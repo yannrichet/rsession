@@ -1,0 +1,63 @@
+
+<project name="Rsession" default="dist" basedir=".">
+    <property name="src" location="src" />
+    <property name="build" location="build" />
+    <property name="dist" location="dist" />
+    <property name="tmp" location="tmp" />
+    <property name="lib" location="lib" />
+    <property name="test" location="test" />
+
+    <target name="clean" description="clean up">
+        <delete dir="${build}" failonerror="false" />
+    </target>
+
+    <target name="clean-dist" description="clean up">
+        <delete dir="${dist}" failonerror="false" />
+    </target>
+
+    <target name="init" depends="clean,clean-dist">
+        <mkdir dir="${build}" />
+        <mkdir dir="${dist}" />
+        <mkdir dir="${dist}/lib" />
+    </target>
+
+    <target name="resource" depends="init">
+        <copy todir="${dist}/lib">
+            <fileset dir="${lib}">
+                <include name="**" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile" depends="init" description="compile the source ">
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar" deprecation="true" target="1.6" srcdir="${src}" destdir="${build}" debug="true" />
+    </target>
+
+    <target name="dist" depends="init,resource,compile" description="generate the distribution" >
+        <!--unjar dest="${build}">
+            <fileset dir="${lib}">
+                <include name="*.jar"/>
+            </fileset>
+        </unjar-->
+        <jar jarfile="${dist}/lib/${ant.project.name}.jar" basedir="${build}" />
+    </target>
+
+    <target name="run" depends="compile">
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar" classname="org.math.R.Rsession" fork="true"  >
+            <assertions>
+                <enable/>
+            </assertions>
+        </java>
+    </target>
+
+    <target name="test" depends="compile">
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" classname="org.math.R.RsessionTest" fork="true"  >
+            <!--env key="Rserve_HOME" value="lib/MacOSX/x86/Rserve"/-->
+            <assertions>
+                <enable/>
+            </assertions>
+        </java>
+    </target>
+    
+</project>
