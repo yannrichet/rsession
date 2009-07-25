@@ -40,6 +40,7 @@
             </fileset>
         </unjar-->
         <jar jarfile="${dist}/lib/${ant.project.name}.jar" basedir="${build}" />
+        <zip basedir="${dist}/lib" destfile="${dist}/libRsession.zip"/>
     </target>
 
     <target name="run" depends="compile">
