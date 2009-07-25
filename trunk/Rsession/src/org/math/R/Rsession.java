@@ -826,7 +826,7 @@ public class Rsession implements Logger {
     /**
      * create a R list with given R objects
      * @param vars R object names
-     * @return
+     * @return list expression
      */
     public static String buildList(String... vars) {
         if (vars.length > 1) {
@@ -844,7 +844,7 @@ public class Rsession implements Logger {
     /**
      * create a R list with given R strings
      * @param vars R strings
-     * @return
+     * @return String list expression
      */
     public static String buildListString(String... vars) {
         if (vars.length > 1) {
@@ -862,7 +862,7 @@ public class Rsession implements Logger {
     /**
      * create a R list with given R string patterns
      * @param vars R string patterns
-     * @return
+     * @return ls pattern expression
      */
     public static String buildListPatern(String... vars) {
         if (vars.length > 1) {

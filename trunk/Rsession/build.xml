@@ -59,5 +59,9 @@
             </assertions>
         </java>
     </target>
+
+    <target name="doc">
+        <javadoc sourcepath="${src}" destdir="doc"/>
+    </target>
     
 </project>
