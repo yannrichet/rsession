@@ -241,7 +241,8 @@ public class RsessionTest {
         assert ls[3].equals("c") : s.toString(ls)+"[3]="+ls[3];
         s.eval("save(file='c" + rand + ".Rdata',c)");
         s.rm("c");
-        ls = (String[]) cast(s.eval("ls()"));
+        //ls = (String[]) cast(s.eval("ls()"));
+        ls = s.ls();
         Arrays.sort(ls);
         assert !ls[3].equals("c") : s.toString(ls)+"[3]="+ls[3];
         s.eval("load(file='c" + rand + ".Rdata')");
