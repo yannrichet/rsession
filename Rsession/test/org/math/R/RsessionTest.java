@@ -86,7 +86,7 @@ public class RsessionTest {
             while ((n = is1.read(buf)) > 0) {
                 os1.write(buf, 0, n);
             }
-        //os1.flush();
+            //os1.flush();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -222,6 +222,9 @@ public class RsessionTest {
         assert ((double[][]) cast(s.eval("CC"))).length == CC.length;
         assert ((double[]) cast(s.eval("CC[1,]"))).length == CC[0].length;
 
+        System.err.println(s.cat(s.ls("C")));
+        assert s.ls("C").length == 2 : "invalid ls(\"C\") : " + s.cat(s.ls("C"));
+
         String str = "abcd";
         s.set("s", str);
         assert ((String) cast(s.eval("s"))).equals(str);
@@ -238,13 +241,13 @@ public class RsessionTest {
         //get/put files
         String[] ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
-        assert ls[3].equals("c") : s.toString(ls)+"[3]="+ls[3];
+        assert ls[3].equals("c") : s.toString(ls) + "[3]=" + ls[3];
         s.eval("save(file='c" + rand + ".Rdata',c)");
         s.rm("c");
         //ls = (String[]) cast(s.eval("ls()"));
         ls = s.ls();
         Arrays.sort(ls);
-        assert !ls[3].equals("c") : s.toString(ls)+"[3]="+ls[3];
+        assert !ls[3].equals("c") : s.toString(ls) + "[3]=" + ls[3];
         s.eval("load(file='c" + rand + ".Rdata')");
         p.println(s.toString(cast(s.eval("c"))));
 
@@ -266,15 +269,15 @@ public class RsessionTest {
         //load
         ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
-        assert ls[0].equals("C") : s.toString(ls)+"[0]="+ls[0];
+        assert ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
         s.rm("C");
         ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
-        assert !ls[0].equals("C") : s.toString(ls)+"[0]="+ls[0];
+        assert !ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
         s.load(f);
         ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
-        assert ls[0].equals("C") : s.toString(ls)+"[0]="+ls[0];
+        assert ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
 
         //toJPEG
         File jpg = new File(tmpdir, "titi" + rand + ".jpg");
@@ -298,8 +301,8 @@ public class RsessionTest {
         System.out.println(s.installPackage("sensitivity", true));
         System.out.println(s.installPackage("wavelets", true));
 
-    //s.end();
-    //s2.end();
+        //s.end();
+        //s2.end();
     }
 
     /*@Test
@@ -383,8 +386,8 @@ public class RsessionTest {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        //}
-        //}).start();
+            //}
+            //}).start();
         }
 
         //checking of each Rsession to verify values are ok.
