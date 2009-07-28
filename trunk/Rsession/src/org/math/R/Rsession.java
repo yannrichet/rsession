@@ -905,7 +905,7 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return (String[]) cast(eval("ls()"));
+            return eval("ls()").asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         }
@@ -919,19 +919,19 @@ public class Rsession implements Logger {
     public String[] ls(String... vars) {
         if (vars == null || vars.length == 0) {
             try {
-                return (String[]) cast(eval("ls()"));
+                return eval("ls()").asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else if (vars.length == 1) {
             try {
-                return (String[]) cast(eval(buildListPattern(vars[0])));
+                return eval(buildListPattern(vars[0])).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else {
             try {
-                return (String[]) cast(eval(buildListPattern(vars)));
+                return eval(buildListPattern(vars)).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
