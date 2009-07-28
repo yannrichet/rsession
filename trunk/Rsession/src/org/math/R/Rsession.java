@@ -36,7 +36,7 @@ public class Rsession implements Logger {
     public final static int MinRserveVersion = 103;
     Rdaemon localRserve;
     public RserverConf RserveConf;
-    public final static String STATUS_NOT_SET = "Unknown status",  STATUS_READY = "Ready",  STATUS_ERROR = "Error",  STATUS_ENDED = "End",  STATUS_NOT_CONNECTED = "Not connected",  STATUS_CONNECTING = "Connecting...";
+    public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     LinkedList<Logger> loggers;
@@ -395,9 +395,9 @@ public class Rsession implements Logger {
             }
 
         }
-    //if (r.getServerVersion() < MinRserveVersion) {
-    //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
-    //}
+        //if (r.getServerVersion() < MinRserveVersion) {
+        //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
+        //}
 
     }
     //RSession previous;
@@ -457,7 +457,6 @@ public class Rsession implements Logger {
             return null;
         }
     }
-
     // <editor-fold defaultstate="collapsed" desc="Packages management">
     public String repos = "http://cran.r-project.org";
 
@@ -864,7 +863,7 @@ public class Rsession implements Logger {
      * @param vars R string patterns
      * @return ls pattern expression
      */
-    public static String buildListPatern(String... vars) {
+    public static String buildListPattern(String... vars) {
         if (vars.length > 1) {
             StringBuffer b = new StringBuffer("c(");
             for (String v : vars) {
@@ -901,6 +900,45 @@ public class Rsession implements Logger {
     }
 
     /**
+     * list R variables in R env.
+     * @return list of R objects names
+     */
+    public String[] ls() {
+        try {
+            return (String[]) cast(eval("ls()"));
+        } catch (REXPMismatchException re) {
+            return new String[0];
+        }
+    }
+
+    /**
+     * list R variables in R env. matching patterns
+     * @param vars R object name patterns
+     * @return list of R objects names
+     */
+    public String[] ls(String... vars) {
+        if (vars == null || vars.length == 0) {
+            try {
+                return (String[]) cast(eval("ls()"));
+            } catch (REXPMismatchException re) {
+                return new String[0];
+            }
+        } else if (vars.length == 1) {
+            try {
+                return (String[]) cast(eval(buildListPattern(vars[0])));
+            } catch (REXPMismatchException re) {
+                return new String[0];
+            }
+        } else {
+            try {
+                return (String[]) cast(eval(buildListPattern(vars)));
+            } catch (REXPMismatchException re) {
+                return new String[0];
+            }
+        }
+    }
+
+    /**
      * delete R variables in R env.
      * @param vars R objects names
      */
@@ -918,9 +956,9 @@ public class Rsession implements Logger {
      */
     public void rmls(String... vars) {
         if (vars.length == 1) {
-            voidEval("rm(list=" + buildListPatern(vars[0]) + ")");
+            voidEval("rm(list=" + buildListPattern(vars[0]) + ")");
         } else {
-            voidEval("rm(list=" + buildListPatern(vars) + ")");
+            voidEval("rm(list=" + buildListPattern(vars) + ")");
         }
     }
 
@@ -946,9 +984,9 @@ public class Rsession implements Logger {
      */
     public void savels(File f, String... vars) {
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName() + "',list=" + buildListPatern(vars[0]) + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars[0]) + ",ascii=TRUE)");
         } else {
-            voidEval("save(file='" + f.getName() + "',list=" + buildListPatern(vars) + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars) + ",ascii=TRUE)");
         }
         receiveFile(f);
         removeFile(f.getName());
@@ -1435,9 +1473,9 @@ public class Rsession implements Logger {
                 //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.");
             }
-        /*} catch (RserveException ex) {
-        log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-         */        } catch (REXPMismatchException ex) {
+            /*} catch (RserveException ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
+             */        } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
             return;
         }
@@ -1475,6 +1513,6 @@ public class Rsession implements Logger {
         log(IO_HEAD + "File " + remoteFile + " sent.");
     }
 
-    public static void main(String[] args) throws REXPMismatchException {
+    public static void main(String[] args) {
     }
 }
