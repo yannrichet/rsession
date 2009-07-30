@@ -11,6 +11,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPList;
@@ -29,6 +32,7 @@ public class Rsession implements Logger {
 
     public RConnection connection;
     PrintStream console;
+    boolean tryLocalRServe;
     public static final String PACKAGEINSTALLED = "Package installed.";
     public static final String PACKAGELOADED = "Package loaded.";
     public boolean connected = false;
@@ -311,6 +315,7 @@ public class Rsession implements Logger {
 
         this.console = console;
         RserveConf = serverconf;
+        this.tryLocalRServe = tryLocalRServe;
 
         loggers = new LinkedList<Logger>();
         loggers.add(new Logger() {
@@ -320,6 +325,10 @@ public class Rsession implements Logger {
             }
         });
 
+        startup();
+    }
+
+    void startup() {
         if (RserveConf == null) {
             if (tryLocalRServe) {
                 RserveConf = RserverConf.newLocalInstance(null);
@@ -443,8 +452,8 @@ public class Rsession implements Logger {
      * @return available R commands
      */
     public String[] listCommands() {
-        silentlyEval(".keyWords <- function() {n <- length(search());result <- c();for (i in 2:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
-        REXP rexp = silentlyEval(".keyWords()");
+        silentlyEvalR(".keyWords <- function() {n <- length(search());result <- c();for (i in 2:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
+        REXP rexp = silentlyEvalR(".keyWords()");
         String as[] = null;
         try {
             if (rexp != null && (as = rexp.asStrings()) != null) {
@@ -483,7 +492,7 @@ public class Rsession implements Logger {
         silentlyVoidEval("loadedpacks<-.packages()", false);
         boolean isloaded = false;
         try {
-            isloaded = silentlyEval("is.element(set=loadedpacks,el='" + pack + "')").asInteger() == 1;
+            isloaded = silentlyEvalR("is.element(set=loadedpacks,el='" + pack + "')").asInteger() == 1;
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  isPackageLoaded(String pack=" + pack + ")");
         }
@@ -493,7 +502,7 @@ public class Rsession implements Logger {
             log("   package " + pack + " is not loaded.");
         }
 
-        silentlyEval("rm(loadedpacks)");
+        silentlyEvalR("rm(loadedpacks)");
         return isloaded;
     }
 
@@ -506,7 +515,7 @@ public class Rsession implements Logger {
     public boolean isPackageInstalled(String pack, String version) {
         silentlyVoidEval("packs<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        REXP r = silentlyEval("is.element(set=packs,el='" + pack + "')");
+        REXP r = silentlyEvalR("is.element(set=packs,el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (r.asInteger() == 1);
@@ -524,12 +533,12 @@ public class Rsession implements Logger {
 
         if (isinstalled && version != null && version.length() > 0) {
             try {
-                isinstalled = silentlyEval("packs['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
+                isinstalled = silentlyEvalR("packs['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
             try {
-                log("    version of package " + pack + " is " + silentlyEval("packs['" + pack + "','Version']").asString());
+                log("    version of package " + pack + " is " + silentlyEvalR("packs['" + pack + "','Version']").asString());
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
@@ -540,7 +549,7 @@ public class Rsession implements Logger {
             }
 
         }
-        silentlyEval("rm(packs)");
+        silentlyEvalR("rm(packs)");
         return isinstalled;
     }
 
@@ -606,7 +615,7 @@ public class Rsession implements Logger {
         }
 
         sendFile(pack_files[0]);
-        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
+        evalR("install.packages('" + pack_files[0].getName() + "',repos=NULL," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
         log("  request package " + pack + " install...");
 
         if (isPackageInstalled(pack, null)) {
@@ -647,7 +656,7 @@ public class Rsession implements Logger {
         return "Impossible to get package " + pack + " from " + repos;
         }*/
 
-        eval("install.packages('" + pack + "',repos='" + repos + "'," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
+        evalR("install.packages('" + pack + "',repos='" + repos + "'," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
         log("  request package " + pack + " install...");
 
 
@@ -670,7 +679,7 @@ public class Rsession implements Logger {
      * @return loading status
      */
     public String loadPackage(String pack) {
-        eval("library(" + pack + ")");
+        evalR("library(" + pack + ")");
         log("  request package " + pack + " loading...");
 
         if (isPackageLoaded(pack)) {
@@ -746,8 +755,8 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
-    public REXP silentlyEval(String expression) {
-        return silentlyEval(expression, true);
+    public REXP silentlyEvalR(String expression) {
+        return silentlyEvalR(expression, true);
     }
 
     /**
@@ -756,7 +765,7 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
-    public REXP silentlyEval(String expression, boolean tryEval) {
+    public REXP silentlyEvalR(String expression, boolean tryEval) {
         assert connected : "R environment not initialized.";
         if (expression == null) {
             return null;
@@ -794,10 +803,10 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
-    public REXP eval(String expression, boolean tryEval) {
+    public REXP evalR(String expression, boolean tryEval) {
         log(HEAD_EVAL + expression);
 
-        REXP e = silentlyEval(expression, tryEval);
+        REXP e = silentlyEvalR(expression, tryEval);
 
         for (UpdateObjectsListener b : updateObjects) {
             b.update();
@@ -811,15 +820,15 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
-    public REXP eval(String expression) {
-        return eval(expression, true);
+    public REXP evalR(String expression) {
+        return evalR(expression, true);
     }
 
     /**
      * delete all variables in R environment
      */
     public void rmAll() {
-        eval("rm(list=ls(all=TRUE))");
+        voidEval("rm(list=ls(all=TRUE))");
     }
 
     /**
@@ -892,7 +901,7 @@ public class Rsession implements Logger {
     public void load(File f) {
         sendFile(f);
         try {
-            assert eval("file.exists('" + f.getName() + "')").asInteger() == 1;
+            assert evalR("file.exists('" + f.getName() + "')").asInteger() == 1;
         } catch (REXPMismatchException r) {
             r.printStackTrace();
         }
@@ -905,7 +914,7 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return eval("ls()").asStrings();
+            return evalR("ls()").asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         }
@@ -919,19 +928,19 @@ public class Rsession implements Logger {
     public String[] ls(String... vars) {
         if (vars == null || vars.length == 0) {
             try {
-                return eval("ls()").asStrings();
+                return evalR("ls()").asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else if (vars.length == 1) {
             try {
-                return eval(buildListPattern(vars[0])).asStrings();
+                return evalR(buildListPattern(vars[0])).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else {
             try {
-                return eval(buildListPattern(vars)).asStrings();
+                return evalR(buildListPattern(vars)).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
@@ -1003,7 +1012,7 @@ public class Rsession implements Logger {
             return "NULL";
         }
         for (String t : types) {
-            REXP is = silentlyEval("is." + t + "(" + robject + ")");
+            REXP is = silentlyEvalR("is." + t + "(" + robject + ")");
             try {
                 if (is != null && is.asInteger() == 1) {
                     return t;
@@ -1188,7 +1197,7 @@ public class Rsession implements Logger {
      * @return java object
      * @throws org.rosuda.REngine.REXPMismatchException
      */
-    public static Object cast(REXP eval) throws REXPMismatchException {
+    public static Object Rcast(REXP eval) throws REXPMismatchException {
         if (eval == null) {
             return null;
         }
@@ -1282,7 +1291,7 @@ public class Rsession implements Logger {
         if (eval.isNull()) {
             return null;
         } else {
-            System.out.println("Unsupported type: " + eval.toDebugString());
+            System.err.println("Unsupported type: " + eval.toDebugString());
         }
         return eval.toString();
     }
@@ -1309,9 +1318,9 @@ public class Rsession implements Logger {
     public void toJPEG(File f, int width, int height, String command) {
         int h = Math.abs(f.hashCode());
         set("plotfile_" + h, f.getName());
-        silentlyEval("jpeg(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
-        eval(command);
-        silentlyEval("dev.off()");
+        silentlyEvalR("jpeg(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
+        evalR(command);
+        silentlyEvalR("dev.off()");
         receiveFile(f);
         rm("plotfile_" + h);
         removeFile(f.getName());
@@ -1325,10 +1334,10 @@ public class Rsession implements Logger {
     public String asHTML(String command) {
         installPackage("R2HTML", true);
         int h = Math.abs(command.hashCode());
-        silentlyEval("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
+        silentlyEvalR("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
         String[] lines = null;
         try {
-            lines = silentlyEval("readLines(\"htmlfile_" + h + "\")").asStrings();
+            lines = silentlyEvalR("readLines(\"htmlfile_" + h + "\")").asStrings();
         } catch (REXPMismatchException e) {
             return e.getMessage();
         }
@@ -1354,7 +1363,7 @@ public class Rsession implements Logger {
         int h = Math.abs(command.hashCode());
         String[] lines = null;
         try {
-            lines = silentlyEval("capture.output( " + command + ")").asStrings();
+            lines = silentlyEvalR("capture.output( " + command + ")").asStrings();
         } catch (REXPMismatchException e) {
             return e.getMessage();
         }
@@ -1387,7 +1396,7 @@ public class Rsession implements Logger {
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
-            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
+            if (silentlyEvalR("file.exists('" + remoteFile + "')").asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.");
             }
         } catch (REXPMismatchException ex) {
@@ -1468,7 +1477,7 @@ public class Rsession implements Logger {
             log(HEAD_ERROR + IO_HEAD + connection.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.");
         }
         try {
-            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() == 1) {
+            if (silentlyEvalR("file.exists('" + remoteFile + "')").asInteger() == 1) {
                 silentlyVoidEval("file.remove('" + remoteFile + "')");
                 //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.");
@@ -1512,7 +1521,163 @@ public class Rsession implements Logger {
         }
         log(IO_HEAD + "File " + remoteFile + " sent.");
     }
+    final static String testExpression = "1+pi";
+    final static double testResult = 1 + Math.PI;
+    static HashMap<String, Object> noVarsEvals = new HashMap<String, Object>();
+
+    /** Method to eval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart).
+     * 1D Numeric "vars" are replaced using Java replace engine instead of R one.
+     * Intended to not interfer with current R env vars.
+     * Yes, it's hard-code :)
+     * @param expression String to evaluate
+     * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
+     * @return java cast Object
+     */
+    public synchronized Object eval(String expression, HashMap<String, Object> vars) {
+        //System.out.println("eval(" + expression + "," + vars + ")");
+        if (expression.length() == 0) {
+            return null;
+        }
+
+        try {
+            return Double.parseDouble(expression);
+        } catch (NumberFormatException ne) {
+
+            if (!uses(expression, vars) && noVarsEvals.containsKey(expression)) {
+                //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
+                return noVarsEvals.get(expression);
+            }
+
+            if (vars != null && vars.containsKey(expression)) {
+                return vars.get(expression);
+            }
+
+            HashMap<String, Object> clean_vars = new HashMap<String, Object>();
+            String clean_expression = expression;
+            if (vars != null) {
+                for (String v : vars.keySet()) {
+                    if (vars.get(v) instanceof Number) {
+                        while (containsVar(clean_expression, v)) {
+                            clean_expression = replaceVar(clean_expression, v, "(" + vars.get(v) + ")");
+                        }
+                    } else {
+                        if (clean_expression.contains(v)) {
+                            String newvarname = v;
+                            while (ls(newvarname).length > 0) {
+                                newvarname = "_" + newvarname;
+                            }
+
+                            clean_expression = replaceVar(clean_expression, v, newvarname);
+                            clean_vars.put(newvarname, vars.get(v));
+                        }
+                    }
+                }
+            }
+
+            if (!uses(clean_expression, clean_vars) && noVarsEvals.containsKey(clean_expression)) {
+                //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
+                return noVarsEvals.get(clean_expression);
+            }
+
+            //System.out.println("clean_expression=" + clean_expression);
+            //System.out.println("clean_vars=" + clean_vars);
+
+            Object out = null;
+            try {
+                if (uses(clean_expression, clean_vars)) {
+                    set(clean_vars);
+                }
+                //System.out.println("clean_expression=" + clean_expression);
+                REXP exp = evalR(clean_expression);
+                //System.out.println("eval=" + eval.toDebugString());
+                out = Rsession.Rcast(exp);
+
+                if (clean_vars.isEmpty() && out != null) {
+                    noVarsEvals.put(clean_expression, out);
+                }
+
+                if (!uses(expression, vars) && out != null) {
+                    noVarsEvals.put(expression, out);
+                    //System.out.println("noVarsEvals > " + expression + " -> " + out);
+                }
+
+            } catch (Exception e) {
+                out = "Cannot cast " + expression + ": " + e.getMessage();
+            } finally {
+                if (uses(clean_expression, clean_vars)) {
+                    unset(clean_vars.keySet());
+                }
+
+            }
+
+            if (out == null) {
+                boolean restartR = false;
+                try {
+                    REXP testEval = evalR(testExpression);
+                    double testOut = (Double) Rsession.Rcast(testEval);
+                    if (testOut == Double.NaN || Math.abs(testOut - testResult) > 0.1) {
+                        restartR = true;
+                    }
+                } catch (Exception e) {
+                    restartR = true;
+                }
+                if (restartR) {
+                    System.err.println("Problem occured, R engine restarted.");
+                    end();
+                    startup();
+
+                    return eval(expression, vars);
+                }
+            }
+
+            return out;
+        }
+    }
+    final static String AW = "((\\A)|(\\W))(";
+    final static String Az = ")((\\W)|(\\z))";
+
+    static String replaceVar(final String expr, final String var, final String val) {
+        String regexp = AW + var + Az;
+        Matcher m = Pattern.compile(regexp).matcher(expr);
+        if (m.find()) {
+            return expr.replace(m.group(), m.group().replace(var, val));
+        } else {
+            return expr;
+        }
+    }
+
+    static boolean containsVar(final String expr, final String var) {
+        String regexp = AW + var + Az;
+        Matcher m = Pattern.compile(regexp).matcher(expr);
+        return m.find();
+    }
+
+    static boolean areUsed(String expression, Set<String> vars) {
+        for (String v : vars) {
+            if (containsVar(expression, v)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean uses(String expression, HashMap<String, Object> vars) {
+        return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
+    }
 
     public static void main(String[] args) {
+        Rsession R = null;
+        int i = 0;
+        if (args[0].startsWith(RserverConf.RURL_START)) {
+            i++;
+            R = Rsession.newInstanceTry(System.out, RserverConf.parse(args[0]));
+        } else {
+            R = Rsession.newInstanceTry(System.out, null);
+        }
+
+        for (int j = i; j < args.length; j++) {
+            System.out.println(castToString(R.evalR(args[j])));
+        }
+
     }
 }

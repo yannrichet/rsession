@@ -123,6 +123,8 @@ public class RserverConf {
         return "R://" + (login != null ? (login + ":" + password + "@") : "") + (host == null ? "localhost" : host) + (port > 0 ? ":" + port : "") /*+ " http_proxy=" + http_proxy + " RLibPath=" + RLibPath*/;
     }
 
+    public final static String RURL_START = "R://";
+    
     public static RserverConf parse(String RURL) {
         String login = null;
         String passwd = null;
@@ -131,7 +133,7 @@ public class RserverConf {
         try {
             String hostport = null;
             if (RURL.contains("@")) {
-                String loginpasswd = RURL.split("@")[0].substring(("R://").length());
+                String loginpasswd = RURL.split("@")[0].substring((RURL_START).length());
                 login = loginpasswd.split(":")[0];
                 if (login.equals("user.name")) {
                     login = System.getProperty("user.name");
@@ -139,7 +141,7 @@ public class RserverConf {
                 passwd = loginpasswd.split(":")[1];
                 hostport = RURL.split("@")[1];
             } else {
-                hostport = RURL.substring(("R://").length());
+                hostport = RURL.substring((RURL_START).length());
             }
 
             if (hostport.contains(":")) {
