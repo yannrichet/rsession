@@ -64,7 +64,7 @@ public class RsessionTest {
     }
 
     @Test
-    public void testEvalExpression() throws REXPMismatchException {
+    public void testEval() throws REXPMismatchException {
 
         double a = -0.123;
         s.set("a", a);
