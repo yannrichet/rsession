@@ -1,5 +1,5 @@
 #labels Featured,Phase-Deploy,Phase-Implementation
-[= Few steps to enable Rserve daemon at startup of your Linux server =
+= Few steps to enable Rserve daemon at startup of your Linux server =
 
   # install R from [http://cran.r-project.org] (tested with 2.9)
   # install Rserve as user:
@@ -34,3 +34,10 @@ exit 0
   # link Rserved in /etc/rc2.d (for ubuntu, maybe other /etc/rc.d for others linux distribution): as root `cd /etc/rc2.d; ln -s ../init.d/Rserved S99Rserved`
   # reboot your server to verify Rserve was correclty launched at startup.
 Now, you can use this linux server as a backend computing engine for your Java applications on desktop.
+{{{
+Rsession s = Rsession.newRemoteInstance(System.out,RserverConf.parse("R://myLinuxServer"));
+HashMap<String,Object> vars = new HashMap<String,Object>();
+vars.put("a",1.0);
+vars.put("b",1.0);
+double[] rand = (double[]) s.eval("rnorm(10,a,b)",vars);
+}}}
