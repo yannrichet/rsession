@@ -25,6 +25,6 @@ echo " * Rserve daemon running ..."
 exit 0
 }}}
   # check that `Rserved` is executable, try to launch it and verify Rserve is available (`ps -u user | grep Rserve` should return something, then kill Rserve)
-  # link Rserved in rc2.d (for ubuntu, maybe other rc*.d for others linux distribution): as root `cd /etc/rc2.d; ln -s ../init.d/Rserved S99Rserved`
+  # link Rserved in /etc/rc2.d (for ubuntu, maybe other /etc/rc.d for others linux distribution): as root `cd /etc/rc2.d; ln -s ../init.d/Rserved S99Rserved`
   # reboot your server to verify Rserve was correclty launched at startup.
 Now, you can use this linux server as a backend computing engine for your Java applications on desktop.
