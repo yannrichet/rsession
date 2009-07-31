@@ -1,7 +1,9 @@
-= Few steps to enable Rserve daemon at startup of your Linux server =
+[= Few steps to enable Rserve daemon at startup of your Linux server =
 
-  # install [R] (tested with 2.9)
+  # install R from [http://cran.r-project.org] (tested with 2.9)
   # install Rserve as user:
+    # get Rserve 0.6 from rforge: `wget http://www.rforge.net/src/contrib/Rserve_0.6-0.tar.gz`
+    # install and compile it (need r-base-dev, not only r-base installed) `R CMD INSTALL Rserve_0.6-0.tar.gz`
   # create `Rserve.sh` startup script in `/home/user/R/x86_64-pc-linux-gnu-library/2.9/Rserve`:
 {{{
 #!/bin/bash
