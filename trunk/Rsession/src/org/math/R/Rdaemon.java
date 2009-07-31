@@ -241,10 +241,10 @@ public class Rdaemon {
         }
 
         if (System.getProperty("os.name").contains("Win")) {
-            RserveArgs.append(" --RS-conf " + Rserve_HOME.replace("\\\\", "/") + "/Rserv.conf");
+            RserveArgs.append(" --RS-conf " + Rserve_HOME.replace("\\\\", "/") + "/Rserve.conf");
             StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R.exe", Rserve_HOME + "\\\\..", "--no-save --slave", RserveArgs.toString(), false);
         } else {
-            RserveArgs.append(" --RS-conf " + Rserve_HOME + "/Rserv.conf");
+            RserveArgs.append(" --RS-conf " + Rserve_HOME + "/Rserve.conf");
             StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R", Rserve_HOME + "/..", "--no-save --slave", RserveArgs.toString(), false);
         }
 
