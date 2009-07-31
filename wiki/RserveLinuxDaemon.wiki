@@ -25,7 +25,7 @@ echo " * Launching Rserve daemon ..."
 
 RSERVE_HOME=/home/user/R/x86_64-pc-linux-gnu-library/2.9/Rserve
 
-start-stop-daemon --start --chdir $RSERVE_HOME --chuid user --exec $RSERVE_HOME/Rserve.sh > /tmp/Rserve.log 2>&1 &
+start-stop-daemon --start --chdir $RSERVE_HOME --chuid user --exec $RSERVE_HOME/Rserve.sh > /var/log/Rserve.log 2>&1 &
 echo " * Rserve daemon running ..."
 
 exit 0
