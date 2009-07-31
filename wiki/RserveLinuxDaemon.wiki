@@ -8,9 +8,15 @@
   # create `Rserve.sh` startup script in `/home/user/R/x86_64-pc-linux-gnu-library/2.9/Rserve`:
 {{{
 #!/bin/bash
-/usr/bin/R CMD Rserve --vanilla
+/usr/bin/R CMD Rserve --vanilla --RS-conf Rserv.conf
 }}}
   # check that `Rserve.sh` is executable, try to launch it and verify Rserve is available (`ps -u user | grep Rserve` should return something, then kill Rserve)
+  # create `Rserve.conf` file in `/home/user/R/x86_64-pc-linux-gnu-library/2.9/Rserve`
+{{{
+workdir tmp
+remote enable
+fileio enable
+}}}
   # create as root `/etc/init.d/Rserved`
 {{{
 #!/bin/sh
