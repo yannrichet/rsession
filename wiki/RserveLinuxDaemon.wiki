@@ -1,3 +1,4 @@
+#labels Featured,Phase-Deploy,Phase-Implementation
 [= Few steps to enable Rserve daemon at startup of your Linux server =
 
   # install R from [http://cran.r-project.org] (tested with 2.9)
