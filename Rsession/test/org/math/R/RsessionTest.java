@@ -242,8 +242,10 @@ public class RsessionTest {
         assert ((double[]) Rcast(s.evalR("C"))).length == C.length;
 
         double[][] CC = new double[10][2];
+        CC[9][1] = Math.random();
         s.set("CC", CC);
-        assert ((double[][]) Rcast(s.evalR("CC"))).length == CC.length;
+        //System.err.println("CC[9][1]="+((double[][]) Rcast(s.evalR("CC")))[9][1]);
+        assert ((double[][]) Rcast(s.evalR("CC")))[9][1] == CC[9][1];
         assert ((double[]) Rcast(s.evalR("CC[1,]"))).length == CC[0].length;
 
         System.err.println(s.cat(s.ls("C")));
