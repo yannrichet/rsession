@@ -223,6 +223,8 @@ public class RsessionTest {
         assert ((Double) Rcast(s.evalR("0.123"))) == 0.123;
         assert ((Double) Rcast(s.evalR("(0.123)+pi"))) - 3.264593 < 0.0001;
         assert ((double[]) Rcast(s.evalR("rnorm(10)"))).length == 10;
+        assert ((double[][]) Rcast(s.evalR("array(0.0,c(4,3))"))).length == 4;
+        assert ((double[]) Rcast(s.evalR("array(array(0.0,c(4,3)))"))).length == 12;
         assert ((double[][]) Rcast(s.evalR("cbind(rnorm(10),rnorm(10))"))).length == 10;
         assert ((RList) Rcast(s.evalR("data.frame(aa=rnorm(10),bb=rnorm(10))"))).size() == 2;
         assert ((String) Rcast(s.evalR("'abcd'"))).equals("abcd");
