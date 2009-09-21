@@ -1234,7 +1234,7 @@ public class Rsession implements Logger {
         "\n  dim=  " + dims);*/
 
         if (eval.isNumeric()) {
-            if (eval.dim() == null) {
+            if (eval.dim() == null || eval.dim().length == 1) {
                 double[] array = eval.asDoubles();
                 if (array.length == 0) {
                     return null;
@@ -1244,6 +1244,7 @@ public class Rsession implements Logger {
                 }
                 return array;
             } else {
+                //System.err.println("eval.dim()="+eval.dim()+"="+cat(eval.dim()));
                 double[][] mat = eval.asDoubleMatrix();
                 if (mat.length == 0) {
                     return null;
