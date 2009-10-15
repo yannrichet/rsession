@@ -148,7 +148,7 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
 
     public void update() {
         try {
-            ls = R == null ? new String[0] : R.silentlyEvalR("ls()").asStrings();
+            ls = R == null ? new String[0] : R.silentlyEval("ls()").asStrings();
             _model.fireTableDataChanged();
         } catch (REXPMismatchException ex) {
             ex.printStackTrace();

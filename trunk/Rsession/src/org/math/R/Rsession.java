@@ -40,7 +40,7 @@ public class Rsession implements Logger {
     public final static int MinRserveVersion = 103;
     Rdaemon localRserve;
     public RserverConf RserveConf;
-    public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
+    public final static String STATUS_NOT_SET = "Unknown status",  STATUS_READY = "Ready",  STATUS_ERROR = "Error",  STATUS_ENDED = "End",  STATUS_NOT_CONNECTED = "Not connected",  STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     LinkedList<Logger> loggers;
@@ -377,6 +377,7 @@ public class Rsession implements Logger {
         }
 
         if (tryLocal) {//try a local start of Rserve
+
             status = STATUS_CONNECTING;
 
             RserveConf = RserverConf.newLocalInstance(null);
@@ -395,6 +396,7 @@ public class Rsession implements Logger {
             connected = (connection != null);
 
             if (!connected) {//failed !
+
                 String message2 = "Failed to launch local Rserve. Unable to initialize Rsession.";
                 println(message2);
                 System.err.println(message2);
@@ -404,9 +406,9 @@ public class Rsession implements Logger {
             }
 
         }
-        //if (r.getServerVersion() < MinRserveVersion) {
-        //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
-        //}
+    //if (r.getServerVersion() < MinRserveVersion) {
+    //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
+    //}
 
     }
     //RSession previous;
@@ -415,6 +417,11 @@ public class Rsession implements Logger {
      * correctly (depending on execution platform) shutdown Rsession.
      */
     public void end() {
+        if (connection == null) {
+            log("Void session temrinated.");
+            return;
+        }
+        
         log("Ending session...");
         //try {
             /*previous = */ connection.close();
@@ -452,8 +459,8 @@ public class Rsession implements Logger {
      * @return available R commands
      */
     public String[] listCommands() {
-        silentlyEvalR(".keyWords <- function() {n <- length(search());result <- c();for (i in 2:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
-        REXP rexp = silentlyEvalR(".keyWords()");
+        silentlyEval(".keyWords <- function() {n <- length(search());result <- c();for (i in 2:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
+        REXP rexp = silentlyEval(".keyWords()");
         String as[] = null;
         try {
             if (rexp != null && (as = rexp.asStrings()) != null) {
@@ -492,7 +499,7 @@ public class Rsession implements Logger {
         silentlyVoidEval("loadedpacks<-.packages()", false);
         boolean isloaded = false;
         try {
-            isloaded = silentlyEvalR("is.element(set=loadedpacks,el='" + pack + "')").asInteger() == 1;
+            isloaded = silentlyEval("is.element(set=loadedpacks,el='" + pack + "')").asInteger() == 1;
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  isPackageLoaded(String pack=" + pack + ")");
         }
@@ -502,7 +509,7 @@ public class Rsession implements Logger {
             log("   package " + pack + " is not loaded.");
         }
 
-        silentlyEvalR("rm(loadedpacks)");
+        silentlyEval("rm(loadedpacks)");
         return isloaded;
     }
 
@@ -515,7 +522,7 @@ public class Rsession implements Logger {
     public boolean isPackageInstalled(String pack, String version) {
         silentlyVoidEval("packs<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        REXP r = silentlyEvalR("is.element(set=packs,el='" + pack + "')");
+        REXP r = silentlyEval("is.element(set=packs,el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (r.asInteger() == 1);
@@ -533,12 +540,12 @@ public class Rsession implements Logger {
 
         if (isinstalled && version != null && version.length() > 0) {
             try {
-                isinstalled = silentlyEvalR("packs['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
+                isinstalled = silentlyEval("packs['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
             try {
-                log("    version of package " + pack + " is " + silentlyEvalR("packs['" + pack + "','Version']").asString());
+                log("    version of package " + pack + " is " + silentlyEval("packs['" + pack + "','Version']").asString());
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
@@ -549,7 +556,7 @@ public class Rsession implements Logger {
             }
 
         }
-        silentlyEvalR("rm(packs)");
+        silentlyEval("rm(packs)");
         return isinstalled;
     }
 
@@ -615,7 +622,7 @@ public class Rsession implements Logger {
         }
 
         sendFile(pack_files[0]);
-        evalR("install.packages('" + pack_files[0].getName() + "',repos=NULL," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
+        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
         log("  request package " + pack + " install...");
 
         if (isPackageInstalled(pack, null)) {
@@ -656,7 +663,7 @@ public class Rsession implements Logger {
         return "Impossible to get package " + pack + " from " + repos;
         }*/
 
-        evalR("install.packages('" + pack + "',repos='" + repos + "'," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
+        eval("install.packages('" + pack + "',repos='" + repos + "'," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
         log("  request package " + pack + " install...");
 
 
@@ -679,7 +686,7 @@ public class Rsession implements Logger {
      * @return loading status
      */
     public String loadPackage(String pack) {
-        evalR("library(" + pack + ")");
+        eval("library(" + pack + ")");
         log("  request package " + pack + " loading...");
 
         if (isPackageLoaded(pack)) {
@@ -755,8 +762,8 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
-    public REXP silentlyEvalR(String expression) {
-        return silentlyEvalR(expression, true);
+    public REXP silentlyEval(String expression) {
+        return silentlyEval(expression, true);
     }
 
     /**
@@ -765,7 +772,7 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
-    public REXP silentlyEvalR(String expression, boolean tryEval) {
+    public REXP silentlyEval(String expression, boolean tryEval) {
         assert connected : "R environment not initialized.";
         if (expression == null) {
             return null;
@@ -803,10 +810,10 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
-    public REXP evalR(String expression, boolean tryEval) {
+    public REXP eval(String expression, boolean tryEval) {
         log(HEAD_EVAL + expression);
 
-        REXP e = silentlyEvalR(expression, tryEval);
+        REXP e = silentlyEval(expression, tryEval);
 
         for (UpdateObjectsListener b : updateObjects) {
             b.update();
@@ -820,8 +827,8 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
-    public REXP evalR(String expression) {
-        return evalR(expression, true);
+    public REXP eval(String expression) {
+        return eval(expression, true);
     }
 
     /**
@@ -901,7 +908,7 @@ public class Rsession implements Logger {
     public void load(File f) {
         sendFile(f);
         try {
-            assert evalR("file.exists('" + f.getName() + "')").asInteger() == 1;
+            assert eval("file.exists('" + f.getName() + "')").asInteger() == 1;
         } catch (REXPMismatchException r) {
             r.printStackTrace();
         }
@@ -914,7 +921,7 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return evalR("ls()").asStrings();
+            return eval("ls()").asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         }
@@ -928,19 +935,19 @@ public class Rsession implements Logger {
     public String[] ls(String... vars) {
         if (vars == null || vars.length == 0) {
             try {
-                return evalR("ls()").asStrings();
+                return eval("ls()").asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else if (vars.length == 1) {
             try {
-                return evalR(buildListPattern(vars[0])).asStrings();
+                return eval(buildListPattern(vars[0])).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else {
             try {
-                return evalR(buildListPattern(vars)).asStrings();
+                return eval(buildListPattern(vars)).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
@@ -1012,7 +1019,7 @@ public class Rsession implements Logger {
             return "NULL";
         }
         for (String t : types) {
-            REXP is = silentlyEvalR("is." + t + "(" + robject + ")");
+            REXP is = silentlyEval("is." + t + "(" + robject + ")");
             try {
                 if (is != null && is.asInteger() == 1) {
                     return t;
@@ -1197,7 +1204,7 @@ public class Rsession implements Logger {
      * @return java object
      * @throws org.rosuda.REngine.REXPMismatchException
      */
-    public static Object Rcast(REXP eval) throws REXPMismatchException {
+    public static Object cast(REXP eval) throws REXPMismatchException {
         if (eval == null) {
             return null;
         }
@@ -1319,9 +1326,9 @@ public class Rsession implements Logger {
     public void toJPEG(File f, int width, int height, String command) {
         int h = Math.abs(f.hashCode());
         set("plotfile_" + h, f.getName());
-        silentlyEvalR("jpeg(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
-        evalR(command);
-        silentlyEvalR("dev.off()");
+        silentlyEval("jpeg(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
+        eval(command);
+        silentlyEval("dev.off()");
         receiveFile(f);
         rm("plotfile_" + h);
         removeFile(f.getName());
@@ -1335,10 +1342,10 @@ public class Rsession implements Logger {
     public String asHTML(String command) {
         installPackage("R2HTML", true);
         int h = Math.abs(command.hashCode());
-        silentlyEvalR("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
+        silentlyEval("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
         String[] lines = null;
         try {
-            lines = silentlyEvalR("readLines(\"htmlfile_" + h + "\")").asStrings();
+            lines = silentlyEval("readLines(\"htmlfile_" + h + "\")").asStrings();
         } catch (REXPMismatchException e) {
             return e.getMessage();
         }
@@ -1364,7 +1371,7 @@ public class Rsession implements Logger {
         int h = Math.abs(command.hashCode());
         String[] lines = null;
         try {
-            lines = silentlyEvalR("capture.output( " + command + ")").asStrings();
+            lines = silentlyEval("capture.output( " + command + ")").asStrings();
         } catch (REXPMismatchException e) {
             return e.getMessage();
         }
@@ -1397,7 +1404,7 @@ public class Rsession implements Logger {
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
-            if (silentlyEvalR("file.exists('" + remoteFile + "')").asInteger() != 1) {
+            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.");
             }
         } catch (REXPMismatchException ex) {
@@ -1478,14 +1485,14 @@ public class Rsession implements Logger {
             log(HEAD_ERROR + IO_HEAD + connection.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.");
         }
         try {
-            if (silentlyEvalR("file.exists('" + remoteFile + "')").asInteger() == 1) {
+            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() == 1) {
                 silentlyVoidEval("file.remove('" + remoteFile + "')");
                 //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.");
             }
-            /*} catch (RserveException ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-             */        } catch (REXPMismatchException ex) {
+        /*} catch (RserveException ex) {
+        log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
+         */        } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
             return;
         }
@@ -1534,7 +1541,7 @@ public class Rsession implements Logger {
      * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
      * @return java cast Object
      */
-    public synchronized Object eval(String expression, HashMap<String, Object> vars) {
+    public synchronized Object evalAppart(String expression, HashMap<String, Object> vars) {
         //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
@@ -1589,9 +1596,9 @@ public class Rsession implements Logger {
                     set(clean_vars);
                 }
                 //System.out.println("clean_expression=" + clean_expression);
-                REXP exp = evalR(clean_expression);
+                REXP exp = eval(clean_expression);
                 //System.out.println("eval=" + eval.toDebugString());
-                out = Rsession.Rcast(exp);
+                out = Rsession.cast(exp);
 
                 if (clean_vars.isEmpty() && out != null) {
                     noVarsEvals.put(clean_expression, out);
@@ -1599,7 +1606,7 @@ public class Rsession implements Logger {
 
                 if (!uses(expression, vars) && out != null) {
                     noVarsEvals.put(expression, out);
-                    //System.out.println("noVarsEvals > " + expression + " -> " + out);
+                //System.out.println("noVarsEvals > " + expression + " -> " + out);
                 }
 
             } catch (Exception e) {
@@ -1614,8 +1621,8 @@ public class Rsession implements Logger {
             if (out == null) {
                 boolean restartR = false;
                 try {
-                    REXP testEval = evalR(testExpression);
-                    double testOut = (Double) Rsession.Rcast(testEval);
+                    REXP testEval = eval(testExpression);
+                    double testOut = (Double) Rsession.cast(testEval);
                     if (testOut == Double.NaN || Math.abs(testOut - testResult) > 0.1) {
                         restartR = true;
                     }
@@ -1627,7 +1634,7 @@ public class Rsession implements Logger {
                     end();
                     startup();
 
-                    return eval(expression, vars);
+                    return evalAppart(expression, vars);
                 }
             }
 
@@ -1677,7 +1684,7 @@ public class Rsession implements Logger {
         }
 
         for (int j = i; j < args.length; j++) {
-            System.out.println(castToString(R.evalR(args[j])));
+            System.out.println(castToString(R.eval(args[j])));
         }
 
     }

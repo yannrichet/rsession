@@ -1,5 +1,6 @@
 package org.math.R;
 
+import java.awt.EventQueue;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -10,6 +11,7 @@ import org.rosuda.REngine.Rserve.RserveException;
 
 public class RserverConf {
 
+    public static String DEFAULT_RSERVE_HOST = "localhost";
     RConnection connection;
     public String host;
     public int port;
@@ -19,41 +21,60 @@ public class RserverConf {
     public Properties properties;
     //public String http_proxy;
 
-    public RserverConf(String RserverHostName, int RserverPort, String login, String password,Properties props) {
+    public RserverConf(String RserverHostName, int RserverPort, String login, String password, Properties props) {
         this.host = RserverHostName;
         this.port = RserverPort;
         this.login = login;
         this.password = password;
         properties = props;
     }
+    public static long CONNECT_TIMEOUT = 1000;
 
-    public RConnection connect() {
-        
-        System.out.println("Connecting " + toString());
-        try {
-            if (host == null) {
-                if (port > 0) {
-                    connection = new RConnection("localhost", port);
+    private class ConnectionThread implements Runnable {
+
+        public void run() {
+            try {
+                if (host == null) {
+                    if (port > 0) {
+                        connection = new RConnection(DEFAULT_RSERVE_HOST, port);
+                    } else {
+                        connection = new RConnection();
+                    }
+                    if (connection.needLogin()) {
+                        connection.login(login, password);
+                    }
                 } else {
-                    connection = new RConnection();
+                    if (port > 0) {
+                        connection = new RConnection(host, port);
+                    } else {
+                        connection = new RConnection(host);
+                    }
+                    if (connection.needLogin()) {
+                        connection.login(login, password);
+                    }
                 }
-                if (connection.needLogin()) {
-                    connection.login(login, password);
-                }
-            } else {
-                if (port > 0) {
-                    connection = new RConnection(host, port);
-                } else {
-                    connection = new RConnection(host);
-                }
-                if (connection.needLogin()) {
-                    connection.login(login, password);
-                }
+            } catch (RserveException ex) {
+                //ex.printStackTrace();
+                //return null;
             }
-        } catch (RserveException ex) {
-            //ex.printStackTrace();
-            return null;
+
+            synchronized (this) {
+                this.notify();
+            }
         }
+    }
+
+    public synchronized RConnection connect() {
+        System.out.println("Connecting " + toString());
+
+        new Thread(new ConnectionThread()).start();
+
+        try {
+            this.wait(CONNECT_TIMEOUT);
+
+        } catch (InterruptedException ie) {
+        }
+
         if (connection != null && connection.isConnected()) {
             if (properties != null) {
                 for (String p : properties.stringPropertyNames()) {
@@ -84,6 +105,7 @@ public class RserverConf {
         } else {
             return null;
         }
+
     }
     public final static int RserverDefaultPort = 6311;
     private static int RserverPort = RserverDefaultPort; //used for windows multi-session emulation. Incremented at each new Rscript instance.
@@ -105,26 +127,26 @@ public class RserverConf {
         if (System.getProperty("os.name").contains("Win") || !Rsession.UNIX_OPTIMIZE) {
             while (!isPortAvailable(RserverPort)) {
                 RserverPort++;
-            //System.out.println("RserverPort++ = " + RserverPort);
+                //System.out.println("RserverPort++ = " + RserverPort);
             }
-            server = new RserverConf(null, RserverPort, null, null,p);
+            server = new RserverConf(null, RserverPort, null, null, p);
         } else { // Unix supports multi-sessions natively, so no need to open a different Rserve on a new port
-            server = new RserverConf(null, -1, null, null,p);
+
+            server = new RserverConf(null, -1, null, null, p);
         }
         return server;
     }
 
     public boolean isLocal() {
-        return host == null || host.equals("localhost") || host.equals("127.0.0.1");
+        return host == null || host.equals(DEFAULT_RSERVE_HOST) || host.equals("127.0.0.1");
     }
 
     @Override
     public String toString() {
-        return "R://" + (login != null ? (login + ":" + password + "@") : "") + (host == null ? "localhost" : host) + (port > 0 ? ":" + port : "") /*+ " http_proxy=" + http_proxy + " RLibPath=" + RLibPath*/;
+        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") /*+ " http_proxy=" + http_proxy + " RLibPath=" + RLibPath*/;
     }
-
     public final static String RURL_START = "R://";
-    
+
     public static RserverConf parse(String RURL) {
         String login = null;
         String passwd = null;
@@ -151,7 +173,7 @@ public class RserverConf {
                 host = hostport;
             }
 
-            return new RserverConf(host, port, login, passwd,null);
+            return new RserverConf(host, port, login, passwd, null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd);
         }
