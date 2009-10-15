@@ -452,7 +452,7 @@ public class RsessionTest {
     @After
     public void tearDown() {
         //uncomment following for sequential call. 
-        s.end();
+        //s.end();
         //If commented, it tests multiple R sessions at same time. 
         //A shutdown hook kills all Rserve at the end.
     }
