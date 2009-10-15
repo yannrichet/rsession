@@ -26,6 +26,7 @@ class StreamHog extends Thread {
             String line = null;
             while ((line = br.readLine()) != null) {
                 if (capture) { // we are supposed to capture the output from REG command
+
                     int i = line.indexOf("InstallPath");
                     if (i >= 0) {
                         String s = line.substring(i + 11).trim();
@@ -67,7 +68,7 @@ public class StartRserve {
             Process p;
             boolean isWindows = false;
             String osname = System.getProperty("os.name");
-            String command=null;
+            String command = null;
             if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
                 isWindows = true; /* Windows startup */
                 command = "\"" + cmd + "\" -e \"library(" + (libloc != null ? "lib.loc='" + libloc + "'," : "") + "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')\" " + rargs;
@@ -78,14 +79,14 @@ public class StartRserve {
                 //System.out.println("e=" + e);
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
             }
-            System.out.println("waiting for Rserve to start ... (" + p + ")");
+            System.out.println("waiting for Rserve to start ...");
             // we need to fetch the output - some platforms will die if you don't ...
             StreamHog errorHog = new StreamHog(p.getErrorStream(), false);
             StreamHog outputHog = new StreamHog(p.getInputStream(), false);
             if (!isWindows) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
             }
-            System.out.println("call "+command+" terminated, let us try to connect ...");
+            System.out.println("call " + command + " terminated, let us try to connect ...");
         } catch (Exception x) {
             System.out.println("failed to start Rserve process with " + x.getMessage());
             return false;
@@ -93,7 +94,15 @@ public class StartRserve {
         int attempts = 5; /* try up to 5 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
         while (attempts > 0) {
             try {
-                RConnection c = new RConnection();
+                RConnection c = null;
+                int port = -1;
+                if (rsrvargs.contains("--RS-port")) {
+                    String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
+                    port = Integer.parseInt(rsport);
+                    c = new RConnection("localhost", port);
+                } else {
+                    c = new RConnection("localhost");
+                }
                 System.out.println("Rserve is running.");
                 c.close();
                 return true;
@@ -105,7 +114,7 @@ public class StartRserve {
                 Thread.sleep(500);
             } catch (InterruptedException ix) {
             }
-            ;
+
             attempts--;
         }
         return false;
