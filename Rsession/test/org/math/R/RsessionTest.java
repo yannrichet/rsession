@@ -13,7 +13,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
@@ -33,7 +32,7 @@ import static org.math.R.Rsession.*;
 public class RsessionTest {
 
     PrintStream p = System.err;
-    RserverConf conf;
+    //RserverConf conf;
     Rsession s;
     int rand = Math.round((float) Math.random() * 10000);
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
@@ -46,7 +45,7 @@ public class RsessionTest {
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 20; i++) {
             int size = i * 10000;
-            s.evalR("raw" + i + "<-rnorm(" + (size / 8) + ")");
+            s.eval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile, "raw" + i);
             assert sfile.exists() : "Size " + size + " failed";
@@ -59,7 +58,7 @@ public class RsessionTest {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", "0.123+a", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
         for (String string : exp) {
-            p.println(string + " --> " + s.toString(Rcast(s.evalR(string))));
+            p.println(string + " --> " + s.toString(cast(s.eval(string))));
         }
     }
 
@@ -78,11 +77,11 @@ public class RsessionTest {
 
         String[] exp = {"TRUE", "0.123", "pi", "a", "A", "0.123+a", "0.123+b", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
         for (String e : exp) {
-            System.out.println(e + " --> " + s.eval(e, vars));
+            System.out.println(e + " --> " + s.evalAppart(e, vars));
         }
         assert Arrays.asList(s.ls()).contains("a") : "variable a disappeared";
-        assert (Double) s.eval("a", null) == a : "variable a changed";
-        assert Arrays.equals((double[]) s.eval("A", null), A) : "variable A changed";
+        assert (Double) s.evalAppart("a", null) == a : "variable a changed";
+        assert Arrays.equals((double[]) s.evalAppart("A", null), A) : "variable A changed";
     }
 
     @Test
@@ -91,8 +90,8 @@ public class RsessionTest {
         String remoteFile1 = "get" + rand + ".csv";
         File localfile1 = new File(tmpdir, remoteFile1);
         System.out.println("GET :" + localfile1.getAbsolutePath());
-        s.evalR("aa<-data.frame(A=c(1,2,3),B=c(4,5,6))");
-        s.evalR("write.csv(file='" + remoteFile1 + "',aa)");
+        s.voidEval("aa<-data.frame(A=c(1,2,3),B=c(4,5,6))");
+        s.voidEval("write.csv(file='" + remoteFile1 + "',aa)");
         InputStream is1 = null;
         OutputStream os1 = null;
         try {
@@ -141,7 +140,7 @@ public class RsessionTest {
             e.printStackTrace();
         }
         assert b.charAt(4) == 'A' : b.charAt(4);
-        s.evalR("rm(aa)");
+        s.eval("rm(aa)");
         //localfile1.delete();
 
 
@@ -206,29 +205,29 @@ public class RsessionTest {
                 ee.printStackTrace();
             }
         }
-        s.evalR("ABC<-read.csv(file='" + remoteFile2 + "', header = TRUE,sep=',')");
-        System.out.println(s.toString(s.Rcast(s.evalR("ABC"))));
-        assert s.evalR("ABC$A").isNumeric();
-        s.evalR("rm(ABC)");
+        s.eval("ABC<-read.csv(file='" + remoteFile2 + "', header = TRUE,sep=',')");
+        System.out.println(s.toString(s.cast(s.eval("ABC"))));
+        assert s.eval("ABC$A").isNumeric();
+        s.eval("rm(ABC)");
         localfile2.delete();
     }
 
     @Test
     public void testCast() throws REXPMismatchException {
         //cast
-        assert ((Boolean) Rcast(s.evalR("TRUE"))) == true;
-        assert ((Double) Rcast(s.evalR("0.123"))) == 0.123;
-        assert ((Double) Rcast(s.evalR("pi"))) - 3.141593 < 0.0001;
-        assert (Rcast(s.evalR("0.123+a"))) == null;
-        assert ((Double) Rcast(s.evalR("0.123"))) == 0.123;
-        assert ((Double) Rcast(s.evalR("(0.123)+pi"))) - 3.264593 < 0.0001;
-        assert ((double[]) Rcast(s.evalR("rnorm(10)"))).length == 10;
-        assert ((double[][]) Rcast(s.evalR("array(0.0,c(4,3))"))).length == 4;
-        assert ((double[]) Rcast(s.evalR("array(array(0.0,c(4,3)))"))).length == 12;
-        assert ((double[][]) Rcast(s.evalR("cbind(rnorm(10),rnorm(10))"))).length == 10;
-        assert ((RList) Rcast(s.evalR("data.frame(aa=rnorm(10),bb=rnorm(10))"))).size() == 2;
-        assert ((String) Rcast(s.evalR("'abcd'"))).equals("abcd");
-        assert ((String[]) Rcast(s.evalR("c('abcd','sdfds')"))).length == 2;
+        assert ((Boolean) cast(s.eval("TRUE"))) == true;
+        assert ((Double) cast(s.eval("0.123"))) == 0.123;
+        assert ((Double) cast(s.eval("pi"))) - 3.141593 < 0.0001;
+        assert (cast(s.eval("0.123+a"))) == null;
+        assert ((Double) cast(s.eval("0.123"))) == 0.123;
+        assert ((Double) cast(s.eval("(0.123)+pi"))) - 3.264593 < 0.0001;
+        assert ((double[]) cast(s.eval("rnorm(10)"))).length == 10;
+        assert ((double[][]) cast(s.eval("array(0.0,c(4,3))"))).length == 4;
+        assert ((double[]) cast(s.eval("array(array(0.0,c(4,3)))"))).length == 12;
+        assert ((double[][]) cast(s.eval("cbind(rnorm(10),rnorm(10))"))).length == 10;
+        assert ((RList) cast(s.eval("data.frame(aa=rnorm(10),bb=rnorm(10))"))).size() == 2;
+        assert ((String) cast(s.eval("'abcd'"))).equals("abcd");
+        assert ((String[]) cast(s.eval("c('abcd','sdfds')"))).length == 2;
     }
 
     @Test
@@ -237,47 +236,47 @@ public class RsessionTest {
         //set
         double c = Math.random();
         s.set("c", c);
-        assert ((Double) Rcast(s.evalR("c"))) == c;
+        assert ((Double) cast(s.eval("c"))) == c;
 
         double[] C = new double[10];
         s.set("C", C);
-        assert ((double[]) Rcast(s.evalR("C"))).length == C.length;
+        assert ((double[]) cast(s.eval("C"))).length == C.length;
 
         double[][] CC = new double[10][2];
         CC[9][1] = Math.random();
         s.set("CC", CC);
         //System.err.println("CC[9][1]="+((double[][]) Rcast(s.evalR("CC")))[9][1]);
-        assert ((double[][]) Rcast(s.evalR("CC")))[9][1] == CC[9][1];
-        assert ((double[]) Rcast(s.evalR("CC[1,]"))).length == CC[0].length;
+        assert ((double[][]) cast(s.eval("CC")))[9][1] == CC[9][1];
+        assert ((double[]) cast(s.eval("CC[1,]"))).length == CC[0].length;
 
         System.err.println(s.cat(s.ls("C")));
         assert s.ls("C").length == 2 : "invalid ls(\"C\") : " + s.cat(s.ls("C"));
 
         String str = "abcd";
         s.set("s", str);
-        assert ((String) Rcast(s.evalR("s"))).equals(str);
+        assert ((String) cast(s.eval("s"))).equals(str);
 
         String[] Str = {"abcd", "cdef"};
         s.set("S", Str);
-        assert ((String[]) Rcast(s.evalR("S"))).length == Str.length;
-        assert ((String) Rcast(s.evalR("S[1]"))).equals(Str[0]);
+        assert ((String[]) cast(s.eval("S"))).length == Str.length;
+        assert ((String) cast(s.eval("S[1]"))).equals(Str[0]);
 
 
         s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
-        assert (Double) (Rcast(s.evalR("df$x1[3]"))) == 7;
+        assert (Double) (cast(s.eval("df$x1[3]"))) == 7;
 
         //get/put files
-        String[] ls = (String[]) Rcast(s.evalR("ls()"));
+        String[] ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
         assert ls[3].equals("c") : s.toString(ls) + "[3]=" + ls[3];
-        s.evalR("save(file='c" + rand + ".Rdata',c)");
+        s.eval("save(file='c" + rand + ".Rdata',c)");
         s.rm("c");
         //ls = (String[]) cast(s.eval("ls()"));
         ls = s.ls();
         Arrays.sort(ls);
         assert !ls[3].equals("c") : s.toString(ls) + "[3]=" + ls[3];
-        s.evalR("load(file='c" + rand + ".Rdata')");
-        p.println(s.toString(Rcast(s.evalR("c"))));
+        s.eval("load(file='c" + rand + ".Rdata')");
+        p.println(s.toString(cast(s.eval("c"))));
 
         File local = new File(tmpdir, "c" + rand + ".Rdata");
         s.receiveFile(local);
@@ -293,17 +292,17 @@ public class RsessionTest {
         assert f.exists();
 
 
-        p.println("ls=\n" + s.toString(Rcast(s.evalR("ls()"))));
+        p.println("ls=\n" + s.toString(cast(s.eval("ls()"))));
         //load
-        ls = (String[]) Rcast(s.evalR("ls()"));
+        ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
         assert ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
         s.rm("C");
-        ls = (String[]) Rcast(s.evalR("ls()"));
+        ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
         assert !ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
         s.load(f);
-        ls = (String[]) Rcast(s.evalR("ls()"));
+        ls = (String[]) cast(s.eval("ls()"));
         Arrays.sort(ls);
         assert ls[0].equals("C") : s.toString(ls) + "[0]=" + ls[0];
 
@@ -345,18 +344,18 @@ public class RsessionTest {
     long duration = Calendar.getInstance().getTimeInMillis() - start;
     System.out.println("Spent time:" + (duration) + " ms");
     }*/
-    //@Test
+    @Test
     public void testConcurrency() throws InterruptedException {
-        final Rsession r1 = Rsession.newLocalInstance(System.out, null);
-        final Rsession r2 = Rsession.newLocalInstance(System.err, null);
+        final Rsession r1 = Rsession.newInstanceTry(System.out, null);
+        final Rsession r2 = Rsession.newInstanceTry(System.err, null);
 
         new Thread(new Runnable() {
 
             public void run() {
                 try {
-                    r1.evalR("a<-1");
+                    r1.eval("a<-1");
 
-                    double a = r1.evalR("a").asDouble();
+                    double a = r1.eval("a").asDouble();
                     assert a == 1 : "a should be == 1 !";
                     System.out.println("1: OK");
 
@@ -369,13 +368,13 @@ public class RsessionTest {
 
             public void run() {
                 try {
-                    r2.evalR("a<-2");
+                    r2.eval("a<-2");
 
-                    double a2 = r2.evalR("a").asDouble();
+                    double a2 = r2.eval("a").asDouble();
                     assert a2 == 2 : "a should be == 2 !";
                     System.out.println("2: OK");
 
-                    double a1 = r1.evalR("a").asDouble();
+                    double a1 = r1.eval("a").asDouble();
                     assert a1 == 1 : "a should be == 1 !";
                     System.out.println("1: OK");
 
@@ -390,12 +389,12 @@ public class RsessionTest {
         r2.end();
     }
 
-    //@Test
+    @Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2/*, 3, 4, 5/*, 6, 7, 8, 9, 10*/};
         final Rsession[] R = new Rsession[A.length];
         for (int i = 0; i < R.length; i++) {
-            R[i] = Rsession.newLocalInstance(System.out, null);
+            R[i] = Rsession.newInstanceTry(System.out, null);
         }
 
         for (int i = 0; i < A.length; i++) {
@@ -405,9 +404,9 @@ public class RsessionTest {
             //
             //   public void run() {
             try {
-                ri.evalR("a<-" + ai);
+                ri.eval("a<-" + ai);
 
-                double ria = ri.evalR("a").asDouble();
+                double ria = ri.eval("a").asDouble();
                 assert ria == ai : "a should be == " + ai + " !";
                 System.out.println(ai + ": OK");
 
@@ -421,11 +420,11 @@ public class RsessionTest {
         //checking of each Rsession to verify values are ok.
         for (int i = 0; i < A.length; i++) {
             for (int j = 0; j < i; j++) {
-                while (R[j].evalR("a") == null) {
+                while (R[j].eval("a") == null) {
                     Thread.sleep(1000);
                 }
                 //System.out.println("Checking " + (j + 1) + " : " + R[j]);
-                double rja = R[j].evalR("a").asDouble();
+                double rja = R[j].eval("a").asDouble();
                 assert rja == A[j] : "a should be == " + A[j] + " !";
                 System.out.println(A[i] + " " + A[j] + ": OK");
             }
@@ -444,7 +443,7 @@ public class RsessionTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
         }
-        conf = new RserverConf(null/*"81.194.2.21"*/, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
+        RserverConf conf = new RserverConf(null/*"81.194.2.21"*/, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
         s = Rsession.newInstanceTry(p, conf);
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
@@ -452,6 +451,9 @@ public class RsessionTest {
 
     @After
     public void tearDown() {
+        //uncomment following for sequential call. 
         s.end();
+        //If commented, it tests multiple R sessions at same time. 
+        //A shutdown hook kills all Rserve at the end.
     }
 }
