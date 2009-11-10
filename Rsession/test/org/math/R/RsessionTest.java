@@ -219,7 +219,7 @@ public class RsessionTest {
         assert ((Double) cast(s.eval("0.123"))) == 0.123;
         assert ((Double) cast(s.eval("pi"))) - 3.141593 < 0.0001;
         assert (cast(s.eval("0.123+a"))) == null;
-        assert ((Double) cast(s.eval("0.123"))) == 0.123;
+        assert ((Double) cast(s.eval("0.123"))) == 0.123 : s.eval("0.123").toString();
         assert ((Double) cast(s.eval("(0.123)+pi"))) - 3.264593 < 0.0001;
         assert ((double[]) cast(s.eval("rnorm(10)"))).length == 10;
         assert ((double[][]) cast(s.eval("array(0.0,c(4,3))"))).length == 4;
@@ -391,7 +391,7 @@ public class RsessionTest {
 
     @Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
-        final int[] A = {1, 2/*, 3, 4, 5/*, 6, 7, 8, 9, 10*/};
+        final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];
         for (int i = 0; i < R.length; i++) {
             R[i] = Rsession.newInstanceTry(System.out, null);
