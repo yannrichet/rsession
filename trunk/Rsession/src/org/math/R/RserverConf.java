@@ -30,50 +30,160 @@ public class RserverConf {
     }
     public static long CONNECT_TIMEOUT = 1000;
 
-    private class ConnectionThread implements Runnable {
+    public abstract class TimeOut {
 
-        public void run() {
-            try {
-                if (host == null) {
-                    if (port > 0) {
-                        connection = new RConnection(DEFAULT_RSERVE_HOST, port);
-                    } else {
-                        connection = new RConnection();
-                    }
-                    if (connection.needLogin()) {
-                        connection.login(login, password);
-                    }
-                } else {
-                    if (port > 0) {
-                        connection = new RConnection(host, port);
-                    } else {
-                        connection = new RConnection(host);
-                    }
-                    if (connection.needLogin()) {
-                        connection.login(login, password);
-                    }
-                }
-            } catch (RserveException ex) {
-                //ex.printStackTrace();
-                //return null;
-            }
+        /**
+         * @return the result
+         */
+        public Object getResult() {
+            return result;
+        }
 
-            synchronized (this) {
-                this.notify();
+        public class TimeOutException extends Exception {
+
+            public TimeOutException(String why) {
+                super(why);
             }
         }
+
+        private class TimeoutThread implements Runnable {
+
+            public void run() {
+                Object res = command();
+                synchronized (TimeOut.this) {
+                    if (timedOut && res != null) {
+                    } else {
+                        result = res;
+                        TimeOut.this.notify();
+                    }
+                }
+            }
+        }
+        private boolean timedOut = false;
+        private Object result = null;
+
+        protected TimeOut() {
+        }
+
+        public synchronized void execute(long timeout) throws TimeOutException {
+            new Thread(new TimeoutThread()).start();
+
+            try {
+                this.wait(timeout);
+            } catch (InterruptedException e) {
+                if (getResult() == null) {
+                    timedOut = true;
+                    result = defaultResult();
+                    throw new TimeOutException("timed out");
+                } else {
+                    return;
+                }
+            }
+
+            if (getResult() != null) {
+                return;
+            } else {
+                timedOut = true;
+                result = defaultResult();
+                throw new TimeOutException("timed out");
+            }
+        }
+
+        /**
+         * @param result
+         */
+        protected abstract Object defaultResult();
+
+        /**
+         * @return
+         */
+        protected abstract Object command();
     }
 
+    /*private class ConnectionThread implements Runnable {
+
+    public void run() {
+    try {
+    if (host == null) {
+    if (port > 0) {
+    connection = new RConnection(DEFAULT_RSERVE_HOST, port);
+    } else {
+    connection = new RConnection();
+    }
+    if (connection.needLogin()) {
+    connection.login(login, password);
+    }
+    } else {
+    if (port > 0) {
+    connection = new RConnection(host, port);
+    } else {
+    connection = new RConnection(host);
+    }
+    if (connection.needLogin()) {
+    connection.login(login, password);
+    }
+    }
+    } catch (RserveException ex) {
+    //ex.printStackTrace();
+    //return null;
+    }
+
+    synchronized (this) {
+    this.notify();
+    }
+    }
+    }*/
     public synchronized RConnection connect() {
         System.out.println("Connecting " + toString());
 
-        new Thread(new ConnectionThread()).start();
+        TimeOut t = new TimeOut() {
+
+            protected Object defaultResult() {
+                return null;
+            }
+
+            protected Object command() {
+                try {
+                    if (host == null) {
+                        if (port > 0) {
+                            connection = new RConnection(DEFAULT_RSERVE_HOST, port);
+                        } else {
+                            connection = new RConnection();
+                        }
+                        if (connection.needLogin()) {
+                            connection.login(login, password);
+                        }
+                    } else {
+                        if (port > 0) {
+                            connection = new RConnection(host, port);
+                        } else {
+                            connection = new RConnection(host);
+                        }
+                        if (connection.needLogin()) {
+                            connection.login(login, password);
+                        }
+                    }
+                } catch (RserveException ex) {
+                    //ex.printStackTrace();
+                    //return null;
+                }
+                return null;
+            }
+        };
 
         try {
-            this.wait(CONNECT_TIMEOUT);
+            t.execute(CONNECT_TIMEOUT);
+        } catch (Exception e) {
+        }
+
+
+        /*new Thread(new ConnectionThread()).start();
+
+        try {
+        this.wait(CONNECT_TIMEOUT);
 
         } catch (InterruptedException ie) {
-        }
+        }*/
 
         if (connection != null && connection.isConnected()) {
             if (properties != null) {

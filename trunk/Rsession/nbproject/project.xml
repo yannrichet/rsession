@@ -9,7 +9,7 @@
             <!-- Do not use Project Properties customizer when editing this file manually. -->
             <name>Rsession</name>
             <properties/>
-            <folders>                
+            <folders>
                 <source-folder>
                     <label>src</label>
                     <type>java</type>
@@ -20,6 +20,11 @@
                     <label>test</label>
                     <type>java</type>
                     <location>test</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
+                    <label>Rsession</label>
+                    <location>.</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>

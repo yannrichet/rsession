@@ -40,7 +40,7 @@ public class Rsession implements Logger {
     public final static int MinRserveVersion = 103;
     Rdaemon localRserve;
     public RserverConf RserveConf;
-    public final static String STATUS_NOT_SET = "Unknown status",  STATUS_READY = "Ready",  STATUS_ERROR = "Error",  STATUS_ENDED = "End",  STATUS_NOT_CONNECTED = "Not connected",  STATUS_CONNECTING = "Connecting...";
+    public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     LinkedList<Logger> loggers;
@@ -406,9 +406,9 @@ public class Rsession implements Logger {
             }
 
         }
-    //if (r.getServerVersion() < MinRserveVersion) {
-    //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
-    //}
+        //if (r.getServerVersion() < MinRserveVersion) {
+        //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
+        //}
 
     }
     //RSession previous;
@@ -421,7 +421,7 @@ public class Rsession implements Logger {
             log("Void session temrinated.");
             return;
         }
-        
+
         log("Ending session...");
         //try {
             /*previous = */ connection.close();
@@ -490,16 +490,20 @@ public class Rsession implements Logger {
         return repos;
     }
 
+    private static String loadedpacks = "loadedpacks";
     /**
      * Check for package loaded in R environment.
      * @param pack R package name
      * @return package loading status
      */
     public boolean isPackageLoaded(String pack) {
-        silentlyVoidEval("loadedpacks<-.packages()", false);
+        silentlyVoidEval(loadedpacks+"<-.packages()", false);
         boolean isloaded = false;
         try {
-            isloaded = silentlyEval("is.element(set=loadedpacks,el='" + pack + "')").asInteger() == 1;
+            REXP i = silentlyEval("is.element(set="+loadedpacks+",el='" + pack + "')");
+            if (i != null) {
+                isloaded = i.asInteger() == 1;
+            }
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  isPackageLoaded(String pack=" + pack + ")");
         }
@@ -509,10 +513,11 @@ public class Rsession implements Logger {
             log("   package " + pack + " is not loaded.");
         }
 
-        silentlyEval("rm(loadedpacks)");
+        silentlyEval("rm("+loadedpacks+")");
         return isloaded;
     }
 
+    private static String packs = "packs";
     /**
      * Check for package installed in R environment.
      * @param pack R package name
@@ -520,9 +525,9 @@ public class Rsession implements Logger {
      * @return package loading status
      */
     public boolean isPackageInstalled(String pack, String version) {
-        silentlyVoidEval("packs<-installed.packages(noCache=TRUE)", false);
+        silentlyVoidEval(packs+"<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        REXP r = silentlyEval("is.element(set=packs,el='" + pack + "')");
+        REXP r = silentlyEval("is.element(set="+packs+",el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (r.asInteger() == 1);
@@ -540,12 +545,12 @@ public class Rsession implements Logger {
 
         if (isinstalled && version != null && version.length() > 0) {
             try {
-                isinstalled = silentlyEval("packs['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
+                isinstalled = silentlyEval(packs+"['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
             try {
-                log("    version of package " + pack + " is " + silentlyEval("packs['" + pack + "','Version']").asString());
+                log("    version of package " + pack + " is " + silentlyEval(packs+"['" + pack + "','Version']").asString());
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
@@ -556,7 +561,7 @@ public class Rsession implements Logger {
             }
 
         }
-        silentlyEval("rm(packs)");
+        silentlyEval("rm("+packs+")");
         return isinstalled;
     }
 
@@ -1490,9 +1495,9 @@ public class Rsession implements Logger {
                 //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.");
             }
-        /*} catch (RserveException ex) {
-        log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-         */        } catch (REXPMismatchException ex) {
+            /*} catch (RserveException ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
+             */        } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
             return;
         }
@@ -1606,7 +1611,7 @@ public class Rsession implements Logger {
 
                 if (!uses(expression, vars) && out != null) {
                     noVarsEvals.put(expression, out);
-                //System.out.println("noVarsEvals > " + expression + " -> " + out);
+                    //System.out.println("noVarsEvals > " + expression + " -> " + out);
                 }
 
             } catch (Exception e) {
