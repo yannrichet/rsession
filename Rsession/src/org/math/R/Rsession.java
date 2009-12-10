@@ -1470,6 +1470,7 @@ public class Rsession implements Logger {
             os = new FileOutputStream(localfile);
             byte[] buf = new byte[512];
             try {
+                //FIXME bug when received file exceeds 65kb
                 connection.setSendBufferSize(buf.length);
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
