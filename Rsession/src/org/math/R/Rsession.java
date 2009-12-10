@@ -616,7 +616,20 @@ public class Rsession implements Logger {
         File[] pack_files = dir.listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
-                return pathname.getName().contains(pack);
+
+                if (!pathname.getName().contains(pack)) {
+                    return false;
+                }
+                if (RServeOSisWindows()) {
+                    return pack.endsWith(".zip");
+                }
+                if (RServeOSisLinux()) {
+                    return pack.endsWith(".tar.gz");
+                }
+                if (RServeOSisMacOSX()) {
+                    return pack.endsWith(".tgz");
+                }
+                return false;
             }
         });
         if (pack_files == null || pack_files.length == 0) {
