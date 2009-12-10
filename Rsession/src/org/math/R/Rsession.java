@@ -489,18 +489,18 @@ public class Rsession implements Logger {
     public String getCRANRepository() {
         return repos;
     }
-
     private static String loadedpacks = "loadedpacks";
+
     /**
      * Check for package loaded in R environment.
      * @param pack R package name
      * @return package loading status
      */
     public boolean isPackageLoaded(String pack) {
-        silentlyVoidEval(loadedpacks+"<-.packages()", false);
+        silentlyVoidEval(loadedpacks + "<-.packages()", false);
         boolean isloaded = false;
         try {
-            REXP i = silentlyEval("is.element(set="+loadedpacks+",el='" + pack + "')");
+            REXP i = silentlyEval("is.element(set=" + loadedpacks + ",el='" + pack + "')");
             if (i != null) {
                 isloaded = i.asInteger() == 1;
             }
@@ -513,11 +513,11 @@ public class Rsession implements Logger {
             log("   package " + pack + " is not loaded.");
         }
 
-        silentlyEval("rm("+loadedpacks+")");
+        silentlyEval("rm(" + loadedpacks + ")");
         return isloaded;
     }
-
     private static String packs = "packs";
+
     /**
      * Check for package installed in R environment.
      * @param pack R package name
@@ -525,9 +525,9 @@ public class Rsession implements Logger {
      * @return package loading status
      */
     public boolean isPackageInstalled(String pack, String version) {
-        silentlyVoidEval(packs+"<-installed.packages(noCache=TRUE)", false);
+        silentlyVoidEval(packs + "<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        REXP r = silentlyEval("is.element(set="+packs+",el='" + pack + "')");
+        REXP r = silentlyEval("is.element(set=" + packs + ",el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (r.asInteger() == 1);
@@ -545,12 +545,12 @@ public class Rsession implements Logger {
 
         if (isinstalled && version != null && version.length() > 0) {
             try {
-                isinstalled = silentlyEval(packs+"['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
+                isinstalled = silentlyEval(packs + "['" + pack + "','Version'] == \"" + version + "\"").asInteger() == 1;
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
             try {
-                log("    version of package " + pack + " is " + silentlyEval(packs+"['" + pack + "','Version']").asString());
+                log("    version of package " + pack + " is " + silentlyEval(packs + "['" + pack + "','Version']").asString());
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  isPackageInstalled(String pack=" + pack + ", String version=" + version + ")");
             }
@@ -561,7 +561,7 @@ public class Rsession implements Logger {
             }
 
         }
-        silentlyEval("rm("+packs+")");
+        silentlyEval("rm(" + packs + ")");
         return isinstalled;
     }
 
@@ -834,6 +834,30 @@ public class Rsession implements Logger {
      */
     public REXP eval(String expression) {
         return eval(expression, true);
+    }
+
+    public String getRServeOS() {
+        try {
+            return eval("Sys.info()['sysname']").asString();
+        } catch (REXPMismatchException re) {
+            return "unknown";
+        }
+    }
+
+    public boolean RServeOSisWindows() {
+        return getRServeOS().startsWith("Windows");
+    }
+
+    public boolean RServeOSisLinux() {
+        return getRServeOS().startsWith("Linux");
+    }
+
+    public boolean RServeOSisMacOSX() {
+        return getRServeOS().startsWith("Darwin");
+    }
+
+    public boolean RServeOSisUnknown() {
+        return !RServeOSisWindows() && !RServeOSisLinux() && !RServeOSisMacOSX();
     }
 
     /**
