@@ -41,13 +41,25 @@ public class RsessionTest {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
     }
 
-    //@Test
+    @Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 20; i++) {
             int size = i * 10000;
             s.eval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile, "raw" + i);
+            assert sfile.exists() : "Size " + size + " failed";
+            p.println(sfile.length());
+        }
+    }
+
+    @Test
+    public void testJPEGSize() throws REXPMismatchException {
+        s.eval("library(MASS)");
+        for (int i = 1; i < 20; i++) {
+            int size = i * 80;
+            File sfile = new File("tmp", size + ".jpg");
+            s.toJPEG(sfile, 600, 600, "parcoord(rbind(rnorm(" + (size / 8) + "),rnorm(" + (size / 8) + ")),var.label=TRUE)");
             assert sfile.exists() : "Size " + size + " failed";
             p.println(sfile.length());
         }

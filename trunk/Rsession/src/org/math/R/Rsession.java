@@ -1446,10 +1446,15 @@ public class Rsession implements Logger {
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
+            int i = 10;
+            while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
+                Thread.sleep(1000);
+                i--;
+            }
             if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.");
             }
-        } catch (REXPMismatchException ex) {
+        } catch (Exception ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
             return;
         }
