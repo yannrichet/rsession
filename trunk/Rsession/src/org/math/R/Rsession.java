@@ -621,13 +621,13 @@ public class Rsession implements Logger {
                     return false;
                 }
                 if (RServeOSisWindows()) {
-                    return pack.endsWith(".zip");
+                    return pathname.getName().endsWith(".zip");
                 }
                 if (RServeOSisLinux()) {
-                    return pack.endsWith(".tar.gz");
+                    return pathname.getName().endsWith(".tar.gz");
                 }
                 if (RServeOSisMacOSX()) {
-                    return pack.endsWith(".tgz");
+                    return pathname.getName().endsWith(".tgz");
                 }
                 return false;
             }
