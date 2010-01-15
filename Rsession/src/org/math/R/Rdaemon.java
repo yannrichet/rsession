@@ -140,8 +140,8 @@ public class Rdaemon {
                     OS_ARCH = "x86";
                 }
 
-                if (OS_NAME.equals("Windows XP")) {
-                    Rserve_HOME = "lib\\WindowsXP\\" + OS_ARCH + "\\Rserve\\";
+                if (OS_NAME.contains("Windows")) {
+                    Rserve_HOME = "lib\\Windows\\" + OS_ARCH + "\\Rserve\\";
                 } else if (OS_NAME.equals("Mac OS X")) {
                     Rserve_HOME = "lib/MacOSX/" + OS_ARCH + "/Rserve";
                 } else if (OS_NAME.equals("Linux")) {
