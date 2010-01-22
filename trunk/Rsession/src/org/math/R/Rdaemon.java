@@ -23,7 +23,6 @@ public class Rdaemon {
     static String R_HOME = null;
     static String Rserve_HOME = null;
 
-
     static {
         boolean app_dir_ok = false;
         if (!APP_DIR.exists()) {
@@ -88,13 +87,13 @@ public class Rdaemon {
                         r_HOME = "C:\\Program Files\\R\\R-2." + major + "." + minor + "\\";
                         if (new File(r_HOME).exists()) {
                             R_HOME = r_HOME;
-                        //break;
+                            //break;
                         }
-                    //}
+                        //}
                     } /*else {
-                break;
-                }
-                }*/
+                    break;
+                    }
+                    }*/
                 } else {
                     R_HOME = "/usr/lib/R/";
                 }
@@ -112,24 +111,17 @@ public class Rdaemon {
         Map<String, String> env = System.getenv();
         Properties prop = System.getProperties();
 
-
-        if (path != null && new File(path).exists()) {
-            File in = new File(path);
-            if (in.isFile() && in.getName().equals("Rserve")) {
-                Rserve_HOME = path;
-            } else {
-                Rserve_HOME = null;
-            }
-        } else {
+        Rserve_HOME = path;
+        if (Rserve_HOME == null || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
             if (env.containsKey(Rserve_HOME_KEY)) {
                 Rserve_HOME = env.get(Rserve_HOME_KEY);
             }
 
-            if (Rserve_HOME == null || prop.containsKey(Rserve_HOME_KEY) || !(new File(Rserve_HOME).exists())) {
+            if (Rserve_HOME == null || prop.containsKey(Rserve_HOME_KEY) || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
                 Rserve_HOME = prop.getProperty(Rserve_HOME_KEY);
             }
 
-            if (Rserve_HOME == null || !(new File(Rserve_HOME).exists())) {
+            if (Rserve_HOME == null || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
                 Rserve_HOME = null;
                 String OS_NAME = prop.getProperty("os.name");
                 String OS_ARCH = prop.getProperty("os.arch");
