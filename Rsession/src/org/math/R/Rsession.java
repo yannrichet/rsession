@@ -29,6 +29,7 @@ import org.rosuda.REngine.Rserve.RserveException;
  * @author richet
  */
 public class Rsession implements Logger {
+    public static final String CAST_ERROR = "Cannot cast ";
 
     public RConnection connection;
     PrintStream console;
@@ -1658,7 +1659,7 @@ public class Rsession implements Logger {
                 }
 
             } catch (Exception e) {
-                out = "Cannot cast " + expression + ": " + e.getMessage();
+                out = CAST_ERROR + expression + ": " + e.getMessage();
             } finally {
                 if (uses(clean_expression, clean_vars)) {
                     unset(clean_vars.keySet());
