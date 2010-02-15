@@ -29,8 +29,8 @@ import org.rosuda.REngine.Rserve.RserveException;
  * @author richet
  */
 public class Rsession implements Logger {
-    public static final String CAST_ERROR = "Cannot cast ";
 
+    public static final String CAST_ERROR = "Cannot cast ";
     public RConnection connection;
     PrintStream console;
     boolean tryLocalRServe;
@@ -1364,17 +1364,40 @@ public class Rsession implements Logger {
      * @param f File to store data (eg .jpg file)
      * @param width width of image
      * @param height height of image
+     * @param fileformat format of image: png,tiff,jpeg,bmp
      * @param command R command to create image (eg plot())
      */
-    public void toJPEG(File f, int width, int height, String command) {
+    public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         set("plotfile_" + h, f.getName());
-        silentlyEval("jpeg(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
-        eval(command);
+        silentlyEval(fileformat + "(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
+        for (String command : commands) {
+            eval(command);
+        }
         silentlyEval("dev.off()");
         receiveFile(f);
         rm("plotfile_" + h);
         removeFile(f.getName());
+    }
+    public final static String GRAPHIC_PNG = "png";
+    public final static String GRAPHIC_JPEG = "jpeg";
+    public final static String GRAPHIC_BMP = "bmp";
+    public final static String GRAPHIC_TIFF = "tiff";
+
+    public void toJPEG(File f, int width, int height, String... commands) {
+        toGraphic(f, width, height, GRAPHIC_JPEG, commands);
+    }
+
+    public void toPNG(File f, int width, int height, String... commands) {
+        toGraphic(f, width, height, GRAPHIC_PNG, commands);
+    }
+
+    public void toBMP(File f, int width, int height, String... commands) {
+        toGraphic(f, width, height, GRAPHIC_BMP, commands);
+    }
+
+    public void toTIFF(File f, int width, int height, String... commands) {
+        toGraphic(f, width, height, GRAPHIC_TIFF, commands);
     }
 
     /**
