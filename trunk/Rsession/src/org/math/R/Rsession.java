@@ -1384,6 +1384,20 @@ public class Rsession implements Logger {
     public final static String GRAPHIC_BMP = "bmp";
     public final static String GRAPHIC_TIFF = "tiff";
 
+    public void toGraphic(File f, int width, int height, String... commands) {
+        if (f.getName().endsWith(GRAPHIC_BMP)) {
+            toBMP(f, width, height, commands);
+        } else if (f.getName().endsWith(GRAPHIC_JPEG)) {
+            toJPEG(f, width, height, commands);
+        } else if (f.getName().endsWith(GRAPHIC_PNG)) {
+            toPNG(f, width, height, commands);
+        } else if (f.getName().endsWith(GRAPHIC_TIFF)) {
+            toTIFF(f, width, height, commands);
+        } else {
+            toPNG(f, width, height, commands);
+        }
+    }
+
     public void toJPEG(File f, int width, int height, String... commands) {
         toGraphic(f, width, height, GRAPHIC_JPEG, commands);
     }
