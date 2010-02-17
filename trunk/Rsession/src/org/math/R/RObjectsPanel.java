@@ -15,6 +15,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 
 /**
@@ -148,7 +149,16 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
 
     public void update() {
         try {
-            ls = R == null ? new String[0] : R.silentlyEval("ls()").asStrings();
+            if (R == null) {
+                ls = new String[0];
+            } else {
+                REXP rls = R.silentlyEval("ls()");
+                if (rls != null) {
+                    ls = rls.asStrings();
+                } else {
+                    ls = new String[0];
+                }
+            }
             _model.fireTableDataChanged();
         } catch (REXPMismatchException ex) {
             ex.printStackTrace();
@@ -293,7 +303,6 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             }
         }
 }//GEN-LAST:event__saveActionPerformed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public javax.swing.JButton _add;
     private javax.swing.JToolBar _bar;
