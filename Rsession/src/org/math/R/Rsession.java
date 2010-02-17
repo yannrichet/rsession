@@ -1372,7 +1372,7 @@ public class Rsession implements Logger {
         set("plotfile_" + h, f.getName());
         silentlyEval(fileformat + "(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
         for (String command : commands) {
-            eval(command);
+            silentlyVoidEval(command);
         }
         silentlyEval("dev.off()");
         receiveFile(f);
