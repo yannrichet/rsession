@@ -595,6 +595,37 @@ public class Rsession implements Logger {
 
     /**
      * Start installation procedure of local R package
+     * @param pack package file to install
+     * @param load automatically load package after successfull installation
+     * @return installation status
+     */
+    public String installPackage(File pack, boolean load) {
+        sendFile(pack);
+        eval("install.packages('" + pack.getName() + "',repos=NULL," + (RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") + "dependencies=TRUE)");
+        log("  request package " + pack + " install...");
+
+        String name = pack.getName();
+        if (name.contains("_")) {
+            name = name.substring(0, name.indexOf("_"));
+        }
+        if (name.contains(".")) {
+            name = name.substring(0, name.indexOf("."));
+        }
+        if (isPackageInstalled(name, null)) {
+            log("  package " + pack + " installation sucessfull.");
+            if (load) {
+                return loadPackage(name);
+            } else {
+                return PACKAGEINSTALLED;
+            }
+        } else {
+            log("  package " + pack + " installation failed.");
+            return "Impossible to install package " + pack + " !";
+        }
+    }
+
+    /**
+     * Start installation procedure of local R package
      * @param pack package to install
      * @param dir directory where package file (.zip, .tar.gz or .tgz) is located.
      * @param load automatically load package after successfull installation
