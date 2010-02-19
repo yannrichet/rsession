@@ -14,7 +14,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 
@@ -28,21 +27,21 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
     private LinkedList<File> Rfiles = new LinkedList<File>();
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
+    TypeCellRenderer typerenderer = new TypeCellRenderer();
+    ObjectCellRenderer objectrenderer = new ObjectCellRenderer();
 
     enum ObjectColumns {
 
-        NAME(0, 100, "Object", new CellRenderer()),
-        TYPE(1, 100, "Type", new CellRenderer());
+        NAME(0, 100, "Object"),
+        TYPE(1, 100, "Type");
         //SOURCE(1, 100, "Source", new CellRenderer());
         String name;
         int value, width;
-        TableCellRenderer renderer;
 
-        ObjectColumns(int v, int w, String n, TableCellRenderer r) {
+        ObjectColumns(int v, int w, String n) {
             value = v;
             width = w;
             name = n;
-            renderer = r;
         }
 
         @Override
@@ -51,7 +50,7 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
         }
     }
 
-    static class CellRenderer extends DefaultTableCellRenderer {
+    class TypeCellRenderer extends DefaultTableCellRenderer {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object name, boolean isSelected, boolean hasFocus, int row, int col) {
@@ -59,6 +58,21 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             setText((String) name);
             setFont(_smallFont);
             setHorizontalAlignment(CENTER);
+            return this;
+        }
+    }
+
+    class ObjectCellRenderer extends TypeCellRenderer {
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object name, boolean isSelected, boolean hasFocus, int row, int col) {
+            super.getTableCellRendererComponent(table, name, isSelected, hasFocus, row, col);
+            String ttip = "?";
+            try {
+                ttip = R.eval("print(" + name.toString() + ")").asString();
+            } catch (Exception re) {
+            }
+            setToolTipText(ttip);
             return this;
         }
     }
@@ -131,8 +145,9 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
         _oList.getTableHeader().setReorderingAllowed(false);
         for (ObjectColumns col : ObjectColumns.values()) {
             _oList.getColumnModel().getColumn(col.value).setPreferredWidth(col.width);
-            _oList.getColumnModel().getColumn(col.value).setCellRenderer(col.renderer);
         }
+        _oList.getColumnModel().getColumn(ObjectColumns.NAME.value).setCellRenderer(objectrenderer);
+        _oList.getColumnModel().getColumn(ObjectColumns.TYPE.value).setCellRenderer(typerenderer);
 
         _oList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
