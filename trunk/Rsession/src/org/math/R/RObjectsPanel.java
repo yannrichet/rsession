@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -81,6 +82,9 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
 
         @Override
         public String get(Object key) {
+            if (key == null) {
+                return null;
+            }
             String keystr = (String) key;
             if (!super.containsKey(keystr)) {
                 super.put(keystr, R == null ? "" : R.typeOf(keystr));
@@ -174,7 +178,12 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
                     ls = new String[0];
                 }
             }
-            _model.fireTableDataChanged();
+            EventQueue.invokeLater(new Runnable() {
+
+                public void run() {
+                    _model.fireTableDataChanged();
+                }
+            });
         } catch (REXPMismatchException ex) {
             ex.printStackTrace();
         }
