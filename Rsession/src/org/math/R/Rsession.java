@@ -1791,6 +1791,9 @@ public class Rsession implements Logger {
     }
 
     public static void main(String[] args) {
+        if (args == null || args.length == 0) {
+            args = new String[]{"1+pi"};
+        }
         Rsession R = null;
         int i = 0;
         if (args[0].startsWith(RserverConf.RURL_START)) {

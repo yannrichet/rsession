@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,9 +21,16 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
 
-    public void println(String message) {
-        if (isVisible())
-        getPrintStream().println(message);
+    public void println(final String message) {
+        if (isVisible()) {
+            EventQueue.invokeLater(new Runnable() {
+
+                public void run() {
+                    getPrintStream().println(message);
+                }
+            });
+        }
+
     }
 
     public RLogPanel() {
@@ -145,7 +153,6 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
             }
         }
 }//GEN-LAST:event__saveActionPerformed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToolBar _bar;
     public javax.swing.JButton _del;
