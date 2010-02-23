@@ -418,14 +418,16 @@ public class Rsession implements Logger {
      * correctly (depending on execution platform) shutdown Rsession.
      */
     public void end() {
-        if (connection == null) {
-            log("Void session temrinated.");
-            return;
-        }
+        synchronized (connection) {
+            if (connection == null) {
+                log("Void session temrinated.");
+                return;
+            }
 
-        log("Ending session...");
-        //try {
+            log("Ending session...");
+            //try {
             /*previous = */ connection.close();
+        }
 
         //} catch (RserveException e) {
         //    log(e.getMessage());
@@ -778,7 +780,9 @@ public class Rsession implements Logger {
             b.eval(expression);
         }
         try {
-            connection.voidEval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+            synchronized (connection) {
+                connection.voidEval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+            }
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
         }
@@ -835,7 +839,9 @@ public class Rsession implements Logger {
         }
         REXP e = null;
         try {
-            e = connection.eval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+            synchronized (connection) {
+                e = connection.eval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+            }
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
         }
@@ -1181,7 +1187,9 @@ public class Rsession implements Logger {
         RList list = buildRList(data, names);
         log(HEAD_SET + varname + " <- " + toString(list));
         try {
-            connection.assign(varname, REXP.createDataFrame(list));
+            synchronized (connection) {
+                connection.assign(varname, REXP.createDataFrame(list));
+            }
         } catch (REXPMismatchException re) {
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.");
         } catch (RserveException ex) {
@@ -1210,7 +1218,9 @@ public class Rsession implements Logger {
         if (var instanceof RList) {
             RList l = (RList) var;
             try {
-                connection.assign(varname, new REXPList(l));
+                synchronized (connection) {
+                    connection.assign(varname, new REXPList(l));
+                }
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (RList) var)");
             }
@@ -1222,7 +1232,9 @@ public class Rsession implements Logger {
             silentlyVoidEval(varname + "<-" + (Double) var);
         } else if (var instanceof double[]) {
             try {
-                connection.assign(varname, (double[]) var);
+                synchronized (connection) {
+                    connection.assign(varname, (double[]) var);
+                }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[]) var)");
             }
@@ -1232,7 +1244,9 @@ public class Rsession implements Logger {
             int rows = array.length;
             int col = array[0].length;
             try {
-                connection.assign("row_" + varname, reshapeAsRow(array));
+                synchronized (connection) {
+                    connection.assign("row_" + varname, reshapeAsRow(array));
+                }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)");
             }
@@ -1241,7 +1255,9 @@ public class Rsession implements Logger {
             silentlyVoidEval("rm(row_" + varname + ")");
         } else if (var instanceof String) {
             try {
-                connection.assign(varname, (String) var);
+                synchronized (connection) {
+                    connection.assign(varname, (String) var);
+                }
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String) var)");
 
@@ -1249,7 +1265,9 @@ public class Rsession implements Logger {
             silentlyVoidEval(varname/*, (String) var*/);
         } else if (var instanceof String[]) {
             try {
-                connection.assign(varname, (String[]) var);
+                synchronized (connection) {
+                    connection.assign(varname, (String[]) var);
+                }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String[]) var)");
             }
@@ -1539,34 +1557,36 @@ public class Rsession implements Logger {
 
         RFileInputStream is = null;
         FileOutputStream os = null;
-        try {
-            is = connection.openFile(remoteFile);
-            os = new FileOutputStream(localfile);
-            byte[] buf = new byte[512];
+        synchronized (connection) {
             try {
-                //FIXME bug when received file exceeds 65kb
-                connection.setSendBufferSize(buf.length);
-            } catch (RserveException ex) {
-                log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-            }
-            int n = 0;
-            while ((n = is.read(buf)) > 0) {
-                os.write(buf, 0, n);
-            }
+                is = connection.openFile(remoteFile);
+                os = new FileOutputStream(localfile);
+                byte[] buf = new byte[512];
+                try {
+                    //FIXME bug when received file exceeds 65kb
+                    connection.setSendBufferSize(buf.length);
+                } catch (RserveException ex) {
+                    log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
+                }
+                int n = 0;
+                while ((n = is.read(buf)) > 0) {
+                    os.write(buf, 0, n);
+                }
 
-        } catch (IOException e) {
-            log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not found.\n" + e.getMessage());
-            return;
-        } finally {
-            try {
-                if (os != null) {
-                    os.close();
+            } catch (IOException e) {
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not found.\n" + e.getMessage());
+                return;
+            } finally {
+                try {
+                    if (os != null) {
+                        os.close();
+                    }
+                    if (is != null) {
+                        is.close();
+                    }
+                } catch (IOException ee) {
+                    ee.printStackTrace();
                 }
-                if (is != null) {
-                    is.close();
-                }
-            } catch (IOException ee) {
-                ee.printStackTrace();
             }
         }
         log(IO_HEAD + "File " + remoteFile + " received.");
@@ -1578,7 +1598,9 @@ public class Rsession implements Logger {
      */
     public void removeFile(String remoteFile) {
         try {
-            connection.removeFile(remoteFile);
+            synchronized (connection) {
+                connection.removeFile(remoteFile);
+            }
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  removeFile(String remoteFile=" + remoteFile + ")");
         }
@@ -1599,7 +1621,9 @@ public class Rsession implements Logger {
      */
     public void sendFile(File localfile, String remoteFile) {
         if (!localfile.exists()) {
-            log(HEAD_ERROR + IO_HEAD + connection.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.");
+            synchronized (connection) {
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.");
+            }
         }
         try {
             if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() == 1) {
@@ -1615,33 +1639,34 @@ public class Rsession implements Logger {
         }
         FileInputStream is = null;
         RFileOutputStream os = null;
-
-        try {
-            os = connection.createFile(remoteFile);
-            is = new FileInputStream(localfile);
-            byte[] buf = new byte[512];
+        synchronized (connection) {
             try {
-                connection.setSendBufferSize(buf.length);
-            } catch (RserveException ex) {
-                log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-            }
-            int n = 0;
-            while ((n = is.read(buf)) > 0) {
-                os.write(buf, 0, n);
-            }
-        } catch (IOException e) {
-            log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage());
-            return;
-        } finally {
-            try {
-                if (os != null) {
-                    os.close();
+                os = connection.createFile(remoteFile);
+                is = new FileInputStream(localfile);
+                byte[] buf = new byte[512];
+                try {
+                    connection.setSendBufferSize(buf.length);
+                } catch (RserveException ex) {
+                    log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
                 }
-                if (is != null) {
-                    is.close();
+                int n = 0;
+                while ((n = is.read(buf)) > 0) {
+                    os.write(buf, 0, n);
                 }
-            } catch (IOException ee) {
-                ee.printStackTrace();
+            } catch (IOException e) {
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage());
+                return;
+            } finally {
+                try {
+                    if (os != null) {
+                        os.close();
+                    }
+                    if (is != null) {
+                        is.close();
+                    }
+                } catch (IOException ee) {
+                    ee.printStackTrace();
+                }
             }
         }
         log(IO_HEAD + "File " + remoteFile + " sent.");
