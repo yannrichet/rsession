@@ -62,19 +62,14 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             return this;
         }
     }
+    HashMap<String, String> prints = new HashMap<String, String>();
 
     class ObjectCellRenderer extends TypeCellRenderer {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object name, boolean isSelected, boolean hasFocus, int row, int col) {
             super.getTableCellRendererComponent(table, name, isSelected, hasFocus, row, col);
-            String ttip = "?";
-            try {
-                ttip = Rsession.cat(R.silentlyEval("print(" + name.toString() + ")").asStrings());
-            } catch (Exception re) {
-                ttip =  "?:"+re.getMessage();
-            }
-            setToolTipText(ttip);
+            setToolTipText(prints.get(name.toString()));
             return this;
         }
     }
@@ -177,6 +172,16 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
                     ls = rls.asStrings();
                 } else {
                     ls = new String[0];
+                }
+            }
+            if (ls != null && ls.length > 0) {
+                for (String l : ls) {
+                    try {
+                        String print = Rsession.cat(R.silentlyEval("print(" + l + ")").asStrings());
+                        prints.put(l, print);
+                    } catch (Exception re) {
+                        prints.put(l, "?:" + re.getMessage());
+                    }
                 }
             }
             EventQueue.invokeLater(new Runnable() {
