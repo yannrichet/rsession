@@ -70,8 +70,9 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             super.getTableCellRendererComponent(table, name, isSelected, hasFocus, row, col);
             String ttip = "?";
             try {
-                ttip = R.eval("print(" + name.toString() + ")").asString();
+                ttip = R.silentlyEval("print(" + name.toString() + ")").asString();
             } catch (Exception re) {
+                ttip =  "?:"+re.getMessage();
             }
             setToolTipText(ttip);
             return this;
