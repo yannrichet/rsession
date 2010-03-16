@@ -22,14 +22,14 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
 
     public void println(final String message) {
-        if (isVisible()) {
-            EventQueue.invokeLater(new Runnable() {
-
-                public void run() {
-                    getPrintStream().println(message);
-                }
-            });
-        }
+        //if (isVisible()) {
+        //    EventQueue.invokeLater(new Runnable() {
+        //
+        //       public void run() {
+        getPrintStream().println(message);
+        //       }
+        //   });
+        //}
 
     }
 
@@ -42,7 +42,7 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
     }
     private OutputStream ostream;
 
-    public OutputStream getOutputStream() {
+    OutputStream getOutputStream() {
         if (ostream == null) {
             ostream = new OutputStream() {
 
@@ -63,7 +63,30 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
 
     public PrintStream getPrintStream() {
         if (pstream == null) {
-            pstream = new PrintStream(getOutputStream());
+            pstream = new PrintStream(getOutputStream()) {
+
+                @Override
+                public void println(final String s) {
+                    final PrintStream THIS = this;
+                    EventQueue.invokeLater(new Runnable() {
+
+                        public void run() {
+                            THIS.println(s);
+                        }
+                    });
+                }
+
+                @Override
+                public void print(final String s) {
+                   final PrintStream THIS = this;
+                    EventQueue.invokeLater(new Runnable() {
+
+                        public void run() {
+                            THIS.print(s);
+                        }
+                    });
+                }
+            };
         }
         return pstream;
     }
