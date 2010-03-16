@@ -840,15 +840,18 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
-                e = connection.eval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+                e = connection.parseAndEval((tryEval ? "try(" : "") + expression + (tryEval ? ",silent=TRUE)" : ""));
             }
-        } catch (RserveException ex) {
+        } catch (REngineException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
         }
 
         if (tryEval && e != null) {
             try {
-                if (e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")) {
+                /*REXP r = c.parseAndEval("try("+myCode+",silent=TRUE)");
+                if (r.inherits("try-error")) System.err.println("Error: "+r.asString());
+                else { // success ... }*/
+                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
                     log(HEAD_ERROR + e.asString() + "\n  " + expression);
                     e = null;
                 }
