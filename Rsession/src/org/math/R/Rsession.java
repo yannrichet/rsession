@@ -844,6 +844,13 @@ public class Rsession implements Logger {
             }
         } catch (REngineException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
+            synchronized (connection) {
+                try {
+                    log("    " + connection.parseAndEval("geterrmessage()").toString());
+                } catch (REngineException ex1) {
+                    log(HEAD_ERROR + ex1.getMessage() + "\n  " + expression);
+                }
+            }
         }
 
         if (tryEval && e != null) {
