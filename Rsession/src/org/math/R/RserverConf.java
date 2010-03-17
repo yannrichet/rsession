@@ -139,7 +139,7 @@ public class RserverConf {
         TimeOut t = new TimeOut() {
 
             protected Object defaultResult() {
-                return null;
+                return -2;
             }
 
             protected Object command() {
@@ -164,19 +164,20 @@ public class RserverConf {
                         }
                     }
                     System.out.println("ok");
+                    return 0;
                 } catch (RserveException ex) {
-                    System.out.println("exception: \n  "+ex.getMessage());
+                    System.out.println("no: "+ex.getMessage());
+                     return -1;
                     //ex.printStackTrace();
                     //return null;
                 }
-                return null;
             }
         };
 
         try {
             t.execute(CONNECT_TIMEOUT);
         } catch (Exception e) {
-            System.out.println("  failed");
+            System.out.println("  failed: "+e.getMessage());
         }
 
 
@@ -214,10 +215,10 @@ public class RserverConf {
                 r.printStackTrace();
             }
 
-            System.out.print("Connection " + toString()+" succeded.");
+            System.out.println("Connection " + toString()+" succeded.");
             return connection;
         } else {
-            System.out.print("Connection " + toString()+" failed.");
+            System.out.println("Connection " + toString()+" failed.");
             return null;
         }
 
