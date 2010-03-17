@@ -455,7 +455,7 @@ public class RsessionTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
         }
-        RserverConf conf = new RserverConf(null/*"81.194.2.21"*/, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
+        RserverConf conf = new RserverConf(null, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
         s = Rsession.newInstanceTry(p, conf);
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());

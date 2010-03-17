@@ -1,6 +1,5 @@
 package org.math.R;
 
-import java.awt.EventQueue;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -17,7 +16,7 @@ public class RserverConf {
     public int port;
     public String login;
     public String password;
-    public String RLibPath;
+    //public String RLibPath;
     public Properties properties;
     //public String http_proxy;
 
@@ -200,7 +199,8 @@ public class RserverConf {
                 }
             }
 
-            try {
+            /*Special libPath no more used.
+             try {
                 //if (RLibPath == null) {
                 boolean isWindows = connection.eval("as.logical(Sys.info()[1]=='Windows')").asInteger() == 1;
                 RLibPath = "paste(Sys.getenv(\"HOME\"),\"Rserve\",sep=\"" + (isWindows ? "\\\\" : "/") + "\")";
@@ -213,7 +213,7 @@ public class RserverConf {
                 r.printStackTrace();
             } catch (RserveException r) {
                 r.printStackTrace();
-            }
+            }*/
 
             System.out.println("Connection " + toString()+" succeded.");
             return connection;
