@@ -63,30 +63,38 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
 
     public PrintStream getPrintStream() {
         if (pstream == null) {
-            pstream = new PrintStream(getOutputStream()) {
+            pstream = new PrintStream(getOutputStream())/* {
 
                 @Override
                 public void println(final String s) {
-                    final PrintStream THIS = this;
-                    EventQueue.invokeLater(new Runnable() {
+                    try {
+                        final PrintStream THIS = this;
+                        EventQueue.invokeAndWait(new Runnable() {
 
-                        public void run() {
-                            THIS.println(s);
-                        }
-                    });
+                            public void run() {
+                                THIS.println(s);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
 
                 @Override
                 public void print(final String s) {
-                   final PrintStream THIS = this;
-                    EventQueue.invokeLater(new Runnable() {
+                    try {
+                        final PrintStream THIS = this;
+                        EventQueue.invokeAndWait(new Runnable() {
 
-                        public void run() {
-                            THIS.print(s);
-                        }
-                    });
+                            public void run() {
+                                THIS.print(s);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
-            };
+            }*/;
         }
         return pstream;
     }
