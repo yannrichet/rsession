@@ -134,7 +134,7 @@ public class RserverConf {
     }
     }*/
     public synchronized RConnection connect() {
-        System.out.println("Connecting " + toString());
+        System.out.print("Connecting " + toString()+" ... ");
 
         TimeOut t = new TimeOut() {
 
@@ -163,7 +163,9 @@ public class RserverConf {
                             connection.login(login, password);
                         }
                     }
+                    System.out.println("ok");
                 } catch (RserveException ex) {
+                    System.out.println("exception: \n  "+ex.getMessage());
                     //ex.printStackTrace();
                     //return null;
                 }
@@ -174,6 +176,7 @@ public class RserverConf {
         try {
             t.execute(CONNECT_TIMEOUT);
         } catch (Exception e) {
+            System.out.println("  failed");
         }
 
 
@@ -211,8 +214,10 @@ public class RserverConf {
                 r.printStackTrace();
             }
 
+            System.out.print("Connection " + toString()+" succeded.");
             return connection;
         } else {
+            System.out.print("Connection " + toString()+" failed.");
             return null;
         }
 
