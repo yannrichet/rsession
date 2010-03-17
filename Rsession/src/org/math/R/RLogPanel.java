@@ -63,6 +63,7 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
 
     public PrintStream getPrintStream() {
         if (pstream == null) {
+            //FIXME: need to use the EventQueue for non-blocking printing
             pstream = new PrintStream(getOutputStream())/* {
 
                 @Override
