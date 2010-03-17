@@ -4,13 +4,13 @@ import java.io.*;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /** helper class that consumes output of a process. In addition, it filter output of the REG command on Windows to look for InstallPath registry entry which specifies the location of R. */
-class StreamHog extends Thread {
+class RegistryHog extends Thread {
 
     InputStream is;
     boolean capture;
     String installPath;
 
-    StreamHog(InputStream is, boolean capture) {
+    RegistryHog(InputStream is, boolean capture) {
         this.is = is;
         this.capture = capture;
         start();
@@ -35,10 +35,42 @@ class StreamHog extends Thread {
                             s = s.substring(j + 6).trim();
                         }
                         installPath = s;
-                    //System.out.println("R InstallPath = " + s);
+                        //System.out.println("R InstallPath = " + s);
                     }
                 } else {
                     //System.out.println("Rserve>" + line);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class StreamHog extends Thread {
+
+    InputStream is;
+    boolean capture;
+    String out;
+
+    StreamHog(InputStream is, boolean capture) {
+        this.is = is;
+        this.capture = capture;
+        start();
+    }
+
+    public String getOutput() {
+        return out;
+    }
+
+    public void run() {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                if (capture) {
+                    out = out + "\n" + line;
+                } else {
                 }
             }
         } catch (IOException e) {
@@ -52,9 +84,76 @@ class StreamHog extends Thread {
  */
 public class StartRserve {
 
+    /** R batch to check Rserve is installed
+     * @param Rcmd command necessary to start R
+     * @return Rserve is already installed
+     */
+    public static boolean isRserveInstalled(String Rcmd) {
+        StringBuffer result = new StringBuffer();
+        boolean done = doInR("i<-installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q", result, null);
+        if (!done) {
+            return false;
+        }
+        if (result.toString().contains("[1] TRUE\n>")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** R batch to install Rserve
+     * @param Rcmd command necessary to start R
+     * @param http_proxy http://login:password@proxy:port string to enable internet access to rforge server
+     * @return success
+     */
+    public static boolean installRserve(String Rcmd, String http_proxy) {
+        return doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',,'http://www.rforge.net/')", Rcmd, "--vanilla", null, null);
+    }
+
+    /** attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid using any quotes in arguments
+    @param todo command to execute in R
+    @param Rcmd command necessary to start R
+    @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
+    @return <code>true</code> if Rserve is running or was successfully started, <code>false</code> otherwise.
+     */
+    public static boolean doInR(String todo, String Rcmd, String rargs, StringBuffer out, StringBuffer err) {
+        try {
+            Process p;
+            boolean isWindows = false;
+            String osname = System.getProperty("os.name");
+            String command = null;
+            if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
+                isWindows = true; /* Windows startup */
+                command = "\"" + Rcmd + "\" -e \"" + todo + "\" " + rargs;
+                //System.out.println("e=" + e);
+                p = Runtime.getRuntime().exec(command);
+            } else /* unix startup */ {
+                command = "echo \"" + todo + "\"|" + Rcmd + " " + rargs;
+                //System.out.println("e=" + e);
+                p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
+            }
+            // we need to fetch the output - some platforms will die if you don't ...
+            StreamHog error = new StreamHog(p.getErrorStream(), false);
+            StreamHog output = new StreamHog(p.getInputStream(), false);
+            if (!isWindows) /* on Windows the process will never return, so we cannot wait */ {
+                p.waitFor();
+            }
+            if (out != null) {
+                out.append(output.getOutput());
+            }
+            if (err != null) {
+                err.append(error.getOutput());
+            }
+
+        } catch (Exception x) {
+            return false;
+        }
+        return true;
+    }
+
     /** shortcut to <code>launchRserve(cmd, "--no-save --slave", "--no-save --slave", false)</code> */
     public static boolean launchRserve(String cmd) {
-        return launchRserve(cmd, null, "--no-save --slave", "--no-save --slave", false);
+        return launchRserve(cmd, /*null,*/ "--no-save --slave", "--no-save --slave", false);
     }
 
     /** attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid using any quotes in arguments
@@ -63,34 +162,16 @@ public class StartRserve {
     @param rsrvargs arguments to be passed to Rserve
     @return <code>true</code> if Rserve is running or was successfully started, <code>false</code> otherwise.
      */
-    public static boolean launchRserve(String cmd, String libloc, String rargs, String rsrvargs, boolean debug) {
-        try {
-            Process p;
-            boolean isWindows = false;
-            String osname = System.getProperty("os.name");
-            String command = null;
-            if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
-                isWindows = true; /* Windows startup */
-                command = "\"" + cmd + "\" -e \"library(" + (libloc != null ? "lib.loc='" + libloc + "'," : "") + "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')\" " + rargs;
-                //System.out.println("e=" + e);
-                p = Runtime.getRuntime().exec(command);
-            } else /* unix startup */ {
-                command = "echo 'library(" + (libloc != null ? "lib.loc=\"" + libloc + "\"," : "") + "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args=\"" + rsrvargs + "\")'|" + cmd + " " + rargs;
-                //System.out.println("e=" + e);
-                p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
-            }
-            System.out.println("waiting for Rserve to start ...");
-            // we need to fetch the output - some platforms will die if you don't ...
-            StreamHog errorHog = new StreamHog(p.getErrorStream(), false);
-            StreamHog outputHog = new StreamHog(p.getInputStream(), false);
-            if (!isWindows) /* on Windows the process will never return, so we cannot wait */ {
-                p.waitFor();
-            }
-            System.out.println("call " + command + " terminated, let us try to connect ...");
-        } catch (Exception x) {
-            System.out.println("failed to start Rserve process with " + x.getMessage());
+    public static boolean launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
+        System.out.println("waiting for Rserve to start ...");
+        boolean startRserve = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')", cmd, rargs, null, null);
+        if (startRserve) {
+            System.out.println("Rserve startup done, let us try to connect ...");
+        } else {
+            System.out.println("failed to start Rserve process.");
             return false;
         }
+
         int attempts = 5; /* try up to 5 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
         while (attempts > 0) {
             try {
@@ -131,7 +212,7 @@ public class StartRserve {
             String installPath = null;
             try {
                 Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
-                StreamHog regHog = new StreamHog(rp.getInputStream(), true);
+                RegistryHog regHog = new RegistryHog(rp.getInputStream(), true);
                 rp.waitFor();
                 regHog.join();
                 installPath = regHog.getInstallPath();
@@ -145,14 +226,14 @@ public class StartRserve {
             }
             return launchRserve(installPath + "\\bin\\R.exe");
         }
-        return (launchRserve("R") || /* try some common unix locations of R */
-                ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R")) ||
-                ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R")) ||
-                ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R")) ||
-                ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R")) ||
-                ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R")) ||
-                ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R")) ||
-                ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R")));
+        return (launchRserve("R")
+                || /* try some common unix locations of R */ ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R"))
+                || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R"))
+                || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R"))
+                || ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R"))
+                || ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R"))
+                || ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R"))
+                || ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R")));
     }
 
     /** check whether Rserve is currently running (on local machine and default port).
