@@ -450,7 +450,7 @@ public class RsessionTest {
     @Before
     public void setUp() {
         p = System.err;
-        String http_proxy_env = "http://richet-yan:poi054900@81.194.12.17:3128";//System.getenv("http_proxy");
+        String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
