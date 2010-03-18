@@ -1537,6 +1537,8 @@ public class Rsession implements Logger {
         receiveFile(localfile, localfile.getName());
     }
 
+    public int SEND_BUFFER_SIZE = 512;
+
     /**
      * Get file from R environment to user filesystem
      * @param localfile local filesystem file
@@ -1572,7 +1574,7 @@ public class Rsession implements Logger {
             try {
                 is = connection.openFile(remoteFile);
                 os = new FileOutputStream(localfile);
-                byte[] buf = new byte[512];
+                byte[] buf = new byte[SEND_BUFFER_SIZE];
                 try {
                     //FIXME bug when received file exceeds 65kb
                     connection.setSendBufferSize(buf.length);
@@ -1654,7 +1656,7 @@ public class Rsession implements Logger {
             try {
                 os = connection.createFile(remoteFile);
                 is = new FileInputStream(localfile);
-                byte[] buf = new byte[512];
+                byte[] buf = new byte[SEND_BUFFER_SIZE];
                 try {
                     connection.setSendBufferSize(buf.length);
                 } catch (RserveException ex) {
