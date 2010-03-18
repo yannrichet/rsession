@@ -381,12 +381,12 @@ public class Rsession implements Logger {
 
             status = STATUS_CONNECTING;
 
-            RserveConf = RserverConf.newLocalInstance(null);
+            RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
             println("Trying to spawn " + RserveConf.toString());
 
             localRserve = new Rdaemon(RserveConf, this);
             String http_proxy = null;
-            if (RserveConf.properties.containsKey("http_proxy")) {
+            if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
                 http_proxy = RserveConf.properties.getProperty("http_proxy");
             }
             localRserve.start(http_proxy);
@@ -429,16 +429,13 @@ public class Rsession implements Logger {
             }
 
             log("Ending session...");
-            //try {
-            /*previous = */ connection.close();
+            if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+                localRserve.stop();
+            } else {
+                connection.close();
+            }
         }
 
-        //} catch (RserveException e) {
-        //    log(e.getMessage());
-        //}
-        if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
-            localRserve.stop();
-        }
         log("Session teminated.");
     }
     public final static boolean UNIX_OPTIMIZE = true;
