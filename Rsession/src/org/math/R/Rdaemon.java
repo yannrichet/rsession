@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.File;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
@@ -79,21 +80,21 @@ public class Rdaemon {
             if (R_HOME == null || !(new File(R_HOME).exists())) {
                 R_HOME = null;
                 if (System.getProperty("os.name").contains("Win")) {
-                    //for (int major = 8; major >= 0; major--) {
-                    int major = 10;//known to work with R 2.9 only.
-                    if (R_HOME == null) {
-                        //for (int minor = 5; minor >= 0; minor--) {
-                        int minor = 0;
-                        r_HOME = "C:\\Program Files\\R\\R-2." + major + "." + minor + "\\";
-                        if (new File(r_HOME).exists()) {
-                            R_HOME = r_HOME;
-                            //break;
+                    for (int major = 10; major >= 0; major--) {
+                        //int major = 10;//known to work with R 2.9 only.
+                        if (R_HOME == null) {
+                            for (int minor = 5; minor >= 0; minor--) {
+                                //int minor = 0;
+                                r_HOME = "C:\\Program Files\\R\\R-2." + major + "." + minor + "\\";
+                                if (new File(r_HOME).exists()) {
+                                    R_HOME = r_HOME;
+                                    break;
+                                }
+                            }
+                        } else {
+                            break;
                         }
-                        //}
-                    } /*else {
-                    break;
                     }
-                    }*/
                 } else {
                     R_HOME = "/usr/lib/R/";
                 }
@@ -183,13 +184,14 @@ public class Rdaemon {
 
         try {
             RConnection s = conf.connect();
-            if (s == null) {
+            if (s == null || !s.isConnected()) {
                 println("R daemon already stoped.");
                 return;
             }
             s.shutdown();
-        } catch (RserveException ex) {
-            ex.printStackTrace();
+
+        } catch (Exception ex) {
+            //ex.printStackTrace();
             println(ex.getMessage());
         }
 
@@ -224,12 +226,11 @@ public class Rdaemon {
         throw new IllegalArgumentException("Rserve_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + Rserve_HOME_KEY + "=[Path to Rserve] ...' startup command.");
         }*/
 
-        println("checking Rserve available... ");
+        println("checking Rserve is available... ");
         boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""));
         if (!RserveInstalled) {
             println("  no");
-            println("installing Rserve from rforfe... (http_proxy=" + http_proxy + ")");
-            RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""),http_proxy);
+            RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), http_proxy);
             if (RserveInstalled) {
                 println("  ok");
             } else {

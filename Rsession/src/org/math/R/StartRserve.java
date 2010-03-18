@@ -1,6 +1,8 @@
 package org.math.R;
 
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /** helper class that consumes output of a process. In addition, it filter output of the REG command on Windows to look for InstallPath registry entry which specifies the location of R. */
@@ -90,11 +92,12 @@ public class StartRserve {
      */
     public static boolean isRserveInstalled(String Rcmd) {
         StringBuffer result = new StringBuffer();
-        boolean done = doInR("i<-installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q", result, null);
+        boolean done = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q", result, result);
         if (!done) {
             return false;
         }
-        if (result.toString().contains("[1] TRUE\n>")) {
+        //System.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
+        if (result.toString().contains("TRUE")) {
             return true;
         } else {
             return false;
@@ -107,7 +110,27 @@ public class StartRserve {
      * @return success
      */
     public static boolean installRserve(String Rcmd, String http_proxy) {
-        return doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',,'http://www.rforge.net/')", Rcmd, "--vanilla", null, null);
+        System.err.print("Install Rserve from rforge... (http_proxy=" + http_proxy + ") ");
+        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',,'http://www.rforge.net/')", Rcmd, "--vanilla", null, null);
+        if (!ok) {
+            System.err.println("failed");
+            return false;
+        }
+        int n = 5;
+        while (n > 0) {
+            try {
+                Thread.sleep(10000 / n);
+                System.err.print(".");
+            } catch (InterruptedException ex) {
+            }
+            if (isRserveInstalled(Rcmd)) {
+                 System.err.println("ok");
+                return true;
+            }
+            n--;
+        }
+        System.err.println("failed");
+        return false;
     }
 
     /** attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid using any quotes in arguments
@@ -132,9 +155,16 @@ public class StartRserve {
                 //System.out.println("e=" + e);
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
             }
+            System.err.println("  executing " + command);
             // we need to fetch the output - some platforms will die if you don't ...
-            StreamHog error = new StreamHog(p.getErrorStream(), false);
-            StreamHog output = new StreamHog(p.getInputStream(), false);
+            StreamHog error = new StreamHog(p.getErrorStream(), (err != null));
+            StreamHog output = new StreamHog(p.getInputStream(), (out != null));
+            if (err != null) {
+                error.join();
+            }
+            if (out != null) {
+                output.join();
+            }
             if (!isWindows) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
             }
@@ -163,12 +193,12 @@ public class StartRserve {
     @return <code>true</code> if Rserve is running or was successfully started, <code>false</code> otherwise.
      */
     public static boolean launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
-        System.out.println("waiting for Rserve to start ...");
+        System.err.println("Waiting for Rserve to start ...");
         boolean startRserve = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')", cmd, rargs, null, null);
         if (startRserve) {
-            System.out.println("Rserve startup done, let us try to connect ...");
+            System.err.println("Rserve startup done, let us try to connect ...");
         } else {
-            System.out.println("failed to start Rserve process.");
+            System.err.println("Failed to start Rserve process.");
             return false;
         }
 
@@ -184,11 +214,11 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                System.out.println("Rserve is running.");
+                System.err.println("Rserve is running.");
                 c.close();
                 return true;
             } catch (Exception e2) {
-                System.out.println("Try failed with: " + e2.getMessage());
+                System.err.println("Try failed with: " + e2.getMessage());
             }
             /* a safety sleep just in case the start up is delayed or asynchronous */
             try {
@@ -208,7 +238,7 @@ public class StartRserve {
         }
         String osname = System.getProperty("os.name");
         if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
-            System.out.println("Windows: query registry to find where R is installed ...");
+            System.err.println("Windows: query registry to find where R is installed ...");
             String installPath = null;
             try {
                 Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
@@ -217,11 +247,11 @@ public class StartRserve {
                 regHog.join();
                 installPath = regHog.getInstallPath();
             } catch (Exception rge) {
-                System.out.println("ERROR: unable to run REG to find the location of R: " + rge);
+                System.err.println("ERROR: unable to run REG to find the location of R: " + rge);
                 return false;
             }
             if (installPath == null) {
-                System.out.println("ERROR: canot find path to R. Make sure reg is available and R was installed with registry settings.");
+                System.err.println("ERROR: canot find path to R. Make sure reg is available and R was installed with registry settings.");
                 return false;
             }
             return launchRserve(installPath + "\\bin\\R.exe");
@@ -242,18 +272,18 @@ public class StartRserve {
     public static boolean isRserveRunning() {
         try {
             RConnection c = new RConnection();
-            System.out.println("Rserve is running.");
+            System.err.println("Rserve is running.");
             c.close();
             return true;
         } catch (Exception e) {
-            System.out.println("First connect try failed with: " + e.getMessage());
+            System.err.println("First connect try failed with: " + e.getMessage());
         }
         return false;
     }
 
     /** just a demo main method which starts Rserve and shuts it down again */
     public static void main(String[] args) {
-        System.out.println("result=" + checkLocalRserve());
+        System.err.println("result=" + checkLocalRserve());
         try {
             RConnection c = new RConnection();
             c.shutdown();
