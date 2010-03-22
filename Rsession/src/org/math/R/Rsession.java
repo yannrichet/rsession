@@ -754,6 +754,7 @@ public class Rsession implements Logger {
     final static String HEAD_EVAL = "[eval] ";
     final static String HEAD_EXCEPTION = "[exception] ";
     final static String HEAD_ERROR = "[error] ";
+    final static String HEAD_CACHE = "[cache] ";
 
     /**
      * Silently (ie no log) launch R command without return value. Encapsulate command in try() to cacth errors
@@ -1702,15 +1703,18 @@ public class Rsession implements Logger {
         }
 
         try {
+            log(HEAD_CACHE + "No evaluation needed for " + expression);
             return Double.parseDouble(expression);
         } catch (NumberFormatException ne) {
 
             if (!uses(expression, vars) && noVarsEvals.containsKey(expression)) {
                 //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
+                log(HEAD_CACHE + "Cached evaluation of " + expression + " in " + noVarsEvals);
                 return noVarsEvals.get(expression);
             }
 
             if (vars != null && vars.containsKey(expression)) {
+                log(HEAD_CACHE + "Get evaluation of " + expression + " in " + vars);
                 return vars.get(expression);
             }
 
@@ -1722,12 +1726,14 @@ public class Rsession implements Logger {
                         while (containsVar(clean_expression, v)) {
                             clean_expression = replaceVar(clean_expression, v, "(" + vars.get(v) + ")");
                         }
+                        log(HEAD_CACHE + "Replacing " + v + " in " + clean_expression);
                     } else {
                         if (containsVar(clean_expression, v)/*clean_expression.contains(v)*/) {
                             String newvarname = v;
                             while (ls(newvarname).length > 0) {
                                 newvarname = "_" + newvarname;
                             }
+                            log(HEAD_CACHE + "Renaming " + v + " by " + newvarname + " in " + clean_expression);
                             while (containsVar(clean_expression, v)) {
                                 clean_expression = replaceVar(clean_expression, v, newvarname);
                             }
@@ -1739,6 +1745,7 @@ public class Rsession implements Logger {
 
             if (!uses(clean_expression, clean_vars) && noVarsEvals.containsKey(clean_expression)) {
                 //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
+                log(HEAD_CACHE + "Cached evaluation of " + expression + " in " + noVarsEvals);
                 return noVarsEvals.get(clean_expression);
             }
 
@@ -1750,22 +1757,26 @@ public class Rsession implements Logger {
                 if (uses(clean_expression, clean_vars)) {
                     set(clean_vars);
                 }
+                log(HEAD_CACHE + "True evaluation of " + clean_expression + " with " + clean_vars);
                 //System.out.println("clean_expression=" + clean_expression);
                 REXP exp = eval(clean_expression);
                 //System.out.println("eval=" + eval.toDebugString());
                 out = cast(exp);
 
                 if (clean_vars.isEmpty() && out != null) {
+                    log(HEAD_CACHE + "Saving result of " + clean_expression );
                     noVarsEvals.put(clean_expression, out);
                 }
 
                 if (!uses(expression, vars) && out != null) {
+                    log(HEAD_CACHE + "Saving result of " + expression );
                     noVarsEvals.put(expression, out);
                     //System.out.println("noVarsEvals > " + expression + " -> " + out);
                 }
 
             } catch (Exception e) {
                 //out = CAST_ERROR + expression + ": " + e.getMessage();
+                log(HEAD_CACHE + "Failed cast of " + expression );
                 throw new Exception(CAST_ERROR + expression + ": " + e.getMessage());
             } finally {
                 if (uses(clean_expression, clean_vars)) {
@@ -1787,13 +1798,13 @@ public class Rsession implements Logger {
                 }
                 if (restartR) {
                     System.err.println("Problem occured, R engine restarted.");
+                    log(HEAD_CACHE + "Problem occured, R engine restarted.");
                     end();
                     startup();
 
                     return evalCache(expression, vars);
                 }
             }
-
             return out;
         }
     }
