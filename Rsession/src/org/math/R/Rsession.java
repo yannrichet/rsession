@@ -1536,7 +1536,6 @@ public class Rsession implements Logger {
     public void receiveFile(File localfile) {
         receiveFile(localfile, localfile.getName());
     }
-
     public int SEND_BUFFER_SIZE = 512;
 
     /**
@@ -1686,7 +1685,7 @@ public class Rsession implements Logger {
     }
     final static String testExpression = "1+pi";
     final static double testResult = 1 + Math.PI;
-    static HashMap<String, Object> noVarsEvals = new HashMap<String, Object>();
+    HashMap<String, Object> noVarsEvals = new HashMap<String, Object>();
 
     /** Method to eval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart).
      * 1D Numeric "vars" are replaced using Java replace engine instead of R one.
@@ -1696,7 +1695,7 @@ public class Rsession implements Logger {
      * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
      * @return java cast Object
      */
-    public synchronized Object evalAppart(String expression, HashMap<String, Object> vars) {
+    public synchronized Object evalCache(String expression, HashMap<String, Object> vars) {
         //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
@@ -1724,13 +1723,14 @@ public class Rsession implements Logger {
                             clean_expression = replaceVar(clean_expression, v, "(" + vars.get(v) + ")");
                         }
                     } else {
-                        if (clean_expression.contains(v)) {
+                        if (containsVar(clean_expression, v)/*clean_expression.contains(v)*/) {
                             String newvarname = v;
                             while (ls(newvarname).length > 0) {
                                 newvarname = "_" + newvarname;
                             }
-
-                            clean_expression = replaceVar(clean_expression, v, newvarname);
+                            while (containsVar(clean_expression, v)) {
+                                clean_expression = replaceVar(clean_expression, v, newvarname);
+                            }
                             clean_vars.put(newvarname, vars.get(v));
                         }
                     }
@@ -1753,7 +1753,7 @@ public class Rsession implements Logger {
                 //System.out.println("clean_expression=" + clean_expression);
                 REXP exp = eval(clean_expression);
                 //System.out.println("eval=" + eval.toDebugString());
-                out = Rsession.cast(exp);
+                out = cast(exp);
 
                 if (clean_vars.isEmpty() && out != null) {
                     noVarsEvals.put(clean_expression, out);
@@ -1789,7 +1789,7 @@ public class Rsession implements Logger {
                     end();
                     startup();
 
-                    return evalAppart(expression, vars);
+                    return evalCache(expression, vars);
                 }
             }
 
