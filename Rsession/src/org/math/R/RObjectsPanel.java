@@ -177,7 +177,7 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             if (ls != null && ls.length > 0) {
                 for (String l : ls) {
                     try {
-                        String print = R.silentlyEval("paste(capture.output(print("+l+")),collapse=\"\\n\")").asString();
+                        String print = toHTML(R.silentlyEval("paste(capture.output(print(" + l + ")),collapse='\\n')").asString());
                         prints.put(l, print);
                     } catch (Exception re) {
                         prints.put(l, "?:" + re.getMessage());
@@ -193,6 +193,18 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
         } catch (REXPMismatchException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static String toHTML(String src) {
+        if (src == null) {
+            return src;
+        }
+        src = src.replace("&", "&amp;");
+        src = src.replace("\"", "&quot;");
+        src = src.replace("'", "&apos;");
+        src = src.replace("<", "&lt;");
+        src = src.replace(">", "&gt;");
+        return "<html>" + src.replace("\n", "<br/>") + "</html>";
     }
 
     /** This method is called from within the constructor to
