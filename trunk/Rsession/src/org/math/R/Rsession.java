@@ -1695,7 +1695,7 @@ public class Rsession implements Logger {
      * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
      * @return java cast Object
      */
-    public synchronized Object evalCache(String expression, HashMap<String, Object> vars) {
+    public synchronized Object evalCache(String expression, HashMap<String, Object> vars) throws Exception {
         //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
@@ -1765,7 +1765,8 @@ public class Rsession implements Logger {
                 }
 
             } catch (Exception e) {
-                out = CAST_ERROR + expression + ": " + e.getMessage();
+                //out = CAST_ERROR + expression + ": " + e.getMessage();
+                throw new Exception(CAST_ERROR + expression + ": " + e.getMessage());
             } finally {
                 if (uses(clean_expression, clean_vars)) {
                     unset(clean_vars.keySet());
