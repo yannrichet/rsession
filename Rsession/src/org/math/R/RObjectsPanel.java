@@ -177,7 +177,7 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             if (ls != null && ls.length > 0) {
                 for (String l : ls) {
                     try {
-                        String print = Rsession.cat(R.silentlyEval("print(" + l + ")").asStrings());
+                        String print = R.silentlyEval("paste(capture.output(print("+l+")),collapse=\"\\n\")").asString();
                         prints.put(l, print);
                     } catch (Exception re) {
                         prints.put(l, "?:" + re.getMessage());
