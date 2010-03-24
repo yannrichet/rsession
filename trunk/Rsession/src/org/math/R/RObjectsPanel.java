@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import javax.swing.JFileChooser;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.filechooser.FileFilter;
@@ -22,7 +23,7 @@ import org.rosuda.REngine.REXPMismatchException;
  *
  * @author  richet
  */
-public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsListener {
+public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
 
     private RObjectsModel _model;
     private LinkedList<File> Rfiles = new LinkedList<File>();
@@ -176,8 +177,11 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
             }
             if (ls != null && ls.length > 0) {
                 for (String l : ls) {
-                    try {
-                        String print = toHTML(R.silentlyEval("paste(capture.output(print(" + l + ")),collapse='\\n')").asString());
+                    try {                      
+                        //System.err.println("print(" + l + ")"+" -> ");
+                        String print = R.asHTML(l);// toHTML(R.silentlyEval("paste(capture.output(print(" + l + ")),collapse='\\n')").asString());
+                        //String print = Rsession.cat(R.silentlyEval("print(" + l + ")").asStrings());
+                        //System.err.println("  "+print);
                         prints.put(l, print);
                     } catch (Exception re) {
                         prints.put(l, "?:" + re.getMessage());
@@ -195,18 +199,7 @@ public class RObjectsPanel extends javax.swing.JPanel implements UpdateObjectsLi
         }
     }
 
-    public static String toHTML(String src) {
-        if (src == null) {
-            return src;
-        }
-        src = src.replace("&", "&amp;");
-        src = src.replace("\"", "&quot;");
-        src = src.replace("'", "&apos;");
-        src = src.replace("<", "&lt;");
-        src = src.replace(">", "&gt;");
-        return "<html>" + src.replace("\n", "<br/>") + "</html>";
-    }
-
+   
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
