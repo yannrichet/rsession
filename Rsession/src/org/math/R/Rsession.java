@@ -1480,7 +1480,7 @@ public class Rsession implements Logger {
      * @param command R command returning text
      * @return HTML string
      */
-    public String asHTML(String command) {
+    public String asR2HTML(String command) {
         installPackage("R2HTML", true);
         int h = Math.abs(command.hashCode());
         silentlyEval("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
@@ -1504,29 +1504,53 @@ public class Rsession implements Logger {
     }
 
     /**
+     * Get R command text output in HTML format
+     * @param command R command returning text
+     * @return HTML string
+     */
+    public String asHTML(String command) {
+        return toHTML(asString(command));
+    }
+
+    public static String toHTML(String src) {
+        if (src == null) {
+            return src;
+        }
+        src = src.replace("&", "&amp;");
+        src = src.replace("\"", "&quot;");
+        src = src.replace("'", "&apos;");
+        src = src.replace("<", "&lt;");
+        src = src.replace(">", "&gt;");
+        return "<html>" + src.replace("\n", "<br/>") + "</html>";
+    }
+
+    /**
      * Get R command text output
      * @param command R command returning text
      * @return String
      */
     public String asString(String command) {
-        int h = Math.abs(command.hashCode());
-        String[] lines = null;
         try {
-            lines = silentlyEval("capture.output( " + command + ")").asStrings();
+            String s = silentlyEval("paste(capture.output(print(" + command + ")),collapse='\\n')").asString();
+            return s;
+        } catch (REXPMismatchException ex) {
+            return ex.getMessage();
+        }
+        /*String[] lines = null;
+        try {
+        lines = silentlyEval("capture.output( " + command + ")").asStrings();
         } catch (REXPMismatchException e) {
-            return e.getMessage();
+        return e.getMessage();
         }
-
         if (lines == null) {
-            return "";
+        return "";
         }
-
         StringBuffer sb = new StringBuffer();
         for (String l : lines) {
-            sb.append(l);
-            sb.append("\n");
+        sb.append(l);
+        sb.append("\n");
         }
-        return sb.toString();
+        return sb.toString();*/
     }
     final static String IO_HEAD = "[IO] ";
 
@@ -1695,8 +1719,9 @@ public class Rsession implements Logger {
      * @param expression String to evaluate
      * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
      * @return java cast Object
+     * @warning UNSTABLE and high CPU cost.
      */
-    public synchronized Object evalCache(String expression, HashMap<String, Object> vars) throws Exception {
+    public synchronized Object proxyEval(String expression, HashMap<String, Object> vars) throws Exception {
         //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
@@ -1764,19 +1789,19 @@ public class Rsession implements Logger {
                 out = cast(exp);
 
                 if (clean_vars.isEmpty() && out != null) {
-                    log(HEAD_CACHE + "Saving result of " + clean_expression );
+                    log(HEAD_CACHE + "Saving result of " + clean_expression);
                     noVarsEvals.put(clean_expression, out);
                 }
 
                 if (!uses(expression, vars) && out != null) {
-                    log(HEAD_CACHE + "Saving result of " + expression );
+                    log(HEAD_CACHE + "Saving result of " + expression);
                     noVarsEvals.put(expression, out);
                     //System.out.println("noVarsEvals > " + expression + " -> " + out);
                 }
 
             } catch (Exception e) {
                 //out = CAST_ERROR + expression + ": " + e.getMessage();
-                log(HEAD_CACHE + "Failed cast of " + expression );
+                log(HEAD_CACHE + "Failed cast of " + expression);
                 throw new Exception(CAST_ERROR + expression + ": " + e.getMessage());
             } finally {
                 if (uses(clean_expression, clean_vars)) {
@@ -1802,7 +1827,7 @@ public class Rsession implements Logger {
                     end();
                     startup();
 
-                    return evalCache(expression, vars);
+                    return proxyEval(expression, vars);
                 }
             }
             return out;

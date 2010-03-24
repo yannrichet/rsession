@@ -89,11 +89,11 @@ public class RsessionTest {
 
         String[] exp = {"TRUE", "0.123", "pi", "a", "A", "0.123+a", "0.123+b", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
         for (String e : exp) {
-            System.out.println(e + " --> " + s.evalCache(e, vars));
+            System.out.println(e + " --> " + s.proxyEval(e, vars));
         }
         assert Arrays.asList(s.ls()).contains("a") : "variable a disappeared";
-        assert (Double) s.evalCache("a", null) == a : "variable a changed";
-        assert Arrays.equals((double[]) s.evalCache("A", null), A) : "variable A changed";
+        assert (Double) s.proxyEval("a", null) == a : "variable a changed";
+        assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
     }
 
     @Test
