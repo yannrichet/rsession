@@ -133,6 +133,16 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         R = r;
     }
 
+    public void setAutoUpdate(boolean autoupdate) {
+        if (autoupdate) {
+            jButton1.setEnabled(false);
+            R.addUpdateObjectsListener(this);
+        } else {
+            jButton1.setEnabled(true);
+            R.removeUpdateObjectsListener(this);
+        }
+    }
+
     /** Creates new form OutputListPanel */
     public RObjectsPanel(Rsession r) {
         setTarget(r);
@@ -177,7 +187,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
             }
             if (ls != null && ls.length > 0) {
                 for (String l : ls) {
-                    try {                      
+                    try {
                         //System.err.println("print(" + l + ")"+" -> ");
                         String print = R.asHTML(l);// toHTML(R.silentlyEval("paste(capture.output(print(" + l + ")),collapse='\\n')").asString());
                         //String print = Rsession.cat(R.silentlyEval("print(" + l + ")").asStrings());
@@ -199,7 +209,6 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         }
     }
 
-   
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -212,6 +221,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         jScrollPane1 = new javax.swing.JScrollPane();
         _oList = new javax.swing.JTable();
         _bar = new javax.swing.JToolBar();
+        jButton1 = new javax.swing.JButton();
         _add = new javax.swing.JButton();
         _del = new javax.swing.JButton();
         _save = new javax.swing.JButton();
@@ -225,6 +235,17 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         _bar.setFloatable(false);
         _bar.setOrientation(1);
         _bar.setRollover(true);
+
+        jButton1.setText("Update");
+        jButton1.setFocusable(false);
+        jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        _bar.add(jButton1);
 
         _add.setText("Add");
         _add.setToolTipText("Add R object");
@@ -266,7 +287,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
             .addGroup(layout.createSequentialGroup()
                 .addComponent(_bar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 411, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 406, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -338,12 +359,17 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
             }
         }
 }//GEN-LAST:event__saveActionPerformed
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        update();
+    }//GEN-LAST:event_jButton1ActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
     public javax.swing.JButton _add;
     private javax.swing.JToolBar _bar;
     public javax.swing.JButton _del;
     private javax.swing.JTable _oList;
     public javax.swing.JButton _save;
+    private javax.swing.JButton jButton1;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
 }
