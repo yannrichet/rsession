@@ -463,7 +463,7 @@ public class Rsession implements Logger {
      * @return available R commands
      */
     public String[] listCommands() {
-        silentlyEval(".keyWords <- function() {n <- length(search());result <- c();for (i in 2:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
+        silentlyEval(".keyWords <- function() {n <- length(search());result <- c();for (i in 1:n) {result <- c(result,ls(pos=i,all.names=TRUE))}; result}");
         REXP rexp = silentlyEval(".keyWords()");
         String as[] = null;
         try {
