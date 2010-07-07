@@ -16,13 +16,10 @@ import org.rosuda.REngine.Rserve.RserveException;
 public class Rdaemon {
 
     RserverConf conf;
-    //BufferedReader br;
-    //PrintWriter pw;
     Process process;
     Logger log;
     static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve");
-    static String R_HOME = null;
-    //static String Rserve_HOME = null;
+    public static String R_HOME = null;
 
     static {
         boolean app_dir_ok = false;
@@ -59,8 +56,7 @@ public class Rdaemon {
     public Rdaemon(RserverConf conf, Logger log) {
         this(conf, log, null, null);
     }
-    final static String R_HOME_KEY = "R_HOME";
-    final static String Rserve_HOME_KEY = "Rserve_HOME";
+    public final static String R_HOME_KEY = "R_HOME";
 
     public static boolean findR_HOME(String r_HOME) {
         Map<String, String> env = System.getenv();
@@ -80,10 +76,10 @@ public class Rdaemon {
             if (R_HOME == null || !(new File(R_HOME).exists())) {
                 R_HOME = null;
                 if (System.getProperty("os.name").contains("Win")) {
-                    for (int major = 10; major >= 0; major--) {
+                    for (int major = 20; major >= 0; major--) {
                         //int major = 10;//known to work with R 2.9 only.
                         if (R_HOME == null) {
-                            for (int minor = 5; minor >= 0; minor--) {
+                            for (int minor = 10; minor >= 0; minor--) {
                                 //int minor = 0;
                                 r_HOME = "C:\\Program Files\\R\\R-2." + major + "." + minor + "\\";
                                 if (new File(r_HOME).exists()) {
