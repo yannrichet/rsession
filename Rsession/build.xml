@@ -69,6 +69,14 @@
             </assertions>
         </java>
     </target>
+<target name="testSystemAccess" depends="compile">
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" classname="org.math.R.SystemAccessTest" fork="true"  >
+            <assertions>
+                <enable/>
+            </assertions>
+        </java>
+    </target>
 
     <target name="doc">
         <javadoc sourcepath="${src}" destdir="doc"/>

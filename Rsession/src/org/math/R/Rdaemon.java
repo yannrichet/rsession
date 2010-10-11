@@ -1,13 +1,11 @@
 package org.math.R;
 
 import java.io.File;
-import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RserveException;
 
 /**
  *
@@ -33,7 +31,7 @@ public class Rdaemon {
         }
     }
 
-    public Rdaemon(RserverConf conf, Logger log, String R_HOME, String Rserve_HOME) {
+    public Rdaemon(RserverConf conf, Logger log, String R_HOME) {
         this.conf = conf;
         this.log = log;
         findR_HOME(R_HOME);
@@ -54,7 +52,7 @@ public class Rdaemon {
     }
 
     public Rdaemon(RserverConf conf, Logger log) {
-        this(conf, log, null, null);
+        this(conf, log, null);
     }
     public final static String R_HOME_KEY = "R_HOME";
 
