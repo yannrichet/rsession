@@ -229,7 +229,7 @@ public class Rdaemon {
                 println("  ok");
             } else {
                 println("  failed.");
-                String notice = "Please install Rserve manually in your R environment using \"install.packages('Rserve',,'http://www.rforge.net/')\" command.";
+                String notice = "Please install Rserve manually in your R environment using \"install.packages('Rserve')\" command.";
                 println(notice);
                 System.err.println(notice);
                 return;
