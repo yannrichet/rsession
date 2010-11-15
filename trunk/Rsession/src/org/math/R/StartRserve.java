@@ -111,7 +111,7 @@ public class StartRserve {
      */
     public static boolean installRserve(String Rcmd, String http_proxy) {
         System.err.print("Install Rserve from rforge... (http_proxy=" + http_proxy + ") ");
-        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',,'http://www.rforge.net/')", Rcmd, "--vanilla", null, null);
+        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve')", Rcmd, "--vanilla", null, null);
         if (!ok) {
             System.err.println("failed");
             return false;
