@@ -41,7 +41,7 @@ public class RsessionTest {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
     }
 
-    @Test
+    //@Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 20; i++) {
             int size = i * 10000;
@@ -53,7 +53,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testJPEGSize() throws REXPMismatchException {
         s.eval("library(MASS)");
         for (int i = 1; i < 20; i++) {
@@ -65,7 +65,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testPrint() throws REXPMismatchException {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", "0.123+a", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
@@ -74,7 +74,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testEval() throws Exception {
 
         double a = -0.123;
@@ -97,6 +97,24 @@ public class RsessionTest {
     }
 
     @Test
+    public void testNullEval() throws Exception {
+
+        double a = -0.123;
+        s.set("a", a);
+        assert s.eval("1+a").asDouble() == 1 + a : "error evaluating 1+a";
+        s.set("a", Double.NaN);
+        assert s.eval("1+a").asDouble() == Double.NaN : "error evaluating 1+a";
+        s.set("a", null);
+        assert s.eval("1+a").asDouble() == Double.NaN : "error evaluating 1+a";
+    }
+
+    //@Test
+    public void testRFile() throws REXPMismatchException {
+        System.err.println(s.eval("getwd()").asString());
+        System.err.println(s.eval("list.files(getwd())").asString());
+    }
+
+    //@Test
     public void testRFileIO() throws REXPMismatchException {
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
@@ -224,7 +242,7 @@ public class RsessionTest {
         localfile2.delete();
     }
 
-    @Test
+    //@Test
     public void testCast() throws REXPMismatchException {
         //cast
         assert ((Boolean) cast(s.eval("TRUE"))) == true;
@@ -242,7 +260,7 @@ public class RsessionTest {
         assert ((String[]) cast(s.eval("c('abcd','sdfds')"))).length == 2;
     }
 
-    @Test
+    //@Test
     public void testSet() throws REXPMismatchException {
 
         //set
@@ -356,7 +374,7 @@ public class RsessionTest {
     long duration = Calendar.getInstance().getTimeInMillis() - start;
     System.out.println("Spent time:" + (duration) + " ms");
     }*/
-    @Test
+    //@Test
     public void testConcurrency() throws InterruptedException {
         final Rsession r1 = Rsession.newInstanceTry(System.out, null);
         final Rsession r2 = Rsession.newInstanceTry(System.err, null);
@@ -401,7 +419,7 @@ public class RsessionTest {
         r2.end();
     }
 
-    @Test
+    //@Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];

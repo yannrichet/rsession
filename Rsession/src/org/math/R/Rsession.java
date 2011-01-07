@@ -1218,7 +1218,7 @@ public class Rsession implements Logger {
     public void set(String varname, Object var) {
         assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
 
-        log(HEAD_SET + varname + " <- " + var.toString());
+        log(HEAD_SET + varname + " <- " + var);
         /*if (var instanceof DataFrame) {
         DataFrame df = (DataFrame) var;
         set("names_" + varname, df.keySet().toArray(new String[]{}));
@@ -1227,7 +1227,9 @@ public class Rsession implements Logger {
         silentlyEval("names(" + varname + ") <- names_" + varname);
         silentlyEval("rm(names_" + varname + ",data_" + varname + ")");
         }*/
-        if (var instanceof RList) {
+        if (var == null) {
+            rm(varname);
+        } else if (var instanceof RList) {
             RList l = (RList) var;
             try {
                 synchronized (connection) {
