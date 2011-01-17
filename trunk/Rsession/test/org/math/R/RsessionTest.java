@@ -103,9 +103,16 @@ public class RsessionTest {
         s.set("a", a);
         assert s.eval("1+a").asDouble() == 1 + a : "error evaluating 1+a";
         s.set("a", Double.NaN);
-        assert s.eval("1+a").asDouble() == Double.NaN : "error evaluating 1+a";
+        double res = s.eval("1+a").asDouble();
+        assert Double.isNaN(res) : "error evaluating 1+a: " + res;
         s.set("a", null);
-        assert s.eval("1+a").asDouble() == Double.NaN : "error evaluating 1+a";
+        try {
+            res = s.eval("1+a").asDouble();
+            throw new Exception("error evaluating 1+a: " + res);
+        } catch (Exception e) {
+            //Exception well raised, everything is ok.
+        }
+
     }
 
     //@Test
@@ -473,7 +480,7 @@ public class RsessionTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
         }
-        RserverConf conf = new RserverConf(null/*"81.194.2.21"*/, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
+        RserverConf conf = new RserverConf(null, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
         s = Rsession.newInstanceTry(p, conf);
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
