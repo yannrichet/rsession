@@ -34,7 +34,7 @@ public class Rsession implements Logger {
     private static final String _ = "  ";
     private static final String _PACKAGE_ = "  package ";
     public RConnection connection;
-    PrintStream console;
+    Logger console;
     boolean tryLocalRServe;
     public static final String PACKAGEINSTALLED = "Package installed.";
     public static final String PACKAGELOADED = "Package loaded.";
@@ -282,7 +282,7 @@ public class Rsession implements Logger {
      * @param console PrintStream for R output
      * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
      */
-    public static Rsession newLocalInstance(final PrintStream console, Properties localRProperties) {
+    public static Rsession newLocalInstance(final Logger console, Properties localRProperties) {
         return new Rsession(console, RserverConf.newLocalInstance(localRProperties), false);
     }
 
@@ -290,7 +290,7 @@ public class Rsession implements Logger {
      * @param console PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
      */
-    public static Rsession newRemoteInstance(final PrintStream console, RserverConf serverconf) {
+    public static Rsession newRemoteInstance(final Logger console, RserverConf serverconf) {
         return new Rsession(console, serverconf, false);
     }
 
@@ -298,7 +298,7 @@ public class Rsession implements Logger {
      * @param console PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy)
      */
-    public static Rsession newInstanceTry(final PrintStream console, RserverConf serverconf) {
+    public static Rsession newInstanceTry(final Logger console, RserverConf serverconf) {
         return new Rsession(console, serverconf, true);
     }
 
@@ -307,7 +307,7 @@ public class Rsession implements Logger {
      * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
      * @param tryLocalRServe local spawned Rsession if given remote one failed to initialized
      */
-    public Rsession(final PrintStream console, RserverConf serverconf, boolean tryLocalRServe) {
+    public Rsession(final Logger console, RserverConf serverconf, boolean tryLocalRServe) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
 
             @Override
@@ -321,19 +321,23 @@ public class Rsession implements Logger {
         this.tryLocalRServe = tryLocalRServe;
 
         loggers = new LinkedList<Logger>();
-        loggers.add(new Logger() {
-
-            public void println(String message, Level l) {
-                if (l == Level.WARNING) {
-                    console.print("! ");
-                } else if (l == Level.ERROR) {
-                    console.print("!! ");
-                }
-                console.println(message);
-            }
-        });
+        loggers.add(console);
 
         startup();
+    }
+
+    /** create rsession using System as a logger*/
+    public Rsession(RserverConf serverconf, boolean tryLocalRServe) {
+        this(new Logger() {
+
+            public void println(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println(string);
+                } else {
+                    System.err.println(string);
+                }
+            }
+        }, serverconf, tryLocalRServe);
     }
 
     void startup() {
@@ -1881,11 +1885,21 @@ public class Rsession implements Logger {
         }
         Rsession R = null;
         int i = 0;
+        Logger l = new Logger() {
+
+            public void println(String message, Level l) {
+                if (l == Level.INFO) {
+                    System.out.println(message);
+                } else {
+                    System.err.println(message);
+                }
+            }
+        };
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
-            R = Rsession.newInstanceTry(System.out, RserverConf.parse(args[0]));
+            R = Rsession.newInstanceTry(l, RserverConf.parse(args[0]));
         } else {
-            R = Rsession.newInstanceTry(System.out, null);
+            R = Rsession.newInstanceTry(l, null);
         }
 
         for (int j = i; j < args.length; j++) {
