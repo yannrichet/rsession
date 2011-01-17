@@ -116,25 +116,25 @@ public class RLogPanel extends JPanel implements Logger {
     private PrintStream error_pstream;
 
     public PrintStream getInfoPrintStream() {
-        if (info_stream == null) {
+        if (info_pstream == null) {
             //FIXME: need to use the EventQueue for non-blocking printing
-            info_stream = new PrintStream(getInfoStream());
+            info_pstream = new PrintStream(getInfoStream());
         }
         return info_pstream;
     }
 
     public PrintStream getWarnPrintStream() {
-        if (warn_stream == null) {
+        if (warn_pstream == null) {
             //FIXME: need to use the EventQueue for non-blocking printing
-            warn_stream = new PrintStream(getWarnStream());
+            warn_pstream = new PrintStream(getWarnStream());
         }
         return warn_pstream;
     }
 
     public PrintStream getErrorPrintStream() {
-        if (error_stream == null) {
+        if (error_pstream == null) {
             //FIXME: need to use the EventQueue for non-blocking printing
-            error_stream = new PrintStream(getErrorStream());
+            error_pstream = new PrintStream(getErrorStream());
         }
         return error_pstream;
     }
