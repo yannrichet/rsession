@@ -1,7 +1,6 @@
 package org.math.R;
 
 import java.awt.Color;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -9,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import javax.swing.JFileChooser;
+import javax.swing.JPanel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyleConstants;
 
@@ -16,17 +16,25 @@ import javax.swing.text.StyleConstants;
  *
  * @author  richet
  */
-public class RLogPanel extends javax.swing.JPanel implements Logger {
+public class RLogPanel extends JPanel implements Logger {
 
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
+    public long maxsize = 10000;
+    public long minsize = 1000;
 
-    public void println(final String message) {
+    public void println(final String message, Level l) {
         //if (isVisible()) {
         //    EventQueue.invokeLater(new Runnable() {
         //
         //       public void run() {
-        getPrintStream().println(message);
+        if (l == Level.INFO) {
+            getInfoPrintStream().println(message);
+        } else if (l == Level.WARNING) {
+            getWarnPrintStream().println(message);
+        } else if (l == Level.ERROR) {
+            getErrorPrintStream().println(message);
+        }
         //       }
         //   });
         //}
@@ -37,18 +45,26 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
         initComponents();
 
         StyleConstants.setForeground(jTextPane1.addStyle("INFO", null), Color.black);
+        StyleConstants.setForeground(jTextPane1.addStyle("WARN", null), Color.blue);
+        StyleConstants.setForeground(jTextPane1.addStyle("ERROR", null), Color.red);
+
         jTextPane1.setEditable(false);
         jTextPane1.setFont(_smallFont);
     }
-    private OutputStream ostream;
+    private OutputStream info_stream;
+    private OutputStream error_stream;
+    private OutputStream warn_stream;
 
-    OutputStream getOutputStream() {
-        if (ostream == null) {
-            ostream = new OutputStream() {
+    OutputStream getInfoStream() {
+        if (info_stream == null) {
+            info_stream = new OutputStream() {
 
                 @Override
                 public void write(int b) throws IOException {
                     try {
+                        if (jTextPane1.getDocument().getLength() > maxsize) {
+                            jTextPane1.getDocument().remove(0, (int) (maxsize - minsize));
+                        }
                         jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("INFO"));
                         jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
                     } catch (BadLocationException e) {
@@ -57,47 +73,70 @@ public class RLogPanel extends javax.swing.JPanel implements Logger {
                 }
             };
         }
-        return ostream;
+        return info_stream;
     }
-    private PrintStream pstream;
 
-    public PrintStream getPrintStream() {
-        if (pstream == null) {
-            //FIXME: need to use the EventQueue for non-blocking printing
-            pstream = new PrintStream(getOutputStream())/* {
+    OutputStream getWarnStream() {
+        if (warn_stream == null) {
+            warn_stream = new OutputStream() {
 
                 @Override
-                public void println(final String s) {
+                public void write(int b) throws IOException {
                     try {
-                        final PrintStream THIS = this;
-                        EventQueue.invokeAndWait(new Runnable() {
-
-                            public void run() {
-                                THIS.println(s);
-                            }
-                        });
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                        jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("WARN"));
+                        jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
                     }
                 }
-
-                @Override
-                public void print(final String s) {
-                    try {
-                        final PrintStream THIS = this;
-                        EventQueue.invokeAndWait(new Runnable() {
-
-                            public void run() {
-                                THIS.print(s);
-                            }
-                        });
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }*/;
+            };
         }
-        return pstream;
+        return warn_stream;
+    }
+
+    OutputStream getErrorStream() {
+        if (error_stream == null) {
+            error_stream = new OutputStream() {
+
+                @Override
+                public void write(int b) throws IOException {
+                    try {
+                        jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("ERROR"));
+                        jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+        }
+        return error_stream;
+    }
+    private PrintStream info_pstream;
+    private PrintStream warn_pstream;
+    private PrintStream error_pstream;
+
+    public PrintStream getInfoPrintStream() {
+        if (info_stream == null) {
+            //FIXME: need to use the EventQueue for non-blocking printing
+            info_stream = new PrintStream(getInfoStream());
+        }
+        return info_pstream;
+    }
+
+    public PrintStream getWarnPrintStream() {
+        if (warn_stream == null) {
+            //FIXME: need to use the EventQueue for non-blocking printing
+            warn_stream = new PrintStream(getWarnStream());
+        }
+        return warn_pstream;
+    }
+
+    public PrintStream getErrorPrintStream() {
+        if (error_stream == null) {
+            //FIXME: need to use the EventQueue for non-blocking printing
+            error_stream = new PrintStream(getErrorStream());
+        }
+        return error_pstream;
     }
 
     /** This method is called from within the constructor to
