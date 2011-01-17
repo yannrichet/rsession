@@ -33,7 +33,12 @@ public class BrokenPipeTest {
             RserverConf conf = RserverConf.parse("R://localhost");
             //System.setProperty("R_HOME", "/Library/Frameworks/R.framework/Versions/2.11/Resources/");
             conf.properties = p;
-            Rsession r = new Rsession(System.out, conf, true);
+            Rsession r = new Rsession(new Logger() {
+
+                public void println(String string, Level level) {
+                    System.out.println(string);
+                }
+            }, conf, true);
             double[] array = r.eval("rnorm(10)").asDoubles();
             for (double db : array) {
                 System.out.println(db);

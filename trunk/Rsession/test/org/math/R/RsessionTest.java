@@ -383,8 +383,26 @@ public class RsessionTest {
     }*/
     //@Test
     public void testConcurrency() throws InterruptedException {
-        final Rsession r1 = Rsession.newInstanceTry(System.out, null);
-        final Rsession r2 = Rsession.newInstanceTry(System.err, null);
+        final Rsession r1 = Rsession.newInstanceTry(new Logger() {
+
+            public void println(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("1 " + string);
+                } else {
+                    System.err.println("1 " + string);
+                }
+            }
+        }, null);
+        final Rsession r2 = Rsession.newInstanceTry(new Logger() {
+
+            public void println(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("2 " + string);
+                } else {
+                    System.err.println("2 " + string);
+                }
+            }
+        }, null);
 
         new Thread(new Runnable() {
 
@@ -431,7 +449,16 @@ public class RsessionTest {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];
         for (int i = 0; i < R.length; i++) {
-            R[i] = Rsession.newInstanceTry(System.out, null);
+            R[i] = Rsession.newInstanceTry(new Logger() {
+
+                public void println(String string, Level level) {
+                    if (level == Level.INFO) {
+                        System.out.println(string);
+                    } else {
+                        System.err.println(string);
+                    }
+                }
+            }, null);
         }
 
         for (int i = 0; i < A.length; i++) {
@@ -474,14 +501,23 @@ public class RsessionTest {
 
     @Before
     public void setUp() {
-        p = System.err;
+        Logger l = new Logger() {
+
+            public void println(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("1 " + string);
+                } else {
+                    System.err.println("1 " + string);
+                }
+            }
+        };
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
         }
         RserverConf conf = new RserverConf(null, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
-        s = Rsession.newInstanceTry(p, conf);
+        s = Rsession.newInstanceTry(l, conf);
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
     }
