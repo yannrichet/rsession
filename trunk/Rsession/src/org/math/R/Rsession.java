@@ -302,6 +302,30 @@ public class Rsession implements Logger {
         return new Rsession(console, serverconf, true);
     }
 
+    /** Build a new local Rsession
+     * @param console PrintStream for R output
+     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
+     */
+    public static Rsession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
+        return new Rsession(pconsole, RserverConf.newLocalInstance(localRProperties), false);
+    }
+
+    /** Build a new remote Rsession
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
+     */
+    public static Rsession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
+        return new Rsession(pconsole, serverconf, false);
+    }
+
+    /** Build a new Rsession. Fork to local spawned Rsession if given remote one failed to initialized.
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy)
+     */
+    public static Rsession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
+        return new Rsession(pconsole, serverconf, true);
+    }
+
     /** create a new Rsession.
      * @param console PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
@@ -331,6 +355,11 @@ public class Rsession implements Logger {
         this(new Logger() {
 
             public void println(String string, Level level) {
+                if (level == Level.WARNING) {
+                    p.print("! ");
+                } else if (level == Level.ERROR) {
+                    p.print("!! ");
+                }
                 p.println(string);
             }
         }, serverconf, tryLocalRServe);
