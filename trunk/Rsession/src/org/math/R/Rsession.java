@@ -327,6 +327,16 @@ public class Rsession implements Logger {
     }
 
     /** create rsession using System as a logger*/
+    public Rsession(final PrintStream p, RserverConf serverconf, boolean tryLocalRServe) {
+        this(new Logger() {
+
+            public void println(String string, Level level) {
+                p.println(string);
+            }
+        }, serverconf, tryLocalRServe);
+    }
+
+    /** create rsession using System as a logger*/
     public Rsession(RserverConf serverconf, boolean tryLocalRServe) {
         this(new Logger() {
 
