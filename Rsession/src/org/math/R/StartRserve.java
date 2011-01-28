@@ -1,8 +1,6 @@
 package org.math.R;
 
 import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /** helper class that consumes output of a process. In addition, it filter output of the REG command on Windows to look for InstallPath registry entry which specifies the location of R. */
@@ -103,15 +101,19 @@ public class StartRserve {
             return false;
         }
     }
+    public static String DEFAULT_REPOSITORY = "http://cran.cict.fr/";
 
     /** R batch to install Rserve
      * @param Rcmd command necessary to start R
      * @param http_proxy http://login:password@proxy:port string to enable internet access to rforge server
      * @return success
      */
-    public static boolean installRserve(String Rcmd, String http_proxy) {
-        System.err.print("Install Rserve from rforge... (http_proxy=" + http_proxy + ") ");
-        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve')", Rcmd, "--vanilla", null, null);
+    public static boolean installRserve(String Rcmd, String http_proxy, String repository) {
+        if (repository == null || repository.length() == 0) {
+            repository = DEFAULT_REPOSITORY;
+        }
+        System.err.print("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
+        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", null, null);
         if (!ok) {
             System.err.println("failed");
             return false;
@@ -124,7 +126,7 @@ public class StartRserve {
             } catch (InterruptedException ex) {
             }
             if (isRserveInstalled(Rcmd)) {
-                 System.err.println("ok");
+                System.err.println("ok");
                 return true;
             }
             n--;
