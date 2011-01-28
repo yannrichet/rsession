@@ -101,7 +101,6 @@ public class StartRserve {
             return false;
         }
     }
-    public static String DEFAULT_REPOSITORY = "http://cran.cict.fr/";
 
     /** R batch to install Rserve
      * @param Rcmd command necessary to start R
@@ -110,7 +109,7 @@ public class StartRserve {
      */
     public static boolean installRserve(String Rcmd, String http_proxy, String repository) {
         if (repository == null || repository.length() == 0) {
-            repository = DEFAULT_REPOSITORY;
+            repository = Rsession.DEFAULT_REPOS;
         }
         System.err.print("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
         boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", null, null);

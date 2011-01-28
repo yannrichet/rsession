@@ -528,8 +528,8 @@ public class Rsession implements Logger {
         }
     }
     // <editor-fold defaultstate="collapsed" desc="Packages management">
-    public String repos = "http://cran.r-project.org";
-
+    public static String DEFAULT_REPOS = "http://cran.cict.fr/";
+    public String repos = DEFAULT_REPOS;
     /**
      * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
      */
