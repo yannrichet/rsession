@@ -1064,7 +1064,7 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return silentlyEval("ls(all=TRUE)").asStrings();
+            return eval("ls()").asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         }
