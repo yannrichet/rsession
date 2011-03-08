@@ -20,8 +20,8 @@ public class RLogPanel extends JPanel implements Logger {
 
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
-    public long maxsize = 10000;
-    public long minsize = 1000;
+    public long maxsize = 100000;
+    public long minsize = 10000;
 
     public void println(final String message, Level l) {
         //if (isVisible()) {
