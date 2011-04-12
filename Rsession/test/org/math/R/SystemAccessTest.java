@@ -42,7 +42,7 @@ public class SystemAccessTest {
         conf = new RserverConf("localhost", -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
         new Rdaemon(conf, new Logger() {
 
-            public void println(String string) {
+            public void println(String string, Level l) {
                 System.err.println(">> "+string);            }
         }).start(null);
         s1 = Rsession.newLocalInstance(System.out, prop);
