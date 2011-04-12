@@ -530,6 +530,7 @@ public class Rsession implements Logger {
     // <editor-fold defaultstate="collapsed" desc="Packages management">
     public static String DEFAULT_REPOS = "http://cran.cict.fr/";
     public String repos = DEFAULT_REPOS;
+
     /**
      * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
      */
@@ -810,8 +811,8 @@ public class Rsession implements Logger {
      * Silently (ie no log) launch R command without return value. Encapsulate command in try() to cacth errors
      * @param expression R expresison to evaluate
      */
-    public void silentlyVoidEval(String expression) {
-        silentlyVoidEval(expression, true);
+    public boolean silentlyVoidEval(String expression) {
+        return silentlyVoidEval(expression, true);
     }
 
     /**
@@ -819,14 +820,17 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      */
-    public void silentlyVoidEval(String expression, boolean tryEval) {
-
-        assert connected : "R environment not initialized.";
+    public boolean silentlyVoidEval(String expression, boolean tryEval) {
+        //assert connected : "R environment not initialized.";
+        if (!connected) {
+            log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
+            return false;
+        }
         if (expression == null) {
-            return;
+            return false;
         }
         if (expression.trim().length() == 0) {
-            return;
+            return true;
         }
         for (EvalListener b : eval) {
             b.eval(expression);
@@ -837,7 +841,9 @@ public class Rsession implements Logger {
             }
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            return false;
         }
+        return true;
     }
 
     /**
@@ -845,22 +851,26 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      */
-    public void voidEval(String expression, boolean tryEval) {
+    public boolean voidEval(String expression, boolean tryEval) {
         log(HEAD_EVAL + expression, Level.INFO);
 
-        silentlyVoidEval(expression, tryEval);
+        boolean done = silentlyVoidEval(expression, tryEval);
 
-        for (UpdateObjectsListener b : updateObjects) {
-            b.update();
+        if (done) {
+            for (UpdateObjectsListener b : updateObjects) {
+                b.update();
+            }
         }
+
+        return done;
     }
 
     /**
      * Launch R command without return value. Encapsulate command in try() to cacth errors.
      * @param expression R expresison to evaluate
      */
-    public void voidEval(String expression) {
-        voidEval(expression, true);
+    public boolean voidEval(String expression) {
+        return voidEval(expression, true);
     }
 
     /**
@@ -977,8 +987,8 @@ public class Rsession implements Logger {
     /**
      * delete all variables in R environment
      */
-    public void rmAll() {
-        voidEval("rm(list=ls(all=TRUE))");
+    public boolean rmAll() {
+       return voidEval("rm(list=ls(all=TRUE))");
     }
 
     /**
@@ -1101,11 +1111,11 @@ public class Rsession implements Logger {
      * delete R variables in R env.
      * @param vars R objects names
      */
-    public void rm(String... vars) {
+    public boolean rm(String... vars) {
         if (vars.length == 1) {
-            voidEval("rm(" + vars[0] + ")");
+            return voidEval("rm(" + vars[0] + ")");
         } else {
-            voidEval("rm(list=" + buildListString(vars) + ")");
+            return voidEval("rm(list=" + buildListString(vars) + ")");
         }
     }
 
@@ -1113,11 +1123,11 @@ public class Rsession implements Logger {
      * delete R variables in R env. matching patterns
      * @param vars R object name patterns
      */
-    public void rmls(String... vars) {
+    public boolean rmls(String... vars) {
         if (vars.length == 1) {
-            voidEval("rm(list=" + buildListPattern(vars[0]) + ")");
+            return voidEval("rm(list=" + buildListPattern(vars[0]) + ")");
         } else {
-            voidEval("rm(list=" + buildListPattern(vars) + ")");
+            return voidEval("rm(list=" + buildListPattern(vars) + ")");
         }
     }
 
@@ -1216,28 +1226,32 @@ public class Rsession implements Logger {
      * delete R object in R env.
      * @param varname R objects to delete
      */
-    public void unset(String... varname) {
-        rm(varname);
+    public boolean unset(String... varname) {
+        return rm(varname);
     }
 
     /**
      * delete R object in R env.
      * @param varname R objects to delete
      */
-    public void unset(Collection varname) {
+    public boolean unset(Collection varname) {
+        boolean done = true;
         for (Object v : varname) {
-            rm(v.toString());
+            done = done & rm(v.toString());
         }
+        return done;
     }
 
     /**
      * Set R object in R env.
      * @param _vars R objects to set as key/values
      */
-    public void set(HashMap<String, Object> _vars) {
+    public boolean set(HashMap<String, Object> _vars) {
+        boolean done = true;
         for (String varname : _vars.keySet()) {
-            set(varname, _vars.get(varname));
+            done = done & set(varname, _vars.get(varname));
         }
+        return done;
     }
 
     /**
@@ -1246,7 +1260,7 @@ public class Rsession implements Logger {
      * @param data numeric data in list
      * @param names names of columns
      */
-    public void set(String varname, double[][] data, String... names) {
+    public boolean set(String varname, double[][] data, String... names) {
         RList list = buildRList(data, names);
         log(HEAD_SET + varname + " <- " + toString(list), Level.INFO);
         try {
@@ -1255,9 +1269,12 @@ public class Rsession implements Logger {
             }
         } catch (REXPMismatchException re) {
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
+            return false;
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",double[][] data, String... names)", Level.ERROR);
+            return false;
         }
+        return true;
     }
     public final static String HEAD_SET = "[set] ";
 
@@ -1266,8 +1283,12 @@ public class Rsession implements Logger {
      * @param varname R object name
      * @param var R object value
      */
-    public void set(String varname, Object var) {
-        assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
+    public boolean set(String varname, Object var) {
+        //assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
+        if (!connected) {
+            log(HEAD_EXCEPTION + "R environment not initialized. Please make sure that R.init() method was called first.", Level.ERROR);
+            return false;
+        }
 
         log(HEAD_SET + varname + " <- " + var, Level.INFO);
         /*if (var instanceof DataFrame) {
@@ -1280,6 +1301,7 @@ public class Rsession implements Logger {
         }*/
         if (var == null) {
             rm(varname);
+            return true;
         } else if (var instanceof RList) {
             RList l = (RList) var;
             try {
@@ -1288,13 +1310,14 @@ public class Rsession implements Logger {
                 }
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (RList) var)", Level.ERROR);
+                return false;
             }
         } else if (var instanceof File) {
-            silentlyVoidEval(varname + "<-'" + ((File) var).getName() + "'");
+            return silentlyVoidEval(varname + "<-'" + ((File) var).getName() + "'");
         } else if (var instanceof Integer) {
-            silentlyVoidEval(varname + "<-" + (Integer) var);
+            return silentlyVoidEval(varname + "<-" + (Integer) var);
         } else if (var instanceof Double) {
-            silentlyVoidEval(varname + "<-" + (Double) var);
+            return silentlyVoidEval(varname + "<-" + (Double) var);
         } else if (var instanceof double[]) {
             try {
                 synchronized (connection) {
@@ -1302,8 +1325,9 @@ public class Rsession implements Logger {
                 }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[]) var)", Level.ERROR);
+                return false;
             }
-            silentlyVoidEval(varname/*, cat((double[]) var)*/);
+            return silentlyVoidEval(varname/*, cat((double[]) var)*/);
         } else if (var instanceof double[][]) {
             double[][] array = (double[][]) var;
             int rows = array.length;
@@ -1314,10 +1338,11 @@ public class Rsession implements Logger {
                 }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
+                return false;
             }
             //eval("print(row_" + varname + ")");
-            silentlyVoidEval(varname + "<-array(row_" + varname + ",c(" + rows + "," + col + "))");
-            silentlyVoidEval("rm(row_" + varname + ")");
+            boolean done = silentlyVoidEval(varname + "<-array(row_" + varname + ",c(" + rows + "," + col + "))");
+            return done && silentlyVoidEval("rm(row_" + varname + ")");
         } else if (var instanceof String) {
             try {
                 synchronized (connection) {
@@ -1325,9 +1350,9 @@ public class Rsession implements Logger {
                 }
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String) var)", Level.ERROR);
-
+                return false;
             }
-            silentlyVoidEval(varname/*, (String) var*/);
+            return silentlyVoidEval(varname/*, (String) var*/);
         } else if (var instanceof String[]) {
             try {
                 synchronized (connection) {
@@ -1335,12 +1360,13 @@ public class Rsession implements Logger {
                 }
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String[]) var)", Level.ERROR);
+                return false;
             }
-            silentlyVoidEval(varname/*, cat((String[]) var)*/);
+            return silentlyVoidEval(varname/*, cat((String[]) var)*/);
         } else {
             throw new IllegalArgumentException("Variable " + varname + " is not double, double[],  double[][], String or String[]. R engine can not handle.");
         }
-
+        return true;
     }
 
     private static double[] reshapeAsRow(double[][] a) {
