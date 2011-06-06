@@ -16,6 +16,7 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.logging.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -113,6 +114,13 @@ public class RsessionTest {
             //Exception well raised, everything is ok.
         }
 
+    }
+
+    @Test
+    public void testLibrary() {
+        s.eval("library(lhs)");
+        // this next call was failing with rserve 0.6-0
+        s.eval("library(rgenoud)");
     }
 
     //@Test
@@ -520,6 +528,11 @@ public class RsessionTest {
         s = Rsession.newInstanceTry(l, conf);
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
+        try {
+            System.err.println("Rserve version " + s.silentlyEval("installed.packages()[\"Rserve\",\"Version\"]").asString());
+        } catch (REXPMismatchException ex) {
+            ex.printStackTrace();
+        }
     }
 
     @After
