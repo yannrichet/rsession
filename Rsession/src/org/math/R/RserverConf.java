@@ -133,7 +133,7 @@ public class RserverConf {
     }
     }*/
     public synchronized RConnection connect() {
-        System.err.print("Connecting " + toString()+" ... ");
+        //System.err.print("Connecting " + toString()+" ... ");
 
         TimeOut t = new TimeOut() {
 
@@ -215,7 +215,7 @@ public class RserverConf {
                 r.printStackTrace();
             }*/
 
-            System.err.println("Connection " + toString()+" succeded.");
+            //System.err.println("Connection " + toString()+" succeded.");
             return connection;
         } else {
             System.err.println("Connection " + toString()+" failed.");
