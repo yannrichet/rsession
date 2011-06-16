@@ -162,10 +162,9 @@ public class RserverConf {
                             connection.login(login, password);
                         }
                     }
-                    System.err.println("ok");
                     return 0;
                 } catch (RserveException ex) {
-                    System.err.println("no: "+ex.getMessage());
+                    System.err.println("Failed to connect: "+ex.getMessage());
                      return -1;
                     //ex.printStackTrace();
                     //return null;
