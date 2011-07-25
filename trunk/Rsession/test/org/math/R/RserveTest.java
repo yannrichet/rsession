@@ -7,6 +7,7 @@ package org.math.R;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Properties;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -14,7 +15,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RFileOutputStream;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -25,6 +25,8 @@ import org.rosuda.REngine.Rserve.RserveException;
  * tried to raise Broken pipe exception. For now it does not work...
  */
 public class RserveTest {
+
+    RConnection c;
 
     public RserveTest() {
     }
@@ -38,7 +40,31 @@ public class RserveTest {
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws RserveException {
+        c = new RConnection();
+
+        Logger l = new Logger() {
+
+            public void println(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("1 " + string);
+                } else {
+                    System.err.println("1 " + string);
+                }
+            }
+        };
+
+
+        try {
+            System.err.println(silentlyEval("R.version.string", false, c).asString());
+        } catch (REXPMismatchException ex) {
+            ex.printStackTrace();
+        }
+        try {
+            System.err.println("Rserve version " + silentlyEval("installed.packages()[\"Rserve\",\"Version\"]", false, c).asString());
+        } catch (REXPMismatchException ex) {
+            ex.printStackTrace();
+        }
     }
 
     @After
@@ -47,8 +73,6 @@ public class RserveTest {
 
     @Test
     public void hello() throws RserveException, REXPMismatchException {
-        RConnection c = new RConnection();
-
         c.voidEval("library(lhs)");
         c.voidEval("library(DiceOptim)");
         c.voidEval("library(DiceKriging)");
