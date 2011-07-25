@@ -1,1 +1,0 @@
-Rserve binary was installed in libs because multi-arch support is enabled.
