@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.Properties;
-import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
@@ -100,7 +99,7 @@ public class RserverConf {
     }
 
     /*private class ConnectionThread implements Runnable {
-
+    
     public void run() {
     try {
     if (host == null) {
@@ -126,7 +125,7 @@ public class RserverConf {
     //ex.printStackTrace();
     //return null;
     }
-
+    
     synchronized (this) {
     this.notify();
     }
@@ -164,8 +163,8 @@ public class RserverConf {
                     }
                     return 0;
                 } catch (RserveException ex) {
-                    System.err.println("Failed to connect: "+ex.getMessage());
-                     return -1;
+                    System.err.println("Failed to connect: " + ex.getMessage());
+                    return -1;
                     //ex.printStackTrace();
                     //return null;
                 }
@@ -175,15 +174,15 @@ public class RserverConf {
         try {
             t.execute(CONNECT_TIMEOUT);
         } catch (Exception e) {
-            System.err.println("  failed: "+e.getMessage());
+            System.err.println("  failed: " + e.getMessage());
         }
 
 
         /*new Thread(new ConnectionThread()).start();
-
+        
         try {
         this.wait(CONNECT_TIMEOUT);
-
+        
         } catch (InterruptedException ie) {
         }*/
 
@@ -199,25 +198,25 @@ public class RserverConf {
             }
 
             /*Special libPath no more used.
-             try {
-                //if (RLibPath == null) {
-                boolean isWindows = connection.eval("as.logical(Sys.info()[1]=='Windows')").asInteger() == 1;
-                RLibPath = "paste(Sys.getenv(\"HOME\"),\"Rserve\",sep=\"" + (isWindows ? "\\\\" : "/") + "\")";
-                //}
-                if (RLibPath != null) {
-                    connection.eval("if(!file.exists(" + RLibPath + ")) dir.create(" + RLibPath + ")");
-                    connection.eval(".libPaths(new=" + RLibPath + ")");
-                }
+            try {
+            //if (RLibPath == null) {
+            boolean isWindows = connection.eval("as.logical(Sys.info()[1]=='Windows')").asInteger() == 1;
+            RLibPath = "paste(Sys.getenv(\"HOME\"),\"Rserve\",sep=\"" + (isWindows ? "\\\\" : "/") + "\")";
+            //}
+            if (RLibPath != null) {
+            connection.eval("if(!file.exists(" + RLibPath + ")) dir.create(" + RLibPath + ")");
+            connection.eval(".libPaths(new=" + RLibPath + ")");
+            }
             } catch (REXPMismatchException r) {
-                r.printStackTrace();
+            r.printStackTrace();
             } catch (RserveException r) {
-                r.printStackTrace();
+            r.printStackTrace();
             }*/
 
             //System.err.println("Connection " + toString()+" succeded.");
             return connection;
         } else {
-            System.err.println("Connection " + toString()+" failed.");
+            System.err.println("Connection " + toString() + " failed.");
             return null;
         }
 
