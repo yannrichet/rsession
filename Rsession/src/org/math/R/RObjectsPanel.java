@@ -8,6 +8,8 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -26,7 +28,7 @@ import org.rosuda.REngine.REXPMismatchException;
 public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
 
     private RObjectsModel _model;
-    private LinkedList<File> Rfiles = new LinkedList<File>();
+    private List<File> Rfiles = new LinkedList<File>();
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
     TypeCellRenderer typerenderer = new TypeCellRenderer();
@@ -63,7 +65,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
             return this;
         }
     }
-    HashMap<String, String> prints = new HashMap<String, String>();
+    Map<String, String> prints = new HashMap<String, String>();
 
     class ObjectCellRenderer extends TypeCellRenderer {
 
@@ -75,7 +77,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         }
     }
     String[] ls = new String[0];
-    HashMap<String, String> typeOf = new HashMap<String, String>() {
+    Map<String, String> typeOf = new HashMap<String, String>() {
 
         @Override
         public String get(Object key) {

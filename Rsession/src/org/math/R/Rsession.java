@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -46,7 +47,7 @@ public class Rsession implements Logger {
     public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
-    LinkedList<Logger> loggers;
+    List<Logger> loggers;
 
     public void addLogger(Logger l) {
         if (!loggers.contains(l)) {
@@ -69,7 +70,7 @@ public class Rsession implements Logger {
         }
 
     }
-    LinkedList<BusyListener> busy = new LinkedList<BusyListener>();
+    List<BusyListener> busy = new LinkedList<BusyListener>();
 
     public void addBusyListener(BusyListener b) {
         if (!busy.contains(b)) {
@@ -89,7 +90,7 @@ public class Rsession implements Logger {
         }
 
     }
-    LinkedList<UpdateObjectsListener> updateObjects = new LinkedList<UpdateObjectsListener>();
+    List<UpdateObjectsListener> updateObjects = new LinkedList<UpdateObjectsListener>();
 
     public void addUpdateObjectsListener(UpdateObjectsListener b) {
         if (!updateObjects.contains(b)) {
@@ -102,7 +103,7 @@ public class Rsession implements Logger {
             updateObjects.remove(b);
         }
     }
-    LinkedList<EvalListener> eval = new LinkedList<EvalListener>();
+    List<EvalListener> eval = new LinkedList<EvalListener>();
 
     public void addEvalListener(EvalListener b) {
         if (!eval.contains(b)) {
@@ -482,7 +483,7 @@ public class Rsession implements Logger {
             if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
                 localRserve.stop();
             } else {
-                connection.close();
+                connection.finalize();
             }
         }
 
@@ -988,7 +989,7 @@ public class Rsession implements Logger {
      * delete all variables in R environment
      */
     public boolean rmAll() {
-       return voidEval("rm(list=ls(all=TRUE))");
+        return voidEval("rm(list=ls(all=TRUE))");
     }
 
     /**
@@ -1246,7 +1247,7 @@ public class Rsession implements Logger {
      * Set R object in R env.
      * @param _vars R objects to set as key/values
      */
-    public boolean set(HashMap<String, Object> _vars) {
+    public boolean set(Map<String, Object> _vars) {
         boolean done = true;
         for (String varname : _vars.keySet()) {
             done = done & set(varname, _vars.get(varname));
@@ -1789,7 +1790,7 @@ public class Rsession implements Logger {
     }
     final static String testExpression = "1+pi";
     final static double testResult = 1 + Math.PI;
-    HashMap<String, Object> noVarsEvals = new HashMap<String, Object>();
+    Map<String, Object> noVarsEvals = new HashMap<String, Object>();
 
     /** Method to eval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart).
      * 1D Numeric "vars" are replaced using Java replace engine instead of R one.
@@ -1800,7 +1801,7 @@ public class Rsession implements Logger {
      * @return java cast Object
      * @warning UNSTABLE and high CPU cost.
      */
-    public synchronized Object proxyEval(String expression, HashMap<String, Object> vars) throws Exception {
+    public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws Exception {
         //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
@@ -1822,7 +1823,7 @@ public class Rsession implements Logger {
                 return vars.get(expression);
             }
 
-            HashMap<String, Object> clean_vars = new HashMap<String, Object>();
+            Map<String, Object> clean_vars = new HashMap<String, Object>();
             String clean_expression = expression;
             if (vars != null) {
                 for (String v : vars.keySet()) {
@@ -1940,7 +1941,7 @@ public class Rsession implements Logger {
         return false;
     }
 
-    static boolean uses(String expression, HashMap<String, Object> vars) {
+    static boolean uses(String expression, Map<String, Object> vars) {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
 
