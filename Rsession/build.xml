@@ -51,9 +51,12 @@
         </java>
     </target>
 
+    <property name="unit.test.jar" value="concutest-junit-4.7-withrt.jar" />
+    <!--property name="unit.test.jar" value="junit-4.3.jar" /-->
+
     <target name="test" depends="compile">
-        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
-        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" classname="org.math.R.RsessionTest" fork="true"  >
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" classname="org.math.R.RsessionTest" fork="true"  >
             <!--env key="Rserve_HOME" value="lib/MacOSX/x86/Rserve"/-->
             <assertions>
                 <enable/>
@@ -61,8 +64,8 @@
         </java>
     </target>
     <target name="testRserve" depends="compile">
-        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
-        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" classname="org.math.R.RserveTest" fork="true"  >
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" classname="org.math.R.RserveTest" fork="true"  >
             <!--env key="Rserve_HOME" value="lib/MacOSX/x86/Rserve"/-->
             <assertions>
                 <enable/>
@@ -70,8 +73,8 @@
         </java>
     </target>
 <target name="testSystemAccess" depends="compile">
-        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
-        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:junit4.jar" classname="org.math.R.SystemAccessTest" fork="true"  >
+        <javac classpath="${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" deprecation="true" target="1.6" srcdir="${test}" destdir="${build}" debug="true" />
+        <java  jvm="java" classpath="${build}:${lib}/REngine.jar:${lib}/Rserve.jar:${unit.test.jar}" classname="org.math.R.SystemAccessTest" fork="true"  >
             <assertions>
                 <enable/>
             </assertions>

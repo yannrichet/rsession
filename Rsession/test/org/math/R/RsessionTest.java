@@ -1,5 +1,7 @@
 package org.math.R;
 
+import java.util.logging.Level;
+import org.junit.After;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,8 +18,6 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.logging.Level;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
@@ -42,7 +42,7 @@ public class RsessionTest {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
     }
 
-    @Test
+    //@Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 20; i++) {
             int size = i * 10000;
@@ -54,7 +54,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testJPEGSize() throws REXPMismatchException {
         s.eval("library(MASS)");
         for (int i = 1; i < 20; i++) {
@@ -66,7 +66,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testPrint() throws REXPMismatchException {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
@@ -97,7 +97,7 @@ public class RsessionTest {
         assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
     }
 
-    @Test
+    //@Test
     public void testNullEval() throws Exception {
 
         double a = -0.123;
@@ -116,20 +116,20 @@ public class RsessionTest {
 
     }
 
-    @Test
+    //@Test
     public void testLibrary() {
         s.eval("library(lhs)");
         // this next call was failing with rserve 0.6-0
         s.eval("library(rgenoud)");
     }
 
-    @Test
+    //@Test
     public void testRFile() throws REXPMismatchException {
-        System.err.println("getwd(): "+s.eval("getwd()").asString());
+        System.err.println("getwd(): " + s.eval("getwd()").asString());
         //System.err.println("list.files(getwd()): "+s.eval("list.files(getwd())").asString());
     }
 
-    @Test
+    //@Test
     public void testRFileIO() throws REXPMismatchException {
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
@@ -257,7 +257,7 @@ public class RsessionTest {
         localfile2.delete();
     }
 
-    @Test
+    //@Test
     public void testCast() throws REXPMismatchException {
         //cast
         assert ((Boolean) cast(s.eval("TRUE"))) == true;
@@ -275,7 +275,7 @@ public class RsessionTest {
         assert ((String[]) cast(s.eval("c('abcd','sdfds')"))).length == 2;
     }
 
-    @Test
+    //@Test
     public void testSet() throws REXPMismatchException {
 
         //set
@@ -389,7 +389,62 @@ public class RsessionTest {
     long duration = Calendar.getInstance().getTimeInMillis() - start;
     System.out.println("Spent time:" + (duration) + " ms");
     }*/
-    @Test
+    //@Test
+    public void testConcurrentEval() throws Exception {
+        s.voidEval("id <- function(x){return(x)}");
+        int n = 10;
+        final boolean[] test = new boolean[n];
+        final boolean[] done = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            done[i] = false;
+        }
+        for (int i = 0; i < n; i++) {
+            final int I = i;
+            new Thread(new Runnable() {
+
+                public void run() {
+                    double x = Math.random();
+                    try {
+                        System.err.println("x= " + x);
+                        double fx = -1;
+                        synchronized (s) {
+                            s.voidEval("x <- " + x);
+                            Thread.sleep((long) (1000 + Math.random() * 1000));
+                            fx = (Double) s.eval("id(x)").asDouble();
+                        }
+                        System.err.println(fx + " =?= " + x);
+                        boolean ok = Math.abs(fx - x) < 0.00001;
+                        synchronized (test) {
+                            test[I] = ok;
+                        }
+                    } catch (Exception ex) {
+                        synchronized (test) {
+                            test[I] = false;
+                        }
+                    }
+                    synchronized (done) {
+                        done[I] = true;
+                    }
+                }
+            }).start();
+        }
+        while (!alltrue(done)) {
+            Thread.sleep(1000);
+            System.err.print(".");
+        }
+        assert alltrue(test) : "One concurrent eval failed !";
+    }
+
+    static boolean alltrue(boolean[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (!a[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    //@Test
     public void testConcurrency() throws InterruptedException {
         final Rsession r1 = Rsession.newInstanceTry(new Logger() {
 
@@ -452,7 +507,7 @@ public class RsessionTest {
         r2.end();
     }
 
-    @Test
+    //@Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];
@@ -512,11 +567,7 @@ public class RsessionTest {
         Logger l = new Logger() {
 
             public void println(String string, Level level) {
-                if (level == Level.INFO) {
-                    System.out.println("1 " + string);
-                } else {
-                    System.err.println("1 " + string);
-                }
+                System.out.println(level + " " + string);
             }
         };
         String http_proxy_env = System.getenv("http_proxy");
@@ -542,9 +593,14 @@ public class RsessionTest {
 
     @After
     public void tearDown() {
-        //uncomment following for sequential call. 
-        //s.end();
-        //If commented, it tests multiple R sessions at same time. 
-        //A shutdown hook kills all Rserve at the end.
+        try {
+            //uncomment following for sequential call. 
+            //s.end();
+            s.connection.serverShutdown();
+            //A shutdown hook kills all Rserve at the end.
+            //A shutdown hook kills all Rserve at the end.
+        } catch (RserveException ex) {
+            ex.printStackTrace();
+        }
     }
 }
