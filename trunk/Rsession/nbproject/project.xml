@@ -11,6 +11,11 @@
             <properties/>
             <folders>
                 <source-folder>
+                    <label>Rsession</label>
+                    <location>.</location>
+                    <encoding>UTF-8</encoding>
+                </source-folder>
+                <source-folder>
                     <label>src</label>
                     <type>java</type>
                     <location>src</location>
@@ -20,11 +25,6 @@
                     <label>test</label>
                     <type>java</type>
                     <location>test</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
-                    <label>Rsession</label>
-                    <location>.</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
             </folders>
@@ -148,7 +148,7 @@
             <compilation-unit>
                 <package-root>test</package-root>
                 <unit-tests/>
-                <classpath mode="compile">build:lib/REngine.jar:lib/Rserve.jar:junit4.jar</classpath>
+                <classpath mode="compile">build:lib/REngine.jar:lib/Rserve.jar:concutest-junit-4.7-withrt.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
