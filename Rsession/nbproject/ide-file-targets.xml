@@ -38,6 +38,10 @@
             <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
         </java>
     </target>
+    
+    <property name="unit.test.jar" value="concutest-junit-4.7-withrt.jar" />
+    <!--property name="unit.test.jar" value="junit-4.3.jar" /-->
+    
     <!-- TODO: edit the following target according to your needs -->
     <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#compilesingle) -->
     <target name="compile-selected-files-in-test">
@@ -45,7 +49,7 @@
         <!-- TODO decide on and define some value for ${build.classes.dir} -->
         <mkdir dir="build"/>
         <javac destdir="build" includes="${files}" source="1.5" srcdir="test">
-            <classpath path="junit4.jar:lib/REngine.jar:lib/Rserve.jar"/>
+            <classpath path="${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar"/>
         </javac>
     </target>
     <!-- TODO: edit the following target according to your needs -->
@@ -54,7 +58,7 @@
         <fail unless="run.class">Must set property 'run.class'</fail>
         <java classname="${run.class}" failonerror="true" fork="true">
             <classpath>
-                <pathelement path="build:junit4.jar:lib/REngine.jar:lib/Rserve.jar"/>
+                <pathelement path="build:${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar"/>
             </classpath>
         </java>
     </target>
