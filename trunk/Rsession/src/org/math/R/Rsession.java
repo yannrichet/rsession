@@ -475,14 +475,14 @@ public class Rsession implements Logger {
     public void end() {
         synchronized (connection) {
             if (connection == null) {
-                log("Void session temrinated.", Level.INFO);
+                log("Void session terminated.", Level.INFO);
                 return;
             }
-
-            log("Ending session...", Level.INFO);
             if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+                log("Ending local session...", Level.INFO);
                 localRserve.stop();
             } else {
+                log("Ending remote session...", Level.INFO);
                 connection.finalize();
             }
         }

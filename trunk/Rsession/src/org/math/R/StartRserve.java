@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /** helper class that consumes output of a process. In addition, it filter output of the REG command on Windows to look for InstallPath registry entry which specifies the location of R. */
@@ -25,8 +27,9 @@ class RegistryHog extends Thread {
     }
 
     public void run() {
+        BufferedReader br = null;
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            br = new BufferedReader(new InputStreamReader(is));
             String line = null;
             while ((line = br.readLine()) != null) {
                 if (capture) { // we are supposed to capture the output from REG command
@@ -47,6 +50,14 @@ class RegistryHog extends Thread {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
     }
 }
@@ -55,7 +66,7 @@ class StreamHog extends Thread {
 
     InputStream is;
     boolean capture;
-    String out;
+    StringBuffer out = new StringBuffer();
 
     StreamHog(InputStream is, boolean capture) {
         this.is = is;
@@ -64,22 +75,42 @@ class StreamHog extends Thread {
     }
 
     public String getOutput() {
-        return out;
+        return out.toString();
     }
 
     public void run() {
+        System.err.println("start streamhog");
+        BufferedReader br = null;
+        InputStreamReader isr = null;
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            isr = new InputStreamReader(is);
+            br = new BufferedReader(isr);
             String line = null;
             while ((line = br.readLine()) != null) {
                 if (capture) {
-                    out = out + "\n" + line;
+                    out.append("\n").append(line);
                 } else {
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (isr != null) {
+                try {
+                    isr.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
+        System.err.println("finished streamhog");
     }
 }
 
@@ -179,7 +210,6 @@ public class StartRserve {
             if (err != null) {
                 err.append(error.getOutput());
             }
-
         } catch (Exception x) {
             return false;
         }
