@@ -52,6 +52,9 @@ public class RserveTest {
                     System.err.println("1 " + string);
                 }
             }
+
+            public void close() {
+            }
         };
 
 

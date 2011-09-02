@@ -1,7 +1,5 @@
 package org.math.R;
 
-import java.util.logging.Level;
-import org.junit.After;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -18,7 +16,6 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
-import org.junit.Before;
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.RList;
@@ -40,6 +37,33 @@ public class RsessionTest {
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
+    }
+
+    @Test
+    public void testEnd() {
+        for (int i = 0; i < 10; i++) {
+            new Thread(new Runnable() {
+
+                public void run() {
+                    Rsession s1 = Rsession.newLocalInstance(new RLogPanel(), null);
+                    try {
+                        System.err.println(s1.eval("runif(1)").asDouble());
+                    } catch (REXPMismatchException ex) {
+                        ex.printStackTrace();
+                    }
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException ex) {
+                    }
+                    s1.end();
+                    s1 = null;
+                }
+            }).start();
+        }
+        try {
+            Thread.sleep(50000);
+        } catch (InterruptedException ex) {
+        }
     }
 
     //@Test
@@ -75,7 +99,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testEval() throws Exception {
 
         double a = -0.123;
@@ -455,6 +479,9 @@ public class RsessionTest {
                     System.err.println("1 " + string);
                 }
             }
+
+            public void close() {
+            }
         }, null);
         final Rsession r2 = Rsession.newInstanceTry(new Logger() {
 
@@ -464,6 +491,9 @@ public class RsessionTest {
                 } else {
                     System.err.println("2 " + string);
                 }
+            }
+
+            public void close() {
             }
         }, null);
 
@@ -521,6 +551,9 @@ public class RsessionTest {
                         System.err.println(string);
                     }
                 }
+
+                public void close() {
+                }
             }, null);
         }
 
@@ -562,12 +595,15 @@ public class RsessionTest {
         }
     }
 
-    @Before
+    //@Before
     public void setUp() {
         Logger l = new Logger() {
 
             public void println(String string, Level level) {
                 System.out.println(level + " " + string);
+            }
+
+            public void close() {
             }
         };
         String http_proxy_env = System.getenv("http_proxy");
@@ -591,16 +627,12 @@ public class RsessionTest {
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
     }
 
-    @After
+    //@After
     public void tearDown() {
-        try {
-            //uncomment following for sequential call. 
-            //s.end();
-            s.connection.serverShutdown();
-            //A shutdown hook kills all Rserve at the end.
-            //A shutdown hook kills all Rserve at the end.
-        } catch (RserveException ex) {
-            ex.printStackTrace();
-        }
+        //uncomment following for sequential call. 
+        //s.end();
+        s.end();
+        //A shutdown hook kills all Rserve at the end.
+        //A shutdown hook kills all Rserve at the end.
     }
 }

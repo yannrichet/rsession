@@ -43,7 +43,11 @@ public class SystemAccessTest {
         new Rdaemon(conf, new Logger() {
 
             public void println(String string, Level l) {
-                System.err.println(">> "+string);            }
+                System.err.println(">> " + string);
+            }
+
+            public void close() {
+            }
         }).start(null);
         s1 = Rsession.newLocalInstance(System.out, prop);
         s2 = Rsession.newLocalInstance(System.err, prop);

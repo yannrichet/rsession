@@ -13,13 +13,13 @@ import org.rosuda.REngine.Rserve.RConnection;
  * @author richet
  */
 public class Rdaemon {
-
+    
     RserverConf conf;
     Process process;
     Logger log;
     static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve");
     public static String R_HOME = null;
-
+    
     static {
         boolean app_dir_ok = false;
         if (!APP_DIR.exists()) {
@@ -31,47 +31,47 @@ public class Rdaemon {
             System.err.println("Cannot write in " + APP_DIR.getAbsolutePath());
         }
     }
-
+    
     public Rdaemon(RserverConf conf, Logger log, String R_HOME) {
         this.conf = conf;
         this.log = log;
         findR_HOME(R_HOME);
         //findRserve_HOME(Rserve_HOME);
         println("Environment variables:\n  " + R_HOME_KEY + "=" + Rdaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + Rdaemon.Rserve_HOME*/, Level.INFO);
-
+        
         Runtime.getRuntime().addShutdownHook(new Thread() {
-
+            
             @Override
             public void run() {
                 _stop();
             }
         });
     }
-
+    
     private void _stop() {
         stop();
     }
-
+    
     public Rdaemon(RserverConf conf, Logger log) {
         this(conf, log, null);
     }
     public final static String R_HOME_KEY = "R_HOME";
-
+    
     public static boolean findR_HOME(String r_HOME) {
         Map<String, String> env = System.getenv();
         Properties prop = System.getProperties();
-
+        
         R_HOME = r_HOME;
         if (R_HOME == null || !(new File(R_HOME).exists())) {
             if (env.containsKey(R_HOME_KEY)) {
                 R_HOME = env.get(R_HOME_KEY);
             }
-
+            
             if (R_HOME == null || prop.containsKey(R_HOME_KEY) || !(new File(R_HOME).exists())) {
                 R_HOME = prop.getProperty(R_HOME_KEY);
-
+                
             }
-
+            
             if (R_HOME == null || !(new File(R_HOME).exists())) {
                 R_HOME = null;
                 if (System.getProperty("os.name").contains("Win")) {
@@ -95,12 +95,12 @@ public class Rdaemon {
                 }
             }
         }
-
+        
         if (R_HOME == null) {
             return false;
         }
         return new File(R_HOME).exists();
-
+        
     }
 
     /*public static boolean findRserve_HOME(String path) {
@@ -163,20 +163,20 @@ public class Rdaemon {
                 f.setExecutable(true);
             }
         }
-
+        
     }
-
+    
     public void println(String m, Level l) {
         //System.out.println(m);
         log.println(m, l);
     }
-
+    
     public void stop() {
         println("stopping R daemon... " + conf, Level.INFO);
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Not authorized to stop a remote R daemon: " + conf.toString());
         }
-
+        
         try {
             RConnection s = conf.connect();
             if (s == null || !s.isConnected()) {
@@ -184,7 +184,7 @@ public class Rdaemon {
                 return;
             }
             s.serverShutdown();
-
+            
         } catch (Exception ex) {
             //ex.printStackTrace();
             println(ex.getMessage(), Level.ERROR);
@@ -206,13 +206,15 @@ public class Rdaemon {
         //process.destroy();
 
         println("R daemon stoped.", Level.INFO);
+        
+        log = null;
     }
-
+    
     public void start(String http_proxy) {
         if (R_HOME == null || !(new File(R_HOME).exists())) {
             throw new IllegalArgumentException("R_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + R_HOME_KEY + "=[Path to R] ...' startup command.");
         }
-
+        
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Unable to start a remote R daemon: " + conf.toString());
         }
@@ -220,7 +222,7 @@ public class Rdaemon {
         /*if (Rserve_HOME == null || !(new File(Rserve_HOME).exists())) {
         throw new IllegalArgumentException("Rserve_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + Rserve_HOME_KEY + "=[Path to Rserve] ...' startup command.");
         }*/
-
+        
         println("checking Rserve is available... ", Level.INFO);
         boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""));
         if (!RserveInstalled) {
@@ -238,23 +240,23 @@ public class Rdaemon {
         } else {
             println("  ok", Level.INFO);
         }
-
+        
         println("starting R daemon... " + conf, Level.INFO);
-
+        
         StringBuffer RserveArgs = new StringBuffer("--no-save --slave");
         if (conf.port > 0) {
             RserveArgs.append(" --RS-port " + conf.port);
         }
-
+        
         boolean started = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--no-save --slave", RserveArgs.toString(), false);
-
+        
         if (started) {
             println("  ok", Level.INFO);
         } else {
             println("  failed", Level.ERROR);
         }
     }
-
+    
     public static String timeDigest() {
         long time = System.currentTimeMillis();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
@@ -263,7 +265,7 @@ public class Rdaemon {
         sdf.format(new Date(time), sb, new java.text.FieldPosition(0));
         return sb.toString();
     }
-
+    
     public static void main(String[] args) throws InterruptedException {
         /*final ProcessBuilder builder = new ProcessBuilder("/usr/lib/R/bin/Rserve", "--vanilla");
         builder.environment().put("R_HOME", "/usr/lib/R");
@@ -309,7 +311,7 @@ public class Rdaemon {
          */
         //System.setProperty("Rserve.home","/usr/lib/R/bin/");
         Rdaemon d = new Rdaemon(new RserverConf(null, -1, null, null, null), new Logger() {
-
+            
             public void println(String message, Level l) {
                 if (l == Level.INFO) {
                     System.out.println(message);
@@ -317,6 +319,10 @@ public class Rdaemon {
                     System.err.println(message);
                 }
             }
+
+            public void close() {
+            }
+            
         });
         d.start(null);
         Thread.sleep(2000);

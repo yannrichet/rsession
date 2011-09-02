@@ -38,6 +38,9 @@ public class BrokenPipeTest {
                 public void println(String string, Level level) {
                     System.out.println(string);
                 }
+
+                public void close() {
+                }
             }, conf, true);
             double[] array = r.eval("rnorm(10)").asDoubles();
             for (double db : array) {

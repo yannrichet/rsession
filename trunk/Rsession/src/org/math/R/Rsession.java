@@ -49,6 +49,34 @@ public class Rsession implements Logger {
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     List<Logger> loggers;
 
+    void cleanupListeners() {
+        if (loggers != null) {
+            for (Logger l : loggers) {
+                removeLogger(l);
+            }
+        }
+        if (busy != null) {
+            for (BusyListener b : busy) {
+                removeBusyListener(b);
+            }
+        }
+        if (updateObjects != null) {
+            for (UpdateObjectsListener u : updateObjects) {
+                removeUpdateObjectsListener(u);
+            }
+        }
+        if (eval != null) {
+            for (EvalListener e : eval) {
+                removeEvalListener(e);
+            }
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+    }
+
     public void addLogger(Logger l) {
         if (!loggers.contains(l)) {
             //System.out.println("+ logger " + l.getClass().getSimpleName());
@@ -58,7 +86,14 @@ public class Rsession implements Logger {
 
     public void removeLogger(Logger l) {
         if (loggers.contains(l)) {
+            l.close();
             loggers.remove(l);
+        }
+    }
+
+    public void close() {
+        for (Logger l : loggers) {
+            l.close();
         }
     }
 
@@ -68,7 +103,6 @@ public class Rsession implements Logger {
             //System.out.println("  log in " + l.getClass().getSimpleName());
             l.println(message, level);
         }
-
     }
     List<BusyListener> busy = new LinkedList<BusyListener>();
 
@@ -100,6 +134,7 @@ public class Rsession implements Logger {
 
     public void removeUpdateObjectsListener(UpdateObjectsListener b) {
         if (updateObjects.contains(b)) {
+            b.setTarget(null);
             updateObjects.remove(b);
         }
     }
@@ -333,14 +368,6 @@ public class Rsession implements Logger {
      * @param tryLocalRServe local spawned Rsession if given remote one failed to initialized
      */
     public Rsession(final Logger console, RserverConf serverconf, boolean tryLocalRServe) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-
-            @Override
-            public void run() {
-                end();
-            }
-        });
-
         this.console = console;
         RserveConf = serverconf;
         this.tryLocalRServe = tryLocalRServe;
@@ -363,6 +390,10 @@ public class Rsession implements Logger {
                 }
                 p.println(string);
             }
+
+            public void close() {
+                p.close();
+            }
         }, serverconf, tryLocalRServe);
     }
 
@@ -376,6 +407,9 @@ public class Rsession implements Logger {
                 } else {
                     System.err.println(string);
                 }
+            }
+
+            public void close() {
             }
         }, serverconf, tryLocalRServe);
     }
@@ -473,21 +507,24 @@ public class Rsession implements Logger {
      * correctly (depending on execution platform) shutdown Rsession.
      */
     public void end() {
-        synchronized (connection) {
-            if (connection == null) {
-                log("Void session terminated.", Level.INFO);
-                return;
-            }
-            if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
-                log("Ending local session...", Level.INFO);
-                localRserve.stop();
-            } else {
-                log("Ending remote session...", Level.INFO);
-                connection.finalize();
-            }
+        if (connection == null) {
+            log("Void session terminated.", Level.INFO);
+            cleanupListeners();
+            return;
+        }
+        if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+            log("Ending local session...", Level.INFO);
+            localRserve.stop();
+            connection.close();
+        } else {
+            log("Ending remote session...", Level.INFO);
+            connection.close();
         }
 
         log("Session teminated.", Level.INFO);
+
+        connection = null;
+        cleanupListeners();
     }
     public final static boolean UNIX_OPTIMIZE = true;
     static String lastmessage = "";
@@ -885,7 +922,7 @@ public class Rsession implements Logger {
 
     /**
      * Silently (ie no log) launch R command and return value.
-     * @param expression R expresison to evaluate
+     * @param expression R expression to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
@@ -1959,6 +1996,9 @@ public class Rsession implements Logger {
                 } else {
                     System.err.println(message);
                 }
+            }
+
+            public void close() {
             }
         };
         if (args[0].startsWith(RserverConf.RURL_START)) {
