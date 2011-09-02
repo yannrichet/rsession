@@ -55,6 +55,33 @@ public class RLogPanel extends JPanel implements Logger {
     private OutputStream error_stream;
     private OutputStream warn_stream;
 
+    public void close() {
+        if (info_stream != null) {
+            try {
+                info_stream.close();
+            } catch (IOException ex) {
+            }
+        }
+        if (error_stream != null) {
+            try {
+                error_stream.close();
+            } catch (IOException ex) {
+            }
+        }
+        if (warn_stream != null) {
+            try {
+                warn_stream.close();
+            } catch (IOException ex) {
+            }
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        close();
+        super.finalize();
+    }
+
     OutputStream getInfoStream() {
         if (info_stream == null) {
             info_stream = new OutputStream() {
