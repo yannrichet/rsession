@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -52,27 +53,23 @@ public class Rsession implements Logger {
 
     void cleanupListeners() {
         if (loggers != null) {
-            for (Iterator<Logger> it = loggers.iterator(); it.hasNext();) {
-                Logger l = it.next();
-                removeLogger(l);
+            while (!loggers.isEmpty()) {
+                removeLogger(loggers.get(0));
             }
         }
         if (busy != null) {
-            for (Iterator<BusyListener> it = busy.iterator(); it.hasNext();) {
-                BusyListener b = it.next();
-                removeBusyListener(b);
+            while (!busy.isEmpty()) {
+                removeBusyListener(busy.get(0));
             }
         }
         if (updateObjects != null) {
-            for (Iterator<UpdateObjectsListener> it = updateObjects.iterator(); it.hasNext();) {
-                UpdateObjectsListener u = it.next();
-                removeUpdateObjectsListener(u);
+            while (!updateObjects.isEmpty()) {
+                removeUpdateObjectsListener(updateObjects.get(0));
             }
         }
         if (eval != null) {
-            for (Iterator<EvalListener> it = eval.iterator(); it.hasNext();) {
-                EvalListener e = it.next();
-                removeEvalListener(e);
+            while (!eval.isEmpty()) {
+                removeEvalListener(eval.get(0));
             }
         }
     }
