@@ -875,13 +875,25 @@ public class Rsession implements Logger {
         for (EvalListener b : eval) {
             b.eval(expression);
         }
+        REXP e = null;
         try {
             synchronized (connection) {
-                connection.voidEval((tryEval ? "try(" : "") + expression + (tryEval ? ")" : ""));
+                e = connection.parseAndEval((tryEval ? "try(eval(parse(text='" : "") + expression.replace("'", "\\'") + (tryEval ? "')),silent=TRUE)" : ""));
             }
-        } catch (RserveException ex) {
+        } catch (Exception ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-            return false;
+        }
+
+        if (tryEval && e != null) {
+            try {
+                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
+                    return false;
+                }
+            } catch (REXPMismatchException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
+                return false;
+            }
         }
         return true;
     }
@@ -942,26 +954,16 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
-                e = connection.parseAndEval((tryEval ? "try(" : "") + expression + (tryEval ? ",silent=TRUE)" : ""));
+                e = connection.parseAndEval((tryEval ? "try(eval(parse(text='" : "") + expression.replace("'", "\\'") + (tryEval ? "')),silent=TRUE)" : ""));
             }
         } catch (Exception ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-            synchronized (connection) {
-                try {
-                    log("    " + connection.parseAndEval("geterrmessage()").toString(), Level.INFO);
-                } catch (Exception ex1) {
-                    log(HEAD_ERROR + ex1.getMessage() + "\n  " + expression, Level.ERROR);
-                }
-            }
         }
 
         if (tryEval && e != null) {
             try {
-                /*REXP r = c.parseAndEval("try("+myCode+",silent=TRUE)");
-                if (r.inherits("try-error")) System.err.println("Error: "+r.asString());
-                else { // success ... }*/
                 if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
-                    log(HEAD_ERROR + e.asString() + "\n  " + expression, Level.ERROR);
+                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
                     e = null;
                 }
             } catch (REXPMismatchException ex) {
