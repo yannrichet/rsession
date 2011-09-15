@@ -990,7 +990,7 @@ public class Rsession implements Logger {
         }
         
         if (e != null) {
-            log(_ + e.toDebugString(), Level.INFO);
+            log(_ + e.toString(), Level.INFO);
         }
         
         return e;
