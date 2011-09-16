@@ -988,11 +988,11 @@ public class Rsession implements Logger {
         for (UpdateObjectsListener b : updateObjects) {
             b.update();
         }
-        
+
         if (e != null) {
-            log(_ + e.toString(), Level.INFO);
+            log(_ + e.toDebugString(), Level.INFO);
         }
-        
+
         return e;
     }
 
