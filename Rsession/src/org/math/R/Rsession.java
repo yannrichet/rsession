@@ -33,6 +33,8 @@ import org.rosuda.REngine.Rserve.RserveException;
  */
 public class Rsession implements Logger {
 
+    public boolean TRY_MODE_DEFAULT = true;
+    public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
     private static final String _ = "  ";
     private static final String _PACKAGE_ = "  package ";
@@ -766,7 +768,7 @@ public class Rsession implements Logger {
         }
 
         sendFile(pack_files[0]);
-        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)");
+        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
@@ -807,7 +809,7 @@ public class Rsession implements Logger {
         return "Impossible to get package " + pack + " from " + repos;
         }*/
 
-        eval("install.packages('" + pack + "',repos='" + repos + "'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)");
+        eval("install.packages('" + pack + "',repos='" + repos + "'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
 
@@ -830,7 +832,7 @@ public class Rsession implements Logger {
      * @return loading status
      */
     public String loadPackage(String pack) {
-        eval("library(" + pack + ")");
+        eval("library(" + pack + ")", TRY_MODE);
         log("  request package " + pack + " loading...", Level.INFO);
 
         if (isPackageLoaded(pack)) {
@@ -852,7 +854,7 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      */
     public boolean silentlyVoidEval(String expression) {
-        return silentlyVoidEval(expression, true);
+        return silentlyVoidEval(expression, TRY_MODE_DEFAULT);
     }
 
     /**
@@ -878,7 +880,11 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
-                e = connection.parseAndEval((tryEval ? "try(eval(parse(text='" : "") + expression.replace("'", "\\'") + (tryEval ? "')),silent=TRUE)" : ""));
+                if (tryEval) {
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
+                } else {
+                    e = connection.parseAndEval(expression);
+                }
             }
         } catch (Exception ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
@@ -904,7 +910,7 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      */
     public boolean voidEval(String expression, boolean tryEval) {
-        log(HEAD_EVAL + expression, Level.INFO);
+        log(HEAD_EVAL + (tryEval ? "-try- " : "") + expression, Level.INFO);
 
         boolean done = silentlyVoidEval(expression, tryEval);
 
@@ -922,7 +928,7 @@ public class Rsession implements Logger {
      * @param expression R expresison to evaluate
      */
     public boolean voidEval(String expression) {
-        return voidEval(expression, true);
+        return voidEval(expression, TRY_MODE_DEFAULT);
     }
 
     /**
@@ -931,7 +937,7 @@ public class Rsession implements Logger {
      * @return REXP R expression
      */
     public REXP silentlyEval(String expression) {
-        return silentlyEval(expression, true);
+        return silentlyEval(expression, TRY_MODE_DEFAULT);
     }
 
     /**
@@ -954,7 +960,11 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
-                e = connection.parseAndEval((tryEval ? "try(eval(parse(text='" : "") + expression.replace("'", "\\'") + (tryEval ? "')),silent=TRUE)" : ""));
+                if (tryEval) {
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
+                } else {
+                    e = connection.parseAndEval(expression);
+                }
             }
         } catch (Exception ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
@@ -981,7 +991,7 @@ public class Rsession implements Logger {
      * @return REXP R expression
      */
     public REXP eval(String expression, boolean tryEval) {
-        log(HEAD_EVAL + expression, Level.INFO);
+        log(HEAD_EVAL + (tryEval ? "-try- " : "") + expression, Level.INFO);
 
         REXP e = silentlyEval(expression, tryEval);
 
@@ -1002,12 +1012,12 @@ public class Rsession implements Logger {
      * @return REXP R expression
      */
     public REXP eval(String expression) {
-        return eval(expression, true);
+        return eval(expression, TRY_MODE_DEFAULT);
     }
 
     public String getRServeOS() {
         try {
-            return eval("Sys.info()['sysname']").asString();
+            return eval("Sys.info()['sysname']", TRY_MODE).asString();
         } catch (REXPMismatchException re) {
             return "unknown";
         }
@@ -1033,7 +1043,7 @@ public class Rsession implements Logger {
      * delete all variables in R environment
      */
     public boolean rmAll() {
-        return voidEval("rm(list=ls(all=TRUE))");
+        return voidEval("rm(list=ls(all=TRUE))", TRY_MODE);
     }
 
     /**
@@ -1096,7 +1106,7 @@ public class Rsession implements Logger {
      */
     public void source(File f) {
         sendFile(f);
-        voidEval("source('" + f.getName() + "')");
+        voidEval("source('" + f.getName() + "')", TRY_MODE);
     }
 
     /**
@@ -1106,11 +1116,11 @@ public class Rsession implements Logger {
     public void load(File f) {
         sendFile(f);
         try {
-            assert eval("file.exists('" + f.getName() + "')").asInteger() == 1;
+            assert eval("file.exists('" + f.getName() + "')", TRY_MODE).asInteger() == 1;
         } catch (REXPMismatchException r) {
             r.printStackTrace();
         }
-        voidEval("load('" + f.getName() + "')");
+        voidEval("load('" + f.getName() + "')", TRY_MODE);
     }
 
     /**
@@ -1119,7 +1129,7 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return eval("ls()").asStrings();
+            return eval("ls()", TRY_MODE).asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         }
@@ -1133,19 +1143,19 @@ public class Rsession implements Logger {
     public String[] ls(String... vars) {
         if (vars == null || vars.length == 0) {
             try {
-                return eval("ls()").asStrings();
+                return eval("ls()", TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else if (vars.length == 1) {
             try {
-                return eval(buildListPattern(vars[0])).asStrings();
+                return eval(buildListPattern(vars[0]), TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
         } else {
             try {
-                return eval(buildListPattern(vars)).asStrings();
+                return eval(buildListPattern(vars), TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             }
@@ -1158,9 +1168,9 @@ public class Rsession implements Logger {
      */
     public boolean rm(String... vars) {
         if (vars.length == 1) {
-            return voidEval("rm(" + vars[0] + ")");
+            return voidEval("rm(" + vars[0] + ")", TRY_MODE);
         } else {
-            return voidEval("rm(list=" + buildListString(vars) + ")");
+            return voidEval("rm(list=" + buildListString(vars) + ")", TRY_MODE);
         }
     }
 
@@ -1170,11 +1180,12 @@ public class Rsession implements Logger {
      */
     public boolean rmls(String... vars) {
         if (vars.length == 1) {
-            return voidEval("rm(list=" + buildListPattern(vars[0]) + ")");
+            return voidEval("rm(list=" + buildListPattern(vars[0]) + ")", TRY_MODE);
         } else {
-            return voidEval("rm(list=" + buildListPattern(vars) + ")");
+            return voidEval("rm(list=" + buildListPattern(vars) + ")", TRY_MODE);
         }
     }
+    public boolean SAVE_ASCII = false;
 
     /**
      * Save R variables in data file
@@ -1183,9 +1194,9 @@ public class Rsession implements Logger {
      */
     public void save(File f, String... vars) {
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName() + "'," + vars[0] + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "'," + vars[0] + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         receiveFile(f);
         removeFile(f.getName());
@@ -1198,9 +1209,9 @@ public class Rsession implements Logger {
      */
     public void savels(File f, String... vars) {
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars[0]) + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars) + ",ascii=TRUE)");
+            voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         receiveFile(f);
         removeFile(f.getName());
@@ -1685,7 +1696,6 @@ public class Rsession implements Logger {
     public void receiveFile(File localfile) {
         receiveFile(localfile, localfile.getName());
     }
-    public int SEND_BUFFER_SIZE = 512;
 
     /**
      * Get file from R environment to user filesystem
@@ -1695,11 +1705,11 @@ public class Rsession implements Logger {
     public void receiveFile(File localfile, String remoteFile) {
         try {
             int i = 10;
-            while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
+            while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 Thread.sleep(1000);
                 i--;
             }
-            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() != 1) {
+            if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
         } catch (Exception ex) {
@@ -1715,27 +1725,34 @@ public class Rsession implements Logger {
                 return;
             }
         }
+        int send_buffer_size = -1;
+        try {
+            send_buffer_size = eval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger() * 10;
+        } catch (REXPMismatchException ex) {
+            log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " size not found.", Level.ERROR);
+        }
 
         RFileInputStream is = null;
         FileOutputStream os = null;
+        int n = 0;
         synchronized (connection) {
             try {
                 is = connection.openFile(remoteFile);
                 os = new FileOutputStream(localfile);
-                byte[] buf = new byte[SEND_BUFFER_SIZE];
+                byte[] buf = new byte[send_buffer_size];
                 try {
                     //FIXME bug when received file exceeds 65kb
                     connection.setSendBufferSize(buf.length);
                 } catch (RserveException ex) {
+                    ex.printStackTrace();
                     log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
                 }
-                int n = 0;
+
                 while ((n = is.read(buf)) > 0) {
                     os.write(buf, 0, n);
                 }
-
             } catch (IOException e) {
-                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not found.\n" + e.getMessage(), Level.ERROR);
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted at " + n + ".\n" + e.getMessage(), Level.ERROR);
                 return;
             } finally {
                 try {
@@ -1787,8 +1804,8 @@ public class Rsession implements Logger {
             }
         }
         try {
-            if (silentlyEval("file.exists('" + remoteFile + "')").asInteger() == 1) {
-                silentlyVoidEval("file.remove('" + remoteFile + "')");
+            if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() == 1) {
+                silentlyVoidEval("file.remove('" + remoteFile + "')", TRY_MODE);
                 //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
@@ -1798,16 +1815,18 @@ public class Rsession implements Logger {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
+        int send_buffer_size = (int) localfile.length() * 10;
         FileInputStream is = null;
         RFileOutputStream os = null;
         synchronized (connection) {
             try {
                 os = connection.createFile(remoteFile);
                 is = new FileInputStream(localfile);
-                byte[] buf = new byte[SEND_BUFFER_SIZE];
+                byte[] buf = new byte[send_buffer_size];
                 try {
                     connection.setSendBufferSize(buf.length);
                 } catch (RserveException ex) {
+                    ex.printStackTrace();
                     log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
                 }
                 int n = 0;
