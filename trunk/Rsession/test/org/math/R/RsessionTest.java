@@ -42,7 +42,7 @@ public class RsessionTest {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
     }
 
-    @Test
+    //@Test
     public void testEnd() {
         for (int i = 0; i < 10; i++) {
             new Thread(new Runnable() {
@@ -72,7 +72,7 @@ public class RsessionTest {
     @Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 20; i++) {
-            int size = i * 10000;
+            int size = i * 100000;
             s.eval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile, "raw" + i);
@@ -81,7 +81,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testJPEGSize() throws REXPMismatchException {
         s.eval("library(MASS)");
         for (int i = 1; i < 20; i++) {
@@ -93,7 +93,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testPrint() throws REXPMismatchException {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
@@ -102,7 +102,7 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testEval() throws Exception {
 
         double a = -0.123;
@@ -124,7 +124,7 @@ public class RsessionTest {
         assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
     }
 
-    @Test
+    //@Test
     public void testNullEval() throws Exception {
 
         double a = -0.123;
@@ -143,7 +143,7 @@ public class RsessionTest {
 
     }
 
-    @Test
+    //@Test
     public void testEvalError() throws Exception {
         String[] exprs = {"a <- 1.0.0", "f <- function(x){((}"};
         for (String expr : exprs) {
@@ -174,20 +174,20 @@ public class RsessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testLibrary() {
         s.eval("library(lhs)");
         // this next call was failing with rserve 0.6-0
         s.eval("library(rgenoud)");
     }
 
-    @Test
+    //@Test
     public void testRFile() throws REXPMismatchException {
         System.err.println("getwd(): " + s.eval("getwd()").asString());
         //System.err.println("list.files(getwd()): "+s.eval("list.files(getwd())").asString());
     }
 
-    @Test
+    //@Test
     public void testRFileIO() throws REXPMismatchException {
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
@@ -315,7 +315,7 @@ public class RsessionTest {
         localfile2.delete();
     }
 
-    @Test
+    //@Test
     public void testCast() throws REXPMismatchException {
         //cast
         assert ((Boolean) cast(s.eval("TRUE"))) == true;
@@ -333,7 +333,7 @@ public class RsessionTest {
         assert ((String[]) cast(s.eval("c('abcd','sdfds')"))).length == 2;
     }
 
-    @Test
+    //@Test
     public void testSet() throws REXPMismatchException {
 
         //set
@@ -447,7 +447,7 @@ public class RsessionTest {
     long duration = Calendar.getInstance().getTimeInMillis() - start;
     System.out.println("Spent time:" + (duration) + " ms");
     }*/
-    @Test
+    //@Test
     public void testConcurrentEval() throws Exception {
         s.voidEval("id <- function(x){return(x)}");
         int n = 10;
@@ -502,7 +502,7 @@ public class RsessionTest {
         return true;
     }
 
-    @Test
+    //@Test
     public void testConcurrency() throws InterruptedException {
         final Rsession r1 = Rsession.newInstanceTry(new Logger() {
 
@@ -571,7 +571,7 @@ public class RsessionTest {
         r2.end();
     }
 
-    @Test
+    //@Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];
