@@ -157,6 +157,7 @@ public class EGOTest {
         new File("XY" + currentiteration + ".Rdata").delete();
         new File("km" + (currentiteration) + ".Rdata").delete();
         new File("EGO" + (currentiteration) + ".Rdata").delete();
+        new File("sectionview." + (currentiteration) + ".png").delete();
     }
     String control_km = "trace=FALSE,logLikFailOver=TRUE";
     String control_ego = "trace=FALSE";
