@@ -33,7 +33,7 @@ import org.rosuda.REngine.Rserve.RserveException;
  */
 public class Rsession implements Logger {
 
-    public static final String HEAD_TRY = "-try- ";
+    public static final String HEAD_TRY = "";//-try- ";
     public boolean TRY_MODE_DEFAULT = true;
     public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
@@ -1736,7 +1736,7 @@ public class Rsession implements Logger {
             //send_buffer_size = (int) Math.max(Math.pow(2.0, 15), send_buffer_size);//min=32kB
             // UGLY turn around to avoid "broken pipe".
             send_buffer_size = (int) Math.max(Math.pow(2.0, 22), send_buffer_size);//min=1MB
-            System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
+            //System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
             log(IO_HEAD + "using buffer of size " + send_buffer_size, Level.WARNING);
         } catch (REXPMismatchException ex) {
             ex.printStackTrace();
