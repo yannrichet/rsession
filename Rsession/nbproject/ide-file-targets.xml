@@ -49,7 +49,7 @@
         <!-- TODO decide on and define some value for ${build.classes.dir} -->
         <mkdir dir="build"/>
         <javac destdir="build" includes="${files}" source="1.5" srcdir="test">
-            <classpath path="${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar"/>
+            <classpath path="${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar:lib/jmatharray.jar"/>
         </javac>
     </target>
     <!-- TODO: edit the following target according to your needs -->
@@ -58,7 +58,7 @@
         <fail unless="run.class">Must set property 'run.class'</fail>
         <java classname="${run.class}" failonerror="true" fork="true">
             <classpath>
-                <pathelement path="build:${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar"/>
+                <pathelement path="build:${unit.test.jar}:lib/REngine.jar:lib/Rserve.jar:lib/jmatharray.jar"/>
             </classpath>
         </java>
     </target>
