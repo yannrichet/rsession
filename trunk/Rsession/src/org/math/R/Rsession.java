@@ -33,6 +33,7 @@ import org.rosuda.REngine.Rserve.RserveException;
  */
 public class Rsession implements Logger {
 
+    public static final String HEAD_TRY = "-try- ";
     public boolean TRY_MODE_DEFAULT = true;
     public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
@@ -910,7 +911,7 @@ public class Rsession implements Logger {
      * @param tryEval encapsulate command in try() to cacth errors
      */
     public boolean voidEval(String expression, boolean tryEval) {
-        log(HEAD_EVAL + (tryEval ? "-try- " : "") + expression, Level.INFO);
+        log(HEAD_EVAL + (tryEval ? HEAD_TRY : " ") + expression, Level.INFO);
 
         boolean done = silentlyVoidEval(expression, tryEval);
 
@@ -991,7 +992,7 @@ public class Rsession implements Logger {
      * @return REXP R expression
      */
     public REXP eval(String expression, boolean tryEval) {
-        log(HEAD_EVAL + (tryEval ? "-try- " : "") + expression, Level.INFO);
+        log(HEAD_EVAL + (tryEval ? HEAD_TRY : "") + expression, Level.INFO);
 
         REXP e = silentlyEval(expression, tryEval);
 
@@ -1212,6 +1213,10 @@ public class Rsession implements Logger {
             voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
         }
         receiveFile(f);
         removeFile(f.getName());
@@ -1704,11 +1709,11 @@ public class Rsession implements Logger {
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
-            int i = 10;
+            /*int i = 10;
             while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 Thread.sleep(1000);
                 i--;
-            }
+            }*/
             if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
@@ -1727,8 +1732,14 @@ public class Rsession implements Logger {
         }
         int send_buffer_size = -1;
         try {
-            send_buffer_size = eval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger() * 10;
+            send_buffer_size = (int) Math.pow(2.0, Math.ceil(Math.log(eval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger()) / Math.log(2)))/2;
+            //send_buffer_size = (int) Math.max(Math.pow(2.0, 15), send_buffer_size);//min=32kB
+            // UGLY turn around to avoid "broken pipe".
+            send_buffer_size = (int) Math.max(Math.pow(2.0, 22), send_buffer_size);//min=1MB
+            System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
+            log(IO_HEAD + "using buffer of size " + send_buffer_size, Level.WARNING);
         } catch (REXPMismatchException ex) {
+            ex.printStackTrace();
             log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " size not found.", Level.ERROR);
         }
 
@@ -1740,27 +1751,28 @@ public class Rsession implements Logger {
                 is = connection.openFile(remoteFile);
                 os = new FileOutputStream(localfile);
                 byte[] buf = new byte[send_buffer_size];
-                try {
-                    //FIXME bug when received file exceeds 65kb
-                    connection.setSendBufferSize(buf.length);
-                } catch (RserveException ex) {
-                    ex.printStackTrace();
-                    log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
-                }
-
+                //FIXME bug when received file exceeds 65kb
+                connection.setSendBufferSize(buf.length);
                 while ((n = is.read(buf)) > 0) {
                     os.write(buf, 0, n);
                 }
+            } catch (RserveException ex) {
+                ex.printStackTrace();
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             } catch (IOException e) {
+                e.printStackTrace();
                 log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted at " + n + ".\n" + e.getMessage(), Level.ERROR);
-                return;
             } finally {
+                try {
+                    if (is != null) {
+                        is.close();
+                    }
+                } catch (IOException ee) {
+                    ee.printStackTrace();
+                }
                 try {
                     if (os != null) {
                         os.close();
-                    }
-                    if (is != null) {
-                        is.close();
                     }
                 } catch (IOException ee) {
                     ee.printStackTrace();
@@ -1815,7 +1827,7 @@ public class Rsession implements Logger {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
-        int send_buffer_size = (int) localfile.length() * 10;
+        int send_buffer_size = (int) localfile.length();
         FileInputStream is = null;
         RFileOutputStream os = null;
         synchronized (connection) {

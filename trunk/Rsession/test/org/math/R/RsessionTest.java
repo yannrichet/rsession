@@ -71,13 +71,14 @@ public class RsessionTest {
 
     @Test
     public void testFileSize() throws REXPMismatchException {
-        for (int i = 0; i < 20; i++) {
-            int size = i * 100000;
+        for (int i = 0; i < 8; i++) {
+            int size = (int) Math.pow(10.0, (double) i);
             s.eval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile, "raw" + i);
             assert sfile.exists() : "Size " + size + " failed";
             p.println(sfile.length());
+            sfile.delete();
         }
     }
 

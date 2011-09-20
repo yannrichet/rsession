@@ -148,7 +148,7 @@
             <compilation-unit>
                 <package-root>test</package-root>
                 <unit-tests/>
-                <classpath mode="compile">build:lib/REngine.jar:lib/Rserve.jar:concutest-junit-4.7-withrt.jar</classpath>
+                <classpath mode="compile">build:lib/REngine.jar:lib/Rserve.jar:concutest-junit-4.7-withrt.jar:lib/jmatharray.jar</classpath>
                 <source-level>1.5</source-level>
             </compilation-unit>
         </java-data>
