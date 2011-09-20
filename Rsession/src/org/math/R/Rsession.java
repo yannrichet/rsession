@@ -1735,7 +1735,7 @@ public class Rsession implements Logger {
             send_buffer_size = (int) Math.pow(2.0, Math.ceil(Math.log(eval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger()) / Math.log(2)))/2;
             //send_buffer_size = (int) Math.max(Math.pow(2.0, 15), send_buffer_size);//min=32kB
             // UGLY turn around to avoid "broken pipe".
-            send_buffer_size = (int) Math.max(Math.pow(2.0, 22), send_buffer_size);//min=1MB
+            send_buffer_size = (int) Math.max(Math.pow(2.0, 22), send_buffer_size);//min=4MB
             //System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
             log(IO_HEAD + "using buffer of size " + send_buffer_size, Level.WARNING);
         } catch (REXPMismatchException ex) {
