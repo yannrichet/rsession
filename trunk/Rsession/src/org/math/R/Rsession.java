@@ -1711,8 +1711,8 @@ public class Rsession implements Logger {
         try {
             /*int i = 10;
             while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
-                Thread.sleep(1000);
-                i--;
+            Thread.sleep(1000);
+            i--;
             }*/
             if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
@@ -1732,10 +1732,10 @@ public class Rsession implements Logger {
         }
         int send_buffer_size = -1;
         try {
-            send_buffer_size = (int) Math.pow(2.0, Math.ceil(Math.log(silentlyEval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger()) / Math.log(2)))/2;
+            send_buffer_size = (int) Math.pow(2.0, Math.ceil(Math.log(silentlyEval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger()) / Math.log(2))) / 2;
             //send_buffer_size = (int) Math.max(Math.pow(2.0, 15), send_buffer_size);//min=32kB
             // UGLY turn around to avoid "broken pipe".
-            send_buffer_size = (int) Math.max(Math.pow(2.0, 24), 4*send_buffer_size);//min=16MB
+            send_buffer_size = (int) Math.max(Math.pow(2.0, 24), 4 * send_buffer_size);//min=16MB
             //System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
             log(IO_HEAD + "using buffer of size " + send_buffer_size, Level.WARNING);
         } catch (REXPMismatchException ex) {
@@ -1758,7 +1758,7 @@ public class Rsession implements Logger {
                 }
             } catch (RserveException ex) {
                 ex.printStackTrace();
-                log(HEAD_EXCEPTION + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
+                log(HEAD_EXCEPTION + ex.getMessage() + ":" + ex.getRequestErrorDescription() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             } catch (IOException e) {
                 e.printStackTrace();
                 log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted at " + n + ".\n" + e.getMessage(), Level.ERROR);
@@ -1823,7 +1823,8 @@ public class Rsession implements Logger {
             }
             /*} catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-             */        } catch (REXPMismatchException ex) {
+             */
+        } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
