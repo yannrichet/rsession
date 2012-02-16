@@ -183,7 +183,7 @@ public class Rdaemon {
                 println("R daemon already stoped.", Level.INFO);
                 return;
             }
-            s.serverShutdown();
+            s.shutdown();
             
         } catch (Exception ex) {
             //ex.printStackTrace();
