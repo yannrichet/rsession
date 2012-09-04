@@ -79,7 +79,7 @@ class StreamHog extends Thread {
     }
 
     public void run() {
-        System.err.println("start streamhog");
+        //System.err.println("start streamhog");
         BufferedReader br = null;
         InputStreamReader isr = null;
         try {
@@ -110,7 +110,7 @@ class StreamHog extends Thread {
                 }
             }
         }
-        System.err.println("finished streamhog");
+        //System.err.println("finished streamhog");
     }
 }
 
@@ -147,7 +147,7 @@ public class StartRserve {
             repository = Rsession.DEFAULT_REPOS;
         }
         System.err.print("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
-        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", null, null);
+        boolean ok = doInR((http_proxy != null ? "Sys.setenv(http_proxy=" + http_proxy + ");" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", null, null);
         if (!ok) {
             System.err.println("failed");
             return false;

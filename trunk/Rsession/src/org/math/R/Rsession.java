@@ -742,7 +742,7 @@ public class Rsession implements Logger {
             log(_PACKAGE_ + pack + " not yet installed.", Level.INFO);
         }
 
-        File[] pack_files = dir.listFiles(new FileFilter() {
+        File[] pack_files = (dir == null ? null : dir.listFiles(new FileFilter() {
 
             public boolean accept(File pathname) {
 
@@ -760,7 +760,7 @@ public class Rsession implements Logger {
                 }
                 return false;
             }
-        });
+        }));
         if (pack_files == null || pack_files.length == 0) {
             log("  impossible to find package " + pack + " in directory " + dir.getAbsolutePath() + " !", Level.WARNING);
             return "Impossible to find package " + pack + " in directory " + dir.getAbsolutePath() + " !";
@@ -1604,7 +1604,11 @@ public class Rsession implements Logger {
     }
 
     public void toPNG(File f, int width, int height, String... commands) {
-        toGraphic(f, width, height, GRAPHIC_PNG, commands);
+        if (RServeOSisMacOSX()) {
+            toGraphic(f, width, height, GRAPHIC_JPEG, commands);
+        } else {
+            toGraphic(f, width, height, GRAPHIC_PNG, commands);
+        }
     }
 
     public void toBMP(File f, int width, int height, String... commands) {
@@ -1640,7 +1644,19 @@ public class Rsession implements Logger {
             sb.append(l);
             sb.append("\n");
         }
-        return sb.toString();
+        String str = sb.toString();
+        str = str.replace("align= center ", "align='center'");
+        str = str.replace("cellspacing=0", "cellspacing='0'");
+        str = str.replace("border=1", "border='1'");
+        str = str.replace("align=bottom", "align='bottom'");
+        str = str.replace("class=dataframe", "class='dataframe'");
+        str = str.replace("class= firstline ", "class='firstline'");
+        str = str.replace("class=firstcolumn", "class='firstcolumn'");
+        str = str.replace("class=cellinside", "class='cellinside'");
+        str = str.replace("border=0", "border='0'");
+        str = str.replace("class=captiondataframe", "class='captiondataframe'");
+        str = str.replace("</td></table>", "</td></tr></table>");
+        return str;
     }
 
     /**
