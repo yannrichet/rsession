@@ -12,7 +12,7 @@
     </target>
 
     <target name="clean-dist" description="clean up">
-        <delete dir="${dist}" failonerror="false" />
+        <!--delete dir="${dist}" failonerror="false" /-->
     </target>
 
     <target name="init" depends="clean,clean-dist">
