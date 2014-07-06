@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.text.BadLocationException;
+import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 
 /**
@@ -20,25 +20,24 @@ public class RLogPanel extends JPanel implements Logger {
 
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
-    public long maxsize = 100000;
-    public long minsize = 10000;
+    public int maxsize = Integer.parseInt(System.getProperty("RLogPanel.maxsize", "100000"));
+    public int minsize = Integer.parseInt(System.getProperty("RLogPanel.minsize", "10000"));
+    public String filter = null;//System.getProperty("RLogPanel.filter", "(.*)");
 
-    public void println(final String message, Level l) {
-        //if (isVisible()) {
-        //    EventQueue.invokeLater(new Runnable() {
-        //
-        //       public void run() {
-        if (l == Level.INFO) {
-            getInfoPrintStream().println(message);
-        } else if (l == Level.WARNING) {
-            getWarnPrintStream().println(message);
-        } else if (l == Level.ERROR) {
-            getErrorPrintStream().println(message);
+    public synchronized void println(final String message, Level l) {
+        if (filter == null || message.matches(filter)) {
+            try {
+                if (l == Level.INFO) {
+                    getInfoPrintStream().println(message);
+                } else if (l == Level.WARNING) {
+                    getWarnPrintStream().println(message);
+                } else if (l == Level.ERROR) {
+                    getErrorPrintStream().println(message);
+                }
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
         }
-        //       }
-        //   });
-        //}
-
     }
 
     public RLogPanel() {
@@ -60,18 +59,21 @@ public class RLogPanel extends JPanel implements Logger {
             try {
                 info_stream.close();
             } catch (IOException ex) {
+                ex.printStackTrace(System.err);
             }
         }
         if (error_stream != null) {
             try {
                 error_stream.close();
             } catch (IOException ex) {
+                ex.printStackTrace(System.err);
             }
         }
         if (warn_stream != null) {
             try {
                 warn_stream.close();
             } catch (IOException ex) {
+                ex.printStackTrace(System.err);
             }
         }
     }
@@ -81,6 +83,9 @@ public class RLogPanel extends JPanel implements Logger {
         close();
         super.finalize();
     }
+    char level = 'i';
+    char[] buffer = new char[maxsize];
+    volatile int pos = 0;
 
     OutputStream getInfoStream() {
         if (info_stream == null) {
@@ -88,15 +93,24 @@ public class RLogPanel extends JPanel implements Logger {
 
                 @Override
                 public void write(int b) throws IOException {
-                    try {
-                        if (jTextPane1.getDocument().getLength() > maxsize) {
-                            jTextPane1.getDocument().remove(0, (int) (maxsize - minsize));
-                        }
-                        jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("INFO"));
-                        jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
+                    if (level != 'i') {
+                        level = 'i';
+                        write('\n');
+                        write('i');
+                        write(' ');
+                        write(b);
+                        return;
                     }
+
+                    if (pos >= maxsize) {
+                        for (int i = 0; i < minsize; i++) {
+                            buffer[i] = buffer[maxsize - minsize + i];
+                        }
+                        pos = minsize;
+                    }
+
+                    buffer[pos] = (char) b;
+                    pos++;
                 }
             };
         }
@@ -109,12 +123,24 @@ public class RLogPanel extends JPanel implements Logger {
 
                 @Override
                 public void write(int b) throws IOException {
-                    try {
-                        jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("WARN"));
-                        jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
+                    if (level != 'w') {
+                        level = 'w';
+                        write('\n');
+                        write('w');
+                        write(' ');
+                        write(b);
+                        return;
                     }
+
+                    if (pos > maxsize) {
+                        for (int i = 0; i < minsize; i++) {
+                            buffer[i] = buffer[maxsize - minsize + i];
+                        }
+                        pos = minsize;
+                    }
+
+                    buffer[pos] = (char) b;
+                    pos++;
                 }
             };
         }
@@ -127,12 +153,24 @@ public class RLogPanel extends JPanel implements Logger {
 
                 @Override
                 public void write(int b) throws IOException {
-                    try {
-                        jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), "" + (char) b, jTextPane1.getStyle("ERROR"));
-                        jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
+                    if (level != 'e') {
+                        level = 'e';
+                        write('\n');
+                        write('e');
+                        write(' ');
+                        write(b);
+                        return;
                     }
+
+                    if (pos > maxsize) {
+                        for (int i = 0; i < minsize; i++) {
+                            buffer[i] = buffer[maxsize - minsize + i];
+                        }
+                        pos = minsize;
+                    }
+
+                    buffer[pos] = (char) b;
+                    pos++;
                 }
             };
         }
@@ -178,6 +216,7 @@ public class RLogPanel extends JPanel implements Logger {
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextPane1 = new javax.swing.JTextPane();
         _bar = new javax.swing.JToolBar();
+        _update = new javax.swing.JButton();
         _del = new javax.swing.JButton();
         _save = new javax.swing.JButton();
 
@@ -187,6 +226,18 @@ public class RLogPanel extends JPanel implements Logger {
         _bar.setFloatable(false);
         _bar.setOrientation(1);
         _bar.setRollover(true);
+
+        _update.setText("Update");
+        _update.setToolTipText("Remove R object");
+        _update.setFocusable(false);
+        _update.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        _update.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        _update.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                _updateActionPerformed(evt);
+            }
+        });
+        _bar.add(_update);
 
         _del.setText("Clear");
         _del.setToolTipText("Remove R object");
@@ -219,7 +270,7 @@ public class RLogPanel extends JPanel implements Logger {
             .addGroup(layout.createSequentialGroup()
                 .addComponent(_bar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE))
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 407, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -251,10 +302,38 @@ public class RLogPanel extends JPanel implements Logger {
             }
         }
 }//GEN-LAST:event__saveActionPerformed
+
+    private void _updateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event__updateActionPerformed
+        jTextPane1.setText("");
+        String text = new String(buffer, 0, pos);
+        String[] lines = text.split("\n");
+
+        Style style = jTextPane1.getStyle("INFO");
+        for (String line : lines) {
+            if (line.startsWith("i ")) {
+                line = line.substring(2);
+                style = jTextPane1.getStyle("INFO");
+            } else if (line.startsWith("w ")) {
+                line = line.substring(2);
+                style = jTextPane1.getStyle("WARN");
+            } else if (line.startsWith("e ")) {
+                line = line.substring(2);
+                style = jTextPane1.getStyle("ERROR");
+            }
+
+            try {
+                jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), line + "\n", style);
+                jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
+        }
+    }//GEN-LAST:event__updateActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToolBar _bar;
     public javax.swing.JButton _del;
     public javax.swing.JButton _save;
+    public javax.swing.JButton _update;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextPane jTextPane1;
     // End of variables declaration//GEN-END:variables

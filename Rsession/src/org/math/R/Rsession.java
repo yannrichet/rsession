@@ -6,10 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class Rsession implements Logger {
     public boolean TRY_MODE_DEFAULT = true;
     public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
-    private static final String _ = "  ";
+    private static final String __ = "  ";
     private static final String _PACKAGE_ = "  package ";
     public RConnection connection;
     Logger console;
@@ -53,6 +52,7 @@ public class Rsession implements Logger {
     public String status = STATUS_NOT_SET;
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     List<Logger> loggers;
+    public boolean debug;
 
     void cleanupListeners() {
         if (loggers != null) {
@@ -79,6 +79,7 @@ public class Rsession implements Logger {
 
     @Override
     protected void finalize() throws Throwable {
+        close();
         super.finalize();
     }
 
@@ -103,7 +104,14 @@ public class Rsession implements Logger {
     }
 
     public void println(String message, Logger.Level level) {
-        //System.out.println("println " + message+ " in "+loggers.size()+" loggers.");
+        if (level == Level.ERROR) {
+            try {
+                message = message + "; R!> " + getLastError();
+            } catch (Exception e) {
+                message = message + "; !> " + e.getLocalizedMessage();
+            }
+        }
+//System.out.println("println " + message+ " in "+loggers.size()+" loggers.");
         for (Logger l : loggers) {
             //System.out.println("  log in " + l.getClass().getSimpleName());
             l.println(message, level);
@@ -305,72 +313,103 @@ public class Rsession implements Logger {
     }
     // </editor-fold>
 
-    /** Map java File object to R path (as string)
+    /**
+     * Map java File object to R path (as string)
+     *
      * @param path java File object
      */
     public static String toRpath(File path) {
         return toRpath(path.getAbsolutePath());
     }
 
-    /** Map java path to R path (as string)
+    /**
+     * Map java path to R path (as string)
+     *
      * @param path java string path
      */
     public static String toRpath(String path) {
         return path.replaceAll("\\\\", "/");
     }
 
-    /** Build a new local Rsession
+    /**
+     * Build a new local Rsession
+     *
      * @param console PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
      */
     public static Rsession newLocalInstance(final Logger console, Properties localRProperties) {
         return new Rsession(console, RserverConf.newLocalInstance(localRProperties), false);
     }
 
-    /** Build a new remote Rsession
+    /**
+     * Build a new remote Rsession
+     *
      * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
      */
     public static Rsession newRemoteInstance(final Logger console, RserverConf serverconf) {
         return new Rsession(console, serverconf, false);
     }
 
-    /** Build a new Rsession. Fork to local spawned Rsession if given remote one failed to initialized.
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
      * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy)
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy)
      */
     public static Rsession newInstanceTry(final Logger console, RserverConf serverconf) {
         return new Rsession(console, serverconf, true);
     }
 
-    /** Build a new local Rsession
+    /**
+     * Build a new local Rsession
+     *
      * @param console PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
      */
     public static Rsession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
         return new Rsession(pconsole, RserverConf.newLocalInstance(localRProperties), false);
     }
 
-    /** Build a new remote Rsession
+    /**
+     * Build a new remote Rsession
+     *
      * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
      */
     public static Rsession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
         return new Rsession(pconsole, serverconf, false);
     }
 
-    /** Build a new Rsession. Fork to local spawned Rsession if given remote one failed to initialized.
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
      * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy)
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy)
      */
     public static Rsession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
         return new Rsession(pconsole, serverconf, true);
     }
 
-    /** create a new Rsession.
+    /**
+     * create a new Rsession.
+     *
      * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP, port, login, password, properties to pass to R (eg http_proxy or R libpath)
-     * @param tryLocalRServe local spawned Rsession if given remote one failed to initialized
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @param tryLocalRServe local spawned Rsession if given remote one failed
+     * to initialized
      */
     public Rsession(final Logger console, RserverConf serverconf, boolean tryLocalRServe) {
         this.console = console;
@@ -383,7 +422,9 @@ public class Rsession implements Logger {
         startup();
     }
 
-    /** create rsession using System as a logger*/
+    /**
+     * create rsession using System as a logger
+     */
     public Rsession(final PrintStream p, RserverConf serverconf, boolean tryLocalRServe) {
         this(new Logger() {
 
@@ -402,7 +443,9 @@ public class Rsession implements Logger {
         }, serverconf, tryLocalRServe);
     }
 
-    /** create rsession using System as a logger*/
+    /**
+     * create rsession using System as a logger
+     */
     public Rsession(RserverConf serverconf, boolean tryLocalRServe) {
         this(new Logger() {
 
@@ -445,10 +488,9 @@ public class Rsession implements Logger {
         status = STATUS_NOT_CONNECTED;
 
         /*if (RserveConf == null) {
-        RserveConf = RserverConf.newLocalInstance(null);
-        println("No Rserve conf given. Trying to use " + RserveConf.toString());
-        }*/
-
+         RserveConf = RserverConf.newLocalInstance(null);
+         println("No Rserve conf given. Trying to use " + RserveConf.toString());
+         }*/
         status = STATUS_CONNECTING;
 
         connection = RserveConf.connect();
@@ -517,7 +559,7 @@ public class Rsession implements Logger {
             cleanupListeners();
             return;
         }
-        if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+        if ((!System.getProperty("os.name").contains("Win")) && localRserve != null) {//if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
             log("Ending local session...", Level.INFO);
             localRserve.stop();
             connection.close();
@@ -531,9 +573,17 @@ public class Rsession implements Logger {
         connection = null;
         cleanupListeners();
     }
-    public final static boolean UNIX_OPTIMIZE = true;
-    static String lastmessage = "";
-    static int repeated = 0;
+    public static final boolean UNIX_OPTIMIZE = true;
+    String lastmessage = "";
+    int repeated = 0;
+
+    public String getLastLogEntry() {
+        return lastmessage;
+    }
+
+    public String getLastError() {
+        return connection.getLastError();
+    }
 
     public void log(String message, Level level) {
         if (message.equals(lastmessage) && repeated < 100) {
@@ -571,11 +621,12 @@ public class Rsession implements Logger {
         }
     }
     // <editor-fold defaultstate="collapsed" desc="Packages management">
-    public static String DEFAULT_REPOS = "http://cran.cict.fr/";
+    public static String DEFAULT_REPOS = "http://cran.irsn.fr/";
     public String repos = DEFAULT_REPOS;
 
     /**
-     * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
+     * @param url CRAN repository to use for packages installation (eg
+     * http://cran.r-project.org)
      */
     public void setCRANRepository(String url) {
         repos = url;
@@ -591,6 +642,7 @@ public class Rsession implements Logger {
 
     /**
      * Check for package loaded in R environment.
+     *
      * @param pack R package name
      * @return package loading status
      */
@@ -611,13 +663,14 @@ public class Rsession implements Logger {
             log(_PACKAGE_ + pack + " is not loaded.", Level.INFO);
         }
 
-        silentlyEval("rm(" + loadedpacks + ")");
+        //silentlyEval("rm(" + loadedpacks + ")");
         return isloaded;
     }
     private static String packs = "packs";
 
     /**
      * Check for package installed in R environment.
+     *
      * @param pack R package name
      * @param version R package version
      * @return package loading status
@@ -659,12 +712,13 @@ public class Rsession implements Logger {
             }
 
         }
-        silentlyEval("rm(" + packs + ")");
+        //silentlyEval("rm(" + packs + ")");
         return isinstalled;
     }
 
     /**
      * Start installation procedure of R packages
+     *
      * @param pack packages to install
      * @param load automatically load packages after successfull installation
      * @return installation status
@@ -692,6 +746,7 @@ public class Rsession implements Logger {
 
     /**
      * Start installation procedure of local R package
+     *
      * @param pack package file to install
      * @param load automatically load package after successfull installation
      * @return installation status
@@ -708,6 +763,7 @@ public class Rsession implements Logger {
         if (name.contains(".")) {
             name = name.substring(0, name.indexOf("."));
         }
+
         if (isPackageInstalled(name, null)) {
             log(_PACKAGE_ + pack + " installation sucessfull.", Level.INFO);
             if (load) {
@@ -716,15 +772,21 @@ public class Rsession implements Logger {
                 return PACKAGEINSTALLED;
             }
         } else {
-            log(_PACKAGE_ + pack + " installation failed.", Level.INFO);
-            return "Impossible to install package " + pack + " !";
+            log(_PACKAGE_ + pack + " installation failed.", Level.ERROR);
+            if (load) {
+                return loadPackage(name);
+            } else {
+                return "Impossible to install package " + pack + " !";
+            }
         }
     }
 
     /**
      * Start installation procedure of local R package
+     *
      * @param pack package to install
-     * @param dir directory where package file (.zip, .tar.gz or .tgz) is located.
+     * @param dir directory where package file (.zip, .tar.gz or .tgz) is
+     * located.
      * @param load automatically load package after successfull installation
      * @return installation status
      */
@@ -780,13 +842,18 @@ public class Rsession implements Logger {
                 return PACKAGEINSTALLED;
             }
         } else {
-            log(_PACKAGE_ + pack + " installation failed.", Level.WARNING);
-            return "Impossible to install package " + pack + " !";
+            log(_PACKAGE_ + pack + " installation failed.", Level.ERROR);
+            if (load) {
+                return loadPackage(pack);
+            } else {
+                return "Impossible to install package " + pack + " !";
+            }
         }
     }
 
     /**
      * Start installation procedure of CRAN R package
+     *
      * @param pack package to install
      * @param load automatically load package after successfull installation
      * @return installation status
@@ -806,13 +873,11 @@ public class Rsession implements Logger {
         }
 
         /*if (!Configuration.isWWWConnected()) {
-        log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
-        return "Impossible to get package " + pack + " from " + repos;
-        }*/
-
-        eval("install.packages('" + pack + "',repos='" + repos + "'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
+         log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
+         return "Impossible to get package " + pack + " from " + repos;
+         }*/
+        eval("install.packages('" + pack + "',repos='\"" + repos + "\"'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
-
 
         if (isPackageInstalled(pack, null)) {
             log(_PACKAGE_ + pack + " installation sucessfull.", Level.INFO);
@@ -822,27 +887,46 @@ public class Rsession implements Logger {
                 return PACKAGEINSTALLED;
             }
         } else {
-            log(_PACKAGE_ + pack + " installation failed.", Level.WARNING);
-            return "Impossible to install package " + pack + " !";
+            log(_PACKAGE_ + pack + " installation failed.", Level.ERROR);
+            if (load) {
+                return loadPackage(pack);
+            } else {
+                return "Impossible to install package " + pack + " !";
+            }
         }
     }
 
     /**
      * load R backage using library() command
+     *
      * @param pack R package name
      * @return loading status
      */
     public String loadPackage(String pack) {
-        eval("library(" + pack + ")", TRY_MODE);
         log("  request package " + pack + " loading...", Level.INFO);
-
-        if (isPackageLoaded(pack)) {
-            log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
-            return PACKAGELOADED;
-        } else {
-            log(_PACKAGE_ + pack + " loading failed.", Level.WARNING);
-            return "Impossible to loading package " + pack + " !";
+        try {
+            boolean ok = eval("library(" + pack + ",logical.return=T)", TRY_MODE).asBytes()[0] == 1;
+            if (ok) {
+                log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
+                return PACKAGELOADED;
+            } else {
+                log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
+                return "Impossible to load package " + pack + ": " + getLastError();
+            }
+        } catch (Exception ex) {
+            log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
+            return "Impossible to load package " + pack + ": " + ex.getLocalizedMessage();
         }
+
+        /*eval("library(" + pack + ",logical.return=T)", TRY_MODE);
+         log("  request package " + pack + " loading...", Level.INFO);
+         if (isPackageLoaded(pack)) {
+         log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
+         return PACKAGELOADED;
+         } else {
+         log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
+         return "Impossible to load package " + pack + ": " + getLastError();
+         }*/
     }
     // </editor-fold>
     final static String HEAD_EVAL = "[eval] ";
@@ -851,7 +935,9 @@ public class Rsession implements Logger {
     final static String HEAD_CACHE = "[cache] ";
 
     /**
-     * Silently (ie no log) launch R command without return value. Encapsulate command in try() to cacth errors
+     * Silently (ie no log) launch R command without return value. Encapsulate
+     * command in try() to cacth errors
+     *
      * @param expression R expresison to evaluate
      */
     public boolean silentlyVoidEval(String expression) {
@@ -860,6 +946,7 @@ public class Rsession implements Logger {
 
     /**
      * Silently (ie no log) launch R command without return value.
+     *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      */
@@ -907,6 +994,7 @@ public class Rsession implements Logger {
 
     /**
      * Launch R command without return value.
+     *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      */
@@ -925,7 +1013,9 @@ public class Rsession implements Logger {
     }
 
     /**
-     * Launch R command without return value. Encapsulate command in try() to cacth errors.
+     * Launch R command without return value. Encapsulate command in try() to
+     * cacth errors.
+     *
      * @param expression R expresison to evaluate
      */
     public boolean voidEval(String expression) {
@@ -933,7 +1023,9 @@ public class Rsession implements Logger {
     }
 
     /**
-     * Silently (ie no log) launch R command and return value. Encapsulate command in try() to cacth errors.
+     * Silently (ie no log) launch R command and return value. Encapsulate
+     * command in try() to cacth errors.
+     *
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
@@ -943,6 +1035,7 @@ public class Rsession implements Logger {
 
     /**
      * Silently (ie no log) launch R command and return value.
+     *
      * @param expression R expression to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
@@ -987,6 +1080,7 @@ public class Rsession implements Logger {
 
     /**
      * Launch R command and return value.
+     *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
@@ -1001,14 +1095,16 @@ public class Rsession implements Logger {
         }
 
         if (e != null) {
-            log(_ + e.toDebugString(), Level.INFO);
+            log(__ + e.toDebugString(), Level.INFO);
         }
 
         return e;
     }
 
     /**
-     * Launch R command and return value. Encapsulate command in try() to cacth errors.
+     * Launch R command and return value. Encapsulate command in try() to cacth
+     * errors.
+     *
      * @param expression R expresison to evaluate
      * @return REXP R expression
      */
@@ -1049,6 +1145,7 @@ public class Rsession implements Logger {
 
     /**
      * create a R list with given R objects
+     *
      * @param vars R object names
      * @return list expression
      */
@@ -1067,6 +1164,7 @@ public class Rsession implements Logger {
 
     /**
      * create a R list with given R strings
+     *
      * @param vars R strings
      * @return String list expression
      */
@@ -1085,6 +1183,7 @@ public class Rsession implements Logger {
 
     /**
      * create a R list with given R string patterns
+     *
      * @param vars R string patterns
      * @return ls pattern expression
      */
@@ -1103,6 +1202,7 @@ public class Rsession implements Logger {
 
     /**
      * loads R source file (eg ".R" file)
+     *
      * @param f ".R" file to source
      */
     public void source(File f) {
@@ -1112,6 +1212,7 @@ public class Rsession implements Logger {
 
     /**
      * loads R data file (eg ".Rdata" file)
+     *
      * @param f ".Rdata" file to load
      */
     public void load(File f) {
@@ -1126,6 +1227,7 @@ public class Rsession implements Logger {
 
     /**
      * list R variables in R env.
+     *
      * @return list of R objects names
      */
     public String[] ls() {
@@ -1138,6 +1240,7 @@ public class Rsession implements Logger {
 
     /**
      * list R variables in R env. matching patterns
+     *
      * @param vars R object name patterns
      * @return list of R objects names
      */
@@ -1165,6 +1268,7 @@ public class Rsession implements Logger {
 
     /**
      * delete R variables in R env.
+     *
      * @param vars R objects names
      */
     public boolean rm(String... vars) {
@@ -1177,6 +1281,7 @@ public class Rsession implements Logger {
 
     /**
      * delete R variables in R env. matching patterns
+     *
      * @param vars R object name patterns
      */
     public boolean rmls(String... vars) {
@@ -1190,6 +1295,7 @@ public class Rsession implements Logger {
 
     /**
      * Save R variables in data file
+     *
      * @param f file to store data (eg ".Rdata")
      * @param vars R variables to save
      */
@@ -1205,6 +1311,7 @@ public class Rsession implements Logger {
 
     /**
      * Save R variables in data file
+     *
      * @param f file to store data (eg ".Rdata")
      * @param vars R variables names patterns to save
      */
@@ -1248,12 +1355,13 @@ public class Rsession implements Logger {
 
     /**
      * Build R liost in R env.
+     *
      * @param data numeric data (eg matrix)
      * @param names names of columns
      * @return RList object
      */
     public static RList buildRList(double[][] data, String... names) {
-        assert data[0].length == names.length;
+        assert data[0].length == names.length : "Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names);
         REXP[] vals = new REXP[names.length];
 
         for (int i = 0; i < names.length; i++) {
@@ -1261,7 +1369,11 @@ public class Rsession implements Logger {
             double[] coli = new double[data.length];
             for (int j = 0; j < coli.length; j++) {
                 //System.out.println("  j=" + j);
-                coli[j] = data[j][i];
+                if (data[j].length > i) {
+                    coli[j] = data[j][i];
+                } else {
+                    coli[j] = Double.NaN;
+                }
             }
             vals[i] = new REXPDouble(coli);
         }
@@ -1270,6 +1382,7 @@ public class Rsession implements Logger {
 
     /**
      * Build R liost in R env.
+     *
      * @param coldata numeric data as an array of numeric vectors
      * @param names names of columns
      * @return RList object
@@ -1285,6 +1398,7 @@ public class Rsession implements Logger {
 
     /**
      * delete R object in R env.
+     *
      * @param varname R objects to delete
      */
     public boolean unset(String... varname) {
@@ -1293,6 +1407,7 @@ public class Rsession implements Logger {
 
     /**
      * delete R object in R env.
+     *
      * @param varname R objects to delete
      */
     public boolean unset(Collection varname) {
@@ -1305,6 +1420,7 @@ public class Rsession implements Logger {
 
     /**
      * Set R object in R env.
+     *
      * @param _vars R objects to set as key/values
      */
     public boolean set(Map<String, Object> _vars) {
@@ -1316,7 +1432,8 @@ public class Rsession implements Logger {
     }
 
     /**
-     *  Set R list in R env.
+     * Set R list in R env.
+     *
      * @param varname R list name
      * @param data numeric data in list
      * @param names names of columns
@@ -1341,6 +1458,7 @@ public class Rsession implements Logger {
 
     /**
      * Set R object in R env.
+     *
      * @param varname R object name
      * @param var R object value
      */
@@ -1353,13 +1471,13 @@ public class Rsession implements Logger {
 
         log(HEAD_SET + varname + " <- " + var, Level.INFO);
         /*if (var instanceof DataFrame) {
-        DataFrame df = (DataFrame) var;
-        set("names_" + varname, df.keySet().toArray(new String[]{}));
-        set("data_" + varname, df.dataSet());
-        eval(varname + "=data.frame(x=data_" + varname + ")");
-        silentlyEval("names(" + varname + ") <- names_" + varname);
-        silentlyEval("rm(names_" + varname + ",data_" + varname + ")");
-        }*/
+         DataFrame df = (DataFrame) var;
+         set("names_" + varname, df.keySet().toArray(new String[]{}));
+         set("data_" + varname, df.dataSet());
+         eval(varname + "=data.frame(x=data_" + varname + ")");
+         silentlyEval("names(" + varname + ") <- names_" + varname);
+         silentlyEval("rm(names_" + varname + ",data_" + varname + ")");
+         }*/
         if (var == null) {
             rm(varname);
             return true;
@@ -1444,6 +1562,7 @@ public class Rsession implements Logger {
 
     /**
      * cast R object in java object
+     *
      * @param eval REXP R object
      * @return java object
      * @throws org.rosuda.REngine.REXPMismatchException
@@ -1454,36 +1573,35 @@ public class Rsession implements Logger {
         }
 
         /*int[] dim = eval.dim();
-        String dims = "[";
-        if (dim == null) {
-        dims = "NULL";
-        } else {
-        for (int i : dim) {
-        dims += (i + " ");
-        }
-        dims += "]";
-        }
+         String dims = "[";
+         if (dim == null) {
+         dims = "NULL";
+         } else {
+         for (int i : dim) {
+         dims += (i + " ");
+         }
+         dims += "]";
+         }
         
-        System.out.println(eval.toString() +
-        "\n  isComplex=     " + (eval.isComplex() ? "TRUE" : "    false") +
-        "\n  isEnvironment= " + (eval.isEnvironment() ? "TRUE" : "    false") +
-        "\n  isExpression=  " + (eval.isExpression() ? "TRUE" : "    false") +
-        "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
-        "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
-        "\n  isInteger=     " + (eval.isInteger() ? "TRUE" : "    false") +
-        "\n  isLanguage=    " + (eval.isLanguage() ? "TRUE" : "    false") +
-        "\n  isList=        " + (eval.isList() ? "TRUE" : "    false") +
-        "\n  isLogical=     " + (eval.isLogical() ? "TRUE" : "    false") +
-        "\n  isNull=        " + (eval.isNull() ? "TRUE" : "    false") +
-        "\n  isNumeric=     " + (eval.isNumeric() ? "TRUE" : "    false") +
-        "\n  isRaw=         " + (eval.isRaw() ? "TRUE" : "    false") +
-        "\n  isRecursive=   " + (eval.isRecursive() ? "TRUE" : "    false") +
-        "\n  isString=      " + (eval.isString() ? "TRUE" : "    false") +
-        "\n  isSymbol=      " + (eval.isSymbol() ? "TRUE" : "    false") +
-        "\n  isVector=      " + (eval.isVector() ? "TRUE" : "    false") +
-        "\n  length=  " + (eval.length()) +
-        "\n  dim=  " + dims);*/
-
+         System.out.println(eval.toString() +
+         "\n  isComplex=     " + (eval.isComplex() ? "TRUE" : "    false") +
+         "\n  isEnvironment= " + (eval.isEnvironment() ? "TRUE" : "    false") +
+         "\n  isExpression=  " + (eval.isExpression() ? "TRUE" : "    false") +
+         "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
+         "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
+         "\n  isInteger=     " + (eval.isInteger() ? "TRUE" : "    false") +
+         "\n  isLanguage=    " + (eval.isLanguage() ? "TRUE" : "    false") +
+         "\n  isList=        " + (eval.isList() ? "TRUE" : "    false") +
+         "\n  isLogical=     " + (eval.isLogical() ? "TRUE" : "    false") +
+         "\n  isNull=        " + (eval.isNull() ? "TRUE" : "    false") +
+         "\n  isNumeric=     " + (eval.isNumeric() ? "TRUE" : "    false") +
+         "\n  isRaw=         " + (eval.isRaw() ? "TRUE" : "    false") +
+         "\n  isRecursive=   " + (eval.isRecursive() ? "TRUE" : "    false") +
+         "\n  isString=      " + (eval.isString() ? "TRUE" : "    false") +
+         "\n  isSymbol=      " + (eval.isSymbol() ? "TRUE" : "    false") +
+         "\n  isVector=      " + (eval.isVector() ? "TRUE" : "    false") +
+         "\n  length=  " + (eval.length()) +
+         "\n  dim=  " + dims);*/
         if (eval.isNumeric()) {
             if (eval.dim() == null || eval.dim().length == 1) {
                 double[] array = eval.asDoubles();
@@ -1550,6 +1668,7 @@ public class Rsession implements Logger {
 
     /**
      * cast to java String representation of object
+     *
      * @param eval REXP R object
      * @return String representation
      */
@@ -1562,6 +1681,7 @@ public class Rsession implements Logger {
 
     /**
      * Create a JPEG file for R graphical command output
+     *
      * @param f File to store data (eg .jpg file)
      * @param width width of image
      * @param height height of image
@@ -1621,11 +1741,15 @@ public class Rsession implements Logger {
 
     /**
      * Get R command text output in HTML format
+     *
      * @param command R command returning text
      * @return HTML string
      */
     public String asR2HTML(String command) {
-        installPackage("R2HTML", true);
+        String ret = installPackage("R2HTML", true);
+        if (!ret.equals(PACKAGEINSTALLED)) {
+            return ret;
+        }
         int h = Math.abs(command.hashCode());
         silentlyEval("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
         String[] lines = null;
@@ -1661,6 +1785,7 @@ public class Rsession implements Logger {
 
     /**
      * Get R command text output in HTML format
+     *
      * @param command R command returning text
      * @return HTML string
      */
@@ -1682,6 +1807,7 @@ public class Rsession implements Logger {
 
     /**
      * Get R command text output
+     *
      * @param command R command returning text
      * @return String
      */
@@ -1693,25 +1819,26 @@ public class Rsession implements Logger {
             return ex.getMessage();
         }
         /*String[] lines = null;
-        try {
-        lines = silentlyEval("capture.output( " + command + ")").asStrings();
-        } catch (REXPMismatchException e) {
-        return e.getMessage();
-        }
-        if (lines == null) {
-        return "";
-        }
-        StringBuffer sb = new StringBuffer();
-        for (String l : lines) {
-        sb.append(l);
-        sb.append("\n");
-        }
-        return sb.toString();*/
+         try {
+         lines = silentlyEval("capture.output( " + command + ")").asStrings();
+         } catch (REXPMismatchException e) {
+         return e.getMessage();
+         }
+         if (lines == null) {
+         return "";
+         }
+         StringBuffer sb = new StringBuffer();
+         for (String l : lines) {
+         sb.append(l);
+         sb.append("\n");
+         }
+         return sb.toString();*/
     }
     final static String IO_HEAD = "[IO] ";
 
     /**
      * Get file from R environment to user filesystem
+     *
      * @param localfile file to get (same name in R env. and user filesystem)
      */
     public void receiveFile(File localfile) {
@@ -1720,16 +1847,17 @@ public class Rsession implements Logger {
 
     /**
      * Get file from R environment to user filesystem
+     *
      * @param localfile local filesystem file
      * @param remoteFile R environment file name
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
             /*int i = 10;
-            while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
-            Thread.sleep(1000);
-            i--;
-            }*/
+             while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
+             Thread.sleep(1000);
+             i--;
+             }*/
             if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
@@ -1800,6 +1928,7 @@ public class Rsession implements Logger {
 
     /**
      * delete R environment file
+     *
      * @param remoteFile filename to delete
      */
     public void removeFile(String remoteFile) {
@@ -1814,6 +1943,7 @@ public class Rsession implements Logger {
 
     /**
      * Send user filesystem file in r environement (like data)
+     *
      * @param localfile File to send
      */
     public void sendFile(File localfile) {
@@ -1822,6 +1952,7 @@ public class Rsession implements Logger {
 
     /**
      * Send user filesystem file in r environement (like data)
+     *
      * @param localfile File to send
      * @param remoteFile filename in R env.
      */
@@ -1838,7 +1969,7 @@ public class Rsession implements Logger {
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
             /*} catch (RserveException ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
+             log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
              */
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
@@ -1884,12 +2015,15 @@ public class Rsession implements Logger {
     final static double testResult = 1 + Math.PI;
     Map<String, Object> noVarsEvals = new HashMap<String, Object>();
 
-    /** Method to eval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart).
-     * 1D Numeric "vars" are replaced using Java replace engine instead of R one.
-     * Intended to not interfer with current R env vars.
-     * Yes, it's hard-code :)
+    /**
+     * Method to eval expression. Holds many optimizations (@see noVarsEvals)
+     * and turn around for reliable usage (like engine auto restart). 1D Numeric
+     * "vars" are replaced using Java replace engine instead of R one. Intended
+     * to not interfer with current R env vars. Yes, it's hard-code :)
+     *
      * @param expression String to evaluate
-     * @param vars HashMap<String, Object> vars inside expression. Passively overload current R env variables.
+     * @param vars HashMap<String, Object> vars inside expression. Passively
+     * overload current R env variables.
      * @return java cast Object
      * @warning UNSTABLE and high CPU cost.
      */
@@ -1948,7 +2082,6 @@ public class Rsession implements Logger {
 
             //System.out.println("clean_expression=" + clean_expression);
             //System.out.println("clean_vars=" + clean_vars);
-
             Object out = null;
             try {
                 if (uses(clean_expression, clean_vars)) {
@@ -2038,8 +2171,12 @@ public class Rsession implements Logger {
     }
 
     public static void main(String[] args) {
+        //args = new String[]{"install.packages('lhs',repos='\"http://cran.irsn.fr/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {
-            args = new String[]{"1+pi"};
+            args = new String[1000];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = Math.random() + "+pi";
+            }
         }
         Rsession R = null;
         int i = 0;
@@ -2056,6 +2193,13 @@ public class Rsession implements Logger {
             public void close() {
             }
         };
+        /*RLogPanel l = new RLogPanel();
+         JFrame f = new JFrame();
+         f.setContentPane(l);
+         f.pack();
+         f.setSize(600, 600);
+         f.setVisible(true);*/
+
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
             R = Rsession.newInstanceTry(l, RserverConf.parse(args[0]));
@@ -2063,9 +2207,14 @@ public class Rsession implements Logger {
             R = Rsession.newInstanceTry(l, null);
         }
 
+        /*RObjectsPanel  o = new RObjectsPanel(R);
+         o.setAutoUpdate(true);*/
+            //System.err.println(R.loadPackage("DiceView"));
         for (int j = i; j < args.length; j++) {
-            System.out.println(castToString(R.eval(args[j])));
+            System.err.print(args[j] + ": ");
+            System.err.println(castToString(R.eval(args[j])));
         }
 
+        R.end();
     }
 }
