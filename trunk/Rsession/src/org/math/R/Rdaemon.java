@@ -168,7 +168,9 @@ public class Rdaemon {
     
     public void println(String m, Level l) {
         //System.out.println(m);
+        if(log!=null)
         log.println(m, l);
+        else System.out.println(l+" "+m);
     }
     
     public void stop() {
