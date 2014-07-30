@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
@@ -24,6 +25,16 @@ public class RLogPanel extends JPanel implements Logger {
     public int minsize = Integer.parseInt(System.getProperty("RLogPanel.minsize", "10000"));
     public String filter = null;//System.getProperty("RLogPanel.filter", "(.*)");
 
+    public static void main(String[] args) {
+        RLogPanel log = new RLogPanel();
+        JFrame f = new JFrame();
+        f.setContentPane(log);
+        f.setVisible(true);
+        f.pack();
+        Rsession R = Rsession.newInstanceTry(log, null);
+        R.eval("ls()");
+    }
+    
     public synchronized void println(final String message, Level l) {
         if (filter == null || message.matches(filter)) {
             try {
