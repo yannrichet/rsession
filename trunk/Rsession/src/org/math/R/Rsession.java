@@ -18,8 +18,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
+import org.rosuda.REngine.REXPInteger;
 import org.rosuda.REngine.REXPList;
+import org.rosuda.REngine.REXPLogical;
 import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REXPNull;
+import org.rosuda.REngine.REXPString;
+import org.rosuda.REngine.REXPWrapper;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -106,9 +111,9 @@ public class Rsession implements Logger {
     public void println(String message, Logger.Level level) {
         if (level == Level.ERROR) {
             try {
-                message = message + "; R!> " + getLastError();
+                message = message + "\n R> " + getLastLogEntry() + "\n R! " + getLastError();
             } catch (Exception e) {
-                message = message + "; !> " + e.getLocalizedMessage();
+                message = message + "\n ! " + e.getLocalizedMessage();
             }
         }
 //System.out.println("println " + message+ " in "+loggers.size()+" loggers.");
@@ -1235,6 +1240,8 @@ public class Rsession implements Logger {
             return eval("ls()", TRY_MODE).asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
+        } catch (Exception re) {
+            return new String[]{"?"};
         }
     }
 
@@ -1250,18 +1257,24 @@ public class Rsession implements Logger {
                 return eval("ls()", TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
+            } catch (Exception re) {
+                return new String[]{"?"};
             }
         } else if (vars.length == 1) {
             try {
                 return eval(buildListPattern(vars[0]), TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
+            } catch (Exception re) {
+                return new String[]{"?"};
             }
         } else {
             try {
                 return eval(buildListPattern(vars), TRY_MODE).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
+            } catch (Exception re) {
+                return new String[]{"?"};
             }
         }
     }
@@ -1492,6 +1505,7 @@ public class Rsession implements Logger {
                 return false;
             }
         } else if (var instanceof File) {
+            sendFile((File) var);
             return silentlyVoidEval(varname + "<-'" + ((File) var).getName() + "'");
         } else if (var instanceof Integer) {
             return silentlyVoidEval(varname + "<-" + (Integer) var);
@@ -1542,10 +1556,53 @@ public class Rsession implements Logger {
                 return false;
             }
             return silentlyVoidEval(varname/*, cat((String[]) var)*/);
+        } else if (var instanceof Map) {
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, asRList((Map) var));
+                }
+            } catch (Exception ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Map) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname);
         } else {
             throw new IllegalArgumentException("Variable " + varname + " is not double, double[],  double[][], String or String[]. R engine can not handle.");
         }
         return true;
+    }
+
+    public static REXPList asRList(Map m) {
+        RList l = new RList();
+        for (Object o : m.keySet()) {
+            Object v = m.get(o);
+            if (v instanceof Double) {
+                l.put(o.toString(), new REXPDouble((Double) v));
+            } else if (v instanceof double[]) {
+                l.put(o.toString(), new REXPDouble((double[]) v));
+            } else if (v instanceof Integer) {
+                l.put(o.toString(), new REXPInteger((Integer) v));
+            } else if (v instanceof int[]) {
+                l.put(o.toString(), new REXPInteger((int[]) v));
+            } else if (v instanceof String) {
+                l.put(o.toString(), new REXPString((String) v));
+            } else if (v instanceof String[]) {
+                l.put(o.toString(), new REXPString((String[]) v));
+            } else if (v instanceof Boolean) {
+                l.put(o.toString(), new REXPLogical((Boolean) v));
+            } else if (v instanceof boolean[]) {
+                l.put(o.toString(), new REXPLogical((boolean[]) v));
+            } else if (v instanceof Map) {
+                l.put(o.toString(), asRList((Map) v));
+            } else if (v instanceof RList) {
+                l.put(o.toString(), (RList) v);
+            } else if (v == null) {
+                l.put(o.toString(), new REXPNull());
+            } else {
+                System.err.println("Could not cast object " + o + " : " + v);
+            }
+        }
+        return new REXPList(l);
     }
 
     private static double[] reshapeAsRow(double[][] a) {
@@ -2170,10 +2227,10 @@ public class Rsession implements Logger {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         //args = new String[]{"install.packages('lhs',repos='\"http://cran.irsn.fr/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {
-            args = new String[1000];
+            args = new String[10];
             for (int i = 0; i < args.length; i++) {
                 args[i] = Math.random() + "+pi";
             }
@@ -2193,12 +2250,12 @@ public class Rsession implements Logger {
             public void close() {
             }
         };
-        /*RLogPanel l = new RLogPanel();
-         JFrame f = new JFrame();
-         f.setContentPane(l);
-         f.pack();
-         f.setSize(600, 600);
-         f.setVisible(true);*/
+        //RLogPanel l = new RLogPanel();
+        //JFrame f = new JFrame();
+        // f.setContentPane(l);
+        //f.pack();
+        // f.setSize(600, 600);
+        //f.setVisible(true);
 
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
@@ -2207,9 +2264,24 @@ public class Rsession implements Logger {
             R = Rsession.newInstanceTry(l, null);
         }
 
-        /*RObjectsPanel  o = new RObjectsPanel(R);
-         o.setAutoUpdate(true);*/
-            //System.err.println(R.loadPackage("DiceView"));
+        //RObjectsPanel  o = new RObjectsPanel(R);
+        //o.setAutoUpdate(true);
+        //System.err.println(R.loadPackage("DiceView"));
+        //RList list = new RList(new REXP[]{new REXPDouble(10)},new String[]{"a"});
+        //System.err.println(list.names);
+        //System.err.println(list.at("a").asDouble());
+        //R.connection.assign("l", new REXPList(list));
+        //System.err.println(R.eval("l"));
+        //Map m = new HashMap();
+        //m.put("a", 10);
+        //m.put("b", "dfsdfs");
+        //m.put("c", new double[]{1, 2, 3});
+        //Map m2 = new HashMap();
+        //m2.put("d", 11);
+        //m.put("e", m2);
+        //R.set("l", m);
+        //R.eval("l");
+
         for (int j = i; j < args.length; j++) {
             System.err.print(args[j] + ": ");
             System.err.println(castToString(R.eval(args[j])));
