@@ -1,8 +1,6 @@
 package org.math.R;
 
-import javax.net.ssl.SSLEngineResult.Status;
 import org.rosuda.REngine.REXP;
-import java.util.List;
 import org.math.array.DoubleArray;
 import org.junit.After;
 import org.junit.Before;

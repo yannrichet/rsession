@@ -3,7 +3,7 @@ package org.math.R;
 public interface Logger {
 
     public enum Level {
-
+        OUTPUT,
         INFO,
         WARNING,
         ERROR;

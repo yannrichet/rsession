@@ -19,6 +19,7 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
+import javax.swing.JFrame;
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.RList;
@@ -69,7 +70,62 @@ public class RsessionTest {
         }
     }
 
+    //@Test
+    public void testSIGPIPEExplicitSink() throws REXPMismatchException {
+        s.SINK_OUTPUT = false;
+        s.addLogger(new Logger() {
+
+            public void println(String string, Logger.Level level) {
+                System.err.println(level + " " + string);
+            }
+
+            public void close() {
+            }
+        });
+
+        String loaded = s.installPackage("rgenoud", true);
+        assert loaded.equals(Rsession.PACKAGELOADED) : loaded;
+
+        // without sink: SIGPIPE error
+        s.voidEval("sink(file('out.txt',open='wt'),type='output')");
+        REXP maxsin = s.eval("genoud(sin, nvars=1, max=TRUE,cluster=FALSE,output.path='/tmp')");
+        s.voidEval("sink(type='output')");
+        //s.voidEval("unlink('out.txt')");
+
+        assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+
+        REXP test = s.eval("1+pi");
+        assert test.asDouble() > 4 : "Failed next eval";
+        s.SINK_OUTPUT = true;
+    }
+
     @Test
+    public void testSIGPIPEAutoSink() throws REXPMismatchException {
+        s.addLogger(new Logger() {
+
+            public void println(String string, Logger.Level level) {
+                System.err.println(level + " " + string);
+            }
+
+            public void close() {
+            }
+        });
+
+        String loaded = s.installPackage("rgenoud", true);
+        assert loaded.equals(Rsession.PACKAGELOADED) : loaded;
+
+        // without sink: SIGPIPE error
+        REXP maxsin = s.eval("genoud(sin, nvars=1, max=TRUE,cluster=FALSE,output.path='/tmp')");
+        //s.voidEval("unlink('out.txt')");
+
+        assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+
+        REXP test = s.eval("1+pi");
+        assert test.asDouble() > 4 : "Failed next eval";
+
+    }
+
+    //@Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 8; i++) {
             int size = (int) Math.pow(10.0, (double) i);
@@ -247,7 +303,6 @@ public class RsessionTest {
         s.eval("rm(aa)");
         //localfile1.delete();
 
-
         //put file test...
         String remoteFile2 = "put" + rand + ".csv";
         File localfile2 = new File(tmpdir, remoteFile2);
@@ -365,7 +420,6 @@ public class RsessionTest {
         assert ((String[]) cast(s.eval("S"))).length == Str.length;
         assert ((String) cast(s.eval("S[1]"))).equals(Str[0]);
 
-
         s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
         assert (Double) (cast(s.eval("df$x1[3]"))) == 7;
 
@@ -394,7 +448,6 @@ public class RsessionTest {
         }
         s.save(f, "C");
         assert f.exists();
-
 
         p.println("ls=\n" + s.toString(cast(s.eval("ls()"))));
         //load
@@ -427,7 +480,6 @@ public class RsessionTest {
 
         //final Rsession s2 = new Rsession(System.err);
         //p.println(toString(cast(s2.eval("0.123"))));
-
         //installPackage
         System.out.println(s.installPackage("sensitivity", true));
         System.out.println(s.installPackage("wavelets", true));
@@ -436,18 +488,18 @@ public class RsessionTest {
         //s2.end();
     }
 
-    /*@Test
-    public void testPerformance() throws REXPMismatchException { //Performance eval
-    long start = Calendar.getInstance().getTimeInMillis();
-    System.out.println("tic");
+    /*//@Test
+     public void testPerformance() throws REXPMismatchException { //Performance eval
+     long start = Calendar.getInstance().getTimeInMillis();
+     System.out.println("tic");
     
-    for (int i = 0; i < 10000; i++) {
-    s.silentlyEval("rnorm(10)").asDoubles();
-    }
-    System.out.println("toc");
-    long duration = Calendar.getInstance().getTimeInMillis() - start;
-    System.out.println("Spent time:" + (duration) + " ms");
-    }*/
+     for (int i = 0; i < 10000; i++) {
+     s.silentlyEval("rnorm(10)").asDoubles();
+     }
+     System.out.println("toc");
+     long duration = Calendar.getInstance().getTimeInMillis() - start;
+     System.out.println("Spent time:" + (duration) + " ms");
+     }*/
     //@Test
     public void testConcurrentEval() throws Exception {
         s.voidEval("id <- function(x){return(x)}");
@@ -632,15 +684,20 @@ public class RsessionTest {
 
     @Before
     public void setUp() {
-        Logger l = new Logger() {
-
-            public void println(String string, Level level) {
-                System.out.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        };
+        Logger l = new RLogPanel();
+        JFrame f = new JFrame("RLogPanel");
+        f.setContentPane((RLogPanel) l);
+        f.setSize(600, 600);
+        f.setVisible(true);
+        /*Logger() {
+        
+         public void println(String string, Level level) {
+         System.out.println(level + " " + string);
+         }
+        
+         public void close() {
+         }
+         };*/
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
@@ -664,8 +721,13 @@ public class RsessionTest {
 
     @After
     public void tearDown() {
-        //uncomment following for sequential call. 
-        //s.end();
+        try {
+            //uncomment following for sequential call. 
+            //s.end();
+            Thread.sleep(10000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
         s.end();
         //A shutdown hook kills all Rserve at the end.
     }
