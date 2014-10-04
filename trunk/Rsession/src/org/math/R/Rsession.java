@@ -113,7 +113,7 @@ public class Rsession implements Logger {
             try {
                 message = message + "\n R> " + getLastLogEntry() + "\n R! " + getLastError();
             } catch (Exception e) {
-                message = message + "\n ! " + e.getLocalizedMessage();
+                message = message + "\n ! " + e.getMessage();
             }
         }
 //System.out.println("println " + message+ " in "+loggers.size()+" loggers.");
@@ -591,18 +591,22 @@ public class Rsession implements Logger {
     }
 
     public void log(String message, Level level) {
-        if (message.equals(lastmessage) && repeated < 100) {
-            repeated++;
-            return;
+        if (level == Level.OUTPUT && message != null && message.length() > 0 && !message.equals("\n")) {
+            println(message, level);
         } else {
-            if (repeated > 0) {
-                println("    Repeated " + repeated + " times.", level);
-                repeated = 0;
-                lastmessage = message;
-                println(message, level);
+            if (message.equals(lastmessage) && repeated < 100) {
+                repeated++;
+                return;
             } else {
-                lastmessage = message;
-                println(message, level);
+                if (repeated > 0) {
+                    println("    Repeated " + repeated + " times.", level);
+                    repeated = 0;
+                    lastmessage = message;
+                    println(message, level);
+                } else {
+                    lastmessage = message;
+                    println(message, level);
+                }
             }
         }
     }
@@ -881,7 +885,7 @@ public class Rsession implements Logger {
          log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
          return "Impossible to get package " + pack + " from " + repos;
          }*/
-        eval("install.packages('" + pack + "',repos='\"" + repos + "\"'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
+        eval("install.packages('" + pack + "',repos='" + repos + "'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
@@ -910,13 +914,13 @@ public class Rsession implements Logger {
     public String loadPackage(String pack) {
         log("  request package " + pack + " loading...", Level.INFO);
         try {
-            boolean ok = eval("library(" + pack + ",logical.return=T)", TRY_MODE).asBytes()[0] == 1;
+            boolean ok = eval("library(" + pack + ",logical.return=T,quietly=T,verbose=F)", TRY_MODE).asBytes()[0] == 1;
             if (ok) {
                 log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
                 return PACKAGELOADED;
             } else {
                 log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
-                return "Impossible to load package " + pack + ": " + getLastError();
+                return "Impossible to load package " + pack + ": " + getLastLogEntry() + "," + getLastError();
             }
         } catch (Exception ex) {
             log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
@@ -949,6 +953,24 @@ public class Rsession implements Logger {
         return silentlyVoidEval(expression, TRY_MODE_DEFAULT);
     }
 
+    boolean SINK_OUTPUT = true;
+    String SINK_FILE = ".Rout";
+
+    String lastOuput = "";
+
+    public String getLastOutput() {
+        if (!SINK_OUTPUT) {
+            return null;
+        } else {
+            return lastOuput;
+            /*try {
+             return connection.parseAndEval("paste(collapse='\n','" + SINK_FILE + "')").asString();
+             } catch (Exception ex) {
+             return ex.getMessage();
+             }*/
+        }
+    }
+
     /**
      * Silently (ie no log) launch R command without return value.
      *
@@ -973,10 +995,24 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
                 } else {
                     e = connection.parseAndEval(expression);
+                }
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink(type='output')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
+                        log(lastOuput, Level.OUTPUT);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + "')");
                 }
             }
         } catch (Exception ex) {
@@ -1059,10 +1095,24 @@ public class Rsession implements Logger {
         REXP e = null;
         try {
             synchronized (connection) {
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
                 } else {
                     e = connection.parseAndEval(expression);
+                }
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink(type='output')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
+                        log(lastOuput, Level.OUTPUT);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + "')");
                 }
             }
         } catch (Exception ex) {
@@ -2281,7 +2331,6 @@ public class Rsession implements Logger {
         //m.put("e", m2);
         //R.set("l", m);
         //R.eval("l");
-
         for (int j = i; j < args.length; j++) {
             System.err.print(args[j] + ": ");
             System.err.println(castToString(R.eval(args[j])));
