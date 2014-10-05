@@ -80,7 +80,7 @@ public class Rdaemon {
                         if (R_HOME == null) {
                             for (int minor = 10; minor >= 0; minor--) {
                                 //int minor = 0;
-                                r_HOME = "C:\\Program Files\\R\\R-2." + major + "." + minor + "\\";
+                                r_HOME = "C:\\Program Files\\R\\R-3." + major + "." + minor + "\\";
                                 if (new File(r_HOME).exists()) {
                                     R_HOME = r_HOME;
                                     break;
