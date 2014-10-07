@@ -591,12 +591,16 @@ public class Rsession implements Logger {
     }
 
     public void log(String message, Level level) {
-        if (level == Level.OUTPUT && message != null && message.length() > 0 && !message.equals("\n")) {
+        if (message != null && message.trim().length() > 0 && !message.trim().equals("\n") && level == Level.OUTPUT) {
             println(message, level);
         } else {
+            if (message == null) {
+                return;
+            } else {
+                message = message.trim();
+            }
             if (message.equals(lastmessage) && repeated < 100) {
                 repeated++;
-                return;
             } else {
                 if (repeated > 0) {
                     println("    Repeated " + repeated + " times.", level);
