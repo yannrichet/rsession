@@ -1003,7 +1003,7 @@ public class Rsession implements Logger {
                     connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
                 }
                 if (tryEval) {
-                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
                 } else {
                     e = connection.parseAndEval(expression);
                 }
@@ -1103,7 +1103,7 @@ public class Rsession implements Logger {
                     connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
                 }
                 if (tryEval) {
-                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=TRUE)");
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
                 } else {
                     e = connection.parseAndEval(expression);
                 }
