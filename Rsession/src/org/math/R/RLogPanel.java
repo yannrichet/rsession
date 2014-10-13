@@ -185,7 +185,7 @@ public class RLogPanel extends JPanel implements Logger {
                         return;
                     }
 
-                    if (pos > maxsize) {
+                    if (pos >= maxsize) {
                         for (int i = 0; i < minsize; i++) {
                             buffer[i] = buffer[maxsize - minsize + i];
                         }
@@ -215,7 +215,7 @@ public class RLogPanel extends JPanel implements Logger {
                         return;
                     }
 
-                    if (pos > maxsize) {
+                    if (pos >= maxsize) {
                         for (int i = 0; i < minsize; i++) {
                             buffer[i] = buffer[maxsize - minsize + i];
                         }
