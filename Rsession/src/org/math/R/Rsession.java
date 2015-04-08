@@ -435,9 +435,9 @@ public class Rsession implements Logger {
 
             public void println(String string, Level level) {
                 if (level == Level.WARNING) {
-                    p.print("! ");
+                    p.print("(!) ");
                 } else if (level == Level.ERROR) {
-                    p.print("!! ");
+                    p.print("(!!) ");
                 }
                 p.println(string);
             }
@@ -1565,6 +1565,19 @@ public class Rsession implements Logger {
             return silentlyVoidEval(varname + "<-" + (Integer) var);
         } else if (var instanceof Double) {
             return silentlyVoidEval(varname + "<-" + (Double) var);
+        } else if (var instanceof Double[]) {
+            Double[] varD = (Double[]) var;
+            double[] vard = new double[varD.length];
+            System.arraycopy(varD, 0, vard, 0, varD.length);
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, vard);
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Double[]) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname/*, cat((double[]) var)*/);
         } else if (var instanceof double[]) {
             try {
                 synchronized (connection) {
@@ -1575,6 +1588,21 @@ public class Rsession implements Logger {
                 return false;
             }
             return silentlyVoidEval(varname/*, cat((double[]) var)*/);
+        } else if (var instanceof Double[][]) {
+            Double[][] array = (Double[][]) var;
+            int rows = array.length;
+            int col = array[0].length;
+            try {
+                synchronized (connection) {
+                    connection.assign("row_" + varname, reshapeAsRow(array));
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
+                return false;
+            }
+            //eval("print(row_" + varname + ")");
+            boolean done = silentlyVoidEval(varname + "<-array(row_" + varname + ",c(" + rows + "," + col + "))");
+            return done && silentlyVoidEval("rm(row_" + varname + ")");
         } else if (var instanceof double[][]) {
             double[][] array = (double[][]) var;
             int rows = array.length;
@@ -1660,6 +1688,18 @@ public class Rsession implements Logger {
     }
 
     private static double[] reshapeAsRow(double[][] a) {
+        double[] reshaped = new double[a.length * a[0].length];
+        int ir = 0;
+        for (int j = 0; j < a[0].length; j++) {
+            for (int i = 0; i < a.length; i++) {
+                reshaped[ir] = a[i][j];
+                ir++;
+            }
+        }
+        return reshaped;
+    }
+
+    private static double[] reshapeAsRow(Double[][] a) {
         double[] reshaped = new double[a.length * a[0].length];
         int ir = 0;
         for (int j = 0; j < a[0].length; j++) {
@@ -2281,6 +2321,20 @@ public class Rsession implements Logger {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
 
+    
+//   static void testD(Rsession R){
+//        Double[][] d = new Double[10][2];
+//        for (int i = 0; i < d.length; i++) {
+//            for (int j = 0; j < d[i].length; j++) {
+//                d[i][j]=Math.random();
+//                
+//            }
+//            
+//        }
+//        R.set("d", d);
+//        System.err.println(castToString(R.eval("d")));
+//    }
+    
     public static void main(String[] args) throws Exception {
         //args = new String[]{"install.packages('lhs',repos='\"http://cran.irsn.fr/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {
@@ -2318,6 +2372,7 @@ public class Rsession implements Logger {
             R = Rsession.newInstanceTry(l, null);
         }
 
+        //testD(R);
         //RObjectsPanel  o = new RObjectsPanel(R);
         //o.setAutoUpdate(true);
         //System.err.println(R.loadPackage("DiceView"));

@@ -61,18 +61,21 @@ public class Rdaemon {
         Map<String, String> env = System.getenv();
         Properties prop = System.getProperties();
         
-        R_HOME = r_HOME;
-        if (R_HOME == null || !(new File(R_HOME).exists())) {
+        if (r_HOME!=null) R_HOME = r_HOME;
+        if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
             if (env.containsKey(R_HOME_KEY)) {
                 R_HOME = env.get(R_HOME_KEY);
             }
             
-            if (R_HOME == null || prop.containsKey(R_HOME_KEY) || !(new File(R_HOME).exists())) {
+            if (R_HOME == null || prop.containsKey(R_HOME_KEY) || !(new File(R_HOME).isDirectory())) {
                 R_HOME = prop.getProperty(R_HOME_KEY);
-                
+            } 
+            
+            if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
+                R_HOME = "R";
             }
             
-            if (R_HOME == null || !(new File(R_HOME).exists())) {
+            if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
                 R_HOME = null;
                 if (System.getProperty("os.name").contains("Win")) {
                     for (int major = 20; major >= 0; major--) {
@@ -99,8 +102,8 @@ public class Rdaemon {
         if (R_HOME == null) {
             return false;
         }
-        return new File(R_HOME).exists();
         
+        return new File(R_HOME).isDirectory();
     }
 
     /*public static boolean findRserve_HOME(String path) {
