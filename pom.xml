@@ -28,14 +28,14 @@
 			<version>1.8</version>
 		</dependency>
 		<dependency>
-			<groupId>org.rosuda</groupId>
+			<groupId>org.rosuda.REngine</groupId>
 			<artifactId>REngine</artifactId>
-			<version>1.8</version>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.rosuda</groupId>
-			<artifactId>RServe</artifactId>
-			<version>1.8</version>
+			<groupId>org.rosuda.REngine</groupId>
+			<artifactId>Rserve</artifactId>
+			<version>1.8.1</version>
 		</dependency>
 	</dependencies>
 
@@ -52,6 +52,10 @@
 	</dependencyManagement>
 
 	<repositories>
+		<repository>
+			<id>sonatype-oss-releases</id>
+			<url>https://oss.sonatype.org/content/repositories/releases</url>
+		</repository>
 		<repository>
 			<id>predictia-public-thirdparty</id>
 			<url>https://raw.githubusercontent.com/Predictia/maven-repo/master/thirdparty</url>
