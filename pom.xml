@@ -6,9 +6,7 @@
 	<artifactId>Rsession</artifactId>
 	<version>1.8.1</version>
 	<packaging>jar</packaging>
-
-	<name>Rsession</name>
-	<url>http://maven.apache.org</url>
+	<name>rsession</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -59,5 +57,19 @@
 			<url>https://raw.githubusercontent.com/Predictia/maven-repo/master/thirdparty</url>
 		</repository>
 	</repositories>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+		<finalName>rsession</finalName>
+	</build>
 	
 </project>
