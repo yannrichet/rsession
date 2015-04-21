@@ -52,11 +52,11 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+
 	<repositories>
 		<repository>
-			<id>predictia-3rdparty-repository</id>
-			<url>http://nexus.predictia.es/content/repositories/thirdparty</url>
+			<id>predictia-public-thirdparty</id>
+			<url>https://raw.githubusercontent.com/Predictia/maven-repo/master/thirdparty</url>
 		</repository>
 	</repositories>
 	
