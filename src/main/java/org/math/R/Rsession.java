@@ -1,10 +1,13 @@
 package org.math.R;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,6 +19,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPInteger;
@@ -24,12 +29,10 @@ import org.rosuda.REngine.REXPLogical;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPNull;
 import org.rosuda.REngine.REXPString;
-import org.rosuda.REngine.REXPWrapper;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RFileInputStream;
-import org.rosuda.REngine.Rserve.RFileOutputStream;
 import org.rosuda.REngine.Rserve.RserveException;
 
 /**
@@ -2126,24 +2129,13 @@ public class Rsession implements Logger {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
-        int send_buffer_size = (int) localfile.length();
-        FileInputStream is = null;
-        RFileOutputStream os = null;
+        InputStream is = null;
+        OutputStream os = null;
         synchronized (connection) {
             try {
                 os = connection.createFile(remoteFile);
-                is = new FileInputStream(localfile);
-                byte[] buf = new byte[send_buffer_size];
-                try {
-                    connection.setSendBufferSize(buf.length);
-                } catch (RserveException ex) {
-                    ex.printStackTrace();
-                    log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
-                }
-                int n = 0;
-                while ((n = is.read(buf)) > 0) {
-                    os.write(buf, 0, n);
-                }
+                is = new BufferedInputStream(new FileInputStream(localfile));
+                IOUtils.copy(is, os);
             } catch (IOException e) {
                 log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage(), Level.ERROR);
                 return;
