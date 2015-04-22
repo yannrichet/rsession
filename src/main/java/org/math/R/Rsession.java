@@ -93,7 +93,6 @@ public class Rsession implements Logger {
 
     public void addLogger(Logger l) {
         if (!loggers.contains(l)) {
-            //System.out.println("+ logger " + l.getClass().getSimpleName());
             loggers.add(l);
         }
     }
@@ -119,9 +118,7 @@ public class Rsession implements Logger {
                 message = message + "\n ! " + e.getMessage();
             }
         }
-//System.out.println("println " + message+ " in "+loggers.size()+" loggers.");
         for (Logger l : loggers) {
-            //System.out.println("  log in " + l.getClass().getSimpleName());
             l.println(message, level);
         }
     }
@@ -455,19 +452,7 @@ public class Rsession implements Logger {
      * create rsession using System as a logger
      */
     public Rsession(RserverConf serverconf, boolean tryLocalRServe) {
-        this(new Logger() {
-
-            public void println(String string, Level level) {
-                if (level == Level.INFO) {
-                    System.out.println(string);
-                } else {
-                    System.err.println(string);
-                }
-            }
-
-            public void close() {
-            }
-        }, serverconf, tryLocalRServe);
+        this(new Slf4jLogger(), serverconf, tryLocalRServe);
     }
 
     void startup() {
@@ -1435,10 +1420,8 @@ public class Rsession implements Logger {
         REXP[] vals = new REXP[names.length];
 
         for (int i = 0; i < names.length; i++) {
-            //System.out.println("i=" + i);
             double[] coli = new double[data.length];
             for (int j = 0; j < coli.length; j++) {
-                //System.out.println("  j=" + j);
                 if (data[j].length > i) {
                     coli[j] = data[j][i];
                 } else {
@@ -1725,37 +1708,6 @@ public class Rsession implements Logger {
         if (eval == null) {
             return null;
         }
-
-        /*int[] dim = eval.dim();
-         String dims = "[";
-         if (dim == null) {
-         dims = "NULL";
-         } else {
-         for (int i : dim) {
-         dims += (i + " ");
-         }
-         dims += "]";
-         }
-        
-         System.out.println(eval.toString() +
-         "\n  isComplex=     " + (eval.isComplex() ? "TRUE" : "    false") +
-         "\n  isEnvironment= " + (eval.isEnvironment() ? "TRUE" : "    false") +
-         "\n  isExpression=  " + (eval.isExpression() ? "TRUE" : "    false") +
-         "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
-         "\n  isFactor=      " + (eval.isFactor() ? "TRUE" : "    false") +
-         "\n  isInteger=     " + (eval.isInteger() ? "TRUE" : "    false") +
-         "\n  isLanguage=    " + (eval.isLanguage() ? "TRUE" : "    false") +
-         "\n  isList=        " + (eval.isList() ? "TRUE" : "    false") +
-         "\n  isLogical=     " + (eval.isLogical() ? "TRUE" : "    false") +
-         "\n  isNull=        " + (eval.isNull() ? "TRUE" : "    false") +
-         "\n  isNumeric=     " + (eval.isNumeric() ? "TRUE" : "    false") +
-         "\n  isRaw=         " + (eval.isRaw() ? "TRUE" : "    false") +
-         "\n  isRecursive=   " + (eval.isRecursive() ? "TRUE" : "    false") +
-         "\n  isString=      " + (eval.isString() ? "TRUE" : "    false") +
-         "\n  isSymbol=      " + (eval.isSymbol() ? "TRUE" : "    false") +
-         "\n  isVector=      " + (eval.isVector() ? "TRUE" : "    false") +
-         "\n  length=  " + (eval.length()) +
-         "\n  dim=  " + dims);*/
         if (eval.isNumeric()) {
             if (eval.dim() == null || eval.dim().length == 1) {
                 double[] array = eval.asDoubles();
@@ -1767,7 +1719,6 @@ public class Rsession implements Logger {
                 }
                 return array;
             } else {
-                //System.err.println("eval.dim()="+eval.dim()+"="+cat(eval.dim()));
                 double[][] mat = eval.asDoubleMatrix();
                 if (mat.length == 0) {
                     return null;
@@ -2123,7 +2074,6 @@ public class Rsession implements Logger {
      * @warning UNSTABLE and high CPU cost.
      */
     public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws Exception {
-        //System.out.println("eval(" + expression + "," + vars + ")");
         if (expression.length() == 0) {
             return null;
         }
@@ -2134,7 +2084,6 @@ public class Rsession implements Logger {
         } catch (NumberFormatException ne) {
 
             if (!uses(expression, vars) && noVarsEvals.containsKey(expression)) {
-                //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
                 log(HEAD_CACHE + "Cached evaluation of " + expression + " in " + noVarsEvals, Level.INFO);
                 return noVarsEvals.get(expression);
             }
@@ -2170,22 +2119,17 @@ public class Rsession implements Logger {
             }
 
             if (!uses(clean_expression, clean_vars) && noVarsEvals.containsKey(clean_expression)) {
-                //System.out.println("noVarsEvals < " + expression + " -> " + noVarsEvals.get(expression));
                 log(HEAD_CACHE + "Cached evaluation of " + expression + " in " + noVarsEvals, Level.INFO);
                 return noVarsEvals.get(clean_expression);
             }
 
-            //System.out.println("clean_expression=" + clean_expression);
-            //System.out.println("clean_vars=" + clean_vars);
             Object out = null;
             try {
                 if (uses(clean_expression, clean_vars)) {
                     set(clean_vars);
                 }
                 log(HEAD_CACHE + "True evaluation of " + clean_expression + " with " + clean_vars, Level.INFO);
-                //System.out.println("clean_expression=" + clean_expression);
                 REXP exp = eval(clean_expression);
-                //System.out.println("eval=" + eval.toDebugString());
                 out = cast(exp);
 
                 if (clean_vars.isEmpty() && out != null) {
@@ -2196,11 +2140,9 @@ public class Rsession implements Logger {
                 if (!uses(expression, vars) && out != null) {
                     log(HEAD_CACHE + "Saving result of " + expression, Level.INFO);
                     noVarsEvals.put(expression, out);
-                    //System.out.println("noVarsEvals > " + expression + " -> " + out);
                 }
 
             } catch (Exception e) {
-                //out = CAST_ERROR + expression + ": " + e.getMessage();
                 log(HEAD_CACHE + "Failed cast of " + expression, Level.INFO);
                 throw new Exception(CAST_ERROR + expression + ": " + e.getMessage());
             } finally {
@@ -2289,26 +2231,7 @@ public class Rsession implements Logger {
         }
         Rsession R = null;
         int i = 0;
-        Logger l = new Logger() {
-
-            public void println(String message, Level l) {
-                if (l == Level.INFO) {
-                    System.out.println(message);
-                } else {
-                    System.err.println(message);
-                }
-            }
-
-            public void close() {
-            }
-        };
-        //RLogPanel l = new RLogPanel();
-        //JFrame f = new JFrame();
-        // f.setContentPane(l);
-        //f.pack();
-        // f.setSize(600, 600);
-        //f.setVisible(true);
-
+        Logger l = new Slf4jLogger();
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
             R = Rsession.newInstanceTry(l, RserverConf.parse(args[0]));

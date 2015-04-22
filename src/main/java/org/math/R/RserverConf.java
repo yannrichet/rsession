@@ -241,7 +241,6 @@ public class RserverConf {
         if (System.getProperty("os.name").contains("Win") || !Rsession.UNIX_OPTIMIZE) {
             while (!isPortAvailable(RserverPort)) {
                 RserverPort++;
-                //System.out.println("RserverPort++ = " + RserverPort);
             }
             server = new RserverConf(null, RserverPort, null, null, p);
         } else { // Unix supports multi-sessions natively, so no need to open a different Rserve on a new port
