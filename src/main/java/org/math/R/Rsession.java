@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -32,7 +33,6 @@ import org.rosuda.REngine.REXPString;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RFileInputStream;
 import org.rosuda.REngine.Rserve.RserveException;
 
 /**
@@ -2007,11 +2007,6 @@ public class Rsession implements Logger {
      */
     public void receiveFile(File localfile, String remoteFile) {
         try {
-            /*int i = 10;
-             while (i > 0 && silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
-             Thread.sleep(1000);
-             i--;
-             }*/
             if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
@@ -2028,56 +2023,23 @@ public class Rsession implements Logger {
                 return;
             }
         }
-        int send_buffer_size = -1;
-        try {
-            send_buffer_size = (int) Math.pow(2.0, Math.ceil(Math.log(silentlyEval("file.info('" + remoteFile + "')$size", TRY_MODE).asInteger()) / Math.log(2))) / 2;
-            //send_buffer_size = (int) Math.max(Math.pow(2.0, 15), send_buffer_size);//min=32kB
-            // UGLY turn around to avoid "broken pipe".
-            send_buffer_size = (int) Math.max(Math.pow(2.0, 24), 4 * send_buffer_size);//min=16MB
-            //System.err.println(IO_HEAD + "using buffer of size " + send_buffer_size);
-            log(IO_HEAD + "using buffer of size " + send_buffer_size, Level.WARNING);
-        } catch (REXPMismatchException ex) {
-            ex.printStackTrace();
-            log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " size not found.", Level.ERROR);
-        }
-
-        RFileInputStream is = null;
-        FileOutputStream os = null;
-        int n = 0;
+        InputStream is = null;
+        OutputStream os = null;
         synchronized (connection) {
             try {
                 is = connection.openFile(remoteFile);
-                os = new FileOutputStream(localfile);
-                byte[] buf = new byte[send_buffer_size];
-                //FIXME bug when received file exceeds 65kb
-                connection.setSendBufferSize(buf.length);
-                while ((n = is.read(buf)) > 0) {
-                    os.write(buf, 0, n);
-                }
-            } catch (RserveException ex) {
-                ex.printStackTrace();
-                log(HEAD_EXCEPTION + ex.getMessage() + ":" + ex.getRequestErrorDescription() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
+                os = new BufferedOutputStream(new FileOutputStream(localfile));
+                IOUtils.copy(is, os);
+                log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
+                is.close();
+                os.close();
             } catch (IOException e) {
-                e.printStackTrace();
-                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted at " + n + ".\n" + e.getMessage(), Level.ERROR);
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
             } finally {
-                try {
-                    if (is != null) {
-                        is.close();
-                    }
-                } catch (IOException ee) {
-                    ee.printStackTrace();
-                }
-                try {
-                    if (os != null) {
-                        os.close();
-                    }
-                } catch (IOException ee) {
-                    ee.printStackTrace();
-                }
+            	IOUtils.closeQuietly(is);
+            	IOUtils.closeQuietly(os);
             }
         }
-        log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
     }
 
     /**
@@ -2119,12 +2081,8 @@ public class Rsession implements Logger {
         try {
             if (silentlyEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() == 1) {
                 silentlyVoidEval("file.remove('" + remoteFile + "')", TRY_MODE);
-                //connection.removeFile(remoteFile);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
-            /*} catch (RserveException ex) {
-             log(HEAD_EXCEPTION + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")");
-             */
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
@@ -2136,23 +2094,17 @@ public class Rsession implements Logger {
                 os = connection.createFile(remoteFile);
                 is = new BufferedInputStream(new FileInputStream(localfile));
                 IOUtils.copy(is, os);
+                log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
+                is.close();
+                os.close();
             } catch (IOException e) {
                 log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage(), Level.ERROR);
-                return;
             } finally {
-                try {
-                    if (os != null) {
-                        os.close();
-                    }
-                    if (is != null) {
-                        is.close();
-                    }
-                } catch (IOException ee) {
-                    ee.printStackTrace();
-                }
+            	IOUtils.closeQuietly(is);
+            	IOUtils.closeQuietly(os);
             }
         }
-        log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
+        
     }
     final static String testExpression = "1+pi";
     final static double testResult = 1 + Math.PI;
