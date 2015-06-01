@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.math.r</groupId>
+	<artifactId>Rsession</artifactId>
+	<version>1.8.2</version>
+	<packaging>jar</packaging>
+	<name>rsession</name>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.math.r</groupId>
+			<artifactId>jmatharray</artifactId>
+			<version>1.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.rosuda.REngine</groupId>
+			<artifactId>REngine</artifactId>
+			<version>2.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.rosuda.REngine</groupId>
+			<artifactId>Rserve</artifactId>
+			<version>1.8.1</version>
+		</dependency>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.spring.platform</groupId>
+				<artifactId>platform-bom</artifactId>
+				<version>1.0.1.RELEASE</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<repositories>
+		<repository>
+			<id>sonatype-oss-releases</id>
+			<url>https://oss.sonatype.org/content/repositories/releases</url>
+		</repository>
+		<repository>
+			<id>predictia-public-thirdparty</id>
+			<url>https://raw.githubusercontent.com/Predictia/maven-repo/master/thirdparty</url>
+		</repository>
+	</repositories>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+		<finalName>rsession</finalName>
+	</build>
+	
+</project>

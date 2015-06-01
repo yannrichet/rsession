@@ -4,9 +4,11 @@ import org.rosuda.REngine.REXP;
 import org.math.array.DoubleArray;
 import org.junit.After;
 import org.junit.Before;
+
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Properties;
+
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
 
@@ -220,7 +222,6 @@ public class EGOTest {
 
         for (currentiteration = 0; currentiteration < 50; currentiteration++) {
             run();
-            System.out.println(analyseDesign());
             nextDesign();
             cleanRdata();
         }
@@ -228,15 +229,7 @@ public class EGOTest {
 
     @Before
     public void setUp() {
-        Logger l = new Logger() {
-
-            public void println(String string, Level level) {
-                System.out.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        };
+        Logger l = new Slf4jLogger();
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {

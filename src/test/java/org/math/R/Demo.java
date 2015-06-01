@@ -23,15 +23,7 @@ public class Demo {
 
     @Before
     public void setUp() {
-        Logger l = new Logger() {
-
-            public void println(String string, Level level) {
-                System.out.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        };
+        Logger l = new Slf4jLogger();
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
@@ -61,15 +53,7 @@ public class Demo {
 
     @Test
     public void demo() throws REXPMismatchException {
-        R = Rsession.newRemoteInstance(new Logger() {
-
-            public void println(String msg, Level level) {
-                System.out.println(msg);
-            }
-
-            public void close() {
-            }
-        }, RserverConf.parse("R://rserver.irsn.org:6311"));
+        R = Rsession.newRemoteInstance(new Slf4jLogger(), RserverConf.parse("R://rserver.irsn.org:6311"));
 
         R.voidEval("require( ROpenTurns )");
 
