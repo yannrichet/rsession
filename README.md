@@ -48,15 +48,29 @@ import static org.math.R.Rsession.*;
 ```
 ## Use it ##
 
-* install R from http://cran.r-project.org
-* get Rsession libs:
-  * (hard) build it yourself:
-            checkout Rsession
-            build Rsession: (command line inside Rsession dir) ant dist
-            copy 'dist/lib' directory inside your java project (as 'lib' directory) 
-  * (easy) or just unzip prebuilt archive: https://github.com/yannrichet/rsession/blob/master/Rsession/dist/libRsession.zip in your 'lib' directory 
-* add lib/Rsession*.jar:lib/Rserve*.jar:lib/REngine*.jar in your project classpath
-* use in your code:
+First, install R from http://cran.r-project.org.
+
+Add lib/Rsession*.jar:lib/Rserve*.jar:lib/REngine*.jar in your project classpath: 
+  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+  * copy Rserve https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/Rserve/1.8.1/Rserve-1.8.1.jar
+  * copy REngine https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/REngine/2.1.0/REngine-2.1.0.jar
+
+
+or include maven dependency:
+```xml
+<dependencies>
+...
+    <dependency>
+      <groupId>com.github.yannrichet</groupId>
+      <artifactId>rsession</artifactId>
+      <version>1.8.2</version>
+    </dependency>
+...
+</dependencies>
+```
+
+
+Then, use it in your code:
   * create new Rsession:
   * (easy) local spawning of Rserve (for Windows XP, Mac OS X, Linux 32 & 64):
     ```java
