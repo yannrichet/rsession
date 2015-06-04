@@ -7,14 +7,19 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Properties;
+import java.util.logging.Level;
+import javax.swing.JFrame;
 
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
 
 import static org.math.R.Rsession.*;
+import org.slf4j.LoggerFactory;
 
-/** Intended to reproduce the broken pipe failure.
+/**
+ * Intended to reproduce the broken pipe failure.
  *
  * @author richet
  */
@@ -30,12 +35,12 @@ public class EGOTest {
         org.junit.runner.JUnitCore.main(EGOTest.class.getName());
     }
 
-    /**
-    branin <- function(x) {
-    x1 <- x[1]*15-5
-    x2 <- x[2]*15
-    (x2 - 5/(4*pi^2)*(x1^2) + 5/pi*x1 - 6)^2 + 10*(1 - 1/(8*pi))*cos(x1) + 10
-    }
+    /*
+     branin <- function(x) {
+     x1 <- x[1]*15-5
+     x2 <- x[2]*15
+     (x2 - 5/(4*pi^2)*(x1^2) + 5/pi*x1 - 6)^2 + 10*(1 - 1/(8*pi))*cos(x1) + 10
+     }
      */
     static double branin(double[] x) {
         double x1 = x[0] * 15 - 5;
@@ -68,7 +73,7 @@ public class EGOTest {
         R.voidEval("max_qEI.CL.fix <- function(model, npoints, L, lower, upper, parinit=NULL, control=NULL) {"
                 + "n1 <- nrow(model@X); "
                 + "for (s in 1:npoints) { "
-                + "oEGO <- max_EI(model, lower, upper, parinit, control); "
+                + "oEGO <- max_EI(model, lower=lower, upper=upper, parinit=parinit, control=control); "
                 + "model@X <- rbind(model@X, oEGO$par); "
                 + "model@y <- rbind(model@y, L, deparse.level=0); "
                 + "model@F <- trendMatrix.update(model, Xnew=data.frame(oEGO$par)); "
@@ -159,7 +164,7 @@ public class EGOTest {
         new File("EGO" + (currentiteration) + ".Rdata").delete();
         new File("sectionview." + (currentiteration) + ".png").delete();
     }
-    String control_km = "trace=FALSE,logLikFailOver=TRUE";
+    String control_km = "trace=FALSE";
     String control_ego = "trace=FALSE";
 
     public String analyseDesign() {
@@ -211,7 +216,8 @@ public class EGOTest {
         return "<HTML name='min'>\n" + htmlout + "\n</HTML>" + dataout.toString();
     }
 
-    /** Intended to test for an EGO algorithm of at least 500 points in 50 steps
+    /**
+     * Intended to test for an EGO algorithm of at least 500 points in 50 steps
      */
     @Test
     public void testEGO() throws REXPMismatchException {
@@ -220,7 +226,7 @@ public class EGOTest {
         currentiteration = 0;
         initDesign();
 
-        for (currentiteration = 0; currentiteration < 50; currentiteration++) {
+        for (currentiteration = 0; currentiteration < 5; currentiteration++) {
             run();
             nextDesign();
             cleanRdata();
@@ -253,7 +259,7 @@ public class EGOTest {
 
     @After
     public void tearDown() {
-        //uncomment following for sequential call. 
+        //uncomment following for sequential call.
         //s.end();
         R.end();
         //A shutdown hook kills all Rserve at the end.

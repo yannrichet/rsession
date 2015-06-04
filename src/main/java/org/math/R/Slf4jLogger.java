@@ -14,7 +14,8 @@ public class Slf4jLogger implements Logger{
 			LOGGER.warn(text);
 		}else if(Level.ERROR.equals(level)){
 			LOGGER.error(text);
-		}
+		}else 
+			LOGGER.trace(text);
 	}
 
 	@Override
