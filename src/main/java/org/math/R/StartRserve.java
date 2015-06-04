@@ -260,7 +260,8 @@ public class StartRserve {
         return false;
     }
 
-    /** checks whether Rserve is running and if that's not the case it attempts to start it using the defaults for the platform where it is run on. This method is meant to be set-and-forget and cover most default setups. For special setups you may get more control over R with <<code>launchRserve</code> instead. */
+    /** checks whether Rserve is running and if that's not the case it attempts to start it using the defaults for the platform where it is run on. 
+    This method is meant to be set-and-forget and cover most default setups. For special setups you may get more control over R with <code>launchRserve</code> instead. */
     public static boolean checkLocalRserve() {
         if (isRserveRunning()) {
             return true;

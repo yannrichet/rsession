@@ -87,14 +87,8 @@ public class RserverConf {
             }
         }
 
-        /**
-         * @param result
-         */
         protected abstract Object defaultResult();
 
-        /**
-         * @return
-         */
         protected abstract Object command();
     }
 

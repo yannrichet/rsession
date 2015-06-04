@@ -374,7 +374,7 @@ public class Rsession implements Logger {
     /**
      * Build a new local Rsession
      *
-     * @param console PrintStream for R output
+     * @param pconsole PrintStream for R output
      * @param localRProperties properties to pass to R (eg http_proxy or R
      * libpath)
      */
@@ -385,7 +385,7 @@ public class Rsession implements Logger {
     /**
      * Build a new remote Rsession
      *
-     * @param console PrintStream for R output
+     * @param pconsole PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy or R
      * libpath)
@@ -398,7 +398,7 @@ public class Rsession implements Logger {
      * Build a new Rsession. Fork to local spawned Rsession if given remote one
      * failed to initialized.
      *
-     * @param console PrintStream for R output
+     * @param pconsole PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy)
      */
@@ -1791,7 +1791,7 @@ public class Rsession implements Logger {
      * @param width width of image
      * @param height height of image
      * @param fileformat format of image: png,tiff,jpeg,bmp
-     * @param command R command to create image (eg plot())
+     * @param commands R command to create image (eg plot())
      */
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
@@ -2068,10 +2068,10 @@ public class Rsession implements Logger {
      * to not interfer with current R env vars. Yes, it's hard-code :)
      *
      * @param expression String to evaluate
-     * @param vars HashMap<String, Object> vars inside expression. Passively
+     * @param vars HashMap&lt;String, Object&gt; vars inside expression. Passively
      * overload current R env variables.
      * @return java cast Object
-     * @warning UNSTABLE and high CPU cost.
+     * Warning, UNSTABLE and high CPU cost.
      */
     public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws Exception {
         if (expression.length() == 0) {
