@@ -754,7 +754,7 @@ public class Rsession implements Logger {
      */
     public String installPackage(File pack, boolean load) {
         sendFile(pack);
-        eval("install.packages('" + pack.getName() + "',repos=NULL," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)");
+        eval("install.packages('" + pack.getName() + "',repos=NULL" );
         log("  request package " + pack + " install...", Level.INFO);
 
         String name = pack.getName();
@@ -832,7 +832,7 @@ public class Rsession implements Logger {
         }
 
         sendFile(pack_files[0]);
-        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
+        eval("install.packages('" + pack_files[0].getName() + "',repos=NULL)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
@@ -877,7 +877,7 @@ public class Rsession implements Logger {
          log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
          return "Impossible to get package " + pack + " from " + repos;
          }*/
-        eval("install.packages('" + pack + "',repos='" + repos + "'," + /*(RserveConf.RLibPath == null ? "" : "lib=" + RserveConf.RLibPath + ",") +*/ "dependencies=TRUE)", TRY_MODE);
+        eval("install.packages('" + pack + "',repos='" + repos + "')", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
