@@ -62,8 +62,8 @@ or include maven dependency:
 ...
     <dependency>
       <groupId>com.github.yannrichet</groupId>
-      <artifactId>rsession</artifactId>
-      <version>1.8.2</version>
+      <artifactId>Rsession</artifactId>
+      <version>1.8.3</version>
     </dependency>
 ...
 </dependencies>
