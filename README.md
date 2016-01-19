@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
+
 # Rsession: R sessions wrapping for Java #
 
 Rsession provides an easy to use java class giving access to remote or local R session. The back-end engine is Rserve, locally spawned automatically if necessary.
