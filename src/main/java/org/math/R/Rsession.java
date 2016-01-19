@@ -1862,7 +1862,7 @@ public class Rsession implements Logger {
      */
     public String asR2HTML(String command) {
         String ret = installPackage("R2HTML", true);
-        if (!ret.equals(PACKAGEINSTALLED)) {
+        if (!ret.equals(PACKAGELOADED)) {
             return ret;
         }
         int h = Math.abs(command.hashCode());
