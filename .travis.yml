@@ -7,4 +7,4 @@ install: mvn install -DskipTests=true -Dgpg.skip=true
 before_install:
   - sudo add-apt-repository "deb http://cran.irsn.fr/bin/linux/ubuntu precise/"
   - sudo apt-get -qq update
-  - sudo apt-get install -y r-recommended r-cran-rserve
+  - sudo apt-get install -y --force-yes r-recommended r-cran-rserve
