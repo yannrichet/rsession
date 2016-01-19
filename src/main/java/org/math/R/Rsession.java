@@ -62,6 +62,17 @@ public class Rsession implements Logger {
     List<Logger> loggers;
     public boolean debug;
 
+    //** GLG HACK: Logging fix **//
+    // No sink file (Passed to false) a lot faster not to sink the output
+    boolean SINK_OUTPUT = true;
+    // GLG HACK: fixed sink file in case of multiple instances
+    // (Appending the port number of the instance to file name)
+    String SINK_FILE_BASE = ".Rout";
+    String SINK_FILE = null;
+    String lastOuput = "";
+
+
+
     void cleanupListeners() {
         if (loggers != null) {
             while (!loggers.isEmpty()) {
@@ -423,6 +434,9 @@ public class Rsession implements Logger {
 
         loggers = new LinkedList<Logger>();
         loggers.add(console);
+
+        // Make sink file specific to current Rserve instance
+        SINK_FILE = SINK_FILE_BASE + "-" + serverconf.port;
 
         startup();
     }
@@ -945,10 +959,6 @@ public class Rsession implements Logger {
         return silentlyVoidEval(expression, TRY_MODE_DEFAULT);
     }
 
-    boolean SINK_OUTPUT = true;
-    String SINK_FILE = ".Rout";
-
-    String lastOuput = "";
 
     public String getLastOutput() {
         if (!SINK_OUTPUT) {
