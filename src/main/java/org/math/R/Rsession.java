@@ -665,7 +665,7 @@ public class Rsession implements Logger {
         silentlyVoidEval(loadedpacks + "<-.packages()", false);
         boolean isloaded = false;
         try {
-            REXP i = silentlyEval("is.element(set=" + loadedpacks + ",el='" + pack + "')");
+            REXP i = silentlyEval("is.element(set=" + loadedpacks + "[,1],el='" + pack + "')");
             if (i != null) {
                 isloaded = i.asInteger() == 1;
             }
@@ -693,7 +693,7 @@ public class Rsession implements Logger {
     public boolean isPackageInstalled(String pack, String version) {
         silentlyVoidEval(packs + "<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        REXP r = silentlyEval("is.element(set=" + packs + ",el='" + pack + "')");
+        REXP r = silentlyEval("is.element(set=" + packs + "[,1],el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (r.asInteger() == 1);
