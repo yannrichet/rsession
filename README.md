@@ -98,3 +98,4 @@ Then, use it in your code:
       you can access R command answers as string using: `s.asHTML("...")` `s.asString("...")` , `s.toJPEG(File f,"...")` 
   * finally close your Rserve instance: `s.end(); `
 
+![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)
