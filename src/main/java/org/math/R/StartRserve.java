@@ -231,7 +231,7 @@ public class StartRserve {
             return false;
         }
 
-        int attempts = 10; /* try up to 5 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
+        int attempts = 15; /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
         while (attempts > 0) {
             try {
                 RConnection c = null;
@@ -251,7 +251,7 @@ public class StartRserve {
             }
             /* a safety sleep just in case the start up is delayed or asynchronous */
             try {
-                Thread.sleep(500);
+                Thread.sleep(1000);
             } catch (InterruptedException ix) {
             }
 
