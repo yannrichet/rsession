@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
+
 # Rsession: R sessions wrapping for Java #
 
 Rsession provides an easy to use java class giving access to remote or local R session. The back-end engine is Rserve, locally spawned automatically if necessary.
@@ -96,3 +98,4 @@ Then, use it in your code:
       you can access R command answers as string using: `s.asHTML("...")` `s.asString("...")` , `s.toJPEG(File f,"...")` 
   * finally close your Rserve instance: `s.end(); `
 
+![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)
