@@ -1776,9 +1776,10 @@ public class Rsession implements Logger {
         if (eval.isNull()) {
             return null;
         } else {
-            System.err.println("Unsupported type: " + eval.toDebugString());
+            System.err.println(CAST_ERROR+eval+": unsupported type " + eval.toDebugString());
+            throw new REXPMismatchException(eval,CAST_ERROR+eval+": unsupported type " + eval.toDebugString());
         }
-        return eval.toString();
+        //return eval.toString();
     }
 
     /**
@@ -2269,7 +2270,7 @@ public class Rsession implements Logger {
         //R.eval("l");
         for (int j = i; j < args.length; j++) {
             System.err.print(args[j] + ": ");
-            System.err.println(castToString(R.eval(args[j])));
+            System.err.println((R.eval(args[j]).asString()));
         }
 
         R.end();
