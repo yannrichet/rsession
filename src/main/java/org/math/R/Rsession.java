@@ -436,7 +436,7 @@ public class Rsession implements Logger {
         loggers.add(console);
 
         // Make sink file specific to current Rserve instance
-        SINK_FILE = SINK_FILE_BASE + "-" + serverconf.port;
+        SINK_FILE = SINK_FILE_BASE + "-" + (serverconf==null ? 0 : serverconf.port);
 
         startup();
     }
