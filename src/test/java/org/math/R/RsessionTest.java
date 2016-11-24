@@ -70,7 +70,37 @@ public class RsessionTest {
         }
     }
 
-    //@Test
+    String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
+    
+    @Test
+    public void testSIGPIPEErrorNOSink() throws REXPMismatchException {
+        s.SINK_OUTPUT = false;
+        s.addLogger(new Logger() {
+
+            public void println(String string, Logger.Level level) {
+                System.err.println(level + " " + string);
+            }
+
+            public void close() {
+            }
+        });
+
+        s.voidEval(f);
+        
+        // without sink: SIGPIPE error
+        //s.voidEval("sink(file('out.txt',open='wt'),type='output')");
+        REXP maxsin = s.eval("f()");
+        //s.voidEval("sink(type='output')");
+        //s.voidEval("unlink('out.txt')");
+
+        assert maxsin == null : s.getLastLogEntry() + "," + s.getLastError();
+
+        REXP test = s.eval("1+pi");
+        assert test.asDouble() > 4 : "Failed next eval";
+        s.SINK_OUTPUT = true;
+    }
+
+    @Test
     public void testSIGPIPEExplicitSink() throws REXPMismatchException {
         s.SINK_OUTPUT = false;
         s.addLogger(new Logger() {
@@ -83,16 +113,18 @@ public class RsessionTest {
             }
         });
 
-        String loaded = s.installPackage("rgenoud", true);
-        assert loaded.equals(Rsession.PACKAGELOADED) : loaded;
+        s.voidEval(f);
 
         // without sink: SIGPIPE error
         s.voidEval("sink(file('out.txt',open='wt'),type='output')");
-        REXP maxsin = s.eval("genoud(sin, nvars=1, max=TRUE,cluster=FALSE,output.path='/tmp')");
+        s.voidEval("sink(file('out.txt',open='wt'),type='message')");
+        REXP maxsin = s.eval("f()");
         s.voidEval("sink(type='output')");
+        s.voidEval("sink(type='message')");
         //s.voidEval("unlink('out.txt')");
 
         assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+        assert maxsin.asDouble()==0 : "Wrong eval";
 
         REXP test = s.eval("1+pi");
         assert test.asDouble() > 4 : "Failed next eval";
@@ -111,18 +143,17 @@ public class RsessionTest {
             }
         });
 
-        String loaded = s.installPackage("rgenoud", true);
-        assert loaded.equals(Rsession.PACKAGELOADED) : loaded;
+        s.voidEval(f);
 
         // without sink: SIGPIPE error
-        REXP maxsin = s.eval("genoud(sin, nvars=1, max=TRUE,cluster=FALSE,output.path='/tmp')");
+        REXP maxsin = s.eval("f()");
         //s.voidEval("unlink('out.txt')");
 
-        assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+       assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+        assert maxsin.asDouble()==0 : "Wrong eval";
 
         REXP test = s.eval("1+pi");
         assert test.asDouble() > 4 : "Failed next eval";
-
     }
 
     //@Test
@@ -724,7 +755,7 @@ public class RsessionTest {
         try {
             //uncomment following for sequential call. 
             //s.end();
-            Thread.sleep(10000);
+            Thread.sleep(1000);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }

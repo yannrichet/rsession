@@ -998,7 +998,8 @@ public class Rsession implements Logger {
         try {
             synchronized (connection) {
                 if (SINK_OUTPUT) {
-                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                    connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                    connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
                 }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
@@ -1007,6 +1008,7 @@ public class Rsession implements Logger {
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");
+                    connection.parseAndEval("sink(type='message')");
                     try {
                         lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
@@ -1098,7 +1100,8 @@ public class Rsession implements Logger {
         try {
             synchronized (connection) {
                 if (SINK_OUTPUT) {
-                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                   connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                   connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
                 }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
@@ -1107,6 +1110,7 @@ public class Rsession implements Logger {
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");
+                    connection.parseAndEval("sink(type='message')");
                     try {
                         lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
