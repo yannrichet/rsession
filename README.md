@@ -3,10 +3,12 @@
 # Rsession: R sessions wrapping for Java #
 
 Rsession provides an easy to use java class giving access to remote or local R session. The back-end engine is Rserve, locally spawned automatically if necessary.
-
 Rsession differs from Rserve as it is a higher level API, and it includes server side startup of Rserve. Therefore, it is easier to use in some point of vue, as it provides a multi session R engine (including for Windows, thanks to an ugly turn-around).
 
-Another alternative is JRI, but it does not provide multi-sessions feature. If you just need one R session in your java code, JRI is a good solution.
+Other alternatives:
+  * JRI, but it does not provide multi-sessions feature. If you just need one R session in your java code, JRI is a good solution.
+  * Renjin: a pure java R implementation, but you cannot use R libraries with C/C++/Fortran dependancies.
+
 ## Example Java code ##
 ```java
 import static org.math.R.Rsession.*;
