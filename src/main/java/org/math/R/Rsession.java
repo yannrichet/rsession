@@ -126,6 +126,7 @@ public class Rsession implements Logger {
             try {
                 message = message + "\n R> " + getLastLogEntry() + "\n R! " + getLastError();
             } catch (Exception e) {
+                e.printStackTrace();
                 message = message + "\n ! " + e.getMessage();
             }
         }
@@ -589,7 +590,7 @@ public class Rsession implements Logger {
     }
 
     public String getLastError() {
-        return connection.getLastError();
+        return connection==null?"(?) no connection":connection.getLastError();
     }
 
     public void log(String message, Level level) {
@@ -998,8 +999,10 @@ public class Rsession implements Logger {
         try {
             synchronized (connection) {
                 if (SINK_OUTPUT) {
-                    connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
-                    connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                    //connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
                 }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
@@ -1008,15 +1011,18 @@ public class Rsession implements Logger {
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");
-                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
                     try {
                         lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
+                        //lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        //log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
                     }
                     connection.parseAndEval("unlink('" + SINK_FILE + "')");
+                    //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
         } catch (Exception ex) {
@@ -1100,8 +1106,10 @@ public class Rsession implements Logger {
         try {
             synchronized (connection) {
                 if (SINK_OUTPUT) {
-                   connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
-                   connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                   //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                   //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                   connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                   //connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
                 }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
@@ -1110,15 +1118,18 @@ public class Rsession implements Logger {
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");
-                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
                     try {
                         lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
+                        //lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        //log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
                     }
                     connection.parseAndEval("unlink('" + SINK_FILE + "')");
+                    //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
         } catch (Exception ex) {
@@ -1293,11 +1304,12 @@ public class Rsession implements Logger {
      */
     public String[] ls() {
         try {
-            return eval("ls()", TRY_MODE).asStrings();
+            return eval("ls()", false).asStrings();
         } catch (REXPMismatchException re) {
             return new String[0];
         } catch (Exception re) {
-            return new String[]{"?"};
+            re.printStackTrace();
+            return new String[0];
         }
     }
 
@@ -1310,11 +1322,12 @@ public class Rsession implements Logger {
     public String[] ls(String... vars) {
         if (vars == null || vars.length == 0) {
             try {
-                return eval("ls()", TRY_MODE).asStrings();
+                return eval("ls()", false).asStrings();
             } catch (REXPMismatchException re) {
                 return new String[0];
             } catch (Exception re) {
-                return new String[]{"?"};
+                re.printStackTrace();
+                return new String[0];
             }
         } else if (vars.length == 1) {
             try {
@@ -1322,7 +1335,8 @@ public class Rsession implements Logger {
             } catch (REXPMismatchException re) {
                 return new String[0];
             } catch (Exception re) {
-                return new String[]{"?"};
+                re.printStackTrace();
+                return new String[0];
             }
         } else {
             try {
@@ -1330,7 +1344,8 @@ public class Rsession implements Logger {
             } catch (REXPMismatchException re) {
                 return new String[0];
             } catch (Exception re) {
-                return new String[]{"?"};
+                re.printStackTrace();
+                return new String[0];
             }
         }
     }
@@ -1989,6 +2004,12 @@ public class Rsession implements Logger {
                 return;
             }
         }
+        if (!localfile.getParentFile().isDirectory()) 
+            if (!localfile.getParentFile().mkdir()) {
+                        log(HEAD_ERROR + IO_HEAD + "parent directory " + localfile.getParentFile() + " not created.", Level.ERROR);
+                        return;
+            }
+        
         InputStream is = null;
         OutputStream os = null;
         synchronized (connection) {
@@ -2000,6 +2021,7 @@ public class Rsession implements Logger {
                 is.close();
                 os.close();
             } catch (IOException e) {
+                e.printStackTrace();
                 log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
             } finally {
             	IOUtils.closeQuietly(is);

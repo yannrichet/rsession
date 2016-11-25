@@ -173,7 +173,7 @@ public class Rdaemon {
         }
         
         try {
-            RConnection s = conf.connect();
+            RConnection s = conf.connection;//connect();
             if (s == null || !s.isConnected()) {
             	log.println("R daemon already stoped.", Level.INFO);
                 return;

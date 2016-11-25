@@ -43,7 +43,7 @@ public class RsessionTest {
         org.junit.runner.JUnitCore.main(RsessionTest.class.getName());
     }
 
-    //@Test
+    @Test
     public void testEnd() {
         for (int i = 0; i < 10; i++) {
             new Thread(new Runnable() {
@@ -70,28 +70,24 @@ public class RsessionTest {
         }
     }
 
+    @Test
+    public void testNodename() throws REXPMismatchException {
+        REXP rexp = s.eval("Sys.info()[['nodename']]");
+        
+        assert rexp != null : "Cannot get nodename";
+        assert rexp.asString().length()>0 : "Cannot read nodename";
+
+    }
+    
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
     
-    @Test
+    //Test
     public void testSIGPIPEErrorNOSink() throws REXPMismatchException {
         s.SINK_OUTPUT = false;
-        s.addLogger(new Logger() {
-
-            public void println(String string, Logger.Level level) {
-                System.err.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        });
 
         s.voidEval(f);
         
-        // without sink: SIGPIPE error
-        //s.voidEval("sink(file('out.txt',open='wt'),type='output')");
         REXP maxsin = s.eval("f()");
-        //s.voidEval("sink(type='output')");
-        //s.voidEval("unlink('out.txt')");
 
         assert maxsin == null : s.getLastLogEntry() + "," + s.getLastError();
 
@@ -103,22 +99,15 @@ public class RsessionTest {
     @Test
     public void testSIGPIPEExplicitSink() throws REXPMismatchException {
         s.SINK_OUTPUT = false;
-        s.addLogger(new Logger() {
-
-            public void println(String string, Logger.Level level) {
-                System.err.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        });
-
+        
         s.voidEval(f);
 
         // without sink: SIGPIPE error
-        s.voidEval("sink(file('out.txt',open='wt'),type='output')");
-        s.voidEval("sink(file('out.txt',open='wt'),type='message')");
+        s.voidEval("sink(file('output.txt',open='wt'),type='output')");
+        s.voidEval("sink(file('message.txt',open='wt'),type='message')");
         REXP maxsin = s.eval("f()");
+        System.err.println("output:"+Arrays.asList(s.eval("readLines('output.txt')").asStrings()));
+        System.err.println("message:"+Arrays.asList(s.eval("readLines('message.txt')").asStrings()));
         s.voidEval("sink(type='output')");
         s.voidEval("sink(type='message')");
         //s.voidEval("unlink('out.txt')");
@@ -133,33 +122,23 @@ public class RsessionTest {
 
     @Test
     public void testSIGPIPEAutoSink() throws REXPMismatchException {
-        s.addLogger(new Logger() {
-
-            public void println(String string, Logger.Level level) {
-                System.err.println(level + " " + string);
-            }
-
-            public void close() {
-            }
-        });
-
         s.voidEval(f);
 
         // without sink: SIGPIPE error
         REXP maxsin = s.eval("f()");
-        //s.voidEval("unlink('out.txt')");
 
-       assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
+        assert maxsin != null : s.getLastLogEntry() + "," + s.getLastError();
         assert maxsin.asDouble()==0 : "Wrong eval";
 
         REXP test = s.eval("1+pi");
         assert test.asDouble() > 4 : "Failed next eval";
     }
 
-    //@Test
+    @Test
     public void testFileSize() throws REXPMismatchException {
         for (int i = 0; i < 8; i++) {
-            int size = (int) Math.pow(10.0, (double) i);
+            int size = (int) Math.pow(10.0, (double) (i+1));
+            System.err.println("Size "+size);
             s.eval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile, "raw" + i);
@@ -169,19 +148,19 @@ public class RsessionTest {
         }
     }
 
-    //@Test
+    @Test
     public void testJPEGSize() throws REXPMismatchException {
         s.eval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
             File sfile = new File("tmp", size + ".jpg");
-            s.toJPEG(sfile, 600, 600, "parcoord(rbind(rnorm(" + (size / 8) + "),rnorm(" + (size / 8) + ")),var.label=TRUE)");
+            s.toJPEG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
             assert sfile.exists() : "Size " + size + " failed";
             p.println(sfile.length());
         }
     }
 
-    //@Test
+    @Test
     public void testPrint() throws REXPMismatchException {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
@@ -190,7 +169,7 @@ public class RsessionTest {
         }
     }
 
-    //@Test
+    @Test
     public void testEval() throws Exception {
 
         double a = -0.123;
@@ -212,7 +191,7 @@ public class RsessionTest {
         assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
     }
 
-    //@Test
+    @Test
     public void testNullEval() throws Exception {
 
         double a = -0.123;
@@ -231,7 +210,7 @@ public class RsessionTest {
 
     }
 
-    //@Test
+    @Test
     public void testEvalError() throws Exception {
         String[] exprs = {"a <- 1.0.0", "f <- function(x){((}"};
         for (String expr : exprs) {
@@ -262,20 +241,20 @@ public class RsessionTest {
         }
     }
 
-    //@Test
+    @Test
     public void testLibrary() {
         s.eval("library(lhs)");
         // this next call was failing with rserve 0.6-0
         s.eval("library(rgenoud)");
     }
 
-    //@Test
+    @Test
     public void testRFile() throws REXPMismatchException {
         System.err.println("getwd(): " + s.eval("getwd()").asString());
         //System.err.println("list.files(getwd()): "+s.eval("list.files(getwd())").asString());
     }
 
-    //@Test
+    @Test
     public void testRFileIO() throws REXPMismatchException {
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
@@ -402,7 +381,7 @@ public class RsessionTest {
         localfile2.delete();
     }
 
-    //@Test
+    @Test
     public void testCast() throws REXPMismatchException {
         //cast
         assert ((Boolean) cast(s.eval("TRUE"))) == true;
@@ -420,7 +399,7 @@ public class RsessionTest {
         assert ((String[]) cast(s.eval("c('abcd','sdfds')"))).length == 2;
     }
 
-    //@Test
+    @Test
     public void testSet() throws REXPMismatchException {
 
         //set
@@ -519,7 +498,7 @@ public class RsessionTest {
         //s2.end();
     }
 
-    /*//@Test
+    /*@Test
      public void testPerformance() throws REXPMismatchException { //Performance eval
      long start = Calendar.getInstance().getTimeInMillis();
      System.out.println("tic");
@@ -531,7 +510,7 @@ public class RsessionTest {
      long duration = Calendar.getInstance().getTimeInMillis() - start;
      System.out.println("Spent time:" + (duration) + " ms");
      }*/
-    //@Test
+    @Test
     public void testConcurrentEval() throws Exception {
         s.voidEval("id <- function(x){return(x)}");
         int n = 10;
@@ -586,7 +565,7 @@ public class RsessionTest {
         return true;
     }
 
-    //@Test
+    @Test
     public void testConcurrency() throws InterruptedException {
         final Rsession r1 = Rsession.newInstanceTry(new Logger() {
 
@@ -655,7 +634,7 @@ public class RsessionTest {
         r2.end();
     }
 
-    //@Test
+    @Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final Rsession[] R = new Rsession[A.length];
@@ -713,22 +692,23 @@ public class RsessionTest {
         }
     }
 
+    
     @Before
     public void setUp() {
-        Logger l = new RLogPanel();
-        JFrame f = new JFrame("RLogPanel");
-        f.setContentPane((RLogPanel) l);
-        f.setSize(600, 600);
-        f.setVisible(true);
-        /*Logger() {
+        Logger l = new Logger() {
         
          public void println(String string, Level level) {
-         System.out.println(level + " " + string);
+         System.out.println("                              "+level + " " + string);
          }
         
          public void close() {
          }
-         };*/
+         };/*RLogPanel();
+        JFrame f = new JFrame("RLogPanel");
+        f.setContentPane((RLogPanel) l);
+        f.setSize(600, 600);
+        f.setVisible(true);*/
+        
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {

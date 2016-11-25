@@ -54,6 +54,8 @@ public class RLogPanel extends JPanel implements Logger {
         }
     }
 
+    public void flush() {_updateActionPerformed(null);}
+    
     public RLogPanel() {
         initComponents();
 
