@@ -429,6 +429,9 @@ public class Rsession implements Logger {
      * to initialized
      */
     public Rsession(final Logger console, RserverConf serverconf, boolean tryLocalRServe) {
+        if (serverconf == null) {
+    		serverconf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, 6311, null, null, null);
+		}
         this.console = console;
         RserveConf = serverconf;
         this.tryLocalRServe = tryLocalRServe;
