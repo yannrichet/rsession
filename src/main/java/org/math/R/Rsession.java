@@ -64,7 +64,7 @@ public class Rsession implements Logger {
 
     //** GLG HACK: Logging fix **//
     // No sink file (Passed to false) a lot faster not to sink the output
-    boolean SINK_OUTPUT = true;
+    boolean SINK_OUTPUT = true, SINK_MESSAGE = false;
     // GLG HACK: fixed sink file in case of multiple instances
     // (Appending the port number of the instance to file name)
     String SINK_FILE_BASE = ".Rout";
@@ -75,24 +75,28 @@ public class Rsession implements Logger {
 
     void cleanupListeners() {
         if (loggers != null) {
-            while (!loggers.isEmpty()) {
+            loggers.clear();
+            /*while (!loggers.isEmpty()) {
                 removeLogger(loggers.get(0));
-            }
+            }*/
         }
         if (busy != null) {
-            while (!busy.isEmpty()) {
+            busy.clear();
+            /*while (!busy.isEmpty()) {
                 removeBusyListener(busy.get(0));
-            }
+            }*/
         }
         if (updateObjects != null) {
-            while (!updateObjects.isEmpty()) {
+            updateObjects.clear();
+            /*while (!updateObjects.isEmpty()) {
                 removeUpdateObjectsListener(updateObjects.get(0));
-            }
+            }*/
         }
         if (eval != null) {
-            while (!eval.isEmpty()) {
+            eval.clear();
+            /*while (!eval.isEmpty()) {
                 removeEvalListener(eval.get(0));
-            }
+            }*/
         }
     }
 
@@ -207,6 +211,7 @@ public class Rsession implements Logger {
     }
 
     public static String cat(RList list) {
+        if (list==null || list.names==null) return null;
         try {
             StringBuffer sb = new StringBuffer("\t");
             double[][] data = new double[list.names.size()][];
@@ -1002,7 +1007,9 @@ public class Rsession implements Logger {
                     //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
                     //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
                     connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
-                    //connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
                 }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
@@ -1023,6 +1030,18 @@ public class Rsession implements Logger {
                     }
                     connection.parseAndEval("unlink('" + SINK_FILE + "')");
                     //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
         } catch (Exception ex) {
@@ -1111,6 +1130,9 @@ public class Rsession implements Logger {
                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
                    //connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
                 }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
+                }
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
                 } else {
@@ -1130,6 +1152,18 @@ public class Rsession implements Logger {
                     }
                     connection.parseAndEval("unlink('" + SINK_FILE + "')");
                     //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
         } catch (Exception ex) {
