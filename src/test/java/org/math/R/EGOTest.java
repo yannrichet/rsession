@@ -7,16 +7,11 @@ import org.junit.Before;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Properties;
-import java.util.logging.Level;
-import javax.swing.JFrame;
 
 import org.junit.Test;
 import org.rosuda.REngine.REXPMismatchException;
 
-import static org.math.R.Rsession.*;
-import org.slf4j.LoggerFactory;
 
 /**
  * Intended to reproduce the broken pipe failure.
@@ -27,7 +22,7 @@ public class EGOTest {
 
     PrintStream p = System.err;
     //RserverConf conf;
-    Rsession R;
+    RserveSession R;
     int rand = Math.round((float) Math.random() * 10000);
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
@@ -62,7 +57,7 @@ public class EGOTest {
         return Y;
     }
 
-    void initR() {
+    void initR()throws Exception  {
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
@@ -86,27 +81,27 @@ public class EGOTest {
                 + "}");
     }
 
-    void initDesign() throws REXPMismatchException {
+    void initDesign() throws Exception {
         int seed = 1;
         R.voidEval("set.seed(" + seed + ")");
         R.voidEval("Xlhs <- maximinLHS(n=9,k=2)");
-        double[][] X0 = R.eval("as.matrix(Xlhs)").asDoubleMatrix();
+        double[][] X0 = R.asMatrix(R.rawEval("as.matrix(Xlhs)"));
         double[][] Xbounds = new double[][]{{0, 0}, {0, 1}, {1, 0}, {1, 1}};
         X0 = DoubleArray.insertRows(X0, 0, Xbounds);
         R.set("X" + currentiteration, X0, Xnames);
     }
     int currentiteration = -1;
 
-    void run() throws REXPMismatchException {
-        double[][] X = R.eval("as.matrix(X" + currentiteration + ")").asDoubleMatrix();
+    void run() throws Exception {
+        double[][] X = R.asMatrix(R.rawEval("as.matrix(X" + currentiteration + ")"));
         double[][] Y = F(X);
-        System.err.println(Rsession.cat(Y));
+        System.err.println(RserveSession.cat(Y));
         R.set("Y" + currentiteration, DoubleArray.getColumnsCopy(Y, 0), "y");
     }
 
-    void nextDesign() throws REXPMismatchException {
-        double[][] X = R.eval("as.matrix(X" + currentiteration + ")").asDoubleMatrix();
-        double[][] Y = R.eval("as.matrix(Y" + currentiteration + ")").asDoubleMatrix();
+    void nextDesign() throws Exception {
+        double[][] X = R.asMatrix(R.rawEval("as.matrix(X" + currentiteration + ")"));
+        double[][] Y = R.asMatrix(R.rawEval("as.matrix(Y" + currentiteration + ")"));
 
         double[][] ytomin = DoubleArray.getColumnsCopy(Y, 0);
 
@@ -115,7 +110,7 @@ public class EGOTest {
         String nuggetnoise_str = "nugget.estim = FALSE, nugget = NULL, noise.var = ";
 
         double[] sdy = DoubleArray.fill(ytomin.length, 7.0);//getColumnCopy(Y, 1);
-        nuggetnoise_str = nuggetnoise_str + "c(" + Rsession.cat(sdy) + ")^2";
+        nuggetnoise_str = nuggetnoise_str + "c(" + RserveSession.cat(sdy) + ")^2";
 
         nuggetnoise_str = nuggetnoise_str + ", ";
 
@@ -130,9 +125,9 @@ public class EGOTest {
                 + "response=Y" + currentiteration + ","
                 + "control=list(" + control_km + "))");
 
-        REXP exists = R.eval("exists('km" + currentiteration + "')");
+        REXP exists = (REXP) R.rawEval("exists('km" + currentiteration + "')");
         if (exists == null || !(exists.asInteger() == 1)) {
-            R.log("No km object built:\n" + Rsession.cat(",", R.ls()), Logger.Level.ERROR);
+            R.log("No km object built:\n" + RserveSession.cat(",", R.ls()), RLog.Level.ERROR);
             return;
         }
 
@@ -147,15 +142,16 @@ public class EGOTest {
                 + "upper=c(1,1),"
                 + "control=list(" + control_ego + "))");
 
-        /*REXP*/ exists = R.eval("exists('EGO" + currentiteration + "')");
+        /*REXP*/ exists = (REXP) R.rawEval("exists('EGO" + currentiteration + "')");
         if (exists == null || !(exists.asInteger() == 1)) {
-            R.log("No EGO object built:\n" + Rsession.cat(",", R.ls()), Logger.Level.ERROR);
+            R.log("No EGO object built:\n" + RserveSession.cat(",", R.ls()), RLog.Level.ERROR);
             return;
         }
 
         R.savels(new File("EGO" + (currentiteration) + ".Rdata"), "" + (currentiteration));
 
         R.voidEval("X" + (currentiteration + 1) + " <- rbind(X" + currentiteration + ",EGO" + currentiteration + "$par)");
+        
     }
 
     void cleanRdata() {
@@ -167,13 +163,13 @@ public class EGOTest {
     String control_km = "trace=FALSE";
     String control_ego = "trace=FALSE";
 
-    public String analyseDesign() {
+    public String analyseDesign() throws Exception {
         String htmlout = "";
         StringBuilder dataout = new StringBuilder();
         try {
             if (currentiteration > 0) {
-                double[][] ysdy = R.eval("as.matrix(Y" + currentiteration + ")").asDoubleMatrix();;
-                double[][] x = R.eval("as.matrix(X" + currentiteration + ")").asDoubleMatrix();
+                double[][] ysdy = R.asMatrix(R.rawEval("as.matrix(Y" + currentiteration + ")"));;
+                double[][] x = R.asMatrix(R.rawEval("as.matrix(X" + currentiteration + ")"));
 
                 double[] y = DoubleArray.getColumnCopy(ysdy, 0);
 
@@ -195,14 +191,14 @@ public class EGOTest {
                 }
 
                 R.voidEval("pred <- predict.km(object=km" + (currentiteration - 1) + ",newdata=EGO" + (currentiteration - 1) + "$par,type='UK')");
-                double em_mean = R.eval("min(pred$mean)").asDouble();
-                double em_sd = R.eval("pred$sd[pred$mean==" + em_mean + "]").asDouble();
+                double em_mean = R.asDouble(R.rawEval("min(pred$mean)"));
+                double em_sd = R.asDouble(R.rawEval("pred$sd[pred$mean==" + em_mean + "]"));
 
                 htmlout = htmlout + "<br/>Next expected minimum value may be " + em_mean + " (sd=" + em_sd + ")";
 
                 File f = new File("sectionview." + (currentiteration - 1) + ".png");
                 R.set("bestX_" + (currentiteration - 1), x[i]);
-                R.toPNG(f, 600, 600, "sectionview.km(model=km" + (currentiteration - 1) + ",center=bestX_" + (currentiteration - 1) + ",type='UK', yscale = 1,yname='Y',Xname=" + Rsession.buildListString(Xnames) + ")");
+                R.toPNG(f, 600, 600, "sectionview.km(model=km" + (currentiteration - 1) + ",center=bestX_" + (currentiteration - 1) + ",type='UK', yscale = 1,yname='Y',Xname=" + RserveSession.buildListString(Xnames) + ")");
                 htmlout += "\n<br/>\n<img src='" + f.getName() + "' width='600' height='600'/>";
 
             } else {
@@ -220,40 +216,55 @@ public class EGOTest {
      * Intended to test for an EGO algorithm of at least 500 points in 50 steps
      */
     @Test
-    public void testEGO() throws REXPMismatchException {
+    public void testEGO() throws Exception {
         initR();
 
         currentiteration = 0;
         initDesign();
 
         for (currentiteration = 0; currentiteration < 5; currentiteration++) {
+            System.err.println("============================== iteration "+currentiteration);
             run();
             nextDesign();
             cleanRdata();
         }
     }
 
-    @Before
+@Before
     public void setUp() {
-        Logger l = new Slf4jLogger();
+        RLog l = new RLog() {
+
+            public void log(String string, RLog.Level level) {
+                System.out.println("                              " + level + " " + string);
+            }
+
+            public void close() {
+            }
+        };/*RLogPanel();
+         JFrame f = new JFrame("RLogPanel");
+         f.setContentPane((RLogPanel) l);
+         f.setSize(600, 600);
+         f.setVisible(true);*/
+
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
-            prop.setProperty("http_proxy", "\"" + http_proxy_env + "\"");
+            prop.setProperty("http_proxy", "'" + http_proxy_env + "'");
         }
-        RserverConf conf = new RserverConf(null, -1/* RserverConf.RserverDefaultPort*/, null, null, prop);
-        R = Rsession.newInstanceTry(l, conf);
 
+        RserverConf conf = new RserverConf(null, -1, null, null, prop);
+        R = RserveSession.newInstanceTry(l, conf);
         try {
-            System.err.println(R.silentlyEval("R.version.string").asString());
-        } catch (REXPMismatchException ex) {
+            System.err.println(R.eval("R.version.string"));
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         try {
-            System.err.println("Rserve version " + R.silentlyEval("installed.packages()[\"Rserve\",\"Version\"]").asString());
-        } catch (REXPMismatchException ex) {
+            System.err.println("Rserve version " + R.eval("installed.packages()[\"Rserve\",\"Version\"]"));
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
+
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
     }
 

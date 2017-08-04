@@ -1,0 +1,498 @@
+package org.math.R;
+
+import java.io.File;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.renjin.sexp.SEXP;
+
+/**
+ *
+ * @author richet
+ */
+public class RenjinTest {
+
+    PrintStream p = System.err;
+    //RserverConf conf;
+    RenjinSession s;
+    int rand = Math.round((float) Math.random() * 10000);
+    File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
+
+    public static void main(String args[]) {
+        org.junit.runner.JUnitCore.main(RenjinTest.class.getName());
+    }
+
+    @Test
+    public void testError() throws Exception {
+        boolean error = false;
+        try {
+            s.eval("stop('!!!')");
+        } catch (Exception e) {
+            e.printStackTrace();
+            error = true;
+        }
+        assert error : "Error not detected";
+    }
+
+    @Test
+    public void testPrintIn() throws Exception { 
+        String str = s.eval("print('*')").toString();
+        assert str.equals("*") : "Bad print: "+str;
+    }
+    
+    @Test
+    public void testObject() throws Exception {
+        Object l = s.eval("list(x=3)");
+        System.err.println("l: " + l);
+        System.err.println("R: " + s.getLastOutput());
+        System.err.println("R! " + s.getLastError());
+
+        assert s.asStrings(s.eval("ls()")).length == 0 : "Not empty environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
+
+        assert l != null : "Cannot eval l:" + s.getLastError();
+        assert (l instanceof Map) : "Not a Map";
+    }
+
+    @Test
+    public void testFun() throws Exception {
+        Object fun = s.eval("function(x) {return(x)}");
+        System.err.println("fun: " + fun);
+        System.err.println("R: " + s.getLastOutput());
+        System.err.println("R! " + s.getLastError());
+
+        assert s.asStrings(s.eval("ls()")).length == 1 : "Not empty environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
+
+        assert fun != null : "Cannot eval fun:" + s.getLastError();
+        assert (fun instanceof Rsession.Function) : "Not a Function";
+        assert (double) (((Rsession.Function) fun).evaluate(1.0)) == 1.0 : "Bad function behavior: 1.0 != " + (double) (((Rsession.Function) fun).evaluate(1.0));
+    }
+
+    //@Test
+    public void testEnvir() throws Exception {
+        Object e = s.eval("new.env()");
+        System.err.println("e: " + e);
+        System.err.println("R: " + s.getLastOutput());
+        System.err.println("R! " + s.getLastError());
+
+        assert s.asStrings(s.eval("ls()")).length == 0 : "Not empty global environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
+
+        assert e != null : "Cannot eval e:" + s.getLastError();
+    }
+
+    @Test
+    public void testNodename() {
+        SEXP rexp = (SEXP) s.rawEval("Sys.info()[['nodename']]");
+
+        assert rexp != null : "Cannot get nodename";
+        assert rexp.asString().length() > 0 : "Cannot read nodename";
+
+    }
+
+    String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
+
+    @Test
+    public void testSIGPIPEErrorNOSink() throws Exception {
+        s.voidEval(f);
+
+        s.SINK_OUTPUT = false;
+
+        SEXP maxsin = (SEXP) s.rawEval("f()");
+
+        assert maxsin != null : "Null eval";
+
+        SEXP test = (SEXP) s.rawEval("1+pi");
+        assert s.asDouble(test) > 4 : "Failed next eval";
+        s.SINK_OUTPUT = true;
+    }
+
+    @Test
+    public void testSIGPIPEExplicitSink() throws Exception {
+        s.voidEval(f);
+
+        s.SINK_OUTPUT = false;
+
+        // without sink: SIGPIPE error
+        s.voidEval("sink(file('output.txt',open='wt'),type='output')");
+        s.voidEval("sink(file('message.txt',open='wt'),type='message')");
+        SEXP maxsin = (SEXP) s.rawEval("f()");
+        System.err.println("output:" + Arrays.asList((s.asStrings(s.rawEval("readLines('output.txt')")))));
+        System.err.println("message:" + Arrays.asList((s.asStrings(s.rawEval("readLines('message.txt')")))));
+        s.voidEval("sink(type='output')");
+        s.voidEval("sink(type='message')");
+        //s.voidEval("unlink('out.txt')");
+
+        assert maxsin != null : s.getLastLogEntry();
+        assert s.asDouble(maxsin) == 0 : "Wrong eval";
+
+        SEXP test = (SEXP) s.rawEval("1+pi");
+        assert s.asDouble(test) > 4 : "Failed next eval";
+        s.SINK_OUTPUT = true;
+    }
+
+    @Test
+    public void testSIGPIPEAutoSink() throws Exception {
+        s.voidEval(f);
+
+        // without sink: SIGPIPE error
+        SEXP maxsin = (SEXP) s.rawEval("f()");
+
+        assert maxsin != null : s.getLastLogEntry();
+        assert s.asDouble(maxsin) == 0 : "Wrong eval";
+
+        SEXP test = (SEXP) s.rawEval("1+pi");
+        assert s.asDouble(test) > 4 : "Failed next eval";
+    }
+
+    @Test
+    public void testFileSize() throws Exception {
+        for (int i = 0; i < 8; i++) {
+            int size = (int) Math.pow(10.0, (double) (i + 1));
+            System.err.println("Size " + size);
+            s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
+            File sfile = new File("tmp", size + ".Rdata");
+            s.save(sfile, "raw" + i);
+            assert sfile.exists() : "Size " + size + " failed";
+            p.println(sfile.length());
+            sfile.delete();
+        }
+    }
+
+    @Test
+    public void testJPEGSize() {
+        s.rawEval("library(MASS)");
+        for (int i = 1; i < 20; i++) {
+            int size = i * 80;
+            File sfile = new File("tmp", size + ".jpg");
+            s.toJPEG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
+            assert sfile.exists() : "Size " + size + " failed";
+            p.println(sfile.length());
+        }
+    }
+
+    @Test
+    public void testPrint() throws Exception {
+        //cast
+        String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
+        for (String string : exp) {
+            p.println(string + " --> " + s.eval(string));
+        }
+    }
+
+    @Test
+    public void testEval() throws Exception {
+
+        double a = -0.123;
+        s.set("a", a);
+        s.set("b", -1.23);
+        double[] A = new double[]{0, 1, 2, 3};
+        s.set("A", A);
+
+        HashMap<String, Object> vars = new HashMap<String, Object>();
+        vars.put("a", 1.23);
+        vars.put("A", new double[]{10, 11, 12, 13});
+
+        String[] exp = {"TRUE", "0.123", "pi", "a", "A", "0.123+a", "0.123+b", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
+        for (String e : exp) {
+            System.out.println(e + " --> " + s.proxyEval(e, vars));
+        }
+        assert Arrays.asList(s.ls()).contains("a") : "variable a disappeared";
+        assert (Double) s.proxyEval("a", null) == a : "variable a changed";
+        assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
+    }
+
+    @Test
+    public void testNullEval() throws Exception {
+
+        double a = -0.123;
+        s.set("a", a);
+        assert s.asDouble(s.rawEval("1+a")) == 1 + a : "error evaluating 1+a";
+        s.set("a", Double.NaN);
+        double res = s.asDouble(s.rawEval("1+a"));
+        assert Double.isNaN(res) : "error evaluating 1+a: " + res;
+        s.set("a", null);
+        try {
+            res = s.asDouble(s.rawEval("1+a"));
+            throw new Exception("error evaluating 1+a: " + res);
+        } catch (Exception e) {
+            //Exception well raised, everything is ok.
+        }
+
+    }
+
+    @Test
+    public void testEvalError() throws Exception {
+        String[] exprs = {"a <- 1.0.0", "f <- function(x){((}"};
+        for (String expr : exprs) {
+            System.err.println("trying expression " + expr);
+            try {
+                boolean done = s.voidEval(expr);
+                if (!done) {
+                    throw new Exception("error not found in " + expr);
+                }
+            } catch (Exception e) {
+                System.err.println("Well detected error in " + expr);
+                //Exception well raised, everything is ok.
+            }
+        }
+
+        String[] evals = {"(xsgsdfgd", "1.0.0"};
+        for (String eval : evals) {
+            System.err.println("trying evaluation " + eval);
+            try {
+                SEXP e = (SEXP) s.rawEval(eval);
+                if (e != null) {
+                    throw new Exception("error not found in " + eval);
+                }
+            } catch (Exception e) {
+                System.err.println("Well detected error in " + eval);
+                //Exception well raised, everything is ok.
+            }
+        }
+    }
+
+    @Test
+    public void testLibrary() {
+        s.rawEval("library(lhs)");
+        // this next call was failing with rserve 0.6-0
+        s.rawEval("library(rgenoud)");
+    }
+
+    @Test
+    public void testRFile() {
+        System.err.println("getwd(): " + s.asString(s.rawEval("getwd()")));
+        //System.err.println("list.files(getwd()): "+s.rawEval("list.files(getwd())").asString());
+    }
+
+    /*@Test
+     public void testPerformance()  { //Performance rawEval
+     long start = Calendar.getInstance().getTimeInMillis();
+     System.out.println("tic");
+    
+     for (int i = 0; i < 10000; i++) {
+     s.silentlyRawEval("rnorm(10)").asDoubles();
+     }
+     System.out.println("toc");
+     long duration = Calendar.getInstance().getTimeInMillis() - start;
+     System.out.println("Spent time:" + (duration) + " ms");
+     }*/
+    @Test
+    public void testConcurrentEval() throws Exception {
+        s.voidEval("id <- function(x){return(x)}");
+        assert (double) s.eval("id(1.0)") == 1.0 : "Failed to eval id";
+        int n = 10;
+        final boolean[] test = new boolean[n];
+        final boolean[] done = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            done[i] = false;
+        }
+        for (int i = 0; i < n; i++) {
+            final int I = i;
+            new Thread(new Runnable() {
+
+                public void run() {
+                    double x = Math.random();
+                    try {
+                        System.err.println("x= " + x);
+                        double fx = -1;
+                        synchronized (s) {
+                            s.voidEval("x <- " + x);
+                            Thread.sleep((long) (1000 + Math.random() * 1000));
+                            fx = ((Double) s.eval("id(x)"));
+                        }
+                        System.err.println(fx + " =?= " + x);
+                        boolean ok = Math.abs(fx - x) < 0.00001;
+                        assert ok : fx + " != " + x;
+                        synchronized (test) {
+                            test[I] = ok;
+                        }
+                    } catch (Exception ex) {
+                        synchronized (test) {
+                            test[I] = false;
+                        }
+                    }
+                    synchronized (done) {
+                        done[I] = true;
+                    }
+                }
+            }).start();
+        }
+        while (!alltrue(done)) {
+            Thread.sleep(1000);
+            System.err.print(".");
+        }
+        assert alltrue(test) : "At least one concurrent eval failed !";
+    }
+
+    static boolean alltrue(boolean[] a) {
+        for (int i = 0; i < a.length; i++) {
+            if (!a[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Test
+    public void testConcurrency() throws InterruptedException {
+        final RserveSession r1 = RserveSession.newInstanceTry(new RLog() {
+
+            public void log(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("1 " + string);
+                } else {
+                    System.err.println("1 " + string);
+                }
+            }
+
+            public void close() {
+            }
+        }, null);
+        final RserveSession r2 = RserveSession.newInstanceTry(new RLog() {
+
+            public void log(String string, Level level) {
+                if (level == Level.INFO) {
+                    System.out.println("2 " + string);
+                } else {
+                    System.err.println("2 " + string);
+                }
+            }
+
+            public void close() {
+            }
+        }, null);
+
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    r1.rawEval("a<-1");
+
+                    double a = r1.asDouble(r1.rawEval("a"));
+                    assert a == 1 : "a should be == 1 !";
+                    System.out.println("1: OK");
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+        new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    r2.rawEval("a<-2");
+
+                    double a2 = r2.asDouble(r2.rawEval("a"));
+                    assert a2 == 2 : "a should be == 2 !";
+                    System.out.println("2: OK");
+
+                    double a1 = r1.asDouble(r1.rawEval("a"));
+                    assert a1 == 1 : "a should be == 1 !";
+                    System.out.println("1: OK");
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+
+        Thread.sleep(5000);
+        r1.end();
+        r2.end();
+    }
+
+    @Test
+    public void testHardConcurrency() throws InterruptedException {
+        final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        final RserveSession[] R = new RserveSession[A.length];
+        for (int i = 0; i < R.length; i++) {
+            R[i] = RserveSession.newInstanceTry(new RLog() {
+
+                public void log(String string, Level level) {
+                    if (level == Level.INFO) {
+                        System.out.println(string);
+                    } else {
+                        System.err.println(string);
+                    }
+                }
+
+                public void close() {
+                }
+            }, null);
+        }
+
+        for (int i = 0; i < A.length; i++) {
+            final int ai = A[i];
+            final RserveSession ri = R[i];
+            //new Thread(new Runnable() {
+            //
+            //   public void run() {
+            try {
+                ri.rawEval("a<-" + ai);
+
+                double ria = ri.asDouble(ri.rawEval("a"));
+                assert ria == ai : "a should be == " + ai + " !";
+                System.out.println(ai + ": OK");
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            //}
+            //}).start();
+        }
+
+        //checking of each RserveSession to verify values are ok.
+        for (int i = 0; i < A.length; i++) {
+            for (int j = 0; j < i; j++) {
+                while (R[j].rawEval("a") == null) {
+                    Thread.sleep(1000);
+                }
+                //System.out.println("Checking " + (j + 1) + " : " + R[j]);
+                double rja = R[j].asDouble(R[j].rawEval("a"));
+                assert rja == A[j] : "a should be == " + A[j] + " !";
+                System.out.println(A[i] + " " + A[j] + ": OK");
+            }
+        }
+
+        for (int i = 0; i < R.length; i++) {
+            R[i].end();
+        }
+    }
+
+    @Before
+    public void setUp() {
+        RLog l = new RLog() {
+
+            public void log(String string, Level level) {
+                System.out.println("                              " + level + " " + string);
+            }
+
+            public void close() {
+            }
+        };/*RLogPanel();
+         JFrame f = new JFrame("RLogPanel");
+         f.setContentPane((RLogPanel) l);
+         f.setSize(600, 600);
+         f.setVisible(true);*/
+
+        String http_proxy_env = System.getenv("http_proxy");
+        Properties prop = new Properties();
+        if (http_proxy_env != null) {
+            prop.setProperty("http_proxy", "'" + http_proxy_env + "'");
+        }
+        s = new RenjinSession(l, prop);
+
+        System.err.println(s.asString(s.silentlyRawEval("R.version.string")));
+        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
+    }
+
+    @After
+    public void tearDown() {
+        s.close();
+    }
+}
