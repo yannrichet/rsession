@@ -1,0 +1,1230 @@
+package org.math.R;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+import org.rosuda.REngine.REXP;
+import org.rosuda.REngine.REXPDouble;
+import org.rosuda.REngine.REXPInteger;
+import org.rosuda.REngine.REXPList;
+import org.rosuda.REngine.REXPLogical;
+import org.rosuda.REngine.REXPMismatchException;
+import org.rosuda.REngine.REXPNull;
+import org.rosuda.REngine.REXPString;
+import org.rosuda.REngine.REngineException;
+import org.rosuda.REngine.RList;
+import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RserveException;
+
+/**
+ * @author richet
+ */
+public class RserveSession extends Rsession implements RLog {
+
+    public RConnection connection;
+    boolean tryLocalRServe;
+    public final static int MinRserveVersion = 103;
+    public boolean connected = false;
+    RserveDaemon localRserve;
+    public RserverConf RserveConf;
+    public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
+    public String status = STATUS_NOT_SET;
+
+    // <editor-fold defaultstate="collapsed" desc="Conveniency static String methods">
+    public static String cat(RList list) {
+        if (list == null || list.names == null) {
+            return null;
+        }
+        try {
+            StringBuffer sb = new StringBuffer("\t");
+            double[][] data = new double[list.names.size()][];
+            for (int i = 0; i < list.size(); i++) {
+                String n = list.keyAt(i);
+                sb.append(n + "\t");
+                data[i] = list.at(n).asDoubles();
+            }
+            sb.append("\n");
+            for (int i = 0; i < data[0].length; i++) {
+                sb.append((i + 1) + "\t");
+                for (int j = 0; j < data.length; j++) {
+                    sb.append(data[j][i] + "\t");
+                }
+                sb.append("\n");
+            }
+            return sb.toString();
+        } catch (REXPMismatchException r) {
+            return "(Not a numeric dataframe)\n" + new REXPList(list).toDebugString();
+        }
+    }
+    // </editor-fold>
+
+    /**
+     * Build a new local Rsession
+     *
+     * @param console PrintStream for R output
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
+     */
+    public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
+        return new RserveSession(console, RserverConf.newLocalInstance(localRProperties), false);
+    }
+
+    /**
+     * Build a new remote Rsession
+     *
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     */
+    public static RserveSession newRemoteInstance(final RLog console, RserverConf serverconf) {
+        return new RserveSession(console, serverconf, false);
+    }
+
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy)
+     */
+    public static RserveSession newInstanceTry(final RLog console, RserverConf serverconf) {
+        return new RserveSession(console, serverconf, true);
+    }
+
+    /**
+     * Build a new local Rsession
+     *
+     * @param pconsole PrintStream for R output
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
+     */
+    public static RserveSession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
+        return new RserveSession(pconsole, RserverConf.newLocalInstance(localRProperties), false);
+    }
+
+    /**
+     * Build a new remote Rsession
+     *
+     * @param pconsole PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     */
+    public static RserveSession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
+        return new RserveSession(pconsole, serverconf, false);
+    }
+
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
+     * @param pconsole PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy)
+     */
+    public static RserveSession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
+        return new RserveSession(pconsole, serverconf, true);
+    }
+
+    /**
+     * create a new Rsession.
+     *
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @param tryLocalRServe local spawned Rsession if given remote one failed
+     * to initialized
+     */
+    public RserveSession(final RLog console, RserverConf serverconf, boolean tryLocalRServe) {
+        super(console);
+
+        RserveConf = serverconf;
+        this.tryLocalRServe = tryLocalRServe;
+
+        // Make sink file specific to current Rserve instance
+        SINK_FILE = SINK_FILE_BASE + "-" + (serverconf == null ? 0 : serverconf.port);
+
+        startup();
+    }
+
+    /**
+     * create rsession using System as a logger
+     */
+    public RserveSession(final PrintStream p, RserverConf serverconf, boolean tryLocalRServe) {
+        this(new RLog() {
+
+            public void log(String string, Level level) {
+                if (level == Level.WARNING) {
+                    p.print("(!) ");
+                } else if (level == Level.ERROR) {
+                    p.print("(!!) ");
+                }
+                p.println(string);
+            }
+
+            public void close() {
+                p.close();
+            }
+        }, serverconf, tryLocalRServe);
+    }
+
+    /**
+     * create rsession using System as a logger
+     */
+    public RserveSession(RserverConf serverconf, boolean tryLocalRServe) {
+        this(new RLogSlf4j(), serverconf, tryLocalRServe);
+    }
+
+    void startup() {
+        if (RserveConf == null) {
+            if (tryLocalRServe) {
+                RserveConf = RserverConf.newLocalInstance(null);
+                log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
+                begin(true);
+            } else {
+                log("No Rserve conf given. Failed to start session.", Level.ERROR);
+                status = STATUS_ERROR;
+            }
+        } else {
+            begin(tryLocalRServe);
+        }
+    }
+
+    /**
+     * @return status of Rsession
+     */
+    public String getStatus() {
+        return status;
+    }
+
+    void begin(boolean tryLocal) {
+        status = STATUS_NOT_CONNECTED;
+
+        /*if (RserveConf == null) {
+         RserveConf = RserverConf.newLocalInstance(null);
+         println("No Rserve conf given. Trying to use " + RserveConf.toString());
+         }*/
+        status = STATUS_CONNECTING;
+
+        connection = RserveConf.connect();
+        connected = (connection != null);
+
+        if (!connected) {
+            status = STATUS_ERROR;
+            String message = "Rserve " + RserveConf + " is not accessible.";
+            log(message, Level.ERROR);
+        } else if (connection.getServerVersion() < MinRserveVersion) {
+            status = STATUS_ERROR;
+            String message = "Rserve " + RserveConf + " version is too old.";
+            log(message, Level.ERROR);
+        } else {
+            status = STATUS_READY;
+            return;
+        }
+
+        if (tryLocal) {//try a local start of Rserve
+
+            status = STATUS_CONNECTING;
+
+            RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
+            log("Trying to spawn " + RserveConf.toString(), Level.INFO);
+
+            localRserve = new RserveDaemon(RserveConf, this);
+            String http_proxy = null;
+            if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
+                http_proxy = RserveConf.properties.getProperty("http_proxy");
+            }
+            localRserve.start(http_proxy);
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ie) {
+                ie.printStackTrace();
+            }
+
+            connection = RserveConf.connect();
+            connected = (connection != null);
+
+            if (!connected) {//failed !
+                String message2 = "Failed to launch local Rserve. Unable to initialize Rsession.";
+                log(message2, Level.ERROR);
+                Log.Err.println(message2);
+                throw new IllegalArgumentException(message2);
+            } else {
+                log("Local Rserve started. (Version " + connection.getServerVersion() + ")", Level.INFO);
+            }
+
+        }
+        //if (r.getServerVersion() < MinRserveVersion) {
+        //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
+        //}
+
+    }
+    //RSession previous;
+
+    /**
+     * correctly (depending on execution platform) shutdown Rsession.
+     */
+    void end() {
+        if (connection == null) {
+            log("Void session terminated.", Level.INFO);
+            cleanupListeners();
+            return;
+        }
+        if ((!System.getProperty("os.name").contains("Win")) && localRserve != null) {//if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+            log("Ending local session...", Level.INFO);
+            localRserve.stop();
+            connection.close();
+        } else {
+            log("Ending remote session...", Level.INFO);
+            connection.close();
+        }
+
+        log("Session teminated.", Level.INFO);
+
+        connection = null;
+        cleanupListeners();
+    }
+
+    @Override
+    public void close() {
+        end();
+        super.close();
+    }
+
+    public static final boolean UNIX_OPTIMIZE = true;
+
+    /**
+     * Silently (ie no log) launch R command without return value.
+     *
+     * @param expression R expresison to evaluate
+     * @param tryEval encapsulate command in try() to cacth errors
+     */
+    public boolean silentlyVoidEval(String expression, boolean tryEval) {
+        //assert connected : "R environment not initialized.";
+        if (!connected) {
+            log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
+            return false;
+        }
+        if (expression == null) {
+            return false;
+        }
+        if (expression.trim().length() == 0) {
+            return true;
+        }
+        for (EvalListener b : eval) {
+            b.eval(expression);
+        }
+        REXP e = null;
+        try {
+            synchronized (connection) {
+                if (SINK_OUTPUT) {
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
+                }
+                if (tryEval) {
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
+                } else {
+                    e = connection.parseAndEval(expression);
+                }
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink(type='output')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
+                        log(lastOuput, Level.OUTPUT);
+                        //lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        //log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + "')");
+                    //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+            }
+        } catch (Exception ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+        }
+
+        if (tryEval && e != null) {
+            try {
+                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
+                    return false;
+                }
+            } catch (REXPMismatchException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Silently (ie no log) launch R command and return value.
+     *
+     * @param expression R expression to evaluate
+     * @param tryEval encapsulate command in try() to cacth errors
+     * @return REXP R expression
+     */
+    public REXP silentlyRawEval(String expression, boolean tryEval) {
+        //assert connected : "R environment not initialized.";
+        if (!connected) {
+            log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
+            return null;
+        }
+        if (expression == null) {
+            return null;
+        }
+        if (expression.trim().length() == 0) {
+            return null;
+        }
+        for (EvalListener b : eval) {
+            b.eval(expression);
+        }
+        REXP e = null;
+        try {
+            synchronized (connection) {
+                if (SINK_OUTPUT) {
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='output')");
+                    //connection.parseAndEval("sink(file('" + SINK_FILE + "',open='wt'),type='message')");
+                    connection.parseAndEval("sink('" + SINK_FILE + "',type='output')");
+                    //connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink('" + SINK_FILE + ".m',type='message')");
+                }
+                if (tryEval) {
+                    e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
+                } else {
+                    e = connection.parseAndEval(expression);
+                }
+                if (SINK_OUTPUT) {
+                    connection.parseAndEval("sink(type='output')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
+                        log(lastOuput, Level.OUTPUT);
+                        //lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        //log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + "')");
+                    //connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+                if (SINK_MESSAGE) {
+                    connection.parseAndEval("sink(type='message')");
+                    //connection.parseAndEval("sink(type='message')");
+                    try {
+                        lastOuput = connection.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
+                        log(lastOuput, Level.INFO);
+                    } catch (Exception ex) {
+                        lastOuput = ex.getMessage();
+                        log(lastOuput, Level.WARNING);
+                    }
+                    connection.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                }
+            }
+        } catch (Exception ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+        }
+
+        if (tryEval && e != null) {
+            try {
+                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
+                    e = null;
+                }
+            } catch (REXPMismatchException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
+                return null;
+            }
+        }
+        return e;
+    }
+
+    public String getRServeOS() {
+        return asString(rawEval("Sys.info()['sysname']", TRY_MODE));
+    }
+
+    public boolean isWindows() {
+        return getRServeOS().startsWith("Windows");
+    }
+
+    public boolean isLinux() {
+        return getRServeOS().startsWith("Linux");
+    }
+
+    public boolean isMacOSX() {
+        return getRServeOS().startsWith("Darwin");
+    }
+
+    /**
+     * Build R liost in R env.
+     *
+     * @param data numeric data (eg matrix)
+     * @param names names of columns
+     * @return RList object
+     */
+    public static RList buildRList(double[][] data, String... names) {
+        assert data[0].length == names.length : "Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names);
+        REXP[] vals = new REXP[names.length];
+
+        for (int i = 0; i < names.length; i++) {
+            double[] coli = new double[data.length];
+            for (int j = 0; j < coli.length; j++) {
+                if (data[j].length > i) {
+                    coli[j] = data[j][i];
+                } else {
+                    coli[j] = Double.NaN;
+                }
+            }
+            vals[i] = new REXPDouble(coli);
+        }
+        return new RList(vals, names);
+    }
+
+    /**
+     * Build R liost in R env.
+     *
+     * @param coldata numeric data as an array of numeric vectors
+     * @param names names of columns
+     * @return RList object
+     */
+    public static RList buildRList(List<double[]> coldata, String... names) {
+        assert coldata.size() == names.length;
+        RList list = new RList(coldata.size(), true);
+        for (int i = 0; i < names.length; i++) {
+            list.put(names[i], new REXPDouble(coldata.get(i)));
+        }
+        return list;
+    }
+
+    /**
+     * Set R data.frame in R env.
+     *
+     * @param varname R list name
+     * @param data numeric data in list
+     * @param names names of columns
+     */
+    @Override
+    public boolean set(String varname, double[][] data, String... names) {
+        RList list = buildRList(data, names);
+        log(HEAD_SET + varname + " <- " + list, Level.INFO);
+        try {
+            synchronized (connection) {
+                connection.assign(varname, REXP.createDataFrame(list));
+            }
+        } catch (REXPMismatchException re) {
+            log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
+            return false;
+        } catch (RserveException ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",double[][] data, String... names)", Level.ERROR);
+            return false;
+        }
+        return true;
+    }
+    public final static String HEAD_SET = "[set] ";
+
+    /**
+     * Set R object in R env.
+     *
+     * @param varname R object name
+     * @param var R object value
+     */
+    @Override
+    public boolean set(String varname, Object var) throws RException {
+        //assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
+        if (!connected) {
+            log(HEAD_EXCEPTION + "R environment not initialized. Please make sure that R.init() method was called first.", Level.ERROR);
+            return false;
+        }
+
+        log(HEAD_SET + varname + " <- " + var, Level.INFO);
+        /*if (var instanceof DataFrame) {
+         DataFrame df = (DataFrame) var;
+         set("names_" + varname, df.keySet().toArray(new String[]{}));
+         set("data_" + varname, df.dataSet());
+         rawEval(varname + "=data.frame(x=data_" + varname + ")");
+         silentlyRawEval("names(" + varname + ") <- names_" + varname);
+         silentlyRawEval("rm(names_" + varname + ",data_" + varname + ")");
+         }*/
+        if (var == null) {
+            rm(varname);
+            return true;
+        } else if (var instanceof RList) {
+            RList l = (RList) var;
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, new REXPList(l));
+                }
+            } catch (RserveException ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (RList) var)", Level.ERROR);
+                return false;
+            }
+        } else if (var instanceof File) {
+            putFile((File) var);
+            return silentlyVoidEval(varname + "<-'" + ((File) var).getName() + "'");
+        } else if (var instanceof Integer) {
+            return silentlyVoidEval(varname + "<-" + (Integer) var);
+        } else if (var instanceof Double) {
+            return silentlyVoidEval(varname + "<-" + (Double) var);
+        } else if (var instanceof Double[]) {
+            Double[] varD = (Double[]) var;
+            double[] vard = new double[varD.length];
+            System.arraycopy(varD, 0, vard, 0, varD.length);
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, vard);
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Double[]) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname/*, cat((double[]) var)*/);
+        } else if (var instanceof double[]) {
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, (double[]) var);
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[]) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname/*, cat((double[]) var)*/);
+        } else if (var instanceof Double[][]) {
+            Double[][] array = (Double[][]) var;
+            int rows = array.length;
+            int col = array[0].length;
+            try {
+                synchronized (connection) {
+                    connection.assign("row_" + varname, reshapeAsRow(array));
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
+                return false;
+            }
+            //eval("print(row_" + varname + ")");
+            boolean done = silentlyVoidEval(varname + "<-array(row_" + varname + ",c(" + rows + "," + col + "))");
+            return done && silentlyVoidEval("rm(row_" + varname + ")");
+        } else if (var instanceof double[][]) {
+            double[][] array = (double[][]) var;
+            int rows = array.length;
+            int col = array[0].length;
+            try {
+                synchronized (connection) {
+                    connection.assign("row_" + varname, reshapeAsRow(array));
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
+                return false;
+            }
+            //eval("print(row_" + varname + ")");
+            boolean done = silentlyVoidEval(varname + "<-array(row_" + varname + ",c(" + rows + "," + col + "))");
+            return done && silentlyVoidEval("rm(row_" + varname + ")");
+        } else if (var instanceof String) {
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, (String) var);
+                }
+            } catch (RserveException ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname/*, (String) var*/);
+        } else if (var instanceof String[]) {
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, (String[]) var);
+                }
+            } catch (REngineException ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String[]) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname/*, cat((String[]) var)*/);
+        } else if (var instanceof Map) {
+            try {
+                synchronized (connection) {
+                    connection.assign(varname, asRList((Map) var));
+                }
+            } catch (Exception ex) {
+                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Map) var)", Level.ERROR);
+                return false;
+            }
+            return silentlyVoidEval(varname);
+        } else {
+            throw new IllegalArgumentException("Variable " + varname + " is not double, double[],  double[][], String or String[]. R engine can not handle.");
+        }
+        return true;
+    }
+
+    public static REXPList asRList(Map m) {
+        RList l = new RList();
+        for (Object o : m.keySet()) {
+            Object v = m.get(o);
+            if (v instanceof Double) {
+                l.put(o.toString(), new REXPDouble((Double) v));
+            } else if (v instanceof double[]) {
+                l.put(o.toString(), new REXPDouble((double[]) v));
+            } else if (v instanceof Integer) {
+                l.put(o.toString(), new REXPInteger((Integer) v));
+            } else if (v instanceof int[]) {
+                l.put(o.toString(), new REXPInteger((int[]) v));
+            } else if (v instanceof String) {
+                l.put(o.toString(), new REXPString((String) v));
+            } else if (v instanceof String[]) {
+                l.put(o.toString(), new REXPString((String[]) v));
+            } else if (v instanceof Boolean) {
+                l.put(o.toString(), new REXPLogical((Boolean) v));
+            } else if (v instanceof boolean[]) {
+                l.put(o.toString(), new REXPLogical((boolean[]) v));
+            } else if (v instanceof Map) {
+                l.put(o.toString(), asRList((Map) v));
+            } else if (v instanceof RList) {
+                l.put(o.toString(), (RList) v);
+            } else if (v == null) {
+                l.put(o.toString(), new REXPNull());
+            } else {
+                System.err.println("[asRList] Could not cast object " + o + " : " + v);
+            }
+        }
+        return new REXPList(l);
+    }
+
+    @Override
+    public double asDouble(Object o) throws ClassCastException {
+        if (o instanceof Double) {
+            return (double) o;
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asDouble] Not an REXP object: " + o);
+        }
+        try {
+            return ((REXP) o).asDouble();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asDouble] Cannot cast to double " + o);
+        }
+    }
+
+    @Override
+    public double[] asArray(Object o) throws ClassCastException {
+        if (o instanceof double[]) {
+            return (double[]) o;
+        }
+        if (o instanceof Double) {
+            return new double[]{(double) o};
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asArray] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            return ((REXP) o).asDoubles();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asArray] Cannot cast to double[] " + o);
+        }
+    }
+
+    @Override
+    public double[][] asMatrix(Object o) throws ClassCastException {
+        if (o instanceof double[][]) {
+            return (double[][]) o;
+        }
+        if (o instanceof double[]) {
+            return t(new double[][]{(double[]) o});
+        }
+        if (o instanceof Double) {
+            return new double[][]{{(double) o}};
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asMatrix] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            return ((REXP) o).asDoubleMatrix();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asMatrix] Cannot cast to matrix " + o);
+        }
+    }
+
+    @Override
+    public String asString(Object o) throws ClassCastException {
+        if (o instanceof String) {
+            return (String) o;
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asString] Not an REXP object: " + o);
+        }
+        try {
+            return ((REXP) o).asString();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asString] Cannot cast to string " + o);
+        }
+    }
+
+    @Override
+    public String[] asStrings(Object o) throws ClassCastException {
+        if (o instanceof String[]) {
+            return (String[]) o;
+        }
+        if (o instanceof String) {
+            return new String[]{(String) o};
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asStrings] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            return ((REXP) o).asStrings();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asStrings] Cannot cast to strings " + o);
+        }
+    }
+
+    @Override
+    public int asInteger(Object o) throws ClassCastException {
+        if (o instanceof Integer) {
+            return (int) o;
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asInteger] Not an REXP object: " + o);
+        }
+        try {
+            return ((REXP) o).asInteger();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asInteger] Cannot cast to integer " + o);
+        }
+    }
+
+    @Override
+    public int[] asIntegers(Object o) throws ClassCastException {
+        if (o instanceof int[]) {
+            return (int[]) o;
+        }
+        if (o instanceof Integer) {
+            return new int[]{(int) o};
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asIntegers] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            return ((REXP) o).asIntegers();
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asIntegers] Cannot cast to integers " + o);
+        }
+    }
+
+    @Override
+    public boolean asLogical(Object o) throws ClassCastException {
+        if (o instanceof Boolean) {
+            return (boolean) o;
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asLogical] Not an REXP object: " + o);
+        }
+        try {
+            return ((REXP) o).asInteger() == 1;
+        } catch (Exception ex) {
+            throw new ClassCastException("[asLogical] Cannot cast to logical " + o);
+        }
+    }
+
+    @Override
+    public boolean[] asLogicals(Object o) throws ClassCastException {
+        if (o instanceof boolean[]) {
+            return (boolean[]) o;
+        }
+        if (o instanceof Boolean) {
+            return new boolean[]{(boolean) o};
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asLogicals] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            int[] i = ((REXP) o).asIntegers();
+            boolean[] ok = new boolean[i.length];
+            for (int j = 0; j < ok.length; j++) {
+                ok[j] = i[j] == 1;
+            }
+            return ok;
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asLogicals] Cannot cast to logicals " + o);
+        }
+    }
+
+    @Override
+    public Map asList(Object o) throws ClassCastException {
+        if (o instanceof Map) {
+            return (Map) o;
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[asList] Not an REXP object: " + o);
+        }
+        if (((REXP) o).isNull()) {
+            return null;
+        }
+
+        try {
+            RList l = ((REXP) o).asList();
+            Map m = new HashMap(l.size());
+            for (String k : l.keys()) {
+                m.put(k, cast(l.at(k)));
+            }
+            return m;
+        } catch (REXPMismatchException ex) {
+            throw new ClassCastException("[asList] Cannot cast to matrix " + o);
+        }
+    }
+
+    @Override
+    public Object cast(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
+
+        if (!(o instanceof REXP)) {
+            throw new ClassCastException("[cast] Not an REXP object: " + o);
+        }
+
+        REXP eval = (REXP) o;
+
+        try {
+            if (eval.isNumeric()) {
+                if (eval.dim() == null || eval.dim().length == 1) {
+                    double[] array = eval.asDoubles();
+                    if (array.length == 0) {
+                        return null;
+                    }
+                    if (array.length == 1) {
+                        return array[0];
+                    }
+                    return array;
+                } else {
+                    double[][] mat = eval.asDoubleMatrix();
+                    if (mat.length == 0) {
+                        return null;
+                    } else if (mat.length == 1) {
+                        if (mat[0].length == 0) {
+                            return null;
+                        } else if (mat[0].length == 1) {
+                            return mat[0][0];
+                        } else {
+                            return mat[0];
+                        }
+                    } else {
+                        if (mat[0].length == 0) {
+                            return null;
+                        } else if (mat[0].length == 1) {
+                            double[] dmat = new double[mat.length];
+                            for (int i = 0; i < dmat.length; i++) {
+                                dmat[i] = mat[i][0];
+                            }
+                            return dmat;
+                        } else {
+                            return mat;
+                        }
+                    }
+                }
+            }
+
+            if (eval.isString()) {
+                String[] s = eval.asStrings();
+                if (s.length == 1) {
+                    return s[0];
+                } else {
+                    return s;
+                }
+            }
+
+            if (eval.isLogical()) {
+                return eval.asInteger() == 1;
+            }
+
+            if (eval.isList()) {
+                return asList(eval);
+            }
+            
+            try {
+                String name = "function_"+(int)Math.floor(1000*Math.random());
+                connection.assign(name, eval);
+                if (connection.eval("is.function("+name+")").asInteger()==1)
+                    return new Function(name);
+            } catch (RserveException ex) {
+                throw new REXPMismatchException(eval,"assign");
+            }
+        } catch (REXPMismatchException e) {
+            throw new ClassCastException(CAST_ERROR + eval + ": REXPMismatchException on " + eval.toDebugString());
+        }
+
+        if (eval.isNull()) {
+            return null;
+        } else {
+            System.err.println(CAST_ERROR + eval + ": unsupported type " + eval.toDebugString());
+            throw new ClassCastException(CAST_ERROR + eval + ": unsupported type " + eval.toDebugString());
+        }
+        //return rawEval.toString();
+    }
+
+    @Override
+    public boolean isNull(Object o) {
+        if (o == null) {
+            return true;
+
+        }
+        if (!(o instanceof REXP)) {
+            throw new IllegalArgumentException("[isNull] Not an REXP object: " + o);
+        }
+        try {
+            return ((REXP) o).isNull();
+        } catch (Exception ex) {
+            throw new ClassCastException("[isNull] Cannot check is null " + o);
+        }
+    }
+
+    @Override
+    public String toString(Object o) {
+        //assert o instanceof REXP : "Not an REXP object";
+        if (o instanceof REXP) {
+            try {
+                return ((REXP) o).toString();
+            } catch (Exception ex) {
+                throw new ClassCastException("[toString] Cannot toString " + o);
+            }
+        } else if (o.getClass().isArray()) {
+            return Arrays.asList(o).toString();
+        } else {
+            return o.toString();
+        }
+    }
+
+    /**
+     * Get file from R environment to user filesystem
+     *
+     * @param localfile local filesystem file
+     * @param remoteFile R environment file name
+     */
+    @Override
+    public void getFile(File localfile, String remoteFile) {
+        try {
+            if (silentlyRawEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
+                log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
+            }
+        } catch (Exception ex) {
+            log(HEAD_ERROR + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
+            return;
+        }
+        if (localfile.exists()) {
+            localfile.delete();
+            if (!localfile.exists()) {
+                log(IO_HEAD + "Local file " + localfile.getAbsolutePath() + " deleted.", Level.INFO);
+            } else {
+                log(HEAD_ERROR + IO_HEAD + "file " + localfile + " still exists !", Level.ERROR);
+                return;
+            }
+        }
+        if (localfile.getParentFile() != null) {
+            if (!localfile.getParentFile().isDirectory()) {
+                if (!localfile.getParentFile().mkdir()) {
+                    log(HEAD_ERROR + IO_HEAD + "parent directory " + localfile.getParentFile() + " not created.", Level.ERROR);
+                    return;
+                }
+            }
+        }
+
+        InputStream is = null;
+        OutputStream os = null;
+        synchronized (connection) {
+            try {
+                is = connection.openFile(remoteFile);
+                os = new BufferedOutputStream(new FileOutputStream(localfile));
+                IOUtils.copy(is, os);
+                log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
+                is.close();
+                os.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
+            } finally {
+                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(os);
+            }
+        }
+    }
+
+    /**
+     * delete R environment file
+     *
+     * @param remoteFile filename to delete
+     */
+    @Override
+    public void deleteFile(String remoteFile) {
+        try {
+            synchronized (connection) {
+                connection.removeFile(remoteFile);
+            }
+        } catch (RserveException ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  removeFile(String remoteFile=" + remoteFile + ")", Level.ERROR);
+        }
+    }
+
+    /**
+     * Send user filesystem file in r environement (like data)
+     *
+     * @param localfile File to send
+     * @param remoteFile filename in R env.
+     */
+    @Override
+    public void putFile(File localfile, String remoteFile) {
+        if (!localfile.exists()) {
+            synchronized (connection) {
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.", Level.ERROR);
+            }
+        }
+        try {
+            if (silentlyRawEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() == 1) {
+                silentlyVoidEval("file.remove('" + remoteFile + "')", TRY_MODE);
+                log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
+            }
+        } catch (REXPMismatchException ex) {
+            log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
+            return;
+        }
+        InputStream is = null;
+        OutputStream os = null;
+        synchronized (connection) {
+            try {
+                os = connection.createFile(remoteFile);
+                is = new BufferedInputStream(new FileInputStream(localfile));
+                IOUtils.copy(is, os);
+                log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
+                is.close();
+                os.close();
+            } catch (IOException e) {
+                log(HEAD_ERROR + IO_HEAD + connection.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage(), Level.ERROR);
+            } finally {
+                IOUtils.closeQuietly(is);
+                IOUtils.closeQuietly(os);
+            }
+        }
+
+    }
+
+    /**
+     * Method to rawEval expression. Holds many optimizations (@see noVarsEvals)
+     * and turn around for reliable usage (like engine auto restart). 1D Numeric
+     * "vars" are replaced using Java replace engine instead of R one. Intended
+     * to not interfer with current R env vars. Yes, it's hard-code :)
+     *
+     * @param expression String to evaluate
+     * @param vars HashMap&lt;String, Object&gt; vars inside expression.
+     * Passively overload current R env variables.
+     * @return java castStrict Object Warning, UNSTABLE and high CPU cost.
+     */
+    public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws RException {
+        Object out = super.proxyEval(expression, vars);
+        if (out == null) {
+            boolean restartR = false;
+            try {
+                double testOut = asDouble(rawEval(testExpression));
+                if (testOut == Double.NaN || Math.abs(testOut - testResult) > 0.1) {
+                    restartR = true;
+                }
+            } catch (Exception e) {
+                restartR = true;
+            }
+            if (restartR) {
+                Log.Err.println("Problem occured, R engine restarted.");
+                log(HEAD_CACHE + "Problem occured, R engine restarted.", Level.INFO);
+                end();
+                startup();
+
+                return proxyEval(expression, vars);
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return connected;
+    }
+
+    public static void main(String[] args) throws Exception {
+        //args = new String[]{"install.packages('lhs',repos='\"http://cran.irsn.fr/\"',lib='.')", "1+1"};
+        if (args == null || args.length == 0) {
+            args = new String[10];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = Math.random() + "+pi";
+            }
+        }
+        RserveSession R = null;
+        int i = 0;
+        RLog l = new RLogSlf4j();
+        if (args[0].startsWith(RserverConf.RURL_START)) {
+            i++;
+            R = RserveSession.newInstanceTry(l, RserverConf.parse(args[0]));
+        } else {
+            R = RserveSession.newInstanceTry(l, null);
+        }
+
+        for (int j = i; j < args.length; j++) {
+            System.out.print(args[j] + ": ");
+            System.out.println(R.cast(R.rawEval(args[j])));
+        }
+
+        R.close();
+    }
+
+}

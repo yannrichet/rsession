@@ -1,6 +1,6 @@
 package org.math.R;
 
-public interface Logger {
+public interface RLog {
 
     public enum Level {
         OUTPUT,
@@ -10,7 +10,7 @@ public interface Logger {
     }
 
     /**Support R messages printing*/
-    public void println(String message, Level l);
+    public void log(String message, Level l);
 
     public void close();
 }

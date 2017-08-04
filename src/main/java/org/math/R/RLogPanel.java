@@ -17,7 +17,7 @@ import javax.swing.text.StyleConstants;
  *
  * @author richet
  */
-public class RLogPanel extends JPanel implements Logger {
+public class RLogPanel extends JPanel implements RLog {
 
     private static int _fontSize = 12;
     private static Font _smallFont = new Font("Arial", Font.PLAIN, _fontSize - 2);
@@ -25,18 +25,18 @@ public class RLogPanel extends JPanel implements Logger {
     public int minsize = Integer.parseInt(System.getProperty("RLogPanel.minsize", "10000"));
     public String filter = null;//System.getProperty("RLogPanel.filter", "(.*)");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         RLogPanel log = new RLogPanel();
         JFrame f = new JFrame();
         f.setContentPane(log);
         f.setVisible(true);
         f.pack();
-        Rsession R = Rsession.newInstanceTry(log, null);
-        R.eval("ls()");
+        Rsession R = RserveSession.newInstanceTry(log, null);
+        R.rawEval("ls()");
     }
 
-    public synchronized void println(final String message, Level l) {
-        //System.err.println("'"+message+"'");
+    public synchronized void log(final String message, Level l) {
+        //Logger.err.println("'"+message+"'");
         if (filter == null || message.matches(filter)) {
             try {
                 if (l == Level.OUTPUT) {
@@ -49,7 +49,7 @@ public class RLogPanel extends JPanel implements Logger {
                     getErrorPrintStream().println(message);
                 }
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                 Log.Err.println(e.getMessage());
             }
         }
     }
@@ -77,28 +77,28 @@ public class RLogPanel extends JPanel implements Logger {
             try {
                 output_stream.close();
             } catch (IOException ex) {
-                ex.printStackTrace(System.err);
+                 Log.Err.println(ex.getMessage());
             }
         }
         if (info_stream != null) {
             try {
                 info_stream.close();
             } catch (IOException ex) {
-                ex.printStackTrace(System.err);
+                 Log.Err.println(ex.getMessage());
             }
         }
         if (error_stream != null) {
             try {
                 error_stream.close();
             } catch (IOException ex) {
-                ex.printStackTrace(System.err);
+                 Log.Err.println(ex.getMessage());
             }
         }
         if (warn_stream != null) {
             try {
                 warn_stream.close();
             } catch (IOException ex) {
-                ex.printStackTrace(System.err);
+                 Log.Err.println(ex.getMessage());
             }
         }
     }
@@ -393,7 +393,7 @@ public class RLogPanel extends JPanel implements Logger {
                 jTextPane1.getDocument().insertString(jTextPane1.getDocument().getLength(), line + "\n", style);
                 jTextPane1.setCaretPosition(jTextPane1.getDocument().getLength());
             } catch (Exception e) {
-                e.printStackTrace(System.err);
+                 Log.Err.println(e.getMessage());
             }
         }
     }//GEN-LAST:event__updateActionPerformed

@@ -2,10 +2,10 @@ package org.math.R;
 
 import org.slf4j.LoggerFactory;
 
-public class Slf4jLogger implements Logger{
+public class RLogSlf4j implements RLog {
 
 	@Override
-	public void println(String text, Level level){
+	public void log(String text, Level level){
 		if(Level.OUTPUT.equals(level)){
 			LOGGER.debug(text);
 		}else if(Level.INFO.equals(level)){
@@ -20,9 +20,9 @@ public class Slf4jLogger implements Logger{
 
 	@Override
 	public void close() {
-		
+		          
 	}
-	
-	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(Slf4jLogger.class);
+        
+	public final static org.slf4j.Logger LOGGER = LoggerFactory.getLogger("RLogger");
 	
 }

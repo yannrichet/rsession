@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import static org.math.R.RserveDaemon.APP_DIR;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
@@ -126,7 +127,7 @@ public class RserverConf {
     }
     }*/
     public synchronized RConnection connect() {
-        //System.err.print("Connecting " + toString()+" ... ");
+        //Logger.err.print("Connecting " + toString()+" ... ");
 
         TimeOut t = new TimeOut() {
 
@@ -157,10 +158,8 @@ public class RserverConf {
                     }
                     return 0;
                 } catch (RserveException ex) {
-                    System.err.println("Failed to connect: " + ex.getMessage());
+                    Log.Err.println("Failed to connect: " + ex.getMessage());
                     return -1;
-                    //ex.printStackTrace();
-                    //return null;
                 }
             }
         };
@@ -168,7 +167,7 @@ public class RserverConf {
         try {
             t.execute(CONNECT_TIMEOUT);
         } catch (Exception e) {
-            System.err.println("  failed: " + e.getMessage());
+            Log.Err.println("  failed: " + e.getMessage());
         }
 
 
@@ -207,10 +206,10 @@ public class RserverConf {
             r.printStackTrace();
             }*/
 
-            //System.err.println("Connection " + toString()+" succeded.");
+            //Logger.err.println("Connection " + toString()+" succeded.");
             return connection;
         } else {
-            System.err.println("Connection " + toString() + " failed.");
+            Log.Err.println("Connection " + toString() + " failed.");
             return null;
         }
 
@@ -232,7 +231,7 @@ public class RserverConf {
 
     public static RserverConf newLocalInstance(Properties p) {
         RserverConf server = null;
-        if (System.getProperty("os.name").contains("Win") || !Rsession.UNIX_OPTIMIZE) {
+        if (System.getProperty("os.name").contains("Win") || !RserveSession.UNIX_OPTIMIZE) {
             while (!isPortAvailable(RserverPort)) {
                 RserverPort++;
             }
