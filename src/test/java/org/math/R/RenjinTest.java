@@ -162,7 +162,7 @@ public class RenjinTest {
         }
     }
 
-    @Test
+    //@Test
     public void testJPEGSize() {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {

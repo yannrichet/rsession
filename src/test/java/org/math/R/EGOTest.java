@@ -10,7 +10,6 @@ import java.io.PrintStream;
 import java.util.Properties;
 
 import org.junit.Test;
-import org.rosuda.REngine.REXPMismatchException;
 
 
 /**
@@ -215,7 +214,7 @@ public class EGOTest {
     /**
      * Intended to test for an EGO algorithm of at least 500 points in 50 steps
      */
-    @Test
+    //@Test
     public void testEGO() throws Exception {
         initR();
 

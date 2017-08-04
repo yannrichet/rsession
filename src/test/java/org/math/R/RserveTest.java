@@ -75,7 +75,7 @@ public class RserveTest {
     }
 
 
-    @Test
+    //@Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
         System.err.println("fun: " + fun);
@@ -140,7 +140,7 @@ public class RserveTest {
 
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
 
- @Test
+    //@Test
     public void testSIGPIPEErrorNOSink() throws Exception{
         s.voidEval(f);
 
@@ -179,7 +179,7 @@ public class RserveTest {
         s.SINK_OUTPUT = true;
     }
 
-    @Test
+    //@Test
     public void testSIGPIPEAutoSink() throws Exception {
         s.voidEval(f);
 
