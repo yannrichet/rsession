@@ -262,6 +262,7 @@ public abstract class Rsession implements RLog {
      * Map java File object to R path (as string)
      *
      * @param path java File object
+     * @return R path with suitable level delimiter "/"
      */
     public static String toRpath(File path) {
         return toRpath(path.getAbsolutePath());
@@ -271,6 +272,7 @@ public abstract class Rsession implements RLog {
      * Map java path to R path (as string)
      *
      * @param path java string path
+     * @return R path with suitable level delimiter "/"
      */
     public static String toRpath(String path) {
         return path.replaceAll("\\\\", "/");
@@ -279,12 +281,7 @@ public abstract class Rsession implements RLog {
     /**
      * create a new Rsession.
      *
-     * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @param tryLocalRServe local spawned Rsession if given remote one failed
-     * to initialized
+     * @param console RLog for R output
      */
     public Rsession(final RLog console) {
         this.console = console;
@@ -298,6 +295,8 @@ public abstract class Rsession implements RLog {
 
     /**
      * create rsession using System as a logger
+     *
+     * @param p PrintStream for R output
      */
     public Rsession(final PrintStream p) {
         this(new RLog() {
@@ -336,6 +335,7 @@ public abstract class Rsession implements RLog {
 
     }
 
+    @Override
     public void log(String message, Level level) {
         if (message != null && message.trim().length() > 0 && !message.trim().equals("\n") && level == Level.OUTPUT) {
             println(message, level);
@@ -717,7 +717,7 @@ public abstract class Rsession implements RLog {
 
     public String getLastError() {
         Object err = silentlyRawEval("geterrmessage()");
-        return (err==null?"":asString(err));
+        return (err == null ? "" : asString(err));
     }
 
     /**
@@ -725,6 +725,7 @@ public abstract class Rsession implements RLog {
      * command in try() to cacth errors
      *
      * @param expression R expresison to evaluate
+     * @return well evaluated ?
      */
     protected boolean silentlyVoidEval(String expression) {
         return silentlyVoidEval(expression, TRY_MODE_DEFAULT);
@@ -735,6 +736,7 @@ public abstract class Rsession implements RLog {
      *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
+     * @return well evaluated ?
      */
     protected abstract boolean silentlyVoidEval(String expression, boolean tryEval);
 
@@ -797,6 +799,8 @@ public abstract class Rsession implements RLog {
      *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
+     * @return well evaluated ?
+     * @throws org.math.R.Rsession.RException Could not eval
      */
     public boolean voidEval(String expression, boolean tryEval) throws RException {
         log(HEAD_EVAL + (tryEval ? HEAD_TRY : " ") + expression, Level.INFO);
@@ -820,6 +824,8 @@ public abstract class Rsession implements RLog {
      * cacth errors.
      *
      * @param expression R expresison to evaluate
+     * @return well evaluated ?
+     * @throws org.math.R.Rsession.RException Could not eval
      */
     public boolean voidEval(String expression) throws RException {
         boolean done = voidEval(expression, TRY_MODE_DEFAULT);
@@ -871,6 +877,8 @@ public abstract class Rsession implements RLog {
 
     /**
      * delete all variables in R environment
+     *
+     * @return well removed ?
      */
     public boolean rmAll() {
         try {
@@ -1024,6 +1032,8 @@ public abstract class Rsession implements RLog {
      * delete R variables in R env.
      *
      * @param vars R objects names
+     * @return well removed ?
+     * @throws org.math.R.Rsession.RException Could not do rm
      */
     public boolean rm(String... vars) throws RException {
         if (vars.length == 1) {
@@ -1037,6 +1047,8 @@ public abstract class Rsession implements RLog {
      * delete R variables in R env. matching patterns
      *
      * @param vars R object name patterns
+     * @return well removed ?
+     * @throws org.math.R.Rsession.RException Could not do rm
      */
     public boolean rmls(String... vars) throws RException {
         if (vars.length == 1) {
@@ -1052,6 +1064,7 @@ public abstract class Rsession implements RLog {
      *
      * @param f file to store data (eg ".Rdata")
      * @param vars R variables to save
+     * @throws org.math.R.Rsession.RException Could not do save
      */
     public void save(File f, String... vars) throws RException {
         if (vars.length == 1) {
@@ -1068,6 +1081,7 @@ public abstract class Rsession implements RLog {
      *
      * @param f file to store data (eg ".Rdata")
      * @param vars R variables names patterns to save
+     * @throws org.math.R.Rsession.RException Could not do save
      */
     public void savels(File f, String... vars) throws RException {
         if (vars.length == 1) {
@@ -1113,6 +1127,8 @@ public abstract class Rsession implements RLog {
      * delete R object in R env.
      *
      * @param varname R objects to delete
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not unset
      */
     public boolean unset(String... varname) throws RException {
         return rm(varname);
@@ -1122,6 +1138,8 @@ public abstract class Rsession implements RLog {
      * delete R object in R env.
      *
      * @param varname R objects to delete
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not unset
      */
     public boolean unset(Collection varname) throws RException {
         boolean done = true;
@@ -1135,6 +1153,8 @@ public abstract class Rsession implements RLog {
      * Set R object in R env.
      *
      * @param _vars R objects to set as key/values
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not set one var
      */
     public boolean set(Map<String, Object> _vars) throws RException {
         boolean done = true;
@@ -1150,6 +1170,8 @@ public abstract class Rsession implements RLog {
      * @param varname R list name
      * @param data numeric data in list
      * @param names names of columns
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not set
      */
     public abstract boolean set(String varname, double[][] data, String... names) throws RException;
 
@@ -1158,6 +1180,8 @@ public abstract class Rsession implements RLog {
      *
      * @param varname R object name
      * @param var R object value
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not set
      */
     public abstract boolean set(String varname, Object var) throws RException;
 
@@ -1184,13 +1208,13 @@ public abstract class Rsession implements RLog {
         }
         return reshaped;
     }
-    
-    protected double[][] t(double[][] m){
-    double[][] tm = new double[m[0].length][m.length];
+
+    protected double[][] t(double[][] m) {
+        double[][] tm = new double[m[0].length][m.length];
         for (int i = 0; i < tm.length; i++) {
             for (int j = 0; j < tm[i].length; j++) {
                 tm[i][j] = m[j][i];
-                
+
             }
         }
         return tm;
@@ -1435,6 +1459,7 @@ public abstract class Rsession implements RLog {
      * @param vars HashMap&lt;String, Object&gt; vars inside expression.
      * Passively overload current R env variables.
      * @return java castStrict Object Warning, UNSTABLE and high CPU cost.
+     * @throws org.math.R.Rsession.RException Could not proxyEval
      */
     public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws RException {
         if (expression.length() == 0) {

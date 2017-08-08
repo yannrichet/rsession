@@ -9,7 +9,9 @@ public interface RLog {
         ERROR;
     }
 
-    /**Support R messages printing*/
+    /**Support R messages printin
+     * @param message to log
+     * @param l Level*/
     public void log(String message, Level l);
 
     public void close();

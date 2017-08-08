@@ -146,6 +146,7 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
 
     /**
      * Creates new form OutputListPanel
+     * @param r session
      */
     public RObjectsPanel(Rsession r) {
         setTarget(r);

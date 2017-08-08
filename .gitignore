@@ -7,3 +7,4 @@ target
 /build.xml
 /tmp/
 *.log.tgz
+/howto_release.md

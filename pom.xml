@@ -172,7 +172,8 @@
         <connection>scm:git:git@github.com:yannrichet/rsession.git</connection>
         <developerConnection>scm:git:git@github.com:yannrichet/rsession.git</developerConnection>
         <url>git@github.com:yannrichet/rsession.git</url>
-    </scm>
+      <tag>Rsession-2.0.0</tag>
+  </scm>
 	
     <reporting>
         <plugins>

@@ -77,6 +77,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param console PrintStream for R output
      * @param localRProperties properties to pass to R (eg http_proxy or R
      * libpath)
+     * @return RserveSession instanciated
      */
     public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
         return new RserveSession(console, RserverConf.newLocalInstance(localRProperties), false);
@@ -89,6 +90,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy or R
      * libpath)
+     * @return RserveSession instanciated
      */
     public static RserveSession newRemoteInstance(final RLog console, RserverConf serverconf) {
         return new RserveSession(console, serverconf, false);
@@ -101,6 +103,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param console PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy)
+     * @return RserveSession instanciated
      */
     public static RserveSession newInstanceTry(final RLog console, RserverConf serverconf) {
         return new RserveSession(console, serverconf, true);
@@ -110,8 +113,8 @@ public class RserveSession extends Rsession implements RLog {
      * Build a new local Rsession
      *
      * @param pconsole PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R
-     * libpath)
+     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
+     * @return RserveSession instanciated
      */
     public static RserveSession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
         return new RserveSession(pconsole, RserverConf.newLocalInstance(localRProperties), false);
@@ -124,6 +127,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy or R
      * libpath)
+     * @return RserveSession instanciated
      */
     public static RserveSession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
         return new RserveSession(pconsole, serverconf, false);
@@ -136,6 +140,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param pconsole PrintStream for R output
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy)
+     * @return RserveSession instanciated
      */
     public static RserveSession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
         return new RserveSession(pconsole, serverconf, true);
@@ -165,6 +170,10 @@ public class RserveSession extends Rsession implements RLog {
 
     /**
      * create rsession using System as a logger
+     *
+     * @param p PrintStream
+     * @param serverconf RserverConf
+     * @param tryLocalRServe local spawned Rsession if given remote one failed
      */
     public RserveSession(final PrintStream p, RserverConf serverconf, boolean tryLocalRServe) {
         this(new RLog() {
@@ -186,6 +195,9 @@ public class RserveSession extends Rsession implements RLog {
 
     /**
      * create rsession using System as a logger
+     *
+     * @param serverconf RserverConf
+     * @param tryLocalRServe local spawned Rsession if given remote one failed
      */
     public RserveSession(RserverConf serverconf, boolean tryLocalRServe) {
         this(new RLogSlf4j(), serverconf, tryLocalRServe);
@@ -315,7 +327,9 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param expression R expresison to evaluate
      * @param tryEval encapsulate command in try() to cacth errors
+     * @return succeeded ?
      */
+    @Override
     public boolean silentlyVoidEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
@@ -400,6 +414,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param tryEval encapsulate command in try() to cacth errors
      * @return REXP R expression
      */
+    @Override
     public REXP silentlyRawEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
@@ -541,6 +556,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param varname R list name
      * @param data numeric data in list
      * @param names names of columns
+     * @return succeeded ?
      */
     @Override
     public boolean set(String varname, double[][] data, String... names) {
@@ -566,6 +582,8 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param varname R object name
      * @param var R object value
+     * @return succeeded ?
+     * @throws org.math.R.Rsession.RException Could not set var
      */
     @Override
     public boolean set(String varname, Object var) throws RException {
@@ -995,14 +1013,15 @@ public class RserveSession extends Rsession implements RLog {
             if (eval.isList()) {
                 return asList(eval);
             }
-            
+
             try {
-                String name = "function_"+(int)Math.floor(1000*Math.random());
+                String name = "function_" + (int) Math.floor(1000 * Math.random());
                 connection.assign(name, eval);
-                if (connection.eval("is.function("+name+")").asInteger()==1)
+                if (connection.eval("is.function(" + name + ")").asInteger() == 1) {
                     return new Function(name);
+                }
             } catch (RserveException ex) {
-                throw new REXPMismatchException(eval,"assign");
+                throw new REXPMismatchException(eval, "assign");
             }
         } catch (REXPMismatchException e) {
             throw new ClassCastException(CAST_ERROR + eval + ": REXPMismatchException on " + eval.toDebugString());
@@ -1171,7 +1190,9 @@ public class RserveSession extends Rsession implements RLog {
      * @param vars HashMap&lt;String, Object&gt; vars inside expression.
      * Passively overload current R env variables.
      * @return java castStrict Object Warning, UNSTABLE and high CPU cost.
+     * @throws org.math.R.Rsession.RException Could not proxyEval with one of vars
      */
+    @Override
     public synchronized Object proxyEval(String expression, Map<String, Object> vars) throws RException {
         Object out = super.proxyEval(expression, vars);
         if (out == null) {

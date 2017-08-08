@@ -8,7 +8,11 @@ import java.io.InputStreamReader;
 import java.util.logging.Level;
 import org.rosuda.REngine.Rserve.RConnection;
 
-/** helper class that consumes output of a process. In addition, it filter output of the REG command on Windows to look for InstallPath registry entry which specifies the location of R. */
+/**
+ * helper class that consumes output of a process. In addition, it filter output
+ * of the REG command on Windows to look for InstallPath registry entry which
+ * specifies the location of R.
+ */
 class RegistryHog extends Thread {
 
     InputStream is;
@@ -25,6 +29,7 @@ class RegistryHog extends Thread {
         return installPath;
     }
 
+    @Override
     public void run() {
         BufferedReader br = null;
         try {
@@ -74,6 +79,7 @@ class StreamHog extends Thread {
         return out.toString();
     }
 
+    @Override
     public void run() {
         //Logger.err.println("start streamhog");
         BufferedReader br = null;
@@ -110,12 +116,21 @@ class StreamHog extends Thread {
     }
 }
 
-/** simple class that start Rserve locally if it's not running already - see mainly <code>checkLocalRserve</code> method. It spits out quite some debugging outout of the console, so feel free to modify it for your application if desired.<p>
-<i>Important:</i> All applications should shutdown every Rserve that they started! Never leave Rserve running if you started it after your application quits since it may pose a security risk. Inform the user if you started an Rserve instance.
+/**
+ * simple class that start Rserve locally if it's not running already - see
+ * mainly <code>checkLocalRserve</code> method. It spits out quite some
+ * debugging outout of the console, so feel free to modify it for your
+ * application if desired.<p>
+ * <i>Important:</i> All applications should shutdown every Rserve that they
+ * started! Never leave Rserve running if you started it after your application
+ * quits since it may pose a security risk. Inform the user if you started an
+ * Rserve instance.
  */
 public class StartRserve {
 
-    /** R batch to check Rserve is installed
+    /**
+     * R batch to check Rserve is installed
+     *
      * @param Rcmd command necessary to start R
      * @return Rserve is already installed
      */
@@ -151,9 +166,13 @@ public class StartRserve {
         }
     }
 
-    /** R batch to install Rserve
+    /**
+     * R batch to install Rserve
+     *
      * @param Rcmd command necessary to start R
-     * @param http_proxy http://login:password@proxy:port string to enable internet access to rforge server
+     * @param http_proxy http://login:password@proxy:port string to enable
+     * internet access to rforge server
+     * @param repository from which R repo ?
      * @return success
      */
     public static boolean installRserve(String Rcmd, String http_proxy, String repository) {
@@ -162,7 +181,7 @@ public class StartRserve {
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
         Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy=" + http_proxy + ");" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla");
-        if (p==null) {
+        if (p == null) {
             Log.Err.println("failed");
             return false;
         }
@@ -183,11 +202,15 @@ public class StartRserve {
         return false;
     }
 
-    /** attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid using any quotes in arguments
-    @param todo command to execute in R
-    @param Rcmd command necessary to start R
-    @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
-    @return <code>true</code> if Rserve is running or was successfully started, <code>false</code> otherwise.
+    /**
+     * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
+     * using any quotes in arguments
+     *
+     * @param todo command to execute in R
+     * @param Rcmd command necessary to start R
+     * @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
+     * @return <code>true</code> if Rserve is running or was successfully
+     * started, <code>false</code> otherwise.
      */
     public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/) {
         Process p = null;
@@ -208,21 +231,32 @@ public class StartRserve {
         return p;
     }
 
-    /** shortcut to <code>launchRserve(cmd, "--no-save --slave", "--no-save --slave", false)</code> */
+    /**
+     * shortcut to
+     * <code>launchRserve(cmd, "--no-save --slave", "--no-save --slave", false)</code>
+     *
+     * @param cmd Rserve command
+     * @return launcher Process
+     */
     public static Process launchRserve(String cmd) {
         return launchRserve(cmd, /*null,*/ "--no-save --slave", "--no-save --slave", false);
     }
 
-    /** attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid using any quotes in arguments
-    @param cmd command necessary to start R
-    @param rargs arguments are are to be passed to R
-    @param rsrvargs arguments to be passed to Rserve
-    @return <code>true</code> if Rserve is running or was successfully started, <code>false</code> otherwise.
+    /**
+     * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
+     * using any quotes in arguments
+     *
+     * @param cmd command necessary to start R
+     * @param rargs arguments are are to be passed to R
+     * @param rsrvargs arguments to be passed to Rserve
+     * @param debug Rserve debug mode ?
+     * @return <code>true</code> if Rserve is running or was successfully
+     * started, <code>false</code> otherwise.
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ...");
         Process p = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')", cmd, rargs);
-        if (p!=null) {
+        if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
             Log.Err.println("Failed to start Rserve process.");
@@ -230,6 +264,7 @@ public class StartRserve {
         }
 
         int attempts = 15; /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
+
         while (attempts > 0) {
             try {
                 RConnection c = null;
@@ -258,8 +293,15 @@ public class StartRserve {
         return null;
     }
 
-    /** checks whether Rserve is running and if that's not the case it attempts to start it using the defaults for the platform where it is run on. 
-    This method is meant to be set-and-forget and cover most default setups. For special setups you may get more control over R with <code>launchRserve</code> instead. */
+    /**
+     * checks whether Rserve is running and if that's not the case it attempts
+     * to start it using the defaults for the platform where it is run on. This
+     * method is meant to be set-and-forget and cover most default setups. For
+     * special setups you may get more control over R with
+     * <code>launchRserve</code> instead.
+     *
+     * @return is ok ?
+     */
     public static boolean checkLocalRserve() {
         if (isRserveRunning()) {
             return true;
@@ -282,20 +324,24 @@ public class StartRserve {
                 Log.Err.println("ERROR: canot find path to R. Make sure reg is available and R was installed with registry settings.");
                 return false;
             }
-            return launchRserve(installPath + "\\bin\\R.exe")!=null;
+            return launchRserve(installPath + "\\bin\\R.exe") != null;
         }
-        return ((launchRserve("R")!=null)
-                || /* try some common unix locations of R */ ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R")!=null)
-                || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R")!=null)
-                || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R")!=null)
-                || ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R")!=null)
-                || ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R")!=null)
-                || ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R")!=null)
-                || ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R")!=null));
+        return ((launchRserve("R") != null)
+                || /* try some common unix locations of R */ ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R") != null)
+                || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R") != null)
+                || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R") != null)
+                || ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R") != null)
+                || ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R") != null)
+                || ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R") != null)
+                || ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R") != null));
     }
 
-    /** check whether Rserve is currently running (on local machine and default port).
-    @return <code>true</code> if local Rserve instance is running, <code>false</code> otherwise
+    /**
+     * check whether Rserve is currently running (on local machine and default
+     * port).
+     *
+     * @return <code>true</code> if local Rserve instance is running,
+     * <code>false</code> otherwise
      */
     public static boolean isRserveRunning() {
         try {
@@ -309,7 +355,11 @@ public class StartRserve {
         return false;
     }
 
-    /** just a demo main method which starts Rserve and shuts it down again */
+    /**
+     * just a demo main method which starts Rserve and shuts it down again
+     *
+     * @param args ...
+     */
     public static void main(String[] args) {
         System.out.println("result=" + checkLocalRserve());
         try {
