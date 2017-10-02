@@ -49,8 +49,11 @@ public abstract class Rsession implements RLog {
     //** GLG HACK: Logging fix **//
     // No sink file (Passed to false) a lot faster not to sink the output
     boolean SINK_OUTPUT = true, SINK_MESSAGE = false;
+    public void sinkOutput(boolean s) {SINK_OUTPUT = s;}
+    public void sinkMessage(boolean s) {SINK_MESSAGE = s;}
     // GLG HACK: fixed sink file in case of multiple instances
     // (Appending the port number of the instance to file name)
+    
     String SINK_FILE_BASE = ".Rout";
     String SINK_FILE = null;
     String lastOuput = "";
