@@ -210,6 +210,7 @@ public class StartRserve {
      * @param todo command to execute in R
      * @param Rcmd command necessary to start R
      * @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
+     * @param redirect should we redirect output to a file ?
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
