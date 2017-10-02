@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import org.rosuda.REngine.Rserve.RserveException;
  *
  * @author richet
  */
-public class RserveTest {
+public class RserveSessionTest {
 
     PrintStream p = System.err;
     //RserverConf conf;
@@ -40,7 +41,7 @@ public class RserveTest {
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
-        org.junit.runner.JUnitCore.main(RserveTest.class.getName());
+        org.junit.runner.JUnitCore.main(RserveSessionTest.class.getName());
     }
 
     @Test
@@ -54,48 +55,63 @@ public class RserveTest {
         }
         assert error : "Error not detected";
     }
-    
+
     @Test
-    public void testPrintIn() throws Exception { 
+    public void testPrintIn() throws Exception {
         String str = s.eval("print('*')").toString();
-        assert str.equals("*") : "Bad print: "+str;
+        assert str.equals("*") : "Bad print: " + str;
     }
-    
+
+    @Test
+    public void testDownload() throws Exception {
+        File dir = new File(new File("."), "tmp/wavelets");
+        if (dir.exists()) {
+            FileUtils.deleteDirectory(dir);
+            assert !dir.exists() : "Cannot delete " + dir;
+        }
+
+        s.eval(".libPaths('" + new File(".").getAbsolutePath() + "/tmp')");
+        s.installPackage("wavelets", true);
+        assert dir.exists() : "Package wavelets not well installed";
+        if (dir.exists()) {
+            FileUtils.deleteDirectory(dir);
+        }
+    }
+
     @Test
     public void testObject() throws Exception {
         Object l = s.eval("list(x=3)");
         System.err.println("l: " + l);
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
-        
+
         assert s.asStrings(s.eval("ls()")).length == 0 : "Not empty environment";
 
         assert l != null : "Cannot eval l:" + s.getLastError();
         assert (l instanceof Map) : "Not a Map";
     }
 
-
-    //@Test
+    // @Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
         System.err.println("fun: " + fun);
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
-        
-        assert s.asStrings(s.eval("ls()")).length == 1 : "Not empty environment: "+Arrays.asList(s.asStrings(s.eval("ls()")));
+
+        assert s.asStrings(s.eval("ls()")).length == 1 : "Not empty environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
 
         assert fun != null : "Cannot eval fun:" + s.getLastError();
         assert (fun instanceof Rsession.Function) : "Not a Function";
         assert (double) (((Rsession.Function) fun).evaluate(1.0)) == 1.0 : "Bad function behavior: 1.0 != " + (double) (((Rsession.Function) fun).evaluate(1.0));
     }
 
-    //@Test
+    // @Test
     public void testEnvir() throws Exception {
         Object e = s.eval("new.env()");
         System.err.println("e: " + e);
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
-        
+
         assert s.asStrings(s.eval("ls()")).length == 0 : "Not empty global environment";
 
         assert e != null : "Cannot eval e:" + s.getLastError();
@@ -141,7 +157,7 @@ public class RserveTest {
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
 
     //@Test
-    public void testSIGPIPEErrorNOSink() throws Exception{
+    public void testSIGPIPEErrorNOSink() throws Exception {
         s.voidEval(f);
 
         s.SINK_OUTPUT = false;
@@ -156,7 +172,7 @@ public class RserveTest {
     }
 
     @Test
-    public void testSIGPIPEExplicitSink() throws Exception{
+    public void testSIGPIPEExplicitSink() throws Exception {
         s.voidEval(f);
 
         s.SINK_OUTPUT = false;
@@ -673,7 +689,7 @@ public class RserveTest {
 
         System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
     }
-    
+
     @After
     public void tearDown() {
         try {

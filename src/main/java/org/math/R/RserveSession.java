@@ -166,6 +166,8 @@ public class RserveSession extends Rsession implements RLog {
         SINK_FILE = SINK_FILE_BASE + "-" + (serverconf == null ? 0 : serverconf.port);
 
         startup();
+        
+        setenv(RserveConf.properties);
     }
 
     /**
@@ -359,7 +361,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
                 } else {
-                    e = connection.parseAndEval(expression);
+                        e = connection.parseAndEval(expression);
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");
@@ -445,7 +447,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (tryEval) {
                     e = connection.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
                 } else {
-                    e = connection.parseAndEval(expression);
+                        e = connection.parseAndEval(expression);
                 }
                 if (SINK_OUTPUT) {
                     connection.parseAndEval("sink(type='output')");

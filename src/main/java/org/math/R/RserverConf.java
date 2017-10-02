@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.Properties;
-import static org.math.R.RserveDaemon.APP_DIR;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
@@ -237,7 +236,6 @@ public class RserverConf {
             }
             server = new RserverConf(null, RserverPort, null, null, p);
         } else { // Unix supports multi-sessions natively, so no need to open a different Rserve on a new port
-
             server = new RserverConf(null, -1, null, null, p);
         }
         return server;

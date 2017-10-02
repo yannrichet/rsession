@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -316,6 +317,23 @@ public abstract class Rsession implements RLog {
         });
     }
 
+    void setenv(Properties properties) {
+        if (properties != null) {
+            for (String p : properties.stringPropertyNames()) {
+                try {
+                    boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "=" + properties.getProperty(p) + ")", false));
+                    if (done) {
+                        log("Setting environment " + p + ": " + properties.getProperty(p), Level.INFO);
+                    } else {
+                        log("Failed setting environment " + p + ": " + properties.getProperty(p), Level.WARNING);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
+
     String lastmessage = "";
     int repeated = 0;
 
@@ -323,7 +341,7 @@ public abstract class Rsession implements RLog {
         return lastmessage;
     }
 
-    private void println(String message, RLog.Level level) {
+    private void err_println(String message, RLog.Level level) {
         if (level == Level.ERROR) {
             try {
                 message = message + "\n R> " + getLastLogEntry();
@@ -338,24 +356,27 @@ public abstract class Rsession implements RLog {
     @Override
     public void log(String message, Level level) {
         if (message != null && message.trim().length() > 0 && !message.trim().equals("\n") && level == Level.OUTPUT) {
-            println(message, level);
+            // nothing to do 
         } else {
             if (message == null) {
                 return;
             } else {
                 message = message.trim();
+                while (message.endsWith("\n")) {
+                    message = message.substring(0, message.length() - 2); // to delete when many return chars
+                }
             }
             if (message.equals(lastmessage) && repeated < 100) {
                 repeated++;
             } else {
                 if (repeated > 0) {
-                    println("    Repeated " + repeated + " times.", level);
+                    err_println("    Repeated " + repeated + " times.", level);
                     repeated = 0;
                     lastmessage = message;
-                    println(message, level);
+                    err_println(message, level);
                 } else {
                     lastmessage = message;
-                    println(message, level);
+                    err_println(message, level);
                 }
             }
         }
@@ -384,7 +405,7 @@ public abstract class Rsession implements RLog {
         }
     }
     // <editor-fold defaultstate="collapsed" desc="Packages management">
-    public static String DEFAULT_REPOS = "http://cran.irsn.fr/";
+    public static String DEFAULT_REPOS = "http://cloud.r-project.org";
     public String repos = DEFAULT_REPOS;
 
     /**
@@ -517,7 +538,7 @@ public abstract class Rsession implements RLog {
     public String installPackage(File pack, boolean load) {
         putFile(pack);
         try {
-            rawEval("install.packages('" + pack.getName() + "',repos=NULL");
+            rawEval("install.packages('" + pack.getName() + "',repos=NULL,quiet=T");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -604,7 +625,7 @@ public abstract class Rsession implements RLog {
         }
 
         putFile(pack_files[0]);
-        rawEval("install.packages('" + pack_files[0].getName() + "',repos=NULL)", TRY_MODE);
+        rawEval("install.packages('" + pack_files[0].getName() + "',repos=NULL,quiet=T)", TRY_MODE);
         log("  request package " + pack + " install...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
@@ -632,7 +653,7 @@ public abstract class Rsession implements RLog {
      * @return installation status
      */
     public String installPackage(String pack, boolean load) {
-        log("  trying to load package " + pack, Level.INFO);
+        log("  trying to intall " + (load ? "& load " : "") + "package " + pack, Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
             log(_PACKAGE_ + pack + " already installed.", Level.INFO);
@@ -649,8 +670,8 @@ public abstract class Rsession implements RLog {
          log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
          return "Impossible to get package " + pack + " from " + repos;
          }*/
-        rawEval("install.packages('" + pack + "',repos='" + repos + "')", TRY_MODE);
-        log("  request package " + pack + " install...", Level.INFO);
+        rawEval("install.packages('" + pack + "',repos='" + repos + "',quiet=T)", TRY_MODE);
+        log("  request if package " + pack + " is installed...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
             log(_PACKAGE_ + pack + " installation sucessfull.", Level.INFO);

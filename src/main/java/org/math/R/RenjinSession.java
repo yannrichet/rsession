@@ -60,16 +60,7 @@ public class RenjinSession extends Rsession implements RLog {
 
         SINK_FILE = SINK_FILE_BASE + "-renjin" + this.hashCode();
 
-        this.properties = properties;
-        if (properties != null) {
-            for (String p : properties.stringPropertyNames()) {
-                try {
-                    rawEval("Sys.setenv(" + p + "=" + properties.getProperty(p) + ")");
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
+        setenv(properties);
     }
 
     public RenjinSession(final PrintStream p, Properties properties) {
@@ -454,7 +445,7 @@ public class RenjinSession extends Rsession implements RLog {
             int n = ((SEXP) o).length();
             boolean[] s = new boolean[n];
             for (int i = 0; i < n; i++) {
-                s[i] = ((SEXP) o).getElementAsSEXP(i).asLogical()==Logical.TRUE;
+                s[i] = ((SEXP) o).getElementAsSEXP(i).asLogical() == Logical.TRUE;
             }
             return s;
         } catch (Exception ex) {

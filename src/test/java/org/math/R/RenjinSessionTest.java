@@ -15,7 +15,7 @@ import org.renjin.sexp.SEXP;
  *
  * @author richet
  */
-public class RenjinTest {
+public class RenjinSessionTest {
 
     PrintStream p = System.err;
     //RserverConf conf;
@@ -24,7 +24,7 @@ public class RenjinTest {
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
-        org.junit.runner.JUnitCore.main(RenjinTest.class.getName());
+        org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
     }
 
     @Test

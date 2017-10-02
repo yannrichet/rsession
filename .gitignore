@@ -7,4 +7,6 @@ target
 /build.xml
 /tmp/
 *.log.tgz
+*.log
 /howto_release.md
+*.Rout

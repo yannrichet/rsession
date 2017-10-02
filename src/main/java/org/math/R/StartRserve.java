@@ -5,7 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /**
@@ -135,7 +136,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q");
+        Process p = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q", false);
         if (p == null) {
             return false;
         }
@@ -180,7 +181,7 @@ public class StartRserve {
             repository = Rsession.DEFAULT_REPOS;
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy=" + http_proxy + ");" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla");
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy=" + http_proxy + ");" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", true);
         if (p == null) {
             Log.Err.println("failed");
             return false;
@@ -212,7 +213,7 @@ public class StartRserve {
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/) {
+    public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/, boolean redirect) {
         Process p = null;
         try {
             String osname = System.getProperty("os.name");
@@ -221,8 +222,10 @@ public class StartRserve {
                 command = "\"" + Rcmd + "\" -e \"" + todo + "\" " + rargs;
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
-                command = "echo \"" + todo + "\"|" + Rcmd + " " + rargs;
+                String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
+                command = "echo \"" + todo + "\" | " + Rcmd + " " + rargs + (redirect ? " > " + Rout : "");
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
+                new File(Rout).deleteOnExit();
             }
             Log.Out.println("  executing " + command);
         } catch (Exception x) {
@@ -232,15 +235,16 @@ public class StartRserve {
     }
 
     /**
-     * shortcut to
-     * <code>launchRserve(cmd, "--no-save --slave", "--no-save --slave", false)</code>
+     * shortcut to <code>launchRserve(cmd, "--vanilla", "", false)</code>
      *
      * @param cmd Rserve command
      * @return launcher Process
      */
     public static Process launchRserve(String cmd) {
-        return launchRserve(cmd, /*null,*/ "--no-save --slave", "--no-save --slave", false);
+        return launchRserve(cmd, "--vanilla", "--vanilla", false);
     }
+
+    static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
 
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
@@ -254,8 +258,8 @@ public class StartRserve {
      * started, <code>false</code> otherwise.
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
-        Log.Out.println("Waiting for Rserve to start ...");
-        Process p = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "')", cmd, rargs);
+        Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
+        Process p = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
@@ -361,11 +365,30 @@ public class StartRserve {
      * @param args ...
      */
     public static void main(String[] args) {
-        System.out.println("result=" + checkLocalRserve());
+        File dir = null;
+
+        System.out.println("checkLocalRserve: " + checkLocalRserve());
         try {
             RConnection c = new RConnection();
+            //c.eval("cat('123')");
+            dir = new File(c.eval("getwd()").asString());
+            System.err.println("wd: " + dir);
+            //c.eval("flush.console <-function(...) return;"); // will crash without that...
+            c.eval("download.file('https://www.r-project.org/',paste0(getwd(),'/log.txt'))");
             c.shutdown();
         } catch (Exception x) {
+            x.printStackTrace();
+        }
+
+        if (new File(dir, "log.txt").exists()) {
+            System.err.println("OK: file exists");
+            if (new File(dir, "log.txt").length() > 10) {
+                System.err.println("OK: file not empty");
+            } else {
+                System.err.println("NO: file EMPTY");
+            }
+        } else {
+            System.err.println("NO: file DOES NOT exist");
         }
     }
 }
