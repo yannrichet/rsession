@@ -224,12 +224,12 @@ public class RserveDaemon {
         
         log.log("starting R daemon... " + conf, Level.INFO);
         
-        StringBuffer RserveArgs = new StringBuffer("--no-save --slave");
+        StringBuffer RserveArgs = new StringBuffer("--vanilla");
         if (conf.port > 0) {
             RserveArgs.append(" --RS-port " + conf.port);
         }
         
-        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--no-save --slave", RserveArgs.toString(), false);
+        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--vanilla", RserveArgs.toString(), false);
         
         if (rserve!=null) {
         	log.log("  ok", Level.INFO);
