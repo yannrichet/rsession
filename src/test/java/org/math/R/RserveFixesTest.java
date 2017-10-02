@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.File;
+import java.util.Properties;
 import org.junit.After;
 import org.junit.Test;
 import static org.math.R.StartRserve.checkLocalRserve;
@@ -41,7 +42,13 @@ public class RserveFixesTest {
             //c.eval("cat('123')");
             dir = new File(c.eval("getwd()").asString());
             System.err.println("wd: " + dir);
-            //c.eval("flush.console <-function(...) return;");
+
+            String http_proxy_env = System.getenv("http_proxy");
+            if (http_proxy_env != null) {
+                c.eval("Sys.setenv(http_proxy='" + http_proxy_env + "')");
+                c.eval("Sys.setenv(https_proxy='" + http_proxy_env + "')");
+            }
+
             c.eval("download.file(quiet=T,'https://www.r-project.org/',paste0(getwd(),'/log.txt'))");
             c.close();
         } catch (Exception x) {
