@@ -8,4 +8,4 @@ before_install:
   - sudo add-apt-repository "deb http://cloud.r-project.org/bin/linux/ubuntu precise/"
   - sudo apt-get -qq update
   - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-  - sudo apt-get install -y --force-yes r-base-core r-recommended r-cran-rserve
+  - sudo apt-get install -y --force-yes libtiff4 r-base-core r-recommended r-cran-rserve
