@@ -34,7 +34,7 @@ import org.renjin.sexp.StringVector;
  */
 public class RenjinSession extends Rsession implements RLog {
 
-    private RenjinScriptEngine R = null;
+    RenjinScriptEngine R = null;
     File wdir;
     Properties properties;
 
@@ -47,7 +47,7 @@ public class RenjinSession extends Rsession implements RLog {
 
         R = new RenjinScriptEngineFactory().getScriptEngine();
         if (R == null) {
-            throw new RuntimeException("Renjin Script Engine not found on the classpath.");
+            throw new RuntimeException("Renjin Script Engine not found in the classpath.");
         }
 
         try {
@@ -441,6 +441,7 @@ public class RenjinSession extends Rsession implements RLog {
         if (!(o instanceof LogicalVector)) {
             throw new IllegalArgumentException("[asLogicals] Not a LogicalVector object: " + o);
         }
+
         try {
             int n = ((SEXP) o).length();
             boolean[] s = new boolean[n];
@@ -629,7 +630,16 @@ public class RenjinSession extends Rsession implements RLog {
          }
          }*/
     }
-
+    
+    @Override
+    public void save(File f, String... vars) throws RException {
+        if (vars.length == 1) {
+            voidEval("save(file='" + f.getAbsolutePath() + "'," + vars[0] + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        } else {
+            voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        }
+    }
+    
     /**
      * Get R command text output
      *
@@ -655,7 +665,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     public static void main(String[] args) throws Exception {
-        //args = new String[]{"install.packages('lhs',repos='\"http://cran.irsn.fr/\"',lib='.')", "1+1"};
+        //args = new String[]{"install.packages('lhs',repos='\"http://cloud.r-project.org/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {
             args = new String[10];
             for (int i = 0; i < args.length; i++) {
