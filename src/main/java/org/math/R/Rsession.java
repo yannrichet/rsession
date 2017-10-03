@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  */
 public abstract class Rsession implements RLog {
 
-    public static final String HEAD_TRY = "";//-try- ";
+    public static final String HEAD_TRY = "[?] ";//-try- ";
     public boolean TRY_MODE_DEFAULT = true;
     public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
@@ -49,12 +49,18 @@ public abstract class Rsession implements RLog {
     //** GLG HACK: Logging fix **//
     // No sink file (Passed to false) a lot faster not to sink the output
     boolean SINK_OUTPUT = true, SINK_MESSAGE = false;
-    public void sinkOutput(boolean s) {SINK_OUTPUT = s;}
-    public void sinkMessage(boolean s) {SINK_MESSAGE = s;}
+
+    public void sinkOutput(boolean s) {
+        SINK_OUTPUT = s;
+    }
+
+    public void sinkMessage(boolean s) {
+        SINK_MESSAGE = s;
+    }
     // GLG HACK: fixed sink file in case of multiple instances
     // (Appending the port number of the instance to file name)
-    
-    String SINK_FILE_BASE = ".Rout";
+
+    String SINK_FILE_BASE = System.getProperty("java.io.tmpdir") + File.separator + ".Rout";
     String SINK_FILE = null;
     String lastOuput = "";
 
@@ -307,9 +313,11 @@ public abstract class Rsession implements RLog {
 
             public void log(String string, Level level) {
                 if (level == Level.WARNING) {
-                    p.print("(!) ");
+                    p.print("(?) ");
                 } else if (level == Level.ERROR) {
                     p.print("(!!) ");
+                } else if (level == Level.OUTPUT) {
+                    p.print("> ");
                 }
                 p.println(string);
             }
@@ -324,13 +332,13 @@ public abstract class Rsession implements RLog {
         if (properties != null) {
             for (String p : properties.stringPropertyNames()) {
                 try {
-                    boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "=" + properties.getProperty(p) + ")", false));
-                    if (done) {
-                        log("Setting environment " + p + ": " + properties.getProperty(p), Level.INFO);
-                    } else {
-                        log("Failed setting environment " + p + ": " + properties.getProperty(p), Level.WARNING);
+                    log("Setting environment " + p + ": '" + properties.getProperty(p) + "'", Level.INFO);
+                    boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "='" + properties.getProperty(p) + "')", false));
+                    if (!done) {
+                        log("Failed setting environment " + p + ": '" + properties.getProperty(p) + "'", Level.WARNING);
                     }
                 } catch (Exception ex) {
+                    log(ex.getMessage(),Level.WARNING);
                     ex.printStackTrace();
                 }
             }
@@ -1096,8 +1104,6 @@ public abstract class Rsession implements RLog {
         } else {
             voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
-        getFile(f);
-        deleteFile(f.getName());
     }
 
     /**
