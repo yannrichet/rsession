@@ -7,25 +7,29 @@ matrix:
         apt:
           sources:
           - r-packages-precise
+          packages:
+          - r-base-core	
+          - r-base-dev	
+          - r-recommended
+          - r-cran-rserve
     - os: linux
       dist: trusty
       addons:
         apt:
           sources:
           - r-packages-trusty
+          packages:
+          - r-base-core	
+          - r-base-dev	
+          - r-recommended
+          - r-cran-rserve
     - os: osx
       brew_packages: 
         - Rserve
 jdk:
   - oraclejdk8
 install: mvn install -DskipTests=true -Dgpg.skip=true
-addons:
-  apt:
-    packages:
-    - r-base-core	
-    - r-base-dev	
-    - r-recommended
-    - r-cran-rserve
+
 #before_install:
 #  - sudo add-apt-repository "deb http://cloud.r-project.org/bin/linux/ubuntu precise/"
 #  - sudo apt-get -qq update
