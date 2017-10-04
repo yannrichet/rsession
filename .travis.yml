@@ -18,7 +18,6 @@ matrix:
         - Rserve
 jdk:
   - oraclejdk8
-  - oraclejdk7
 install: mvn install -DskipTests=true -Dgpg.skip=true
 addons:
   apt:
