@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,10 +19,9 @@ import org.renjin.sexp.SEXP;
 public class RenjinSessionTest {
 
     PrintStream p = System.err;
-    //RserverConf conf;
     RenjinSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
+    File tmpdir = new File("tmp/Renjin"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
@@ -40,11 +40,35 @@ public class RenjinSessionTest {
     }
 
     @Test
-    public void testPrintIn() throws Exception { 
+    public void testPrintIn() throws Exception {
         String str = s.eval("print('*')").toString();
-        assert str.equals("*") : "Bad print: "+str;
+        assert str.equals("*") : "Bad print: " + str;
+    }
+
+    // @Test
+    public void testInstallPackage() throws Exception {
+        File dir = new File(new File("."), "tmp/pso");
+        if (dir.exists()) {
+            FileUtils.deleteDirectory(dir);
+            assert !dir.exists() : "Cannot delete " + dir;
+        }
+
+        s.eval(".libPaths('" + new File(".").getAbsolutePath() + "/tmp')");
+        assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install pso";
+        assert dir.exists() : "Package pso not well installed";
+        if (dir.exists()) {
+            FileUtils.deleteDirectory(dir);
+        }
     }
     
+    // @Test
+    public void testInstallPackages() {
+        String out = s.installPackage("sensitivity", true);
+        // will not work yet... assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: "+out;
+        String out2 = s.installPackage("pso", true);
+        assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: "+out2;
+    }
+
     @Test
     public void testObject() throws Exception {
         Object l = s.eval("list(x=3)");
@@ -72,7 +96,7 @@ public class RenjinSessionTest {
         assert (double) (((Rsession.Function) fun).evaluate(1.0)) == 1.0 : "Bad function behavior: 1.0 != " + (double) (((Rsession.Function) fun).evaluate(1.0));
     }
 
-    //@Test
+    // @Test
     public void testEnvir() throws Exception {
         Object e = s.eval("new.env()");
         System.err.println("e: " + e);
@@ -96,7 +120,7 @@ public class RenjinSessionTest {
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
 
     @Test
-    public void testSIGPIPEErrorNOSink() throws Exception {
+    public void testErrorNOSink() throws Exception {
         s.voidEval(f);
 
         s.SINK_OUTPUT = false;
@@ -111,17 +135,26 @@ public class RenjinSessionTest {
     }
 
     @Test
-    public void testSIGPIPEExplicitSink() throws Exception {
+    public void testExplicitSink() throws Exception {
         s.voidEval(f);
 
         s.SINK_OUTPUT = false;
+        s.SINK_MESSAGE = false;
 
         // without sink: SIGPIPE error
-        s.voidEval("sink(file('output.txt',open='wt'),type='output')");
-        s.voidEval("sink(file('message.txt',open='wt'),type='message')");
+        if (new File(tmpdir, "output.txt").exists()) {
+            assert new File(tmpdir, "output.txt").delete() : "Cannot delete output.txt";
+        }
+
+        if (new File(tmpdir, "message.txt").exists()) {
+            assert new File(tmpdir, "message.txt").delete() : "Cannot delete message.txt";
+        }
+
+        s.voidEval("sink(file('" + tmpdir.getAbsolutePath() + "/output.txt',open='wt'),type='output')");
+        s.voidEval("sink(file('" + tmpdir.getAbsolutePath() + "/message.txt',open='wt'),type='message')");
         SEXP maxsin = (SEXP) s.rawEval("f()");
-        System.err.println("output:" + Arrays.asList((s.asStrings(s.rawEval("readLines('output.txt')")))));
-        System.err.println("message:" + Arrays.asList((s.asStrings(s.rawEval("readLines('message.txt')")))));
+        assert Arrays.asList((s.asStrings(s.rawEval("readLines('" + tmpdir.getAbsolutePath() + "/output.txt')")))).size() > 0 : "Empty output sinked";
+        assert Arrays.asList((s.asStrings(s.rawEval("readLines('" + tmpdir.getAbsolutePath() + "/message.txt')")))).size() > 0 : "Empty message sinked";
         s.voidEval("sink(type='output')");
         s.voidEval("sink(type='message')");
         //s.voidEval("unlink('out.txt')");
@@ -135,14 +168,22 @@ public class RenjinSessionTest {
     }
 
     @Test
-    public void testSIGPIPEAutoSink() throws Exception {
+    public void testDefaultSink() throws Exception {
         s.voidEval(f);
 
         // without sink: SIGPIPE error
         SEXP maxsin = (SEXP) s.rawEval("f()");
+        
+        //System.err.println("output="+s.getLastOutput()+"\nerror="+s.getLastError()+"\nlog="+s.getLastLogEntry());
+        // No, because SINK files are deleted after...
+        //assert Arrays.asList((s.asStrings(s.rawEval("readLines('"+s.SINK_FILE+"')")))).size() > 0 : "Empty output sinked";
+        //assert Arrays.asList((s.asStrings(s.rawEval("readLines('"+s.SINK_FILE+".m')")))).size() > 0 : "Empty message sinked";
 
         assert maxsin != null : s.getLastLogEntry();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
+        assert s.getLastOutput().equals("cat") : "Wrong LastOutput: "+s.getLastOutput();
+        assert s.getLastError() == null : "Wrong LastError: "+s.getLastError();
+        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: "+s.getLastLogEntry();
 
         SEXP test = (SEXP) s.rawEval("1+pi");
         assert s.asDouble(test) > 4 : "Failed next eval";
@@ -155,14 +196,13 @@ public class RenjinSessionTest {
             System.err.println("Size " + size);
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
-            s.save(sfile, "raw" + i);
-            assert sfile.exists() : "Size " + size + " failed";
-            p.println(sfile.length());
+            s.save(sfile.getAbsoluteFile(), "raw" + i);
+            assert sfile.exists() : "Size " + size + " failed: "+sfile.getAbsolutePath()+" size "+(sfile.length());
             sfile.delete();
         }
     }
 
-    //@Test
+    // @Test
     public void testJPEGSize() {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
@@ -231,9 +271,7 @@ public class RenjinSessionTest {
             System.err.println("trying expression " + expr);
             try {
                 boolean done = s.voidEval(expr);
-                if (!done) {
-                    throw new Exception("error not found in " + expr);
-                }
+                assert !done : "error not found in " + expr;
             } catch (Exception e) {
                 System.err.println("Well detected error in " + expr);
                 //Exception well raised, everything is ok.
@@ -245,9 +283,7 @@ public class RenjinSessionTest {
             System.err.println("trying evaluation " + eval);
             try {
                 SEXP e = (SEXP) s.rawEval(eval);
-                if (e != null) {
-                    throw new Exception("error not found in " + eval);
-                }
+                assert e == null : "error not found in " + eval;
             } catch (Exception e) {
                 System.err.println("Well detected error in " + eval);
                 //Exception well raised, everything is ok.
@@ -255,17 +291,10 @@ public class RenjinSessionTest {
         }
     }
 
-    @Test
+    // @Test
     public void testLibrary() {
         s.rawEval("library(lhs)");
-        // this next call was failing with rserve 0.6-0
         s.rawEval("library(rgenoud)");
-    }
-
-    @Test
-    public void testRFile() {
-        System.err.println("getwd(): " + s.asString(s.rawEval("getwd()")));
-        //System.err.println("list.files(getwd()): "+s.rawEval("list.files(getwd())").asString());
     }
 
     /*@Test
@@ -339,7 +368,7 @@ public class RenjinSessionTest {
 
     @Test
     public void testConcurrency() throws InterruptedException {
-        final RserveSession r1 = RserveSession.newInstanceTry(new RLog() {
+        final RenjinSession r1 = RenjinSession.newInstance(new RLog() {
 
             public void log(String string, Level level) {
                 if (level == Level.INFO) {
@@ -352,7 +381,7 @@ public class RenjinSessionTest {
             public void close() {
             }
         }, null);
-        final RserveSession r2 = RserveSession.newInstanceTry(new RLog() {
+        final RenjinSession r2 = RenjinSession.newInstance(new RLog() {
 
             public void log(String string, Level level) {
                 if (level == Level.INFO) {
@@ -402,16 +431,16 @@ public class RenjinSessionTest {
         }).start();
 
         Thread.sleep(5000);
-        r1.end();
-        r2.end();
+        r1.close();
+        r2.close();
     }
 
     @Test
     public void testHardConcurrency() throws InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-        final RserveSession[] R = new RserveSession[A.length];
+        final RenjinSession[] R = new RenjinSession[A.length];
         for (int i = 0; i < R.length; i++) {
-            R[i] = RserveSession.newInstanceTry(new RLog() {
+            R[i] = RenjinSession.newInstance(new RLog() {
 
                 public void log(String string, Level level) {
                     if (level == Level.INFO) {
@@ -428,7 +457,7 @@ public class RenjinSessionTest {
 
         for (int i = 0; i < A.length; i++) {
             final int ai = A[i];
-            final RserveSession ri = R[i];
+            final RenjinSession ri = R[i];
             //new Thread(new Runnable() {
             //
             //   public void run() {
@@ -446,7 +475,7 @@ public class RenjinSessionTest {
             //}).start();
         }
 
-        //checking of each RserveSession to verify values are ok.
+        //checking of each RSession to verify values are ok.
         for (int i = 0; i < A.length; i++) {
             for (int j = 0; j < i; j++) {
                 while (R[j].rawEval("a") == null) {
@@ -460,12 +489,12 @@ public class RenjinSessionTest {
         }
 
         for (int i = 0; i < R.length; i++) {
-            R[i].end();
+            R[i].close();
         }
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         RLog l = new RLog() {
 
             public void log(String string, Level level) {
@@ -483,16 +512,21 @@ public class RenjinSessionTest {
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
-            prop.setProperty("http_proxy", "'" + http_proxy_env + "'");
+            prop.setProperty("http_proxy", http_proxy_env);
         }
-        s = new RenjinSession(l, prop);
+        
+        System.out.println("tmpdir=" + tmpdir.getAbsolutePath()+" "+tmpdir.mkdir());
 
-        System.err.println(s.asString(s.silentlyRawEval("R.version.string")));
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
+        s = new RenjinSession(l, prop);
+        
+        s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')");
+
+	System.err.println(s.eval("R.version.string"));
+        System.err.println(s.eval("getwd()"));
     }
 
     @After
     public void tearDown() {
-        s.close();
+        //nothing to do as Renjin is hosted in jvm
     }
 }
