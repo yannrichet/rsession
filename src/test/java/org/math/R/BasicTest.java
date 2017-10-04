@@ -45,7 +45,7 @@ public class BasicTest {
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
-            prop.setProperty("http_proxy", "'" + http_proxy_env + "'");
+            prop.setProperty("http_proxy", http_proxy_env);
         }
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
@@ -80,7 +80,8 @@ public class BasicTest {
 
     @Test
     public void testCast_Rserve() throws Exception {
-        //cast
+         System.err.println("====================================== Rserve");
+       //cast
         assert ((Boolean) s.eval("TRUE")) == true;
         assert ((Double) s.eval("0.123")) == 0.123;
         assert ((Double) s.eval("pi")) - 3.141593 < 0.0001;
@@ -98,6 +99,7 @@ public class BasicTest {
 
     @Test
     public void testCast_Renjin() throws Exception {
+        System.err.println("====================================== Renjin");
         //cast
         assert ((Boolean) r.eval("TRUE")) == true;
         assert ((Double) r.eval("0.123")) == 0.123;
@@ -116,7 +118,7 @@ public class BasicTest {
 
     @Test
     public void testSet_Rserve() throws Exception {
-
+        System.err.println("====================================== Rserve");
         //set
         double c = Math.random();
         s.set("c", c);
@@ -151,7 +153,7 @@ public class BasicTest {
 
     @Test
     public void testSet_Renjin() throws Exception {
-
+        System.err.println("====================================== Renjin");
         //set
         double c = Math.random();
         r.set("c", c);
@@ -186,6 +188,7 @@ public class BasicTest {
 
     @Test
     public void testIOFiles_Rserve() throws Exception {
+        System.err.println("====================================== Rserve");
         //set
         double c = Math.random();
         s.set("c", c);
@@ -249,6 +252,7 @@ public class BasicTest {
 
     @Test
     public void testIOFiles_Renjin() throws Exception {
+        System.err.println("====================================== Renjin");
         //set
         double c = Math.random();
         r.set("c", c);
@@ -308,19 +312,4 @@ public class BasicTest {
         System.out.println(html);
         assert html.length() > 0;
     }
-
-    @Test
-    public void testInstallPAckages_Rserve() {
-        //installPackage
-        System.out.println(s.installPackage("sensitivity", true));
-        System.out.println(s.installPackage("wavelets", true));
-    }
-
-    @Test
-    public void testInstallPackages_Renjin() {
-        //installPackage
-        //System.out.println(s.installPackage("sensitivity", true));
-        //System.out.println(s.installPackage("wavelets", true));
-    }
-
 }
