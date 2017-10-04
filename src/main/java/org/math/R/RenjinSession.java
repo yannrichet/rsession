@@ -630,7 +630,7 @@ public class RenjinSession extends Rsession implements RLog {
          }
          }*/
     }
-    
+
     @Override
     public void save(File f, String... vars) throws RException {
         if (vars.length == 1) {
@@ -639,7 +639,7 @@ public class RenjinSession extends Rsession implements RLog {
             voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
     }
-    
+
     /**
      * Get R command text output
      *
@@ -657,6 +657,21 @@ public class RenjinSession extends Rsession implements RLog {
         } catch (Exception ex) {
             return ex.getMessage();
         }
+    }
+
+    @Override
+    public boolean isPackageInstalled(String pack, String version) {
+        return false;
+    }
+
+    @Override
+    public String installPackage(String pack, boolean load) {
+        return "Renjin cannot install package yet.";
+    }
+
+    @Override
+    public String installPackage(String pack, File dir, boolean load) {
+        return "Renjin cannot install package yet.";
     }
 
     @Override
