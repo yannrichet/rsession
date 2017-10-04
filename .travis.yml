@@ -1,17 +1,17 @@
 language: java
 matrix:
   include:
-    - os: linux
-      dist: precise
-      addons:
-        apt:
-          sources:
-          - r-packages-precise
-          packages:
-          - r-base-core	
-          - r-base-dev	
-          - r-recommended
-          - r-cran-rserve
+#    - os: linux
+#      dist: precise
+#      addons:
+#        apt:
+#          sources:
+#          - r-packages-precise
+#          packages:
+"          - r-base-core	
+#          - r-base-dev	
+#          - r-recommended
+#          - r-cran-rserve
     - os: linux
       dist: trusty
       addons:
