@@ -182,7 +182,7 @@ public class RserverConf {
             if (properties != null) {
                 for (String p : properties.stringPropertyNames()) {
                     try {
-                        connection.eval("Sys.setenv(" + p + "=" + properties.getProperty(p) + ")");
+                        connection.eval("Sys.setenv(" + p + "='" + properties.getProperty(p) + "')");
                     } catch (RserveException ex) {
                         ex.printStackTrace();
                     }
