@@ -1,13 +1,27 @@
 language: java
-dist: precise
+matrix:
+  include:
+    - os: linux
+      dist: precise
+      addons:
+        apt:
+          sources:
+          - r-packages-precise
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+          - r-packages-trusty
+    - os: osx
+      brew_packages: 
+        - Rserve
 jdk:
   - oraclejdk8
   - oraclejdk7
 install: mvn install -DskipTests=true -Dgpg.skip=true
 addons:
   apt:
-    sources:
-    - r-packages-precise
     packages:
     - r-base-core	
     - r-base-dev	
