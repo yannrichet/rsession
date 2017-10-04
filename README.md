@@ -94,8 +94,8 @@ Then, use it in your code:
       ```java
       Rsession s = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
       //connect to local Rserve (previously started with /usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf):
-     session s = RserveSession.newLocalInstance(System.out,null); 
-        ```
+      session s = RserveSession.newLocalInstance(System.out,null); 
+      ```
   * do your work in R and get Java objects
     * create Java objects from R command using
     ```java
