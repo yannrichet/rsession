@@ -24,7 +24,9 @@ matrix:
           - r-recommended
           - r-cran-rserve
     - os: osx
+      osx_image: xcode8.3
       brew_packages: 
+        - r
         - Rserve
 jdk:
   - oraclejdk8
