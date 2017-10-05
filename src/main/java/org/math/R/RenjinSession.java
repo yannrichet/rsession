@@ -114,44 +114,59 @@ public class RenjinSession extends Rsession implements RLog {
             b.eval(expression);
         }
         SEXP e = null;
-        try {
-            synchronized (R) {
+        synchronized (R) {
+            try {
                 if (SINK_OUTPUT) {
-                    R.eval("sink('" + SINK_FILE + "',type='output')");
+                    R.eval(".f <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval("sink('" + SINK_FILE + ".m',type='message')");
+                    R.eval(".fm <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
                     e = ((SEXP) R.eval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)"));
                 } else {
                     e = ((SEXP) R.eval(expression));
                 }
+            } catch (Exception ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            } finally {
                 if (SINK_OUTPUT) {
-                    R.eval("sink(type='output')");
                     try {
+                        R.eval("sink(type='output')");
                         lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.eval("close(.f)");
+                            R.eval("unlink('" + SINK_FILE + "')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.eval("unlink('" + SINK_FILE + "')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval("sink(type='message')");
                     try {
+                        R.eval("sink(type='message')");
                         lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))"));
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.eval("close(.fm)");
+                            R.eval("unlink('" + SINK_FILE + ".m')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.eval("unlink('" + SINK_FILE + ".m')");
                 }
             }
-        } catch (Exception ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
         }
 
         if (tryEval && e != null) {
@@ -184,44 +199,59 @@ public class RenjinSession extends Rsession implements RLog {
             b.eval(expression);
         }
         SEXP e = null;
-        try {
-            synchronized (R) {
+        synchronized (R) {
+            try {
                 if (SINK_OUTPUT) {
-                    R.eval("sink('" + SINK_FILE + "',type='output')");
+                    R.eval(".f <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval("sink('" + SINK_FILE + ".m',type='message')");
+                    R.eval(".fm <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
                     e = (SEXP) (R.eval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)"));
                 } else {
                     e = (SEXP) (R.eval(expression));
                 }
+            } catch (Exception ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            } finally {
                 if (SINK_OUTPUT) {
-                    R.eval("sink(type='output')");
                     try {
+                        R.eval("sink(type='output')");
                         lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.eval("close(.f)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("unlink('" + SINK_FILE + "')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.eval("unlink('" + SINK_FILE + "')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval("sink(type='message')");
                     try {
+                        R.eval("sink(type='message')");
                         lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))"));
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.eval("close(.fm)");
+                            R.eval("unlink('" + SINK_FILE + ".m')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.eval("unlink('" + SINK_FILE + ".m')");
                 }
             }
-        } catch (Exception ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
         }
 
         if (tryEval && e != null) {
@@ -530,6 +560,12 @@ public class RenjinSession extends Rsession implements RLog {
         }
     }
 
+    @Override
+    public void close() {
+        super.close();
+        R.getSession().close();
+    }
+
     public Object cast(Object o) throws ClassCastException {
         if (o == null) {
             return null;
@@ -576,7 +612,6 @@ public class RenjinSession extends Rsession implements RLog {
                 case "closure":
                     String name = "function_" + (int) Math.floor(1000 * Math.random());
                     R.put(name, s);
-
                     try {
                         if (((SEXP) rawEval("is.function(" + name + ")")).asLogical() == TRUE) {
                             return new Function(name);
