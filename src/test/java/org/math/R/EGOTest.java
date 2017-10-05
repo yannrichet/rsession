@@ -248,7 +248,7 @@ public class EGOTest {
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();
         if (http_proxy_env != null) {
-            prop.setProperty("http_proxy", "'" + http_proxy_env + "'");
+            prop.setProperty("http_proxy", http_proxy_env);
         }
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);

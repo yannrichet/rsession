@@ -77,13 +77,13 @@ public class RserveSessionTest {
             FileUtils.deleteDirectory(dir);
         }
     }
-    
+
     @Test
     public void testInstallPackages() {
         String out = s.installPackage("sensitivity", true);
-        assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: "+out;
+        assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: " + out;
         String out2 = s.installPackage("pso", true);
-        assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: "+out2;
+        assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: " + out2;
     }
 
     @Test
@@ -183,7 +183,7 @@ public class RserveSessionTest {
     public void testExplicitSink() throws Exception {
         s.SINK_OUTPUT = false;
         s.SINK_MESSAGE = false;
-        
+
         s.voidEval(f);
 
         // without sink: SIGPIPE error
@@ -203,7 +203,7 @@ public class RserveSessionTest {
         s.voidEval("sink(type='output')");
         s.voidEval("sink(type='message')");
 
-        assert maxsin != null : s.getLastLogEntry()+" - "+s.getLastError()+" - "+s.getLastOutput();
+        assert maxsin != null : s.getLastLogEntry() + " - " + s.getLastError() + " - " + s.getLastOutput();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
 
         REXP test = (REXP) s.rawEval("1+pi");
@@ -220,9 +220,9 @@ public class RserveSessionTest {
 
         assert maxsin != null : s.getLastLogEntry();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
-        assert s.getLastOutput().equals("cat") : "Wrong LastOutput: "+s.getLastOutput();
-        assert s.getLastError() == null : "Wrong LastError: "+s.getLastError();
-        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: "+s.getLastLogEntry();
+        assert s.getLastOutput().equals("cat") : "Wrong LastOutput: " + s.getLastOutput();
+        assert s.getLastError() == null : "Wrong LastError: " + s.getLastError();
+        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: " + s.getLastLogEntry();
 
         REXP test = (REXP) s.rawEval("1+pi");
         assert test.asDouble() > 4 : "Failed next eval";
@@ -236,7 +236,7 @@ public class RserveSessionTest {
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile.getAbsoluteFile(), "raw" + i);
-            assert sfile.exists() : "Size " + size + " failed: "+sfile.getAbsolutePath()+" size "+(sfile.length());
+            assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
             sfile.delete();
         }
     }
@@ -681,23 +681,17 @@ public class RserveSessionTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
-        
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath()+" "+tmpdir.mkdir());
+
+        System.out.println("tmpdir=" + tmpdir.getAbsolutePath() + " " + tmpdir.mkdir());
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
-        
+
         s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')");
 
-        try{
-	System.err.println(s.eval("R.version.string"));
+        System.err.println(s.eval("R.version.string"));
         System.err.println("Rserve version " + s.eval("installed.packages()[\"Rserve\",\"Version\"]"));
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
-        }catch(Exception e){e.printStackTrace();
-            System.err.println(s.getLastError());
-            System.err.println(s.getLastLogEntry());
-            System.err.println(s.getLastOutput());
-                }
+        System.err.println(s.eval("getwd()"));
     }
 
     @After
