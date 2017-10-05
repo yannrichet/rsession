@@ -332,10 +332,10 @@ public abstract class Rsession implements RLog {
         if (properties != null) {
             for (String p : properties.stringPropertyNames()) {
                 try {
-                    log("Setting environment " + p + ": '" + properties.getProperty(p) + "'", Level.INFO);
+                    log("Setting environment " + p + ": '" + properties.getProperty(p).replaceAll("\\:([^/])(.*)\\@", ":???@") + "'", Level.INFO);
                     boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "='" + properties.getProperty(p) + "')", false));
                     if (!done) {
-                        log("Failed setting environment " + p + ": '" + properties.getProperty(p) + "'", Level.WARNING);
+                        log("Failed setting environment " + p, Level.WARNING);
                     }
                 } catch (Exception ex) {
                     log(ex.getMessage(),Level.WARNING);
