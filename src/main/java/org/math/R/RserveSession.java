@@ -349,8 +349,8 @@ public class RserveSession extends Rsession implements RLog {
             b.eval(expression);
         }
         REXP e = null;
-        try {
-            synchronized (R) {
+        synchronized (R) {
+            try {
                 if (SINK_OUTPUT) {
                     R.parseAndEval("sink('" + SINK_FILE + "',type='output')");
                 }
@@ -362,32 +362,45 @@ public class RserveSession extends Rsession implements RLog {
                 } else {
                     e = R.parseAndEval(expression);
                 }
+            } catch (Exception ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+                return false;
+            } finally {
                 if (SINK_OUTPUT) {
-                    R.parseAndEval("sink(type='output')");
                     try {
+                        R.parseAndEval("sink(type='output')");
+
                         lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.parseAndEval("unlink('" + SINK_FILE + "')");
+                        } catch (Exception ex) {
+                            log(ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.parseAndEval("unlink('" + SINK_FILE + "')");
                 }
                 if (SINK_MESSAGE) {
-                    R.parseAndEval("sink(type='message')");
                     try {
+                        R.parseAndEval("sink(type='message')");
+
                         lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                        } catch (Exception ex) {
+                            log(ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
-        } catch (Exception ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-            return false;
         }
 
         if (tryEval && e != null) {
@@ -428,8 +441,8 @@ public class RserveSession extends Rsession implements RLog {
             b.eval(expression);
         }
         REXP e = null;
-        try {
-            synchronized (R) {
+        synchronized (R) {
+            try {
                 if (SINK_OUTPUT) {
                     R.parseAndEval("sink('" + SINK_FILE + "',type='output')");
                 }
@@ -441,31 +454,44 @@ public class RserveSession extends Rsession implements RLog {
                 } else {
                     e = R.parseAndEval(expression);
                 }
+            } catch (Exception ex) {
+                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            } finally {
                 if (SINK_OUTPUT) {
-                    R.parseAndEval("sink(type='output')");
                     try {
+                        R.parseAndEval("sink(type='output')");
+
                         lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.parseAndEval("unlink('" + SINK_FILE + "')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION +ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.parseAndEval("unlink('" + SINK_FILE + "')");
                 }
                 if (SINK_MESSAGE) {
-                    R.parseAndEval("sink(type='message')");
                     try {
+                        R.parseAndEval("sink(type='message')");
+
                         lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))").asString();
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
                         log(lastOuput, Level.WARNING);
+                    } finally {
+                        try {
+                            R.parseAndEval("unlink('" + SINK_FILE + ".m')");
+                        } catch (Exception ex) {
+                            log(HEAD_EXCEPTION +ex.getMessage(), Level.ERROR);
+                        }
                     }
-                    R.parseAndEval("unlink('" + SINK_FILE + ".m')");
                 }
             }
-        } catch (Exception ex) {
-            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
         }
 
         if (tryEval && e != null) {
