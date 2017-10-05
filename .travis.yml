@@ -8,7 +8,7 @@ matrix:
 #          sources:
 #          - r-packages-precise
 #          packages:
-"          - r-base-core	
+#          - r-base-core	
 #          - r-base-dev	
 #          - r-recommended
 #          - r-cran-rserve
