@@ -45,6 +45,13 @@ public class RserveSessionTest {
     }
 
     @Test
+    public void testExceed128Connections() throws Exception {
+        for (int i = 0; i < 129; i++) {
+            assert (boolean)s.eval("is.function(png)") : "Failed to call is.function";
+        }
+    }
+    
+    @Test
     public void testError() throws Exception {
         boolean error = false;
         try {

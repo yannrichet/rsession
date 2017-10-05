@@ -28,6 +28,13 @@ public class RenjinSessionTest {
     }
 
     @Test
+    public void testExceed128Connections() throws Exception {
+        for (int i = 0; i < 129; i++) {
+            assert (boolean)s.eval("is.function(png)") : "Failed to call is.function";
+        }
+    }
+
+    @Test
     public void testError() throws Exception {
         boolean error = false;
         try {
@@ -60,13 +67,13 @@ public class RenjinSessionTest {
             FileUtils.deleteDirectory(dir);
         }
     }
-    
+
     // @Test
     public void testInstallPackages() {
         String out = s.installPackage("sensitivity", true);
         // will not work yet... assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: "+out;
         String out2 = s.installPackage("pso", true);
-        assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: "+out2;
+        assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: " + out2;
     }
 
     @Test
@@ -138,7 +145,7 @@ public class RenjinSessionTest {
     public void testExplicitSink() throws Exception {
         s.SINK_OUTPUT = false;
         s.SINK_MESSAGE = false;
-        
+
         s.voidEval(f);
 
         // without sink: SIGPIPE error
@@ -173,17 +180,16 @@ public class RenjinSessionTest {
 
         // without sink: SIGPIPE error
         SEXP maxsin = (SEXP) s.rawEval("f()");
-        
+
         //System.err.println("output="+s.getLastOutput()+"\nerror="+s.getLastError()+"\nlog="+s.getLastLogEntry());
         // No, because SINK files are deleted after...
         //assert Arrays.asList((s.asStrings(s.rawEval("readLines('"+s.SINK_FILE+"')")))).size() > 0 : "Empty output sinked";
         //assert Arrays.asList((s.asStrings(s.rawEval("readLines('"+s.SINK_FILE+".m')")))).size() > 0 : "Empty message sinked";
-
         assert maxsin != null : s.getLastLogEntry();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
-        assert s.getLastOutput().equals("cat") : "Wrong LastOutput: "+s.getLastOutput();
-        assert s.getLastError() == null : "Wrong LastError: "+s.getLastError();
-        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: "+s.getLastLogEntry();
+        assert s.getLastOutput().equals("cat") : "Wrong LastOutput: " + s.getLastOutput();
+        assert s.getLastError() == null : "Wrong LastError: " + s.getLastError();
+        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: " + s.getLastLogEntry();
 
         SEXP test = (SEXP) s.rawEval("1+pi");
         assert s.asDouble(test) > 4 : "Failed next eval";
@@ -197,7 +203,7 @@ public class RenjinSessionTest {
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile.getAbsoluteFile(), "raw" + i);
-            assert sfile.exists() : "Size " + size + " failed: "+sfile.getAbsolutePath()+" size "+(sfile.length());
+            assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
             sfile.delete();
         }
     }
@@ -514,14 +520,14 @@ public class RenjinSessionTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
-        
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath()+" "+tmpdir.mkdir());
+
+        System.out.println("tmpdir=" + tmpdir.getAbsolutePath() + " " + tmpdir.mkdir());
 
         s = new RenjinSession(l, prop);
-        
+
         s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')");
 
-	System.err.println(s.eval("R.version.string"));
+        System.err.println(s.eval("R.version.string"));
         System.err.println(s.eval("getwd()"));
     }
 
