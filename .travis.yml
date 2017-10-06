@@ -13,8 +13,6 @@ matrix:
 #          - r-recommended
 #          - r-cran-rserve
     - os: linux
-      jdk:
-        - oraclejdk8
       dist: trusty
       addons:
         apt:
@@ -29,7 +27,6 @@ matrix:
       osx_image: xcode8.3
       brew_packages: 
         - r
-        - Rserve
 install: mvn install -DskipTests=true -Dgpg.skip=true
 
 #before_install:
