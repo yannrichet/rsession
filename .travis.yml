@@ -19,7 +19,8 @@ matrix:
           sources:
           - r-packages-trusty
           packages:
-          - r-base-core	
+          - r-base-core
+          - gcc
       #    - r-base-dev	
       #    - r-recommended
       #    - r-cran-rserve
