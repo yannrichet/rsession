@@ -18,11 +18,11 @@ matrix:
         apt:
           sources:
           - r-packages-trusty
+          - ubuntu-toolchain-r-test
           packages:
           - r-base-core
-          - gcc
+          - gcc-4.8
       #    - r-base-dev	
-      #    - r-recommended
       #    - r-cran-rserve
       #before_install:
       #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
