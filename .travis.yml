@@ -20,19 +20,19 @@ matrix:
           - r-packages-trusty
           packages:
           - r-base-core	
-          - r-base-dev	
-          - r-recommended
-          - r-cran-rserve
-      before_install:
-      - "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
-      - "R CMD INSTALL Rserve_1.8-3.tar.gz"
+      #    - r-base-dev	
+      #    - r-recommended
+      #    - r-cran-rserve
+      #before_install:
+      #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
+      #- "R CMD INSTALL Rserve_1.8-3.tar.gz"
     - os: osx
       osx_image: xcode8.3
       brew_packages: 
         - r
-      before_install:
-      - "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
-      - "R CMD INSTALL Rserve_1.8-1.tgz"
+      #before_install:
+      #- "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
+      #- "R CMD INSTALL Rserve_1.8-1.tgz"
 install: mvn install -DskipTests=true -Dgpg.skip=true
 
 #before_install:
