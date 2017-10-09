@@ -2,11 +2,17 @@ package org.math.R;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.io.FileSystemUtils;
+import org.apache.commons.vfs2.FileContent;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /**
@@ -180,8 +186,11 @@ public class StartRserve {
         if (repository == null || repository.length() == 0) {
             repository = Rsession.DEFAULT_REPOS;
         }
-        Log.Out.println("Install Rserve from " + repository + " ... (http_proxy=" + http_proxy + ") ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy=" + http_proxy + ");" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", true);
+        if (http_proxy == null) {
+            http_proxy = "";
+        }
+        Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", true);
         if (p == null) {
             Log.Err.println("failed");
             return false;
@@ -200,6 +209,21 @@ public class StartRserve {
             n--;
         }
         Log.Err.println("failed");
+        File[] rout = new File(".").listFiles(
+                new FilenameFilter() {
+
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".Rout");
+                    }
+                });
+        for (File f : rout) {
+            try {
+                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f));
+            } catch (IOException ex) {
+                Log.Err.println(f + ": " + ex.getMessage());
+            }
+        }
         return false;
     }
 

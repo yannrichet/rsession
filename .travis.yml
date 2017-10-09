@@ -8,7 +8,7 @@ matrix:
 #          sources:
 #          - r-packages-precise
 #          packages:
-"          - r-base-core	
+#          - r-base-core	
 #          - r-base-dev	
 #          - r-recommended
 #          - r-cran-rserve
@@ -18,18 +18,22 @@ matrix:
         apt:
           sources:
           - r-packages-trusty
+          - ubuntu-toolchain-r-test
           packages:
-          - r-base-core	
-          - r-base-dev	
-          - r-recommended
-          - r-cran-rserve
+          - r-base-core
+          - gcc-4.8
+      #    - r-base-dev	
+      #    - r-cran-rserve
+      #before_install:
+      #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
+      #- "R CMD INSTALL Rserve_1.8-3.tar.gz"
     - os: osx
       osx_image: xcode8.3
       brew_packages: 
         - r
-        - Rserve
-jdk:
-  - oraclejdk8
+      #before_install:
+      #- "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
+      #- "R CMD INSTALL Rserve_1.8-1.tgz"
 install: mvn install -DskipTests=true -Dgpg.skip=true
 
 #before_install:
