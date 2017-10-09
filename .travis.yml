@@ -21,6 +21,7 @@ matrix:
           - ubuntu-toolchain-r-test
           packages:
           - r-base-core
+          - r-base-dev	
           - gcc-4.8
       #    - r-base-dev	
       #    - r-cran-rserve
