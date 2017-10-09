@@ -105,7 +105,18 @@ public class RserveSessionTest {
         assert l != null : "Cannot eval l:" + s.getLastError();
         assert (l instanceof Map) : "Not a Map";
     }
+    
+    // @Test
+    public void testObjectFun() throws Exception {
+       s.voidEval("f <- function(x) x");
+        System.err.println("R: " + s.getLastOutput());
+        System.err.println("R! " + s.getLastError());
 
+        assert s.asStrings(s.eval("ls()")).length == 1 : "Wrong environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
+
+        assert s.rawEval("f")!=null:"Cannot get function object";
+    }
+    
     // @Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
