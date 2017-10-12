@@ -2,17 +2,12 @@ package org.math.R;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.io.FileSystemUtils;
-import org.apache.commons.vfs2.FileContent;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /**
@@ -250,7 +245,7 @@ public class StartRserve {
                 String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
                 command = "echo \"" + todo + "\" | " + Rcmd + " " + rargs + (redirect ? " > " + Rout : "");
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
-                new File(Rout).deleteOnExit();
+                //new File(Rout).deleteOnExit();
             }
             Log.Out.println("  executing " + command);
         } catch (Exception x) {
