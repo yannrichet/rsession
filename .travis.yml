@@ -23,8 +23,7 @@ matrix:
           - r-base-core
           - r-base-dev	
           - gcc-4.8
-      #    - r-base-dev	
-      #    - r-cran-rserve
+          - r-cran-rserve
       #before_install:
       #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
       #- "R CMD INSTALL Rserve_1.8-3.tar.gz"
