@@ -310,6 +310,9 @@ public class RenjinSession extends Rsession implements RLog {
     // http://docs.renjin.org/en/latest/library/moving-data-between-java-and-r-code.html
     @Override
     public double asDouble(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Double) null;
+        }
         if (o instanceof Double) {
             return (double) o;
         }
@@ -325,6 +328,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public double[] asArray(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof double[]) {
             return (double[]) o;
         }
@@ -346,6 +352,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public double[][] asMatrix(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof double[][]) {
             return (double[][]) o;
         }
@@ -377,6 +386,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public String asString(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof String) {
             return (String) o;
         }
@@ -392,6 +404,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public String[] asStrings(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof String[]) {
             return (String[]) o;
         }
@@ -418,11 +433,17 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Integer) null;
+        }
         return asIntegers(o)[0];
     }
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof int[]) {
             return (int[]) o;
         }
@@ -444,6 +465,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Boolean) null;
+        }
         if (o instanceof Boolean) {
             return (boolean) o;
         }
@@ -459,6 +483,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public boolean[] asLogicals(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof boolean[]) {
             return (boolean[]) o;
         }
@@ -486,6 +513,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public Map asList(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof Map) {
             return (Map) o;
         }
@@ -668,8 +698,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public void save(File f, String... vars) throws RException {
+        if (vars==null) return;
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getAbsolutePath() + "'," + vars[0] + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getAbsolutePath() + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }

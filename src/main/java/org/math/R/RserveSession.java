@@ -470,7 +470,7 @@ public class RserveSession extends Rsession implements RLog {
                         try {
                             R.parseAndEval("unlink('" + SINK_FILE + "')");
                         } catch (Exception ex) {
-                            log(HEAD_EXCEPTION +ex.getMessage(), Level.ERROR);
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
                     }
                 }
@@ -487,7 +487,7 @@ public class RserveSession extends Rsession implements RLog {
                         try {
                             R.parseAndEval("unlink('" + SINK_FILE + ".m')");
                         } catch (Exception ex) {
-                            log(HEAD_EXCEPTION +ex.getMessage(), Level.ERROR);
+                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
                     }
                 }
@@ -761,6 +761,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public double asDouble(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Double) null;
+        }
         if (o instanceof Double) {
             return (double) o;
         }
@@ -776,6 +779,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public double[] asArray(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof double[]) {
             return (double[]) o;
         }
@@ -798,6 +804,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public double[][] asMatrix(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof double[][]) {
             return (double[][]) o;
         }
@@ -823,6 +832,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public String asString(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof String) {
             return (String) o;
         }
@@ -838,6 +850,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public String[] asStrings(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof String[]) {
             return (String[]) o;
         }
@@ -860,6 +875,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Integer) null;
+        }
         if (o instanceof Integer) {
             return (int) o;
         }
@@ -875,6 +893,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof int[]) {
             return (int[]) o;
         }
@@ -897,6 +918,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
+        if (o == null) {
+            return (Boolean) null;
+        }
         if (o instanceof Boolean) {
             return (boolean) o;
         }
@@ -912,6 +936,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public boolean[] asLogicals(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof boolean[]) {
             return (boolean[]) o;
         }
@@ -939,6 +966,9 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public Map asList(Object o) throws ClassCastException {
+        if (o == null) {
+            return null;
+        }
         if (o instanceof Map) {
             return (Map) o;
         }
@@ -1197,7 +1227,8 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public void save(File f, String... vars) throws RException {
         super.save(f, vars);
-
+        if (vars==null) return;
+        
         getFile(f);
         deleteFile(f.getName());
     }

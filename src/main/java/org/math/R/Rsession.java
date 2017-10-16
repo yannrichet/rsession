@@ -338,7 +338,7 @@ public abstract class Rsession implements RLog {
                         log("Failed setting environment " + p, Level.WARNING);
                     }
                 } catch (Exception ex) {
-                    log(ex.getMessage(),Level.WARNING);
+                    log(ex.getMessage(), Level.WARNING);
                     ex.printStackTrace();
                 }
             }
@@ -551,7 +551,7 @@ public abstract class Rsession implements RLog {
         try {
             rawEval("install.packages('" + pack.getName() + "',repos=NULL,quiet=T");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log(ex.getMessage(), Level.ERROR);
         }
         log("  request package " + pack + " install...", Level.INFO);
 
@@ -946,6 +946,7 @@ public abstract class Rsession implements RLog {
      * @return String list expression
      */
     public static String buildListString(String... vars) {
+        //if (vars==null) return null;
         if (vars.length > 1) {
             StringBuffer b = new StringBuffer("c(");
             for (String v : vars) {
@@ -987,7 +988,7 @@ public abstract class Rsession implements RLog {
         try {
             assert asLogical(rawEval("file.exists('" + f.getName() + "')", TRY_MODE));
         } catch (Exception r) {
-            r.printStackTrace();
+            log(r.getMessage(), Level.ERROR);
         }
         try {
             voidEval("source('" + f.getName() + "')", TRY_MODE);
@@ -1006,7 +1007,7 @@ public abstract class Rsession implements RLog {
         try {
             assert asLogical(rawEval("file.exists('" + f.getName() + "')", TRY_MODE));
         } catch (Exception r) {
-            r.printStackTrace();
+            log(r.getMessage(), Level.ERROR);
         }
         try {
             voidEval("load('" + f.getName() + "')", TRY_MODE);
@@ -1022,9 +1023,13 @@ public abstract class Rsession implements RLog {
      */
     public String[] ls() {
         try {
-            return asStrings(rawEval("ls()", false));
+            String[] ls = asStrings(rawEval("ls()", false));
+            if (ls == null) {
+                return new String[]{};
+            }
+            return ls;
         } catch (Exception re) {
-            re.printStackTrace();
+            log(re.getMessage(), Level.ERROR);
             return new String[0];
         }
     }
@@ -1040,21 +1045,21 @@ public abstract class Rsession implements RLog {
             try {
                 return asStrings(rawEval("ls()", false));
             } catch (Exception re) {
-                re.printStackTrace();
+                log(re.getMessage(), Level.ERROR);
                 return new String[0];
             }
         } else if (vars.length == 1) {
             try {
                 return asStrings(rawEval(buildListPattern(vars[0]), TRY_MODE));
             } catch (Exception re) {
-                re.printStackTrace();
+                log(re.getMessage(), Level.ERROR);
                 return new String[0];
             }
         } else {
             try {
                 return asStrings(rawEval(buildListPattern(vars), TRY_MODE));
             } catch (Exception re) {
-                re.printStackTrace();
+                log(re.getMessage(), Level.ERROR);
                 return new String[0];
             }
         }
@@ -1099,8 +1104,9 @@ public abstract class Rsession implements RLog {
      * @throws org.math.R.Rsession.RException Could not do save
      */
     public void save(File f, String... vars) throws RException {
+        if (vars==null) return;
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName() + "'," + vars[0] + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName() + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
@@ -1298,7 +1304,7 @@ public abstract class Rsession implements RLog {
         try {
             set("plotfile_" + h, f.getName());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log(ex.getMessage(), Level.ERROR);
         }
         silentlyRawEval(fileformat + "(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
         for (String command : commands) {
@@ -1309,7 +1315,7 @@ public abstract class Rsession implements RLog {
         try {
             rm("plotfile_" + h);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log(ex.getMessage(), Level.ERROR);
         }
         deleteFile(f.getName());
     }

@@ -80,8 +80,8 @@ public class BasicTest {
 
     @Test
     public void testCast_Rserve() throws Exception {
-         System.err.println("====================================== Rserve");
-       //cast
+        System.err.println("====================================== Rserve");
+        //cast
         assert ((Boolean) s.eval("TRUE")) == true;
         assert ((Double) s.eval("0.123")) == 0.123;
         assert ((Double) s.eval("pi")) - 3.141593 < 0.0001;
@@ -184,6 +184,44 @@ public class BasicTest {
 
         r.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
         assert (Double) (r.eval("df$x1[3]")) == 7;
+    }
+
+    @Test
+    public void testSave_Rserve() throws Exception {
+        String str = "abcd";
+        s.set("s", str);
+        assert ((String) s.eval("s")).equals(str);
+        
+        File f = File.createTempFile("Rserve", "save");
+        s.save(f, null);
+        assert !f.exists() : "Created empty save file !";
+        s.save(f, "s");
+        assert f.exists() : "Failed to create save file !";
+
+        String ss = s.asString(s.eval("s"));
+        assert ss.equals("abcd") : "bad eval of s";
+        assert s.rm("s") : "Failed to delete s";
+        s.load(f);
+        assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
+    }
+    
+    @Test
+    public void testSave_Renjin() throws Exception {
+        String str = "abcd";
+        r.set("s", str);
+        assert ((String) r.eval("s")).equals(str);
+        
+        File f = File.createTempFile("Rserve", "save");
+        r.save(f, null);
+        assert !f.exists() : "Created empty save file !";
+        r.save(f, "s");
+        assert f.exists() : "Failed to create save file !";
+
+        String ss = r.asString(r.eval("s"));
+        assert ss.equals("abcd") : "bad eval of s";
+        assert r.rm("s") : "Failed to delete s";
+        r.load(f);
+        assert r.asString(r.eval("s")).equals("abcd") : "bad restore of s";
     }
 
     @Test
