@@ -30,7 +30,7 @@ public class RenjinSessionTest {
     @Test
     public void testExceed128Connections() throws Exception {
         for (int i = 0; i < 129; i++) {
-            assert (boolean)s.eval("is.function(png)") : "Failed to call is.function";
+            assert (boolean) s.eval("is.function(png)") : "Failed to call is.function";
         }
     }
 
@@ -77,6 +77,25 @@ public class RenjinSessionTest {
     }
 
     @Test
+    public void testPackageErrorNotBlocking() {
+        try {
+            assert s.eval("packageDescription(\"Rserve\")")==Boolean.FALSE : "Failed to eval (without error) packageDescription: "+s.eval("packageDescription(\"Rserve\")");
+        } catch (Exception ex) {
+            //ex.printStackTrace();
+        }
+        try {
+            Object o = s.eval("packageDescription(\"Rserve\")$Version");
+            assert false : "Failed to eval (with error) packageDescription$";
+        } catch (Exception ex) {
+        }
+        try {
+           assert new Double(2.0).compareTo((Double)s.eval("1+1"))==0 : "Failed to eval 1+1: "+s.eval("1+1");
+        } catch (Exception ex) {
+        }
+
+    }
+
+    @Test
     public void testObject() throws Exception {
         Object l = s.eval("list(x=3)");
         System.err.println("l: " + l);
@@ -91,15 +110,15 @@ public class RenjinSessionTest {
 
     @Test
     public void testObjectFun() throws Exception {
-       s.voidEval("f <- function(x) x");
+        s.voidEval("f <- function(x) x");
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
 
         assert s.asStrings(s.eval("ls()")).length == 1 : "Wrong environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
 
-        assert s.rawEval("f")!=null:"Cannot get function object";
+        assert s.rawEval("f") != null : "Cannot get function object";
     }
-    
+
     @Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
