@@ -1224,15 +1224,6 @@ public class RserveSession extends Rsession implements RLog {
 
     }
 
-    @Override
-    public void save(File f, String... vars) throws RException {
-        super.save(f, vars);
-        if (vars==null) return;
-        
-        getFile(f);
-        deleteFile(f.getName());
-    }
-
     /**
      * Method to rawEval expression. Holds many optimizations (@see noVarsEvals)
      * and turn around for reliable usage (like engine auto restart). 1D Numeric

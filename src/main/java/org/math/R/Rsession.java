@@ -946,7 +946,9 @@ public abstract class Rsession implements RLog {
      * @return String list expression
      */
     public static String buildListString(String... vars) {
-        //if (vars==null) return null;
+        if (vars == null) {
+            return null;
+        }
         if (vars.length > 1) {
             StringBuffer b = new StringBuffer("c(");
             for (String v : vars) {
@@ -955,7 +957,11 @@ public abstract class Rsession implements RLog {
 
             return b.substring(0, b.length() - 1) + ")";
         } else {
-            return "'" + vars[0] + "'";
+            if (vars.length == 1 && vars[0] != null) {
+                return "'" + vars[0] + "'";
+            } else {
+                return "''";
+            }
         }
     }
 
@@ -1005,12 +1011,12 @@ public abstract class Rsession implements RLog {
     public void load(File f) {
         putFile(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getName() + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath() + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("load('" + f.getName() + "')", TRY_MODE);
+            voidEval("load('" + f.getAbsolutePath() + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1104,12 +1110,21 @@ public abstract class Rsession implements RLog {
      * @throws org.math.R.Rsession.RException Could not do save
      */
     public void save(File f, String... vars) throws RException {
-        if (vars==null) return;
+        if (vars == null) {
+            log("Nothing to save.", Level.WARNING);
+            return;
+        }
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName() + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName()+ "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+        }
+        getFile(f);
+        deleteFile(f.getName());
     }
 
     /**
@@ -1120,6 +1135,10 @@ public abstract class Rsession implements RLog {
      * @throws org.math.R.Rsession.RException Could not do save
      */
     public void savels(File f, String... vars) throws RException {
+        if (vars == null) {
+            log("Nothing to save.", Level.WARNING);
+            return;
+        }
         if (vars.length == 1) {
             voidEval("save(file='" + f.getName() + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {

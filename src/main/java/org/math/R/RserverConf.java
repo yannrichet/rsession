@@ -57,7 +57,7 @@ public class RserverConf {
                 }
             }
         }
-        private boolean timedOut = false;
+        private boolean timedOut = false;        
         private Object result = null;
 
         protected TimeOut() {
