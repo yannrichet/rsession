@@ -42,6 +42,10 @@ public class RenjinSession extends Rsession implements RLog {
         return new RenjinSession(console, properties);
     }
 
+    public static String fixPathSeparator(String p) {
+        return p.replace(File.separatorChar, '/');
+    }
+
     public RenjinSession(RLog console, Properties properties) {
         super(console);
 
@@ -51,11 +55,16 @@ public class RenjinSession extends Rsession implements RLog {
         }
 
         try {
-            wdir = new File(FileUtils.getTempDirectory(), "Renjin");
-            wdir.mkdir();
-            R.eval("setwd('" + wdir.getAbsolutePath() + "')");
+            wdir = new File(FileUtils.getTempDirectory(), "Renjin" + hashCode());
+            if (!wdir.mkdir()) {
+                wdir = new File(FileUtils.getUserDirectory(), "Renjin" + hashCode());
+                if (!wdir.mkdir()) {
+                    throw new IOException("Could not create directory " + new File(FileUtils.getTempDirectory(), "Renjin") + hashCode() + "\n or " + new File(FileUtils.getUserDirectory(), "Renjin") + hashCode());
+                }
+            }
+            R.eval("setwd('" + fixPathSeparator(wdir.getAbsolutePath()) + "')");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
 
         SINK_FILE = SINK_FILE_BASE + "-renjin" + this.hashCode();
@@ -117,11 +126,11 @@ public class RenjinSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval(".f <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -135,7 +144,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.eval("sink(type='output')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + "'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -143,7 +152,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)");
-                            R.eval("unlink('" + SINK_FILE + "')");
+                            R.eval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -152,7 +161,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -160,7 +169,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)");
-                            R.eval("unlink('" + SINK_FILE + ".m')");
+                            R.eval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -202,11 +211,11 @@ public class RenjinSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval(".f <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + SINK_FILE + "',open='wt')");
+                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -220,7 +229,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.eval("sink(type='output')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + "'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -228,7 +237,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
-                            R.eval("unlink('" + SINK_FILE + "')");
+                            R.eval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -237,7 +246,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + SINK_FILE + ".m'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
                         log(lastOuput, Level.INFO);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -245,7 +254,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)");
-                            R.eval("unlink('" + SINK_FILE + ".m')");
+                            R.eval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -583,10 +592,12 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public void putFile(File localfile, String remoteFile) {
-        try {
-            FileUtils.copyFile(localfile, new File(wdir, remoteFile));
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        if (!localfile.equals(new File(wdir, remoteFile))) {
+            try {
+                FileUtils.copyFile(localfile, new File(wdir, remoteFile));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -698,11 +709,30 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public void save(File f, String... vars) throws RException {
-        if (vars==null) return;
+        if (vars == null) {
+            log("Nothing to save.", Level.WARNING);
+            return;
+        }
         if (vars.length == 1) {
             voidEval("save(file='" + f.getAbsolutePath() + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        }
+    }
+
+    public void savels(File f, String... vars) throws RException {
+        if (vars == null) {
+            log("Nothing to save.", Level.WARNING);
+            return;
+        }
+        if (vars.length == 1) {
+            voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        } else {
+            voidEval("save(file='" + f.getAbsolutePath() + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+        }
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
         }
     }
 
