@@ -182,7 +182,7 @@ public class RserveSessionTest {
 
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
 
-    // @Test
+    @Test
     public void testErrorNOSink() throws Exception {
         s.voidEval(f);
 
@@ -229,7 +229,7 @@ public class RserveSessionTest {
         s.SINK_OUTPUT = true;
     }
 
-    // @Test not working because ogf melting bw output, message, error, ... TO BE FIXED
+    @Test
     public void testDefaultSink() throws Exception {
         s.voidEval(f);
 
@@ -239,8 +239,8 @@ public class RserveSessionTest {
         assert maxsin != null : s.getLastLogEntry();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
         assert s.getLastOutput().equals("cat") : "Wrong LastOutput: " + s.getLastOutput();
-        assert s.getLastError() == null : "Wrong LastError: " + s.getLastError();
-        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: " + s.getLastLogEntry();
+        assert s.getLastError().equals("message") : "Wrong LastError: " + s.getLastError();
+        assert s.getLastLogEntry().contains("0.0") : "Wrong LastLogEntry: " + s.getLastLogEntry();
 
         REXP test = (REXP) s.rawEval("1+pi");
         assert test.asDouble() > 4 : "Failed next eval";

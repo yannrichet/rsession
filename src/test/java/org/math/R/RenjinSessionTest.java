@@ -218,8 +218,8 @@ public class RenjinSessionTest {
         assert maxsin != null : s.getLastLogEntry();
         assert s.asDouble(maxsin) == 0 : "Wrong eval";
         assert s.getLastOutput().equals("cat") : "Wrong LastOutput: " + s.getLastOutput();
-        assert s.getLastError() == null : "Wrong LastError: " + s.getLastError();
-        assert s.getLastLogEntry().equals("") : "Wrong LastLogEntry: " + s.getLastLogEntry();
+        assert s.getLastError().equals("message") : "Wrong LastError: " + s.getLastError();
+        assert s.getLastLogEntry().contains("0.0") : "Wrong LastLogEntry: " + s.getLastLogEntry();
 
         SEXP test = (SEXP) s.rawEval("1+pi");
         assert s.asDouble(test) > 4 : "Failed next eval";
