@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -177,13 +178,13 @@ public class RObjectsPanel extends JPanel implements UpdateObjectsListener {
         });
     }
 
-    public void update() {
+    public void update() { 
         try {
             if (R == null) {
                 ls = new String[0];
             } else {
                 String[] rls = R.asStrings(R.silentlyRawEval("ls()"));
-                if (rls == null) {
+                if (rls != null) {
                     ls = rls;
                 } else {
                     ls = new String[0];
