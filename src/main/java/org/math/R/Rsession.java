@@ -48,7 +48,7 @@ public abstract class Rsession implements RLog {
 
     //** GLG HACK: Logging fix **//
     // No sink file (Passed to false) a lot faster not to sink the output
-    boolean SINK_OUTPUT = true, SINK_MESSAGE = false;
+    boolean SINK_OUTPUT = true, SINK_MESSAGE = true;
 
     public void sinkOutput(boolean s) {
         SINK_OUTPUT = s;
@@ -63,6 +63,11 @@ public abstract class Rsession implements RLog {
     String SINK_FILE_BASE = System.getProperty("java.io.tmpdir") + File.separator + ".Rout";
     String SINK_FILE = null;
     String lastOuput = "";
+    String lastMessage = "";
+
+    public static String fixPathSeparator(String p) {
+        return p.replace(File.separatorChar, '/');
+    }
 
     void cleanupListeners() {
         if (loggers != null) {
@@ -345,11 +350,11 @@ public abstract class Rsession implements RLog {
         }
     }
 
-    String lastmessage = "";
+    String lastLog = "";
     int repeated = 0;
 
     public String getLastLogEntry() {
-        return lastmessage;
+        return lastLog;
     }
 
     private void err_println(String message, RLog.Level level) {
@@ -377,16 +382,16 @@ public abstract class Rsession implements RLog {
                     message = message.substring(0, message.length() - 2); // to delete when many return chars
                 }
             }
-            if (message.equals(lastmessage) && repeated < 100) {
+            if (message.equals(lastLog) && repeated < 100) {
                 repeated++;
             } else {
                 if (repeated > 0) {
                     err_println("    Repeated " + repeated + " times.", level);
                     repeated = 0;
-                    lastmessage = message;
+                    lastLog = message;
                     err_println(message, level);
                 } else {
-                    lastmessage = message;
+                    lastLog = message;
                     err_println(message, level);
                 }
             }
@@ -748,8 +753,12 @@ public abstract class Rsession implements RLog {
     }
 
     public String getLastError() {
-        Object err = silentlyRawEval("geterrmessage()");
-        return (err == null ? "" : asString(err));
+        if (!SINK_MESSAGE) {
+            Object err = silentlyRawEval("geterrmessage()");
+            return (err == null ? "" : asString(err));
+        } else {
+            return lastMessage;
+        }
     }
 
     /**
@@ -1115,7 +1124,7 @@ public abstract class Rsession implements RLog {
             return;
         }
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName()+ "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName() + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getName() + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }

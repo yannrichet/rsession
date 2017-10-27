@@ -42,10 +42,6 @@ public class RenjinSession extends Rsession implements RLog {
         return new RenjinSession(console, properties);
     }
 
-    public static String fixPathSeparator(String p) {
-        return p.replace(File.separatorChar, '/');
-    }
-
     public RenjinSession(RLog console, Properties properties) {
         super(console);
 
@@ -63,10 +59,11 @@ public class RenjinSession extends Rsession implements RLog {
                 }
             }
             R.eval("setwd('" + fixPathSeparator(wdir.getAbsolutePath()) + "')");
+            wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
-
+        
         SINK_FILE = SINK_FILE_BASE + "-renjin" + this.hashCode();
 
         setenv(properties);
@@ -76,6 +73,9 @@ public class RenjinSession extends Rsession implements RLog {
         this(new RLog() {
 
             public void log(String string, Level level) {
+                PrintStream pp=null;
+                if (p!=null) pp=p; else pp=System.err;
+                
                 if (level == Level.WARNING) {
                     p.print("(!) ");
                 } else if (level == Level.ERROR) {
@@ -85,7 +85,7 @@ public class RenjinSession extends Rsession implements RLog {
             }
 
             public void close() {
-                p.close();
+                if (p!=null) p.close();
             }
         }, properties);
     }
@@ -130,7 +130,7 @@ public class RenjinSession extends Rsession implements RLog {
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
+                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -161,11 +161,11 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
-                        log(lastOuput, Level.INFO);
+                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
+                        log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
-                        lastOuput = ex.getMessage();
-                        log(lastOuput, Level.WARNING);
+                        lastMessage = ex.getMessage();
+                        log(lastMessage, Level.WARNING);
                     } finally {
                         try {
                             R.eval("close(.fm)");
@@ -215,7 +215,7 @@ public class RenjinSession extends Rsession implements RLog {
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
+                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -246,11 +246,11 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
-                        log(lastOuput, Level.INFO);
+                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))"));
+                        log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
-                        lastOuput = ex.getMessage();
-                        log(lastOuput, Level.WARNING);
+                        lastMessage = ex.getMessage();
+                        log(lastMessage, Level.WARNING);
                     } finally {
                         try {
                             R.eval("close(.fm)");

@@ -31,7 +31,7 @@ public class BasicTest {
         RLog l = new RLog() {
 
             public void log(String string, RLog.Level level) {
-                System.out.println("                              " + level + " " + string);
+                System.out.println("                               " + level + " " + string);
             }
 
             public void close() {
@@ -76,6 +76,30 @@ public class BasicTest {
         s.close();
         //A shutdown hook kills all Rserve at the end.
         r.close();
+    }
+
+    @Test
+    public void testWriteCSVAnywhere_Rserve() throws Exception {
+        String toto = "/tmp/toto.csv";
+        File totof = new File(toto);
+        if (totof.exists()) {
+            assert totof.delete() : "Failed to delete " + totof;
+        }
+        assert !totof.exists() : "Indeed, did not deleted " + totof;
+        s.voidEval("write.csv(runif(10),'" + toto + "')");
+        assert totof.isFile() : "Failed to write file";
+    }
+
+    @Test
+    public void testWriteCSVAnywhere_Renjin() throws Exception {
+        String toto = "/tmp/toto.csv";
+        File totof = new File(toto);
+        if (totof.exists()) {
+            assert totof.delete() : "Failed to delete " + totof;
+        }
+        assert !totof.exists() : "Indeed, did not deleted " + totof;
+        r.voidEval("write.csv(runif(10),'" + toto + "')");
+        assert totof.isFile() : "Failed to write file";
     }
 
     @Test
@@ -191,8 +215,8 @@ public class BasicTest {
         String str = "abcd";
         s.set("s", str);
         assert ((String) s.eval("s")).equals(str);
-        
-        File f = File.createTempFile("Rserve", "save");
+
+        File f = new File("Rserve"+Math.random()+".save");
         s.save(f, null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
@@ -204,14 +228,14 @@ public class BasicTest {
         s.load(f);
         assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
     }
-    
+
     @Test
     public void testSave_Renjin() throws Exception {
         String str = "abcd";
         r.set("s", str);
         assert ((String) r.eval("s")).equals(str);
-        
-        File f = File.createTempFile("Rserve", "save");
+
+        File f = new File("Rserve"+Math.random()+".save");
         r.save(f, null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
@@ -282,7 +306,7 @@ public class BasicTest {
         System.out.println(txt);
         assert txt.length() > 0;
 
-//to HTML
+        //to HTML
         String html = s.asHTML("summary(rnorm(100))");
         System.out.println(html);
         assert html.length() > 0;
