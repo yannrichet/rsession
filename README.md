@@ -10,7 +10,7 @@ Other alternatives:
 
 ## Example Java code ##
 ```java
-import static org.math.R.RserveSession.*;
+import static org.math.R.*;
 ...
  
     public static void main(String args[]) {
@@ -101,7 +101,7 @@ Then, use it in your code:
     ```java
     Object o = s.eval("...",HashMap<String,Object> vars)
     ```
-    (Object o is automatically cast to double, double, double,String, String, ...)
+    (Object o is automatically cast to double, double[], double[][],String, String[], ...)
     * OR
       * create your R objects using `s.set("...",...)`
       * call any R command using `s.eval("...")`
