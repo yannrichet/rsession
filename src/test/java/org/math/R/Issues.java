@@ -13,66 +13,7 @@ import org.junit.Test;
  */
 public class Issues {
 
-    PrintStream p = System.err;
-    //RserverConf conf;
-    RserveSession s;
-    RenjinSession r;
-    int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
-
-    public static void main(String args[]) {
-        org.junit.runner.JUnitCore.main(Issues.class.getName());
-    }
-
-    @Before
-    public void setUp() {
-        RLog l = new RLog() {
-
-            public void log(String string, RLog.Level level) {
-                System.out.println("                               " + level + " " + string);
-            }
-
-            public void close() {
-            }
-        };
-
-        String http_proxy_env = System.getenv("http_proxy");
-        Properties prop = new Properties();
-        if (http_proxy_env != null) {
-            prop.setProperty("http_proxy", http_proxy_env);
-        }
-
-        RserverConf conf = new RserverConf(null, -1, null, null, prop);
-        s = RserveSession.newInstanceTry(l, conf);
-        try {
-            System.err.println(s.eval("R.version.string"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        try {
-            System.err.println("Rserve version " + s.eval("installed.packages()[\"Rserve\",\"Version\"]"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        r = RenjinSession.newInstance(l, prop);
-
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
-    }
-
-    @After
-    public void tearDown() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-        }
-        s.close();
-        //A shutdown hook kills all Rserve at the end.
-        r.close();
-    }
-
-    @Test
+    //@Test
     public void Error_when_running_Rsession_eval_on_multiple_lines_string() throws Exception {
         Rsession s = RserveSession.newInstanceTry(System.out, null);
         //    RConnection s = new RConnection();
@@ -94,7 +35,7 @@ public class Issues {
         s.end();
     }
 
-    @Test
+    //@Test
     public void code_snippet_does_not_compile() throws Exception {
         Rsession s = RserveSession.newInstanceTry(System.out, null);
 
@@ -126,8 +67,8 @@ public class Issues {
 
         s.end();
     }
-    
-    @Test
+
+    //@Test
     public void sink_stack_is_full_exception_when_run_RSession() throws Rsession.RException {
         for (int i = 0; i < 25; i++) {
             RserverConf rconf = new RserverConf("127.0.0.1", 6311, "", "", new Properties());
@@ -142,5 +83,19 @@ public class Issues {
             }
             s.end();
         }
+    }
+
+    @Test
+    public void Found_a_bug_in_isPackageInstalled() throws Rsession.RException {
+        Rsession s = RserveSession.newInstanceTry(System.out, null);
+        s.installPackage("atsd", false);
+
+        if ((Boolean) s.eval("is.element(set=row.names(packs), el='zoo')")) {
+            s.voidEval("remove.packages('zoo')");
+        }
+
+        assert (Boolean) s.eval("is.element(set=row.names(packs), el='zoo')") == false : "Package still here !";
+
+        assert !s.isPackageInstalled("zoo", null) : "Package uninstalled !";
     }
 }

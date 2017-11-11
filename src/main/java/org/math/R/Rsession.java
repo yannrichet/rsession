@@ -454,7 +454,7 @@ public abstract class Rsession implements RLog {
         silentlyVoidEval(loadedpacks + "<-.packages()", false);
         boolean isloaded = false;
         try {
-            Object i = silentlyRawEval("is.element(set=" + loadedpacks + "[,1],el='" + pack + "')");
+            Object i = silentlyRawEval("is.element(set=" + loadedpacks + ",el='" + pack + "')");
             if (i != null) {
                 isloaded = asLogical(i);
             }
@@ -482,7 +482,7 @@ public abstract class Rsession implements RLog {
     public boolean isPackageInstalled(String pack, String version) {
         silentlyVoidEval(packs + "<-installed.packages(noCache=TRUE)", false);
         boolean isinstalled = false;
-        Object r = silentlyRawEval("is.element(set=" + packs + "[,1],el='" + pack + "')");
+        Object r = silentlyRawEval("is.element(set=row.names(" + packs + "),el='" + pack + "')");
         try {
             if (r != null) {
                 isinstalled = (asInteger(r) == 1);
