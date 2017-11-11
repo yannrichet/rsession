@@ -1,3 +1,5 @@
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsesion/badge.svg?style=flat)](http://search.maven.org/#search|ga|1|g%3ARsession)
+
 # Rsession: R sessions wrapping for Java #
 
 Rsession provides an easy to use java class giving access to remote or local R session. The back-end engine is Renjin (NEW) or Rserve, locally spawned automatically if necessary.
