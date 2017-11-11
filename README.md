@@ -1,4 +1,4 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsesion/badge.svg?style=flat)](http://search.maven.org/#search|ga|1|g%3ARsession)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsesion/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsesion)
 
 # Rsession: R sessions wrapping for Java #
 
