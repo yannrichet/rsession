@@ -1,4 +1,5 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
+[![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
 
 # Rsession: R sessions wrapping for Java #
@@ -50,16 +51,16 @@ import static org.math.R.*;
 
 ### Using Renjin: ###
 
-Add `lib/Rsession*.jar:lib/renjin*.jar` in your project classpath: 
-  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+Add `lib/rsession.jar:lib/renjin*.jar` in your project classpath: 
+  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version)
   * copy Renjin https://nexus.bedatadriven.com/service/local/artifact/maven/redirect?r=renjin-release&g=org.renjin&a=renjin-script-engine&c=jar-with-dependencies&v=RELEASE&e=jar
 
 ### Using Rserve: ###
 
 Install R from http://cran.r-project.org.
 
-Add `lib/Rsession*.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpath: 
-  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpath: 
+  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version)
   * copy Rserve https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/Rserve/1.8.1/Rserve-1.8.1.jar
   * copy REngine https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/REngine/2.1.0/REngine-2.1.0.jar
 
@@ -70,7 +71,7 @@ Add `lib/Rsession*.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpa
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>2.0.1</version>
+      <version>2.0.2</version>
     </dependency>
 ...
 </dependencies>
