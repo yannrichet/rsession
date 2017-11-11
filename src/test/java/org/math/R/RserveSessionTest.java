@@ -688,11 +688,7 @@ public class RserveSessionTest {
 
             public void close() {
             }
-        };/*RLogPanel();
-         JFrame f = new JFrame("RLogPanel");
-         f.setContentPane((RLogPanel) l);
-         f.setSize(600, 600);
-         f.setVisible(true);*/
+        };
 
         String http_proxy_env = System.getenv("http_proxy");
         Properties prop = new Properties();

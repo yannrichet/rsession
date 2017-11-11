@@ -1126,16 +1126,21 @@ public class RserveSession extends Rsession implements RLog {
                 RList l = ((REXPGenericVector) o).asList();
                 String s = "";
                 for (String k : l.keys()) {
-                    s = s + k+": " + toString(l.get(k)) + "\n";
+                    s = s + k + ": " + toString(l.get(k)) + "\n";
                 }
                 return s;
             } else if (((REXP) o).isVector()) {
                 try {
-                    return Arrays.asList(((REXP) o).asStrings()).toString();
+                    String[] ss = ((REXP) o).asStrings();
+                    if (((REXP) o).length() > 10) {
+                        return Arrays.asList(new String[]{ss[0], ss[1], "...("+ ss.length + ")...", ss[ss.length - 2], ss[ss.length - 1]}).toString();
+                    } else {
+                        return Arrays.asList(((REXP) o).asStrings()).toString();
+                    }
                 } catch (Exception ex) {
                     throw new ClassCastException("[toString] Cannot toString " + o);
                 }
-            } else  {
+            } else {
                 try {
                     return ((REXP) o).asString();
                 } catch (Exception ex) {
