@@ -122,6 +122,10 @@ public abstract class Rsession implements RLog {
         }
     }
 
+    public void end() {
+        close();
+    }
+
     List<BusyListener> busy = new LinkedList<BusyListener>();
 
     public void addBusyListener(BusyListener b) {

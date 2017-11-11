@@ -299,7 +299,8 @@ public class RserveSession extends Rsession implements RLog {
     /**
      * correctly (depending on execution platform) shutdown Rsession.
      */
-    void end() {
+    @Override
+    public void end() {
         if (R == null) {
             log("Void session terminated.", Level.INFO);
             cleanupListeners();
