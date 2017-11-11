@@ -20,17 +20,11 @@ matrix:
       #before_install:
       #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
       #- "R CMD INSTALL Rserve_1.8-3.tar.gz"
-    - os: osx
-      osx_image: xcode8.3
-      brew_packages: 
-        - r
-      #before_install:
-      #- "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
-      #- "R CMD INSTALL Rserve_1.8-1.tgz"
+    #- os: osx
+    #  osx_image: xcode8.3
+    #  brew_packages: 
+    #    - r
+    #  #before_install:
+    #  #- "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
+    #  #- "R CMD INSTALL Rserve_1.8-1.tgz"
 install: mvn install -DskipTests=true -Dgpg.skip=true
-
-#before_install:
-#  - sudo add-apt-repository "deb http://cloud.r-project.org/bin/linux/ubuntu precise/"
-#  - sudo apt-get -qq update
-#  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-#  - sudo apt-get install -y --force-yes libtiff4 r-base-core r-recommended r-cran-rserve
