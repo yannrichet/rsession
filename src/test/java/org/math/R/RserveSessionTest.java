@@ -701,7 +701,7 @@ public class RserveSessionTest {
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
 
-        s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')");
+        //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
 
         System.err.println(s.eval("R.version.string"));
         System.err.println("Rserve version " + s.eval("installed.packages()[\"Rserve\",\"Version\"]"));

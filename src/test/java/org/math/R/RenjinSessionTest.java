@@ -555,7 +555,7 @@ public class RenjinSessionTest {
 
         s = new RenjinSession(l, prop);
 
-        s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')");
+        //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
 
         System.err.println(s.eval("R.version.string"));
         System.err.println(s.eval("getwd()"));
