@@ -126,4 +126,21 @@ public class Issues {
 
         s.end();
     }
+    
+    @Test
+    public void sink_stack_is_full_exception_when_run_RSession() throws Rsession.RException {
+        for (int i = 0; i < 25; i++) {
+            RserverConf rconf = new RserverConf("127.0.0.1", 6311, "", "", new Properties());
+            Rsession s = null;
+            s = RserveSession.newInstanceTry(System.out, rconf);
+            s.voidEval("warning2error <- function(code=\"\") { tryCatch(code, warning = function(e) stop(e)) }");
+            try {
+                s.eval("warning2error(warning(\'hahaha\'))", true);
+                assert false : "Did not report error";
+            } catch (Rsession.RException err) {
+                assert true;
+            }
+            s.end();
+        }
+    }
 }
