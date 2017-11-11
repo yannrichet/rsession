@@ -1,17 +1,6 @@
 language: java
 matrix:
   include:
-#    - os: linux
-#      dist: precise
-#      addons:
-#        apt:
-#          sources:
-#          - r-packages-precise
-#          packages:
-#          - r-base-core	
-#          - r-base-dev	
-#          - r-recommended
-#          - r-cran-rserve
     - os: linux
       dist: trusty
       addons:
@@ -24,6 +13,10 @@ matrix:
           - r-base-dev	
           - gcc-4.8
           - r-cran-rserve
+      before_script:
+      - "export DISPLAY=:99.0"
+      - "sh -e /etc/init.d/xvfb start"
+      - sleep 3
       #before_install:
       #- "curl -O http://www.rforge.net/Rserve/snapshot/Rserve_1.8-3.tar.gz"
       #- "R CMD INSTALL Rserve_1.8-3.tar.gz"
