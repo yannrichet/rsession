@@ -287,7 +287,7 @@ public class StartRserve {
             return null;
         }
 
-        int attempts = 15; /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
+        int attempts = 30; /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
 
         while (attempts > 0) {
             try {
