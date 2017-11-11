@@ -28,3 +28,5 @@ matrix:
     #  #- "curl -O http://www.rforge.net/bin/macosx/contrib/3.0/Rserve_1.8-1.tgz"
     #  #- "R CMD INSTALL Rserve_1.8-1.tgz"
 install: mvn install -DskipTests=true -Dgpg.skip=true
+after_success:
+  - mvn clean test jacoco:report coveralls:report
