@@ -1,10 +1,7 @@
 package org.math.R;
 
 import java.io.File;
-import java.io.PrintStream;
 import java.util.Properties;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
