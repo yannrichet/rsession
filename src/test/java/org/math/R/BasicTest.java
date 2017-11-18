@@ -78,7 +78,7 @@ public class BasicTest {
         r.close();
     }
 
-    @Test
+    //@Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
         String toto = "/tmp/toto.csv";
         File totof = new File(toto);
@@ -90,7 +90,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    @Test
+    //@Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
         String toto = "/tmp/toto.csv";
         File totof = new File(toto);
@@ -102,7 +102,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    @Test
+    //@Test
     public void testCast_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //cast
@@ -121,7 +121,7 @@ public class BasicTest {
         assert ((String[]) s.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    @Test
+    //@Test
     public void testCast_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //cast
@@ -140,7 +140,7 @@ public class BasicTest {
         assert ((String[]) r.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    @Test
+    //@Test
     public void testSet_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //set
@@ -176,6 +176,68 @@ public class BasicTest {
     }
 
     @Test
+    public void testMatrix_Renjin() throws Exception {
+        System.err.println("====================================== Renjin");
+
+        double[][] m = new double[][]{{0, 1}, {2, 3}};
+        r.set("m", m);
+        assert Arrays.deepEquals(m, r.asMatrix(r.eval("m"))) : "Failed asMatrix: " + Arrays.deepToString(m) + " != " + Arrays.deepToString(r.asMatrix(r.eval("m")));
+
+        double[] a = new double[]{0, 1};
+        r.set("a", a);
+        // !!! R used to put arrays in column matrix when as.matrix called
+        assert Arrays.deepEquals(new double[][]{{a[0]}, {a[1]}}, r.asMatrix(r.eval("a"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{a[0]}, {a[1]}}) + " != " + Arrays.deepToString(r.asMatrix(r.eval("a")));
+
+        double d = 0;
+        r.set("d", d);
+        assert Arrays.deepEquals(new double[][]{{d}}, r.asMatrix(r.eval("d"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{d}}) + " != " + Arrays.deepToString(r.asMatrix(r.eval("d")));
+
+        assert r.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
+        assert r.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
+
+        assert r.set("lm", r.asMatrix(r.eval("m")), "m1", "m2") : "Failed to create list";
+        assert r.print("lm").contains("m1 m2") && r.print("lm").contains("2  3") : "Bad print: " + r.print("lm");
+        assert r.asDouble(r.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + r.eval("print(lm)");
+
+        assert r.set("la", r.asMatrix(r.eval("a")), "a1") : "Failed to create list";
+        assert r.print("la").contains("a1") && r.print("la").contains("2 1") : "Bad print: " + r.print("la");
+
+        assert r.set("ld", r.asMatrix(r.eval("d")), "d1") : "Failed to create list";
+        assert r.print("ld").contains("d1") && r.print("ld").contains("1 0") : "Bad print: " + r.print("ld");
+    }
+
+    @Test
+    public void testMatrix_Rserve() throws Exception {
+        System.err.println("====================================== Rserve");
+
+        double[][] m = new double[][]{{0, 1}, {2, 3}};
+        s.set("m", m);
+        assert Arrays.deepEquals(m, s.asMatrix(s.eval("m"))) : "Failed asMatrix: " + Arrays.deepToString(m) + " != " + Arrays.deepToString(s.asMatrix(s.eval("m")));
+
+        double[] a = new double[]{0, 1};
+        s.set("a", a);
+        // !!! R used to put arrays in column matrix when as.matrix called
+        assert Arrays.deepEquals(new double[][]{{a[0]}, {a[1]}}, s.asMatrix(s.eval("a"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{a[0]}, {a[1]}}) + " != " + Arrays.deepToString(s.asMatrix(s.eval("a")));
+
+        double d = 0;
+        s.set("d", d);
+        assert Arrays.deepEquals(new double[][]{{d}}, s.asMatrix(s.eval("d"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{d}}) + " != " + Arrays.deepToString(s.asMatrix(s.eval("d")));
+
+        assert s.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
+        assert s.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
+
+        assert s.set("lm", s.asMatrix(s.eval("m")), "m1", "m2") : "Failed to create list";
+        assert s.print("lm").contains("m1 m2") && s.print("lm").contains("2  3") : "Bad print: " + s.print("lm");
+        assert s.asDouble(s.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + s.eval("print(lm)");
+
+        assert s.set("la", s.asMatrix(s.eval("a")), "a1") : "Failed to create list";
+        assert s.print("la").contains("a1") && s.print("la").contains("2  1") : "Bad print: " + s.print("la");
+
+        assert s.set("ld", s.asMatrix(s.eval("d")), "d1") : "Failed to create list";
+        assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
+    }
+
+    //@Test
     public void testSet_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //set
@@ -210,13 +272,13 @@ public class BasicTest {
         assert (Double) (r.eval("df$x1[3]")) == 7;
     }
 
-    @Test
+    //@Test
     public void testSave_Rserve() throws Exception {
         String str = "abcd";
         s.set("s", str);
         assert ((String) s.eval("s")).equals(str);
 
-        File f = new File("Rserve"+Math.random()+".save");
+        File f = new File("Rserve" + Math.random() + ".save");
         s.save(f, null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
@@ -229,13 +291,13 @@ public class BasicTest {
         assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
     }
 
-    @Test
+    //@Test
     public void testSave_Renjin() throws Exception {
         String str = "abcd";
         r.set("s", str);
         assert ((String) r.eval("s")).equals(str);
 
-        File f = new File("Rserve"+Math.random()+".save");
+        File f = new File("Rserve" + Math.random() + ".save");
         r.save(f, null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
@@ -248,7 +310,7 @@ public class BasicTest {
         assert r.asString(r.eval("s")).equals("abcd") : "bad restore of s";
     }
 
-    @Test
+    //@Test
     public void testIOFiles_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //set
@@ -312,7 +374,7 @@ public class BasicTest {
         assert html.length() > 0;
     }
 
-    @Test
+    //@Test
     public void testIOFiles_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //set
