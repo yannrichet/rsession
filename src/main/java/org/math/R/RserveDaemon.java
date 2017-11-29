@@ -36,7 +36,7 @@ public class RserveDaemon {
         this.conf = conf;
         this.log = log != null ? log : new RLogSlf4j();
         findR_HOME(R_HOME);
-        log.log("Environment variables:\n  " + R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);        
+        this.log.log("Environment variables:\n  " + R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);        
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
