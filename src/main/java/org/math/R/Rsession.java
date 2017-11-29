@@ -117,8 +117,12 @@ public abstract class Rsession implements RLog {
     }
 
     public void close() {
-        for (RLog l : loggers) {
-            l.close();
+        if (loggers != null) {
+            for (RLog l : loggers) {
+                if (l != null) {
+                    l.close();
+                }
+            }
         }
     }
 
@@ -340,15 +344,17 @@ public abstract class Rsession implements RLog {
     void setenv(Properties properties) {
         if (properties != null) {
             for (String p : properties.stringPropertyNames()) {
-                try {
-                    log("Setting environment " + p + ": '" + properties.getProperty(p).replaceAll("\\:([^/])(.*)\\@", ":???@") + "'", Level.INFO);
-                    boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "='" + properties.getProperty(p) + "')", false));
-                    if (!done) {
-                        log("Failed setting environment " + p, Level.WARNING);
+                if (p != null) {
+                    try {
+                        log("Setting environment " + p + ": '" + properties.getProperty(p).replaceAll("\\:([^/])(.*)\\@", ":???@") + "'", Level.INFO);
+                        boolean done = asLogical(silentlyRawEval("Sys.setenv(" + p + "='" + properties.getProperty(p) + "')", false));
+                        if (!done) {
+                            log("Failed setting environment " + p, Level.WARNING);
+                        }
+                    } catch (Exception ex) {
+                        log(ex.getMessage(), Level.WARNING);
+                        ex.printStackTrace();
                     }
-                } catch (Exception ex) {
-                    log(ex.getMessage(), Level.WARNING);
-                    ex.printStackTrace();
                 }
             }
         }
