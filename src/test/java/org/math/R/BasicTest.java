@@ -78,7 +78,7 @@ public class BasicTest {
         r.close();
     }
 
-    //@Test
+    @Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
         String toto = "/tmp/toto.csv";
         File totof = new File(toto);
@@ -90,7 +90,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    //@Test
+    @Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
         String toto = "/tmp/toto.csv";
         File totof = new File(toto);
@@ -102,7 +102,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    //@Test
+    @Test
     public void testCast_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //cast
@@ -121,7 +121,7 @@ public class BasicTest {
         assert ((String[]) s.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    //@Test
+    @Test
     public void testCast_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //cast
@@ -140,7 +140,7 @@ public class BasicTest {
         assert ((String[]) r.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    //@Test
+    @Test
     public void testSet_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //set
@@ -237,7 +237,7 @@ public class BasicTest {
         assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
     }
 
-    //@Test
+    @Test
     public void testSet_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //set
@@ -272,7 +272,7 @@ public class BasicTest {
         assert (Double) (r.eval("df$x1[3]")) == 7;
     }
 
-    //@Test
+    @Test
     public void testSave_Rserve() throws Exception {
         String str = "abcd";
         s.set("s", str);
@@ -291,7 +291,7 @@ public class BasicTest {
         assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
     }
 
-    //@Test
+    @Test
     public void testSave_Renjin() throws Exception {
         String str = "abcd";
         r.set("s", str);
@@ -310,7 +310,7 @@ public class BasicTest {
         assert r.asString(r.eval("s")).equals("abcd") : "bad restore of s";
     }
 
-    //@Test
+    @Test
     public void testIOFiles_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //set
@@ -374,7 +374,7 @@ public class BasicTest {
         assert html.length() > 0;
     }
 
-    //@Test
+    @Test
     public void testIOFiles_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //set
