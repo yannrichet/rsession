@@ -7,6 +7,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.script.ScriptException;
@@ -27,6 +29,7 @@ import org.renjin.sexp.Null;
 import org.renjin.sexp.SEXP;
 import org.renjin.sexp.StringArrayVector;
 import org.renjin.sexp.StringVector;
+import org.renjin.sexp.Vector;
 
 /**
  *
@@ -63,7 +66,7 @@ public class RenjinSession extends Rsession implements RLog {
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
-        
+
         SINK_FILE = SINK_FILE_BASE + "-renjin" + this.hashCode();
 
         setenv(properties);
@@ -73,9 +76,13 @@ public class RenjinSession extends Rsession implements RLog {
         this(new RLog() {
 
             public void log(String string, Level level) {
-                PrintStream pp=null;
-                if (p!=null) pp=p; else pp=System.err;
-                
+                PrintStream pp = null;
+                if (p != null) {
+                    pp = p;
+                } else {
+                    pp = System.err;
+                }
+
                 if (level == Level.WARNING) {
                     p.print("(!) ");
                 } else if (level == Level.ERROR) {
@@ -85,7 +92,9 @@ public class RenjinSession extends Rsession implements RLog {
             }
 
             public void close() {
-                if (p!=null) p.close();
+                if (p != null) {
+                    p.close();
+                }
             }
         }, properties);
     }
@@ -279,23 +288,51 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public boolean set(String varname, double[][] data, String... names) {
-        DoubleVector[] d = new DoubleVector[data[0].length];
-        for (int i = 0; i < d.length; i++) {
-            d[i] = new DoubleArrayVector(DoubleArray.getColumnCopy(data, i));
+        if (data == null) {
+            
+            if (names == null) {
+                return false;
+            }
+            Vector[] d = new Vector[names.length];
+
+            List<SEXP> nulls = new LinkedList<>();
+            for (int i = 0; i < names.length; i++) {
+                nulls.add(Null.INSTANCE);
+            }
+            ListVector l = new ListVector(nulls);
+            //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
+            R.put(varname, l);
+            //R.put("names("+varname+")",new StringArrayVector(names));
+            R.put(varname + ".names", new StringArrayVector(names));
+            try {
+                R.eval("names(" + varname + ") <- " + varname + ".names");
+                R.eval(varname + " <- data.frame(" + varname + ")");
+            } catch (ScriptException ex) {
+                ex.printStackTrace();
+                return false;
+            }
+            return true;
+
+        } else {
+            
+            DoubleVector[] d = new DoubleVector[data[0].length];
+            for (int i = 0; i < d.length; i++) {
+                d[i] = new DoubleArrayVector(DoubleArray.getColumnCopy(data, i));
+            }
+            ListVector l = new ListVector(d);
+            //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
+            R.put(varname, l);
+            //R.put("names("+varname+")",new StringArrayVector(names));
+            R.put(varname + ".names", new StringArrayVector(names));
+            try {
+                R.eval("names(" + varname + ") <- " + varname + ".names");
+                R.eval(varname + " <- data.frame(" + varname + ")");
+            } catch (ScriptException ex) {
+                ex.printStackTrace();
+                return false;
+            }
+            return true;
         }
-        ListVector l = new ListVector(d);
-        //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
-        R.put(varname, l);
-        //R.put("names("+varname+")",new StringArrayVector(names));
-        R.put(varname + ".names", new StringArrayVector(names));
-        try {
-            R.eval("names(" + varname + ") <- " + varname + ".names");
-            R.eval(varname + " <- data.frame(" + varname + ")");
-        } catch (ScriptException ex) {
-            ex.printStackTrace();
-            return false;
-        }
-        return true;
     }
 
     @Override

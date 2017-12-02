@@ -143,6 +143,9 @@ public class BasicTest {
     @Test
     public void testSet_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
+
+        assert s.set("n", null) : "Failed to create NULL object";
+
         //set
         double c = Math.random();
         s.set("c", c);
@@ -179,6 +182,8 @@ public class BasicTest {
     public void testMatrix_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
 
+        assert r.set("n", null, "a") : "Failed to create NULL matrix";
+
         double[][] m = new double[][]{{0, 1}, {2, 3}};
         r.set("m", m);
         assert Arrays.deepEquals(m, r.asMatrix(r.eval("m"))) : "Failed asMatrix: " + Arrays.deepToString(m) + " != " + Arrays.deepToString(r.asMatrix(r.eval("m")));
@@ -210,6 +215,8 @@ public class BasicTest {
     public void testMatrix_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
 
+        assert s.set("n", null, "a") : "Failed to create NULL matrix";
+
         double[][] m = new double[][]{{0, 1}, {2, 3}};
         s.set("m", m);
         assert Arrays.deepEquals(m, s.asMatrix(s.eval("m"))) : "Failed asMatrix: " + Arrays.deepToString(m) + " != " + Arrays.deepToString(s.asMatrix(s.eval("m")));
@@ -240,6 +247,9 @@ public class BasicTest {
     @Test
     public void testSet_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
+
+        assert r.set("n", null) : "Failed to create NULL object";
+
         //set
         double c = Math.random();
         r.set("c", c);
@@ -289,6 +299,10 @@ public class BasicTest {
         assert s.rm("s") : "Failed to delete s";
         s.load(f);
         assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
+
+        File fa = new File("Rserve" + Math.random() + ".all.save");
+        s.savels(fa, "*");
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
@@ -308,6 +322,10 @@ public class BasicTest {
         assert r.rm("s") : "Failed to delete s";
         r.load(f);
         assert r.asString(r.eval("s")).equals("abcd") : "bad restore of s";
+
+        File fa = new File("Rserve" + Math.random() + ".all.save");
+        r.savels(fa, "*");
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test

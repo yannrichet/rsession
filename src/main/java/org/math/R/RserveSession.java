@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,9 @@ import org.rosuda.REngine.REXPList;
 import org.rosuda.REngine.REXPLogical;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPNull;
+import org.rosuda.REngine.REXPRaw;
 import org.rosuda.REngine.REXPString;
+import org.rosuda.REngine.REXPVector;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -551,6 +554,17 @@ public class RserveSession extends Rsession implements RLog {
      * @return RList object
      */
     public static RList buildRList(double[][] data, String... names) {
+        if (data == null) {
+            if (names == null) {
+                return null;
+            }
+            REXP[] nulls = new REXP[names.length];
+            for (int i = 0; i < nulls.length; i++) {
+                 nulls[i] = new REXPDouble(new double[0]);
+            }
+            return new RList(nulls, names);
+        }
+        
         assert data[0].length == names.length : "Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names);
         REXP[] vals = new REXP[names.length];
 
@@ -595,12 +609,14 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public boolean set(String varname, double[][] data, String... names) {
         RList list = buildRList(data, names);
+        System.err.println("list "+list);
         log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
             synchronized (R) {
                 R.assign(varname, REXP.createDataFrame(list));
             }
         } catch (REXPMismatchException re) {
+            re.printStackTrace();
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
             return false;
         } catch (RserveException ex) {
