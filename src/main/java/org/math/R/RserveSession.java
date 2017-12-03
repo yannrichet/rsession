@@ -609,7 +609,6 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public boolean set(String varname, double[][] data, String... names) {
         RList list = buildRList(data, names);
-        System.err.println("list "+list);
         log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
             synchronized (R) {

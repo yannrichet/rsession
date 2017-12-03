@@ -26,9 +26,12 @@ import org.renjin.sexp.Logical;
 import static org.renjin.sexp.Logical.TRUE;
 import org.renjin.sexp.LogicalVector;
 import org.renjin.sexp.Null;
+import org.renjin.sexp.PairList;
 import org.renjin.sexp.SEXP;
 import org.renjin.sexp.StringArrayVector;
 import org.renjin.sexp.StringVector;
+import org.renjin.sexp.Symbol;
+import org.renjin.sexp.Symbols;
 import org.renjin.sexp.Vector;
 
 /**
@@ -289,24 +292,21 @@ public class RenjinSession extends Rsession implements RLog {
     @Override
     public boolean set(String varname, double[][] data, String... names) {
         if (data == null) {
-            
+
             if (names == null) {
                 return false;
             }
-            Vector[] d = new Vector[names.length];
-
             List<SEXP> nulls = new LinkedList<>();
             for (int i = 0; i < names.length; i++) {
-                nulls.add(Null.INSTANCE);
+                nulls.add(Null.INSTANCE.clone());
             }
+
             ListVector l = new ListVector(nulls);
-            //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
             R.put(varname, l);
-            //R.put("names("+varname+")",new StringArrayVector(names));
             R.put(varname + ".names", new StringArrayVector(names));
             try {
                 R.eval("names(" + varname + ") <- " + varname + ".names");
-                R.eval(varname + " <- data.frame(" + varname + ")");
+                //R.eval(varname + " <- data.frame(" + varname + ")");
             } catch (ScriptException ex) {
                 ex.printStackTrace();
                 return false;
@@ -314,7 +314,7 @@ public class RenjinSession extends Rsession implements RLog {
             return true;
 
         } else {
-            
+
             DoubleVector[] d = new DoubleVector[data[0].length];
             for (int i = 0; i < d.length; i++) {
                 d[i] = new DoubleArrayVector(DoubleArray.getColumnCopy(data, i));
@@ -574,7 +574,7 @@ public class RenjinSession extends Rsession implements RLog {
         ListVector l = (ListVector) o;
         Map m = new HashMap<String, Object>();
         for (int i = 0; i < l.length(); i++) {
-            m.put(l.getName(i), cast(l.get(i).getElementAsSEXP(i)));
+            m.put(l.getName(i), cast(l.get(i)));
         }
         return m;
     }
