@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,9 +24,7 @@ import org.rosuda.REngine.REXPList;
 import org.rosuda.REngine.REXPLogical;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REXPNull;
-import org.rosuda.REngine.REXPRaw;
 import org.rosuda.REngine.REXPString;
-import org.rosuda.REngine.REXPVector;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -560,11 +557,11 @@ public class RserveSession extends Rsession implements RLog {
             }
             REXP[] nulls = new REXP[names.length];
             for (int i = 0; i < nulls.length; i++) {
-                 nulls[i] = new REXPDouble(new double[0]);
+                nulls[i] = new REXPDouble(new double[0]);
             }
             return new RList(nulls, names);
         }
-        
+
         assert data[0].length == names.length : "Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names);
         REXP[] vals = new REXP[names.length];
 
@@ -590,12 +587,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return RList object
      */
     public static RList buildRList(List<double[]> coldata, String... names) {
-        assert coldata.size() == names.length;
-        RList list = new RList(coldata.size(), true);
-        for (int i = 0; i < names.length; i++) {
-            list.put(names[i], new REXPDouble(coldata.get(i)));
-        }
-        return list;
+        return buildRList(coldata.toArray(new double[coldata.size()][]), names);
     }
 
     /**
@@ -1147,7 +1139,7 @@ public class RserveSession extends Rsession implements RLog {
                 try {
                     String[] ss = ((REXP) o).asStrings();
                     if (((REXP) o).length() > 10) {
-                        return Arrays.asList(new String[]{ss[0], ss[1], "...("+ ss.length + ")...", ss[ss.length - 2], ss[ss.length - 1]}).toString();
+                        return Arrays.asList(new String[]{ss[0], ss[1], "...(" + ss.length + ")...", ss[ss.length - 2], ss[ss.length - 1]}).toString();
                     } else {
                         return Arrays.asList(((REXP) o).asStrings()).toString();
                     }
