@@ -106,6 +106,7 @@ public class BasicTest {
     public void testCast_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //cast
+        assert Double.isNaN((Double) s.eval("NaN")) : r.eval("NaN");
         assert ((Boolean) s.eval("TRUE")) == true;
         assert ((Double) s.eval("0.123")) == 0.123;
         assert ((Double) s.eval("pi")) - 3.141593 < 0.0001;
@@ -125,6 +126,7 @@ public class BasicTest {
     public void testCast_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //cast
+        assert Double.isNaN((Double) r.eval("NaN")) : r.eval("NaN");
         assert ((Boolean) r.eval("TRUE")) == true;
         assert ((Double) r.eval("0.123")) == 0.123;
         assert ((Double) r.eval("pi")) - 3.141593 < 0.0001;
@@ -183,8 +185,8 @@ public class BasicTest {
         System.err.println("====================================== Renjin");
 
         assert r.set("n", null, "a") : "Failed to create NULL matrix";
-        assert r.eval("n").toString().equals("{a=null}"): "Bad print of object: "+r.eval("n").toString();
-        
+        assert r.eval("n").toString().equals("{a=null}") : "Bad print of object: " + r.eval("n").toString();
+
         double[][] m = new double[][]{{0, 1}, {2, 3}};
         r.set("m", m);
         assert Arrays.deepEquals(m, r.asMatrix(r.eval("m"))) : "Failed asMatrix: " + Arrays.deepToString(m) + " != " + Arrays.deepToString(r.asMatrix(r.eval("m")));
@@ -217,7 +219,7 @@ public class BasicTest {
         System.err.println("====================================== Rserve");
 
         assert s.set("n", null, "a") : "Failed to create NULL matrix";
-        assert s.eval("n").toString().equals("{a=null}"): "Bad print of object: "+s.eval("n").toString();
+        assert s.eval("n").toString().equals("{a=null}") : "Bad print of object: " + s.eval("n").toString();
 
         double[][] m = new double[][]{{0, 1}, {2, 3}};
         s.set("m", m);
