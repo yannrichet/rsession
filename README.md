@@ -71,7 +71,7 @@ Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpat
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.3</version>
     </dependency>
 ...
 </dependencies>
