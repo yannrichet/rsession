@@ -26,13 +26,9 @@ import org.renjin.sexp.Logical;
 import static org.renjin.sexp.Logical.TRUE;
 import org.renjin.sexp.LogicalVector;
 import org.renjin.sexp.Null;
-import org.renjin.sexp.PairList;
 import org.renjin.sexp.SEXP;
 import org.renjin.sexp.StringArrayVector;
 import org.renjin.sexp.StringVector;
-import org.renjin.sexp.Symbol;
-import org.renjin.sexp.Symbols;
-import org.renjin.sexp.Vector;
 
 /**
  *
@@ -40,7 +36,7 @@ import org.renjin.sexp.Vector;
  */
 public class RenjinSession extends Rsession implements RLog {
 
-    RenjinScriptEngine R = null;
+    private RenjinScriptEngine R = null;
     File wdir;
     Properties properties;
 
@@ -302,14 +298,16 @@ public class RenjinSession extends Rsession implements RLog {
             }
 
             ListVector l = new ListVector(nulls);
-            R.put(varname, l);
-            R.put(varname + ".names", new StringArrayVector(names));
-            try {
-                R.eval("names(" + varname + ") <- " + varname + ".names");
-                //R.eval(varname + " <- data.frame(" + varname + ")");
-            } catch (ScriptException ex) {
-                ex.printStackTrace();
-                return false;
+            synchronized (R) {
+                R.put(varname, l);
+                R.put(varname + ".names", new StringArrayVector(names));
+                try {
+                    R.eval("names(" + varname + ") <- " + varname + ".names");
+                    //R.eval(varname + " <- data.frame(" + varname + ")");
+                } catch (ScriptException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
             }
             return true;
 
@@ -321,15 +319,17 @@ public class RenjinSession extends Rsession implements RLog {
             }
             ListVector l = new ListVector(d);
             //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
-            R.put(varname, l);
-            //R.put("names("+varname+")",new StringArrayVector(names));
-            R.put(varname + ".names", new StringArrayVector(names));
-            try {
-                R.eval("names(" + varname + ") <- " + varname + ".names");
-                R.eval(varname + " <- data.frame(" + varname + ")");
-            } catch (ScriptException ex) {
-                ex.printStackTrace();
-                return false;
+            synchronized (R) {
+                R.put(varname, l);
+                //R.put("names("+varname+")",new StringArrayVector(names));
+                R.put(varname + ".names", new StringArrayVector(names));
+                try {
+                    R.eval("names(" + varname + ") <- " + varname + ".names");
+                    R.eval(varname + " <- data.frame(" + varname + ")");
+                } catch (ScriptException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
             }
             return true;
         }
@@ -340,15 +340,19 @@ public class RenjinSession extends Rsession implements RLog {
         if (var instanceof double[][]) {
             double[][] dd = (double[][]) var;
             double[] d = reshapeAsRow(dd);
-            R.put(varname, d);
-            try {
-                R.eval(varname + " <- matrix(" + varname + ",nrow=" + dd.length + ")");
-            } catch (ScriptException ex) {
-                ex.printStackTrace();
-                return false;
+            synchronized (R) {
+                R.put(varname, d);
+                try {
+                    R.eval(varname + " <- matrix(" + varname + ",nrow=" + dd.length + ")");
+                } catch (ScriptException ex) {
+                    ex.printStackTrace();
+                    return false;
+                }
             }
         } else {
-            R.put(varname, var);
+            synchronized (R) {
+                R.put(varname, var);
+            }
         }
         return true;
     }
@@ -689,13 +693,15 @@ public class RenjinSession extends Rsession implements RLog {
                     return asList(s);
                 case "closure":
                     String name = "function_" + (int) Math.floor(1000 * Math.random());
-                    R.put(name, s);
-                    try {
-                        if (((SEXP) rawEval("is.function(" + name + ")")).asLogical() == TRUE) {
-                            return new Function(name);
+                    synchronized (R) {
+                        R.put(name, s);
+                        try {
+                            if (((SEXP) rawEval("is.function(" + name + ")")).asLogical() == TRUE) {
+                                return new Function(name);
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
                         }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
                     }
                 case "NULL":
                     return null;
