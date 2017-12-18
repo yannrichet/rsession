@@ -2,6 +2,8 @@ package org.math.R;
 
 import java.io.File;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 
 /**
@@ -10,7 +12,7 @@ import org.junit.Test;
  */
 public class Issues {
 
-    @Test
+    //@Test
     public void Error_when_running_Rsession_eval_on_multiple_lines_string() throws Exception {
         Rsession s = RserveSession.newInstanceTry(System.out, null);
         //    RConnection s = new RConnection();
@@ -32,7 +34,7 @@ public class Issues {
         s.end();
     }
 
-    @Test
+    //@Test
     public void code_snippet_does_not_compile() throws Exception {
         Rsession s = RserveSession.newInstanceTry(System.out, null);
 
@@ -65,7 +67,7 @@ public class Issues {
         s.end();
     }
 
-    @Test
+    //@Test
     public void sink_stack_is_full_exception_when_run_RSession() throws Rsession.RException {
         for (int i = 0; i < 25; i++) {
             RserverConf rconf = new RserverConf("127.0.0.1", 6311, "", "", new Properties());
@@ -82,7 +84,7 @@ public class Issues {
         }
     }
 
-    @Test
+    //@Test
     public void Found_a_bug_in_isPackageInstalled() throws Rsession.RException {
         Rsession s = RserveSession.newInstanceTry(System.out, null);
         s.installPackage("atsd", false);
@@ -94,5 +96,43 @@ public class Issues {
         assert (Boolean) s.eval("is.element(set=row.names(packs), el='zoo')") == false : "Package still here !";
 
         assert !s.isPackageInstalled("zoo", null) : "Package uninstalled !";
+    }
+
+    @Test
+    public void Unsynchronized_RenjinSession() throws Rsession.RException {
+        final Rsession s = new RenjinSession(System.out, null);
+
+        Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int i = 0;
+                while (i++ < 100) {
+                    try {
+                        s.set("b", 456.0);
+                        //assert (Double) s.eval("b") == 456.0 : "Failed to eval b after set";
+                        Thread.sleep(50);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+        t1.start();
+
+        int i = 0;
+        while (i++ < 50) {
+            try {
+                String b = "" + s.eval("b = 123.0; Sys.sleep(.1); print(b)");
+                assert b.equals("123.0") : "Failed to get b after eval: " + b;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        try {
+            t1.join();
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
     }
 }
