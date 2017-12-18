@@ -1087,7 +1087,9 @@ public class RserveSession extends Rsession implements RLog {
 
             try {
                 String name = "function_" + (int) Math.floor(1000 * Math.random());
-                R.assign(name, eval);
+                synchronized (R) {
+                    R.assign(name, eval);
+                }
                 if (R.eval("is.function(" + name + ")").asInteger() == 1) {
                     return new Function(name);
                 }
