@@ -53,11 +53,11 @@ public class RenjinSession extends Rsession implements RLog {
         }
 
         try {
-            wdir = new File(FileUtils.getTempDirectory(), "Renjin" + hashCode());
-            if (!wdir.mkdir()) {
-                wdir = new File(FileUtils.getUserDirectory(), "Renjin" + hashCode());
-                if (!wdir.mkdir()) {
-                    throw new IOException("Could not create directory " + new File(FileUtils.getTempDirectory(), "Renjin") + hashCode() + "\n or " + new File(FileUtils.getUserDirectory(), "Renjin") + hashCode());
+            wdir = new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode());
+            if (!wdir.mkdirs()) {
+                wdir = new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode());
+                if (!wdir.mkdirs()) {
+                    throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
                 }
             }
             R.eval("setwd('" + fixPathSeparator(wdir.getAbsolutePath()) + "')");
