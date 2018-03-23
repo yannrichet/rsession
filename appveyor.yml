@@ -26,10 +26,19 @@ install:
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
-    USE_RTOOLS: true
+    USE_RTOOLS: false
     R_VERSION: release
     R_ARCH: x64
 build_script:
+  - ps: |
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+      if (!(Test-Path -Path "C:\maven" )) {
+        (new-object System.Net.WebClient).DownloadFile(
+          'http://cran.irsn.org/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
+          'C:\'
+        )
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\Rserve_1.7-3.zip", "C:\R\library")
+      }
   #- travis-tool.sh install_deps
   - mvn clean package --batch-mode -DskipTest
 test_script:
