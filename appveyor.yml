@@ -34,7 +34,7 @@ build_script:
       Add-Type -AssemblyName System.IO.Compression.FileSystem
       if (!(Test-Path -Path "C:\R" )) {
         (new-object System.Net.WebClient).DownloadFile(
-          'http://cran.irsn.org/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
+          'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
           'C:\'
         )
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\Rserve_1.7-3.zip", "C:\R\library")
