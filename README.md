@@ -1,6 +1,7 @@
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 [![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/IRSN/DiceKriging?branch=master&svg=true)](https://ci.appveyor.com/project/IRSN/DiceKriging)
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 
 # Rsession: R sessions wrapping for Java #
 
