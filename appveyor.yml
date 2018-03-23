@@ -1,5 +1,9 @@
 version: '{build}'
 os: Windows Server 2012
+init:
+  ps: |
+        Get-Date
+        $ErrorActionPreference = "Stop"
 install:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -10,6 +14,9 @@ install:
         )
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
       }
+  - ps: |
+        Import-Module '.\scripts\appveyor-tool.ps1'
+        Bootstrap
   - cmd: SET PATH=C:\maven\apache-maven-3.2.5\bin;%JAVA_HOME%\bin;%PATH%
   - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
@@ -18,7 +25,10 @@ environment:
   global:
     WARNINGS_ARE_ERRORS: 0
     USE_RTOOLS: true
+    R_VERSION: release
+    R_ARCH: x64
 build_script:
+  - travis-tool.sh install_deps
   - mvn clean package --batch-mode -DskipTest
 test_script:
   - mvn clean install --batch-mode
