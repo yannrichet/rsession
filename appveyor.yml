@@ -22,6 +22,7 @@ install:
   - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
+  - cmd: SET R_HOME=C:\R
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
