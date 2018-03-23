@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/IRSN/DiceKriging?branch=master&svg=true)](https://ci.appveyor.com/project/IRSN/DiceKriging)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/yannrichet/rsession?branch=master&svg=true)](https://ci.appveyor.com/project/yannrichet/rsession)
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 
