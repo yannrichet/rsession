@@ -23,6 +23,13 @@ install:
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
   - cmd: SET R_HOME=C:\R
+  - ps: |
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+        (new-object System.Net.WebClient).DownloadFile(
+          'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
+          'C:\'
+        )
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\Rserve_1.7-3.zip", "C:\R\library")
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
@@ -30,15 +37,6 @@ environment:
     R_VERSION: release
     R_ARCH: x64
 build_script:
-  - ps: |
-      Add-Type -AssemblyName System.IO.Compression.FileSystem
-      if (!(Test-Path -Path "C:\R" )) {
-        (new-object System.Net.WebClient).DownloadFile(
-          'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
-          'C:\'
-        )
-        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\Rserve_1.7-3.zip", "C:\R\library")
-      }
   #- travis-tool.sh install_deps
   - mvn clean package --batch-mode -DskipTest
 test_script:
