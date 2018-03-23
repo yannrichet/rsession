@@ -32,7 +32,7 @@ environment:
 build_script:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
-      if (!(Test-Path -Path "C:\maven" )) {
+      if (!(Test-Path -Path "C:\R" )) {
         (new-object System.Net.WebClient).DownloadFile(
           'http://cran.irsn.org/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
           'C:\'
