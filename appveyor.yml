@@ -25,11 +25,13 @@ install:
   - cmd: SET R_HOME=C:\R
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
+      if ((Test-Path -Path "C:\R" )) {
         (new-object System.Net.WebClient).DownloadFile(
           'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
-          'C:\'
+          'C:\Rserve_1.7-3.zip'
         )
         [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\Rserve_1.7-3.zip", "C:\R\library")
+      }
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
