@@ -42,13 +42,6 @@ environment:
     R_ARCH: x64
 build_script:
   #- travis-tool.sh install_deps
-  - cmd: SET R_HOME=C:\R
-  - cmd: SET R_HOME_DIR=C:\R
-  - cmd: SET R_LIBS=C:\R\library
-  - cmd: SET R_LIBS_SITE=C:\R\library
-  - cmd: SET R_LIBS_USER=C:\R\library
-  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
-  - cmd: "C:\R\bin\R.exe" -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
   - mvn clean package --batch-mode -DskipTest
 test_script:
   - cmd: SET R_HOME=C:\R
@@ -57,7 +50,7 @@ test_script:
   - cmd: SET R_LIBS_SITE=C:\R\library
   - cmd: SET R_LIBS_USER=C:\R\library
   - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
-  - cmd: "C:\R\bin\R.exe" -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
+  - cmd: R -e "library('Rserve');Rserve()" --vanilla -q
   - mvn clean install --batch-mode
 cache:
   - C:\maven\
