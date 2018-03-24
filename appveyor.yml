@@ -28,7 +28,7 @@ install:
           'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
           'C:\Rserve_1.7-3.zip'
         )
-  - cmd: R CMD ISNTALL C:\Rserve_1.7-3.zip
+  - cmd: R CMD INSTALL C:\Rserve_1.7-3.zip
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
