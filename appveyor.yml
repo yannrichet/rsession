@@ -23,6 +23,10 @@ install:
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
   - cmd: SET R_HOME=C:\R
+  - cmd: SET R_HOME_DIR=C:\R
+  - cmd: SET R_LIBS=C:\RLibrary
+  - cmd: SET R_LIBS_SITE=C:\RLibrary
+  - cmd: SET R_LIBS_USER=C:\RLibrary
   - ps: |
         (new-object System.Net.WebClient).DownloadFile(
           'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
