@@ -35,6 +35,7 @@ install:
   - cmd: R --vanilla CMD INSTALL C:\Rserve_1.7-3.zip
   - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
   #- cmd: R -e "library('Rserve');Rserve()" --vanilla -q
+  - cmd: SET PATH=C:\R\library\Rserve\libs\x64;%PATH%
   - cmd: R CMD Rserve
 environment:
   global:
