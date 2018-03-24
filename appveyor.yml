@@ -33,6 +33,7 @@ install:
           'C:\Rserve_1.7-3.zip'
         )
   - cmd: R --vanilla CMD INSTALL C:\Rserve_1.7-3.zip
+  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
@@ -41,6 +42,12 @@ environment:
     R_ARCH: x64
 build_script:
   #- travis-tool.sh install_deps
+  - cmd: SET R_HOME=C:\R
+  - cmd: SET R_HOME_DIR=C:\R
+  - cmd: SET R_LIBS=C:\R\library
+  - cmd: SET R_LIBS_SITE=C:\R\library
+  - cmd: SET R_LIBS_USER=C:\R\library
+  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
   - mvn clean package --batch-mode -DskipTest
 test_script:
   - cmd: SET R_HOME=C:\R
@@ -48,7 +55,9 @@ test_script:
   - cmd: SET R_LIBS=C:\R\library
   - cmd: SET R_LIBS_SITE=C:\R\library
   - cmd: SET R_LIBS_USER=C:\R\library
+  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
   - mvn clean install --batch-mode
 cache:
   - C:\maven\
+  - C:\R\
   - C:\Users\appveyor\.m2
