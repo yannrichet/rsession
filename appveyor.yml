@@ -43,6 +43,11 @@ build_script:
   #- travis-tool.sh install_deps
   - mvn clean package --batch-mode -DskipTest
 test_script:
+  - cmd: SET R_HOME=C:\R
+  - cmd: SET R_HOME_DIR=C:\R
+  - cmd: SET R_LIBS=C:\R\library
+  - cmd: SET R_LIBS_SITE=C:\R\library
+  - cmd: SET R_LIBS_USER=C:\R\library
   - mvn clean install --batch-mode
 cache:
   - C:\maven\
