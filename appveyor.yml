@@ -37,7 +37,7 @@ install:
   #- cmd: R -e "library('Rserve');Rserve()" --vanilla -q
   - cmd: SET PATH=C:\R\library\Rserve\libs\x64;C:\R\bin\;%PATH%
   - ps: Start-Process "C:\R\bin\R.exe" "CMD Rserve" -PassThru
-  - cmd: "C:\R\bin\R.exe" -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
+  - cmd: C:\R\bin\R.exe -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
   - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
 environment:
   global:
