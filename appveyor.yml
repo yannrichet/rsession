@@ -1,0 +1,54 @@
+version: '{build}'
+os: Windows Server 2012
+platform: x64
+init:
+ - ps: |
+        Get-Date
+        $ErrorActionPreference = "Stop"
+        Invoke-WebRequest http://raw.github.com/krlmlr/r-appveyor/master/scripts/appveyor-tool.ps1 -OutFile "..\appveyor-tool.ps1"
+        Import-Module '..\appveyor-tool.ps1'
+install:
+  - ps: |
+      Add-Type -AssemblyName System.IO.Compression.FileSystem
+      if (!(Test-Path -Path "C:\maven" )) {
+        (new-object System.Net.WebClient).DownloadFile(
+          'http://www.us.apache.org/dist/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.zip',
+          'C:\maven-bin.zip'
+        )
+        [System.IO.Compression.ZipFile]::ExtractToDirectory("C:\maven-bin.zip", "C:\maven")
+      }
+      Bootstrap
+  - cmd: SET PATH=C:\maven\apache-maven-3.2.5\bin;%JAVA_HOME%\bin;%PATH%
+  - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
+  - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
+  - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
+  - cmd: SET R_HOME=C:\R
+  - cmd: SET R_HOME_DIR=C:\R
+  - cmd: SET R_LIBS=C:\R\library
+  - cmd: SET R_LIBS_SITE=C:\R\library
+  - cmd: SET R_LIBS_USER=C:\R\library
+  - ps: |
+        (new-object System.Net.WebClient).DownloadFile(
+          'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
+          'C:\Rserve_1.7-3.zip'
+        )
+  - cmd: R --vanilla CMD INSTALL C:\Rserve_1.7-3.zip
+  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
+  - cmd: SET PATH=C:\R\library\Rserve\libs\x64;C:\R\bin\;%PATH%
+  - ps: Start-Process "C:\R\bin\R.exe" "CMD Rserve" -PassThru
+  - ps: Start-Process "C:\R\bin\R.exe" "-e 'i=installed.packages();is.element(set=i,el=\'Rserve\')' --vanilla -q"
+environment:
+  global:
+    WARNINGS_ARE_ERRORS: 0
+    USE_RTOOLS: false
+    R_VERSION: release
+    R_ARCH: x64
+build_script:
+  #- travis-tool.sh install_deps
+  - mvn clean package --batch-mode -DskipTest
+test_script:
+  - mvn clean install --batch-mode
+cache:
+  - C:\maven\
+  - C:\R\
+  - C:\Users\appveyor\.m2
