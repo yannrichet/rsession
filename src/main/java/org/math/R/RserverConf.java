@@ -230,7 +230,7 @@ public class RserverConf {
 
     public static RserverConf newLocalInstance(Properties p) {
         RserverConf server = null;
-        if (System.getProperty("os.name").contains("Win") || !RserveSession.UNIX_OPTIMIZE) {
+        if (RserveDaemon.isWindows() || !RserveSession.UNIX_OPTIMIZE) {
             while (!isPortAvailable(RserverPort)) {
                 RserverPort++;
             }

@@ -13,13 +13,27 @@ import org.rosuda.REngine.Rserve.RConnection;
  * @author richet
  */
 public class RserveDaemon {
-    
+
     RserverConf conf;
     Process process;
     private final RLog log;
     static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve");
     public static String R_HOME = null;
-    
+
+    private static String OS = System.getProperty("os.name").toLowerCase();
+
+    static boolean isWindows() {
+        return (OS.indexOf("win") >= 0);
+    }
+
+    static boolean isMacOSX() {
+        return (OS.indexOf("mac") >= 0);
+    }
+
+    static boolean isLinux() {
+        return OS.indexOf("inux") >= 0;
+    }
+
     static {
         boolean app_dir_ok = false;
         if (!APP_DIR.exists()) {
@@ -31,12 +45,12 @@ public class RserveDaemon {
             Log.Err.println("Cannot write in " + APP_DIR.getAbsolutePath());
         }
     }
-    
+
     public RserveDaemon(RserverConf conf, RLog log, String R_HOME) {
         this.conf = conf;
         this.log = log != null ? log : new RLogSlf4j();
         findR_HOME(R_HOME);
-        this.log.log("Environment variables:\n  " + R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);        
+        this.log.log("Environment variables:\n  " + R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -44,37 +58,39 @@ public class RserveDaemon {
             }
         });
     }
-    
+
     private void _stop() {
         stop();
     }
-    
+
     public RserveDaemon(RserverConf conf, RLog log) {
         this(conf, log, null);
     }
     public final static String R_HOME_KEY = "R_HOME";
-    
+
     public static boolean findR_HOME(String r_HOME) {
         Map<String, String> env = System.getenv();
         Properties prop = System.getProperties();
-        
-        if (r_HOME!=null) R_HOME = r_HOME;
+
+        if (r_HOME != null) {
+            R_HOME = r_HOME;
+        }
         if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
             if (env.containsKey(R_HOME_KEY)) {
                 R_HOME = env.get(R_HOME_KEY);
             }
-            
+
             if (R_HOME == null || prop.containsKey(R_HOME_KEY) || !(new File(R_HOME).isDirectory())) {
                 R_HOME = prop.getProperty(R_HOME_KEY);
-            } 
-            
+            }
+
             if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
                 R_HOME = "R";
             }
-            
+
             if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
                 R_HOME = null;
-                if (System.getProperty("os.name").contains("Win")) {
+                if (isWindows()) {
                     for (int major = 20; major >= 0; major--) {
                         //int major = 10;//known to work with R 2.9 only.
                         if (R_HOME == null) {
@@ -95,11 +111,11 @@ public class RserveDaemon {
                 }
             }
         }
-        
+
         if (R_HOME == null) {
             return false;
         }
-        
+
         return new File(R_HOME).isDirectory();
     }
 
@@ -163,39 +179,41 @@ public class RserveDaemon {
                 f.setExecutable(true);
             }
         }
-        
+
     }
-    
+
     public void stop() {
         log.log("stopping R daemon... " + conf, Level.INFO);
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Not authorized to stop a remote R daemon: " + conf.toString());
         }
-        
+
         try {
             RConnection s = conf.connection;//connect();
             if (s == null || !s.isConnected()) {
-            	log.log("R daemon already stoped.", Level.INFO);
+                log.log("R daemon already stoped.", Level.INFO);
                 return;
             }
             s.shutdown();
-            if(rserve!=null) {
+            if (rserve != null) {
                 rserve.getInputStream().close();
                 rserve.getErrorStream().close();
             }
         } catch (Exception ex) {
-        	log.log(ex.getMessage(), Level.ERROR);
+            log.log(ex.getMessage(), Level.ERROR);
         }
 
         log.log("R daemon stoped.", Level.INFO);
     }
-    
+
     Process rserve;
+    public static boolean USE_RSERVE_FROM_CRAN = false;
+
     public void start(String http_proxy) {
         if (R_HOME == null || !(new File(R_HOME).exists())) {
             throw new IllegalArgumentException("R_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + R_HOME_KEY + "=[Path to R] ...' startup command.");
         }
-        
+
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Unable to start a remote R daemon: " + conf.toString());
         }
@@ -203,50 +221,53 @@ public class RserveDaemon {
         /*if (Rserve_HOME == null || !(new File(Rserve_HOME).exists())) {
         throw new IllegalArgumentException("Rserve_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + Rserve_HOME_KEY + "=[Path to Rserve] ...' startup command.");
         }*/
-        
         log.log("checking Rserve is available... ", Level.INFO);
-        boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""));
+        boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
         if (!RserveInstalled) {
-        	log.log("  no", Level.INFO);
-            RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), http_proxy, null);
-            if (RserveInstalled) {
-            	log.log("  ok", Level.INFO);
+            log.log("  no", Level.INFO);
+            if (USE_RSERVE_FROM_CRAN) {
+                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), http_proxy, null);
             } else {
-            	log.log("  failed.", Level.ERROR);
+                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            }
+            if (RserveInstalled) {
+                log.log("  ok", Level.INFO);
+            } else {
+                log.log("  failed.", Level.ERROR);
                 String notice = "Please install Rserve manually in your R environment using \"install.packages('Rserve')\" command.";
                 log.log(notice, Level.ERROR);
-                Log.Err.println( notice);
+                Log.Err.println(notice);
                 return;
             }
         } else {
-        	log.log("  ok", Level.INFO);
+            log.log("  ok", Level.INFO);
         }
-        
+
         log.log("starting R daemon... " + conf, Level.INFO);
-        
+
         StringBuffer RserveArgs = new StringBuffer("--vanilla");
         if (conf.port > 0) {
             RserveArgs.append(" --RS-port " + conf.port);
         }
-        
-        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (System.getProperty("os.name").contains("Win") ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--vanilla", RserveArgs.toString(), false);
-        
-        if (rserve!=null) {
-        	log.log("  ok", Level.INFO);
+
+        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--vanilla", RserveArgs.toString(), false);
+
+        if (rserve != null) {
+            log.log("  ok", Level.INFO);
         } else {
-        	log.log("  failed", Level.ERROR);
+            log.log("  failed", Level.ERROR);
         }
     }
-    
+
     public static String timeDigest() {
         long time = System.currentTimeMillis();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
         StringBuffer sb = new StringBuffer();
-        sb =
-        sdf.format(new Date(time), sb, new java.text.FieldPosition(0));
+        sb
+                = sdf.format(new Date(time), sb, new java.text.FieldPosition(0));
         return sb.toString();
     }
-    
+
     public static void main(String[] args) throws InterruptedException {
         RserveDaemon d = new RserveDaemon(new RserverConf(null, -1, null, null, null), new RLogSlf4j());
         d.start(null);

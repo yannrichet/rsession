@@ -98,21 +98,20 @@ public class RenjinSession extends Rsession implements RLog {
         }, properties);
     }
 
-    private static String OS = System.getProperty("os.name").toLowerCase();
 
     @Override
     boolean isWindows() {
-        return (OS.indexOf("win") >= 0);
+        return RserveDaemon.isWindows();
     }
 
     @Override
     boolean isMacOSX() {
-        return (OS.indexOf("mac") >= 0);
+        return RserveDaemon.isMacOSX();
     }
 
     @Override
     boolean isLinux() {
-        return OS.indexOf("inux") >= 0;
+        return RserveDaemon.isLinux();
     }
 
     @Override

@@ -304,7 +304,7 @@ public class RserveSession extends Rsession implements RLog {
             cleanupListeners();
             return;
         }
-        if ((!System.getProperty("os.name").contains("Win")) && localRserve != null) {//if ((!UNIX_OPTIMIZE || System.getProperty("os.name").contains("Win")) && localRserve != null) {
+        if ((!isWindows()) && localRserve != null) {//if ((!UNIX_OPTIMIZE || isWindows()) && localRserve != null) {
             log("Ending local session...", Level.INFO);
             localRserve.stop();
             R.close();

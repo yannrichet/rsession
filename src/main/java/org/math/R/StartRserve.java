@@ -2,10 +2,12 @@ package org.math.R;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -150,8 +152,7 @@ public class StartRserve {
             error.join();
             output.join();
 
-            boolean isWindows = System.getProperty("os.name") != null && System.getProperty("os.name").length() >= 7 && System.getProperty("os.name").substring(0, 7).equals("Windows");
-            if (!isWindows) /* on Windows the process will never return, so we cannot wait */ {
+            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
             }
             result.append(output.getOutput());
@@ -207,11 +208,101 @@ public class StartRserve {
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith(".Rout");
-                    }
-                });
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".Rout");
+            }
+        });
+        for (File f : rout) {
+            try {
+                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f));
+            } catch (IOException ex) {
+                Log.Err.println(f + ": " + ex.getMessage());
+            }
+        }
+        return false;
+    }
+
+    /**
+     * R batch to install Rserve
+     *
+     * @param Rcmd command necessary to start R
+     * @return success
+     */
+    public static boolean installRserve(String Rcmd) {
+        Log.Out.println("Install Rserve from local filesystem");
+
+        String pack_suffix = ".tar.gz";
+        if (RserveDaemon.isWindows()) {
+            pack_suffix = ".zip";
+        } else {
+            if (RserveDaemon.isMacOSX()) {
+                pack_suffix = ".tgz";
+            }
+        }
+        File packFile;
+        try {
+            packFile = File.createTempFile("Rserve_1.7-3", pack_suffix);
+            //packFile.deleteOnExit();
+        } catch (IOException ex) {
+            Log.Err.println(ex.getMessage());
+            return false;
+        }
+        try {
+                    ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            InputStream fileStream = classloader.getResourceAsStream("org/math/R/Rserve_1.7-3" + pack_suffix);
+
+            if (fileStream == null) {
+                Log.Err.println("Cannot find resource " + "org/math/R/Rserve_1.7-3" + pack_suffix);
+                return false;
+            }
+
+            // Create an output stream to barf to the temp file
+            OutputStream out = new FileOutputStream(packFile);
+
+            // Write the file to the temp file
+            byte[] buffer = new byte[1024];
+            int len = fileStream.read(buffer);
+            while (len != -1) {
+                out.write(buffer, 0, len);
+                len = fileStream.read(buffer);
+            }
+
+            // Close the streams
+            fileStream.close();
+            out.close();
+        } catch (Exception e) {
+            Log.Err.println(e.getMessage());
+            return false;
+        }
+
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla", true);
+        if (p == null) {
+            Log.Err.println("failed");
+            return false;
+        }
+        int n = 5;
+        while (n > 0) {
+            try {
+                Thread.sleep(10000 / n);
+                Log.Out.print(".");
+            } catch (InterruptedException ex) {
+            }
+            if (isRserveInstalled(Rcmd)) {
+                Log.Out.print(" ok");
+                return true;
+            }
+            n--;
+        }
+        Log.Err.println("failed");
+        File[] rout = new File(".").listFiles(
+                new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".Rout");
+            }
+        });
         for (File f : rout) {
             try {
                 Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f));
@@ -236,9 +327,8 @@ public class StartRserve {
     public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/, boolean redirect) {
         Process p = null;
         try {
-            String osname = System.getProperty("os.name");
             String command = null;
-            if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
+            if (RserveDaemon.isWindows()) {
                 command = "\"" + Rcmd + "\" -e \"" + todo + "\" " + rargs;
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
@@ -287,7 +377,8 @@ public class StartRserve {
             return null;
         }
 
-        int attempts = 30; /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
+        int attempts = 30;
+        /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
 
         while (attempts > 0) {
             try {
@@ -330,8 +421,7 @@ public class StartRserve {
         if (isRserveRunning()) {
             return true;
         }
-        String osname = System.getProperty("os.name");
-        if (osname != null && osname.length() >= 7 && osname.substring(0, 7).equals("Windows")) {
+        if (RserveDaemon.isWindows()) {
             Log.Out.println("Windows: query registry to find where R is installed ...");
             String installPath = null;
             try {
