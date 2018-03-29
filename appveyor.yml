@@ -22,21 +22,6 @@ install:
   - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
-  - cmd: SET R_HOME=C:\R
-  - cmd: SET R_HOME_DIR=C:\R
-  - cmd: SET R_LIBS=C:\R\library
-  - cmd: SET R_LIBS_SITE=C:\R\library
-  - cmd: SET R_LIBS_USER=C:\R\library
-  - ps: |
-        (new-object System.Net.WebClient).DownloadFile(
-          'http://cran.irsn.fr/bin/windows/contrib/3.4/Rserve_1.7-3.zip',
-          'C:\Rserve_1.7-3.zip'
-        )
-  - cmd: R --vanilla CMD INSTALL C:\Rserve_1.7-3.zip
-  - cmd: R -e "i=installed.packages();is.element(set=i,el='Rserve')" --vanilla -q
-  - cmd: SET PATH=C:\R\library\Rserve\libs\x64;C:\R\bin\;%PATH%
-  - ps: Start-Process "C:\R\bin\R.exe" "CMD Rserve" -PassThru
-  - ps: Start-Process "C:\R\bin\R.exe" "-e 'i=installed.packages();is.element(set=i,el=\'Rserve\')' --vanilla -q"
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
@@ -50,5 +35,4 @@ test_script:
   - mvn clean install --batch-mode
 cache:
   - C:\maven\
-  - C:\R\
   - C:\Users\appveyor\.m2
