@@ -52,7 +52,7 @@ public class RenjinSessionTest {
         assert str.equals("*") : "Bad print: " + str;
     }
 
-    // @Test
+    @Test
     public void testInstallPackage() throws Exception {
         File dir = new File(new File("."), "tmp/pso");
         if (dir.exists()) {
@@ -68,7 +68,7 @@ public class RenjinSessionTest {
         }
     }
 
-    // @Test
+    @Test
     public void testInstallPackages() {
         String out = s.installPackage("sensitivity", true);
         // will not work yet... assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: "+out;
@@ -79,7 +79,7 @@ public class RenjinSessionTest {
     @Test
     public void testPackageErrorNotBlocking() {
         try {
-            assert s.eval("packageDescription(\"Rserve\")")==Boolean.FALSE : "Failed to eval (without error) packageDescription: "+s.eval("packageDescription(\"Rserve\")");
+            assert s.eval("packageDescription(\"Rserve\")") == Boolean.FALSE : "Failed to eval (without error) packageDescription: " + s.eval("packageDescription(\"Rserve\")");
         } catch (Exception ex) {
             //ex.printStackTrace();
         }
@@ -89,7 +89,7 @@ public class RenjinSessionTest {
         } catch (Exception ex) {
         }
         try {
-           assert new Double(2.0).compareTo((Double)s.eval("1+1"))==0 : "Failed to eval 1+1: "+s.eval("1+1");
+            assert new Double(2.0).compareTo((Double) s.eval("1+1")) == 0 : "Failed to eval 1+1: " + s.eval("1+1");
         } catch (Exception ex) {
         }
 
@@ -556,7 +556,6 @@ public class RenjinSessionTest {
         s = new RenjinSession(l, prop);
 
         //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
-
         System.err.println(s.eval("R.version.string"));
         System.err.println(s.eval("getwd()"));
     }

@@ -24,7 +24,7 @@ public abstract class Rsession implements RLog {
     public boolean TRY_MODE = false;
     public static final String CAST_ERROR = "Cannot cast ";
     private static final String __ = "  ";
-    private static final String _PACKAGE_ = "  package ";
+    public static final String _PACKAGE_ = "  package ";
     RLog console;
     public static final String PACKAGEINSTALLED = "Package installed.";
     public static final String PACKAGELOADED = "Package loaded.";

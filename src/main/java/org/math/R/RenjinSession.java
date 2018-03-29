@@ -69,6 +69,8 @@ public class RenjinSession extends Rsession implements RLog {
         SINK_FILE = SINK_FILE_BASE + "-renjin" + this.hashCode();
 
         setenv(properties);
+
+        repos = "org.renjin.cran";
     }
 
     public RenjinSession(final PrintStream p, Properties properties) {
@@ -97,7 +99,6 @@ public class RenjinSession extends Rsession implements RLog {
             }
         }, properties);
     }
-
 
     @Override
     boolean isWindows() {
@@ -797,19 +798,58 @@ public class RenjinSession extends Rsession implements RLog {
         }
     }
 
+    /**
+     * @param url CRAN repository to use for packages installation (eg
+     * http://cran.r-project.org)
+     */
+    public void setCRANRepository(String url) {
+        if (!url.equals(repos)) {
+            log("Cannot use another repositroy that " + repos, Level.WARNING);
+        }
+    }
+
     @Override
-    public boolean isPackageInstalled(String pack, String version) {
-        return false;
+    public String loadPackage(String pack) {
+        log("  request package " + pack + " loading...", Level.INFO);
+        try {
+            boolean ok = asLogical(rawEval("library('" + pack + "')", TRY_MODE));
+            if (ok) {
+                log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
+                return PACKAGELOADED;
+            } else {
+                log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
+                return "Impossible to load package " + pack + ": " + getLastLogEntry();
+            }
+        } catch (Exception ex) {
+            log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
+            return "Impossible to load package " + pack + ": " + ex.getLocalizedMessage();
+        }
+
     }
 
     @Override
     public String installPackage(String pack, boolean load) {
-        return "Renjin cannot install package yet.";
+        if (!load) {
+            return "Renjin does not support yet installing package without loading.";
+        }
+        try {
+            return loadPackage(pack);
+        } catch (Exception e) {
+            return "Renjin cannot install package " + pack + " yet: " + e.getMessage();
+        }
     }
 
     @Override
     public String installPackage(String pack, File dir, boolean load) {
-        return "Renjin cannot install package yet.";
+        if (!load) {
+            return "Renjin does not support yet installing package without loading.";
+        }
+        try {
+            return "Renjin does not support yet installing local package.";
+            //return super.installPackage(RENJIN_REPO_PREFIX + pack, dir, load);
+        } catch (Exception e) {
+            return "Renjin cannot install package " + pack + " from " + dir + " yet: " + e.getMessage();
+        }
     }
 
     @Override

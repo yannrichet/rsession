@@ -44,6 +44,10 @@ public class RenjinPlotTest {
 
     public SEXP GlobalEnv;
 
+    public static void main(String args[]) {
+        org.junit.runner.JUnitCore.main(RenjinPlotTest.class.getName());
+    }
+
     @Before
     public void setupPackages() {
         assumingBasePackagesLoad();
@@ -114,7 +118,7 @@ public class RenjinPlotTest {
     @Test
     public void coordinateSystems() throws IOException {
 
-    // compared to output from R2.12
+        // compared to output from R2.12
         // with png(filename='test.png', width=420, height=340)
         GraphicsDeviceDriverStub driver = new GraphicsDeviceDriverStub(420, 340);
         GraphicsDevice device = new GraphicsDevice(driver);
@@ -137,7 +141,7 @@ public class RenjinPlotTest {
     @Test
     public void plotWindow() throws IOException {
 
-    // compared to output from R2.12
+        // compared to output from R2.12
         // with png(filename='test.png', width=420, height=340)
         GraphicsDeviceDriverStub driver = new GraphicsDeviceDriverStub(420, 340);
         GraphicsDevice device = new GraphicsDevice(driver);
