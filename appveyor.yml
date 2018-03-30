@@ -38,7 +38,7 @@ cache:
   - C:\maven\
   - C:\Users\appveyor\.m2
 on_failure:
-  - 7z a failure.zip C:\Users\appveyor\**\*.Rout
+  - 7z a failure.zip C:\projects\rsession\**\*.Rout
   - appveyor PushArtifact failure.zip
 artifacts:
   - path: '\**\*.log'
