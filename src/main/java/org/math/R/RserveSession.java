@@ -528,7 +528,8 @@ public class RserveSession extends Rsession implements RLog {
     }
 
     public String getRServeOS() {
-        return asString(rawEval("Sys.info()['sysname']", TRY_MODE));
+        String os = asString(rawEval("Sys.info()['sysname']", TRY_MODE));
+        return (os == null ? "NA" : os);
     }
 
     public boolean isWindows() {
