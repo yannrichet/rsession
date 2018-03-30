@@ -38,16 +38,16 @@ cache:
   - C:\maven\
   - C:\Users\appveyor\.m2
 on_failure:
-  - 7z a failure.zip **\*.Rout **\*.log
+  - 7z a failure.zip C:\Users\appveyor\**\*.Rout
   - appveyor PushArtifact failure.zip
 artifacts:
-  - path: '**\*.log'
+  - path: '\**\*.log'
     name: Logs
-  - path: '**\*.out'
+  - path: '\**\*.out'
     name: Logs
-  - path: '**\*.fail'
+  - path: '\**\*.fail'
     name: Logs
-  - path: '**\*.Rout'
+  - path: '\**\*.Rout'
     name: Logs
   - path: '\*_*.tar.gz'
     name: Bits
