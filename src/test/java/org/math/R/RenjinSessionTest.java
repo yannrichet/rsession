@@ -61,7 +61,7 @@ public class RenjinSessionTest {
         }
 
         s.eval(".libPaths('" + new File(".").getAbsolutePath() + "/tmp')");
-        assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install pso";
+        assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install & load pso";
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
@@ -71,7 +71,7 @@ public class RenjinSessionTest {
     @Test
     public void testInstallPackages() {
         String out = s.installPackage("sensitivity", true);
-        // will not work yet... assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: "+out;
+        assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: " + out;
         String out2 = s.installPackage("pso", true);
         assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: " + out2;
     }
