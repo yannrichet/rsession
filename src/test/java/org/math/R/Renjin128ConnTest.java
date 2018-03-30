@@ -26,8 +26,8 @@ public class Renjin128ConnTest {
         }
     }
 
-    @Test
-    public void testExceed128Connections() throws Exception {
+    // @Test
+    public void testExceed128ConnectionsOld() throws Exception {
         try {
             for (int i = 0; i < 129; i++) {
                 R.eval("sink('toto.out',type='output')");
@@ -39,6 +39,15 @@ public class Renjin128ConnTest {
             return;
         }
         assert false : "Did not failed as expected...";
+    }
+    
+    @Test //Now fixed in Renjin
+    public void testExceed128Connections() throws Exception {
+            for (int i = 0; i < 129; i++) {
+                R.eval("sink('toto.out',type='output')");
+                R.eval("1+1");
+                R.eval("sink(type='output')");
+            }
     }
 
     @Before
