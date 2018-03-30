@@ -22,6 +22,7 @@ install:
   - cmd: SET MAVEN_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET JAVA_OPTS=-XX:MaxPermSize=2g -Xmx4g
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
+  - cmd: SET R_HOME=C:\R
 environment:
   global:
     WARNINGS_ARE_ERRORS: 0
@@ -36,3 +37,19 @@ test_script:
 cache:
   - C:\maven\
   - C:\Users\appveyor\.m2
+on_failure:
+  - 7z a failure.zip *.Rout *.log
+  - appveyor PushArtifact failure.zip
+artifacts:
+  - path: '*.Rcheck\**\*.log'
+    name: Logs
+  - path: '*.Rcheck\**\*.*out'
+    name: Logs
+  - path: '*.Rcheck\**\*.fail'
+    name: Logs
+  - path: '*.Rcheck\**\*.Rout'
+    name: Logs
+  - path: '\*_*.tar.gz'
+    name: Bits
+  - path: '\*_*.zip'
+    name: Bits
