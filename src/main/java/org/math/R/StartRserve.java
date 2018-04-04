@@ -220,10 +220,10 @@ public class StartRserve {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
-                Log.Out.println("Rserve install failed: " + result.toString());
+                Log.Out.println("Rserve install failed: " + result.toString().replace("\n", "\n| "));
                 return false;
             } else {
-                Log.Err.println("Rserve install unknown: " + result.toString());
+                Log.Err.println("Rserve install unknown: " + result.toString().replace("\n", "\n| "));
                 return false;
             }
         } catch (InterruptedException e) {
@@ -330,10 +330,10 @@ public class StartRserve {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
-                Log.Out.println("Rserve install failed: " + result.toString());
+                Log.Out.println("Rserve install failed: " + result.toString().replace("\n", "\n| "));
                 return false;
             } else {
-                Log.Err.println("Rserve install unknown: " + result.toString());
+                Log.Err.println("Rserve install unknown: " + result.toString().replace("\n", "\n| "));
                 return false;
             }
         } catch (InterruptedException e) {
