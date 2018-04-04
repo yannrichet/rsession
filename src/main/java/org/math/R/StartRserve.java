@@ -139,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             return false;
         }
@@ -162,9 +162,9 @@ public class StartRserve {
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("TRUE")) {
-                Log.Err.println("Rserve is not installed: " + result.toString());
                 return true;
             } else {
+                Log.Err.println("Rserve is not installed: " + result.toString());
                 return false;
             }
         } catch (InterruptedException e) {
@@ -189,25 +189,25 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla", true);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", true);
         if (p == null) {
-            Log.Err.println("failed");
+            Log.Err.println("Failed to launch Rserve install");
             return false;
         }
         int n = 5;
         while (n > 0) {
             try {
-                Thread.sleep(10000 / n);
+                Thread.sleep(2000);
                 Log.Out.print(".");
             } catch (InterruptedException ex) {
             }
             if (isRserveInstalled(Rcmd)) {
-                Log.Out.print(" ok");
+                Log.Out.print("Rserve is installed");
                 return true;
             }
             n--;
         }
-        Log.Err.println("failed: ");
+        Log.Err.println("Rserve is not installed");
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
@@ -286,23 +286,23 @@ public class StartRserve {
 
         Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla --silent", true);
         if (p == null) {
-            Log.Err.println("failed");
+            Log.Err.println("Failed to launch Rserve install");
             return false;
         }
         int n = 5;
         while (n > 0) {
             try {
-                Thread.sleep(10000 / n);
+                Thread.sleep(2000);
                 Log.Out.print(".");
             } catch (InterruptedException ex) {
             }
             if (isRserveInstalled(Rcmd)) {
-                Log.Out.print(" ok");
+                Log.Out.print("Rserve is installed");
                 return true;
             }
             n--;
         }
-        Log.Err.println("failed");
+        Log.Out.print("Rserve is not installed");
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
@@ -336,7 +336,7 @@ public class StartRserve {
         Process p = null;
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-            String command = command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
+            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
