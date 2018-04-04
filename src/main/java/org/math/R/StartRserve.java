@@ -243,13 +243,13 @@ public class StartRserve {
         File packFile;
         try {
             packFile = File.createTempFile("Rserve_1.7-3", pack_suffix);
-            //packFile.deleteOnExit();
+            packFile.deleteOnExit();
         } catch (IOException ex) {
             Log.Err.println(ex.getMessage());
             return false;
         }
         try {
-                    ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            ClassLoader classloader = Thread.currentThread().getContextClassLoader();
             InputStream fileStream = classloader.getResourceAsStream("org/math/R/Rserve_1.7-3" + pack_suffix);
 
             if (fileStream == null) {
@@ -275,8 +275,13 @@ public class StartRserve {
             Log.Err.println(e.getMessage());
             return false;
         }
+        
+        if (!packFile.isFile()) {
+            Log.Err.println("Could not create file " + packFile);
+            return false;
+        }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla", true);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\","/") + "',repos=NULL)", Rcmd, "--vanilla", true);
         if (p == null) {
             Log.Err.println("failed");
             return false;
