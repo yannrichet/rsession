@@ -140,7 +140,7 @@ public class StartRserve {
      */
     public static boolean isRserveInstalled(String Rcmd) {
         Process p = doInR("is.element(set=installed.packages(),el='Rserve')", Rcmd, "--vanilla --silent", false);
-        if (p == null) {            
+        if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
         }
@@ -304,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("list.files('" + packFile.getParent().replace("\\", "/") + "');install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "\\\\") + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -371,7 +371,7 @@ public class StartRserve {
         Process p = null;
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
+            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout + (!RserveDaemon.isWindows() ? " 2>&1" : "") : "");
             Log.Out.println("Doing in R: " + command);
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
