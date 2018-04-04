@@ -409,7 +409,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
-        Process p = doInR("library(" + /*(libloc != null ? "lib.loc='" + libloc + "'," : "") +*/ "Rserve);Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        Process p = doInR("library(Rserve,lib.loc='"+RserveDaemon.APP_DIR+"');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
