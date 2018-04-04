@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
@@ -166,8 +167,11 @@ public class RserveSession extends Rsession implements RLog {
 
         // Make sink file specific to current Rserve instance
         SINK_FILE = "./rout.txt";//+SINK_FILE_BASE + "-" + (serverconf == null ? 0 : serverconf.port);
-
-        startup();
+        try {
+            startup();
+        } catch (Exception ex) {
+            console.log(ex.getMessage(), Level.ERROR);
+        }
 
         setenv(RserveConf.properties);
     }
@@ -207,7 +211,7 @@ public class RserveSession extends Rsession implements RLog {
         this(new RLogSlf4j(), serverconf, tryLocalRServe);
     }
 
-    void startup() {
+    void startup() throws Exception {
         if (RserveConf == null) {
             if (tryLocalRServe) {
                 RserveConf = RserverConf.newLocalInstance(null);
@@ -229,7 +233,7 @@ public class RserveSession extends Rsession implements RLog {
         return status;
     }
 
-    void begin(boolean tryLocal) {
+    void begin(boolean tryLocal) throws Exception {
         status = STATUS_NOT_CONNECTED;
 
         /*if (RserveConf == null) {
@@ -261,7 +265,14 @@ public class RserveSession extends Rsession implements RLog {
             RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
             log("Trying to spawn " + RserveConf.toString(), Level.INFO);
 
-            localRserve = new RserveDaemon(RserveConf, this);
+            try {
+                localRserve = new RserveDaemon(RserveConf, this);
+            } catch (Exception ex) {
+                log(ex.getMessage(), Level.ERROR);
+                Log.Err.println(ex.getMessage());
+                throw ex;
+            }
+
             String http_proxy = null;
             if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
                 http_proxy = RserveConf.properties.getProperty("http_proxy");
@@ -281,7 +292,7 @@ public class RserveSession extends Rsession implements RLog {
                 String message2 = "Failed to launch local Rserve. Unable to initialize Rsession.";
                 log(message2, Level.ERROR);
                 Log.Err.println(message2);
-                throw new IllegalArgumentException(message2);
+                throw new Exception(message2);
             } else {
                 log("Local Rserve started. (Version " + R.getServerVersion() + ")", Level.INFO);
             }
@@ -1305,7 +1316,11 @@ public class RserveSession extends Rsession implements RLog {
                 Log.Err.println("Problem occured, R engine restarted.");
                 log(HEAD_CACHE + "Problem occured, R engine restarted.", Level.INFO);
                 end();
-                startup();
+                try {
+                    startup();
+                } catch (Exception ex) {
+                    throw new RException(ex.getMessage());
+                }
 
                 return proxyEval(expression, vars);
             }
