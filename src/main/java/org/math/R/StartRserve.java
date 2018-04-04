@@ -333,7 +333,7 @@ public class StartRserve {
         Process p = null;
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-            String command = command = "\"" + Rcmd + " " + rargs + "\" -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
+            String command = command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
