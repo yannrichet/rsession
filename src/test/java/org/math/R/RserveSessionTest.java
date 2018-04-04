@@ -704,7 +704,7 @@ public class RserveSessionTest {
         //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
 
         System.err.println(s.eval("R.version.string"));
-        System.err.println("Rserve version " + s.eval("installed.packages()[\"Rserve\",\"Version\"]"));
+        System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"')[\"Rserve\",\"Version\"]"));
         System.err.println(s.eval("getwd()"));
     }
 
