@@ -220,7 +220,7 @@ public class StartRserve {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
-                Log.Out.println("Rserve install failed.");
+                Log.Out.println("Rserve install failed: " + result.toString());
                 return false;
             } else {
                 Log.Err.println("Rserve install unknown: " + result.toString());
@@ -304,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "\\\\") + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -330,7 +330,7 @@ public class StartRserve {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
-                Log.Out.println("Rserve install failed.");
+                Log.Out.println("Rserve install failed: " + result.toString());
                 return false;
             } else {
                 Log.Err.println("Rserve install unknown: " + result.toString());
