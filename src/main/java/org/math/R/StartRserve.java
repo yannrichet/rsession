@@ -194,7 +194,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + ".libPaths();install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -304,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
+        Process p = doInR(".libPaths();install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -372,7 +372,7 @@ public class StartRserve {
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
             String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout + (!RserveDaemon.isWindows() ? " 2>&1" : "") : "");
-            Log.Out.println("Doing in R: " + command);
+            Log.Out.println("Doing (in R): " + command);
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
@@ -476,7 +476,7 @@ public class StartRserve {
                 return false;
             }
             if (installPath == null) {
-                Log.Err.println("ERROR: canot find path to R. Make sure reg is available and R was installed with registry settings.");
+                Log.Err.println("ERROR: cannot find path to R. Make sure reg is available and R was installed with registry settings.");
                 return false;
             }
             return launchRserve(installPath + "\\bin\\R.exe") != null;
