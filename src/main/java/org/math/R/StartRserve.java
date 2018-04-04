@@ -3,7 +3,6 @@ package org.math.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -139,7 +138,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"'),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -194,7 +193,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + ".libPaths();install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='"+RserveDaemon.APP_DIR+"')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -304,7 +303,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR(".libPaths();install.packages('" + packFile.getAbsolutePath() + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL,lib='"+RserveDaemon.APP_DIR+"')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
