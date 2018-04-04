@@ -139,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla -q", false);
+        Process p = doInR("i=installed.packages();is.element(set=i,el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             return false;
         }
@@ -154,12 +154,15 @@ public class StartRserve {
 
             if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
+            } else {
+                Thread.sleep(2000);
             }
             result.append(output.getOutput());
             result.append(error.getOutput());
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("TRUE")) {
+                Log.Err.println("Rserve is not installed: " + result.toString());
                 return true;
             } else {
                 return false;
@@ -281,7 +284,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla", true);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla --silent", true);
         if (p == null) {
             Log.Err.println("failed");
             return false;
@@ -310,7 +313,7 @@ public class StartRserve {
         });
         for (File f : rout) {
             try {
-                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f));
+                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
             } catch (IOException ex) {
                 Log.Err.println(f + ": " + ex.getMessage());
             }
