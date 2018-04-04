@@ -140,7 +140,8 @@ public class StartRserve {
      */
     public static boolean isRserveInstalled(String Rcmd) {
         Process p = doInR("is.element(set=installed.packages(),el='Rserve')", Rcmd, "--vanilla --silent", false);
-        if (p == null) {
+        if (p == null) {            
+            Log.Err.println("Failed to ask if Rserve is installed");
             return false;
         }
 
@@ -162,10 +163,10 @@ public class StartRserve {
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("[1] TRUE")) {
-                Log.Err.println("Rserve is installed.");
+                Log.Out.println("Rserve is installed.");
                 return true;
             } else if (result.toString().contains("[1] FALSE")) {
-                Log.Err.println("Rserve is not installed.");
+                Log.Out.println("Rserve is not installed.");
                 return false;
             } else {
                 Log.Err.println("Cannot check if Rserve is installed: " + result.toString());
@@ -193,9 +194,39 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", true);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
+            return false;
+        }
+        try {
+            StringBuffer result = new StringBuffer();
+            // we need to fetch the output - some platforms will die if you don't ...
+            StreamHog error = new StreamHog(p.getErrorStream(), true);
+            StreamHog output = new StreamHog(p.getInputStream(), true);
+            error.join();
+            output.join();
+
+            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+                p.waitFor();
+            } else {
+                Thread.sleep(2000);
+            }
+            result.append(output.getOutput());
+            result.append(error.getOutput());
+
+            //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
+            if (result.toString().contains("DONE")) {
+                Log.Out.println("Rserve install succeded.");
+                //return true;
+            } else if (result.toString().contains("FAILED")) {
+                Log.Out.println("Rserve install failed.");
+                return false;
+            } else {
+                Log.Err.println("Rserve install unknown: " + result.toString());
+                return false;
+            }
+        } catch (InterruptedException e) {
             return false;
         }
         int n = 5;
@@ -211,22 +242,7 @@ public class StartRserve {
             }
             n--;
         }
-        Log.Out.print("Rserve is not installed:");
-        File[] rout = new File(".").listFiles(
-                new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".Rout");
-            }
-        });
-        for (File f : rout) {
-            try {
-                Log.Out.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
-            } catch (IOException ex) {
-                Log.Out.println(f + ": " + ex.getMessage());
-            }
-        }
+        Log.Out.print("Rserve is not installed");
         return false;
     }
 
@@ -288,11 +304,42 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("list.files('" + packFile.getParent().replace("\\", "/") + "');install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla --silent", true);
+        Process p = doInR("list.files('" + packFile.getParent().replace("\\", "/") + "');install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
         }
+        try {
+            StringBuffer result = new StringBuffer();
+            // we need to fetch the output - some platforms will die if you don't ...
+            StreamHog error = new StreamHog(p.getErrorStream(), true);
+            StreamHog output = new StreamHog(p.getInputStream(), true);
+            error.join();
+            output.join();
+
+            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+                p.waitFor();
+            } else {
+                Thread.sleep(2000);
+            }
+            result.append(output.getOutput());
+            result.append(error.getOutput());
+
+            //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
+            if (result.toString().contains("DONE")) {
+                Log.Out.println("Rserve install succeded.");
+                //return true;
+            } else if (result.toString().contains("FAILED")) {
+                Log.Out.println("Rserve install failed.");
+                return false;
+            } else {
+                Log.Err.println("Rserve install unknown: " + result.toString());
+                return false;
+            }
+        } catch (InterruptedException e) {
+            return false;
+        }
+
         int n = 5;
         while (n > 0) {
             try {
@@ -305,22 +352,7 @@ public class StartRserve {
             }
             n--;
         }
-        Log.Out.print("Rserve is not installed:");
-        File[] rout = new File(".").listFiles(
-                new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".Rout");
-            }
-        });
-        for (File f : rout) {
-            try {
-                Log.Out.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
-            } catch (IOException ex) {
-                Log.Out.println(f + ": " + ex.getMessage());
-            }
-        }
+        Log.Out.print("Rserve is not installed");
         return false;
     }
 
