@@ -204,7 +204,7 @@ public class StartRserve {
             }
             n--;
         }
-        Log.Err.println("failed");
+        Log.Err.println("failed: ");
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
@@ -215,7 +215,7 @@ public class StartRserve {
         });
         for (File f : rout) {
             try {
-                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f));
+                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
             } catch (IOException ex) {
                 Log.Err.println(f + ": " + ex.getMessage());
             }
@@ -275,13 +275,13 @@ public class StartRserve {
             Log.Err.println(e.getMessage());
             return false;
         }
-        
+
         if (!packFile.isFile()) {
             Log.Err.println("Could not create file " + packFile);
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\","/") + "',repos=NULL)", Rcmd, "--vanilla", true);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL)", Rcmd, "--vanilla", true);
         if (p == null) {
             Log.Err.println("failed");
             return false;
@@ -332,13 +332,11 @@ public class StartRserve {
     public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/, boolean redirect) {
         Process p = null;
         try {
-            String command = null;
+            String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
+            String command = command = "\"" + Rcmd + " " + rargs + "\" -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
             if (RserveDaemon.isWindows()) {
-                command = "\"" + Rcmd + "\" -e \"" + todo + "\" " + rargs;
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
-                String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-                command = "echo \"" + todo + "\" | " + Rcmd + " " + rargs + (redirect ? " > " + Rout : "");
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
                 //new File(Rout).deleteOnExit();
             }
