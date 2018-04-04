@@ -50,8 +50,8 @@ public class RserveDaemon {
         this.conf = conf;
         this.log = log != null ? log : new RLogSlf4j();
         if (!findR_HOME(R_HOME)) {
-            this.log.log("Failed to find "+R_HOME_KEY+" (with default " + R_HOME + ") as " + RserveDaemon.R_HOME, Level.ERROR);
-            throw new Exception("Failed to find "+R_HOME_KEY+" (with default " + R_HOME + ") as " + RserveDaemon.R_HOME);
+            this.log.log("Failed to find " + R_HOME_KEY + " (with default " + R_HOME + ") as " + RserveDaemon.R_HOME, Level.ERROR);
+            throw new Exception("Failed to find " + R_HOME_KEY + " (with default " + R_HOME + ") as " + RserveDaemon.R_HOME);
         }
         this.log.log(R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -229,26 +229,26 @@ public class RserveDaemon {
         log.log("checking Rserve is available... ", Level.INFO);
         boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
         if (!RserveInstalled) {
-            log.log("  no", Level.INFO);
+            log.log("                           ...no", Level.INFO);
             if (USE_RSERVE_FROM_CRAN) {
                 RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), http_proxy, null);
             } else {
                 RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
             }
             if (RserveInstalled) {
-                log.log("  ok", Level.INFO);
+                log.log("                           ...yes", Level.INFO);
             } else {
-                log.log("  failed.", Level.ERROR);
+                log.log("                           ...failed", Level.ERROR);
                 String notice = "Please install Rserve manually in your R environment using \"install.packages('Rserve')\" command.";
                 log.log(notice, Level.ERROR);
                 Log.Err.println(notice);
                 return;
             }
         } else {
-            log.log("  ok", Level.INFO);
+            log.log("                           ...yes", Level.INFO);
         }
 
-        log.log("starting R daemon... " + conf, Level.INFO);
+        log.log("Starting R daemon... " + conf, Level.INFO);
 
         StringBuffer RserveArgs = new StringBuffer("--vanilla");
         if (conf.port > 0) {
@@ -258,9 +258,9 @@ public class RserveDaemon {
         rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--vanilla", RserveArgs.toString(), false);
 
         if (rserve != null) {
-            log.log("  ok", Level.INFO);
+            log.log("                 ...ok", Level.INFO);
         } else {
-            log.log("  failed", Level.ERROR);
+            log.log("                 ...failed", Level.ERROR);
         }
     }
 

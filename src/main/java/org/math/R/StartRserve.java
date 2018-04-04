@@ -161,10 +161,14 @@ public class StartRserve {
             result.append(error.getOutput());
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
-            if (result.toString().contains("TRUE")) {
+            if (result.toString().contains("[1] TRUE")) {
+                Log.Err.println("Rserve is installed.");
                 return true;
+            } else if (result.toString().contains("[1] FALSE")) {
+                Log.Err.println("Rserve is not installed.");
+                return false;
             } else {
-                Log.Err.println("Rserve is not installed: " + result.toString());
+                Log.Err.println("Cannot check if Rserve is installed: " + result.toString());
                 return false;
             }
         } catch (InterruptedException e) {
@@ -207,7 +211,7 @@ public class StartRserve {
             }
             n--;
         }
-        Log.Err.println("Rserve is not installed");
+        Log.Out.print("Rserve is not installed:");
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
@@ -218,9 +222,9 @@ public class StartRserve {
         });
         for (File f : rout) {
             try {
-                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
+                Log.Out.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
             } catch (IOException ex) {
-                Log.Err.println(f + ": " + ex.getMessage());
+                Log.Out.println(f + ": " + ex.getMessage());
             }
         }
         return false;
@@ -293,7 +297,6 @@ public class StartRserve {
         while (n > 0) {
             try {
                 Thread.sleep(2000);
-                Log.Out.print(".");
             } catch (InterruptedException ex) {
             }
             if (isRserveInstalled(Rcmd)) {
@@ -302,7 +305,7 @@ public class StartRserve {
             }
             n--;
         }
-        Log.Out.print("Rserve is not installed");
+        Log.Out.print("Rserve is not installed:");
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
 
@@ -313,9 +316,9 @@ public class StartRserve {
         });
         for (File f : rout) {
             try {
-                Log.Err.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
+                Log.Out.println(f + ":\n" + org.apache.commons.io.FileUtils.readFileToString(f).replace("\n", "\n | "));
             } catch (IOException ex) {
-                Log.Err.println(f + ": " + ex.getMessage());
+                Log.Out.println(f + ": " + ex.getMessage());
             }
         }
         return false;
@@ -337,13 +340,13 @@ public class StartRserve {
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
             String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + Rout : "");
+            Log.Out.println("Doing in R: " + command);
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
             } else /* unix startup */ {
                 p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
                 //new File(Rout).deleteOnExit();
             }
-            Log.Out.println("  executing " + command);
         } catch (Exception x) {
             Log.Err.println(x.getMessage());
         }
