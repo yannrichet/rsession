@@ -50,8 +50,8 @@ public class RserveDaemon {
         this.conf = conf;
         this.log = log != null ? log : new RLogSlf4j();
         if (!findR_HOME(R_HOME)) {
-            this.log.log("Failed to find "+R_HOME_KEY+" with default " + R_HOME + " and conf " + conf, Level.ERROR);
-            throw new Exception("Failed to find "+R_HOME_KEY+" with default " + R_HOME + " and conf " + conf);
+            this.log.log("Failed to find "+R_HOME_KEY+" (with default " + R_HOME + ") as " + RserveDaemon.R_HOME, Level.ERROR);
+            throw new Exception("Failed to find "+R_HOME_KEY+" (with default " + R_HOME + ") as " + RserveDaemon.R_HOME);
         }
         this.log.log(R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
         Runtime.getRuntime().addShutdownHook(new Thread() {
