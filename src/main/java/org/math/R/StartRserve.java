@@ -219,7 +219,7 @@ public class StartRserve {
             if (result.toString().contains("DONE")) {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
-            } else if (result.toString().contains("FAILED")) {
+            } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
                 Log.Out.println("Rserve install failed.");
                 return false;
             } else {
@@ -329,7 +329,7 @@ public class StartRserve {
             if (result.toString().contains("DONE")) {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
-            } else if (result.toString().contains("FAILED")) {
+            } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
                 Log.Out.println("Rserve install failed.");
                 return false;
             } else {
