@@ -7,6 +7,7 @@ init:
         $ErrorActionPreference = "Stop"
         Invoke-WebRequest http://raw.github.com/krlmlr/r-appveyor/master/scripts/appveyor-tool.ps1 -OutFile "..\appveyor-tool.ps1"
         Import-Module '..\appveyor-tool.ps1'
+        Bootstrap
 install:
   - ps: |
       Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -31,7 +32,6 @@ environment:
     WARNINGS_ARE_ERRORS: 0
     USE_RTOOLS: false
     R_VERSION: release
-    R_ARCH: x64
 build_script:
   #- travis-tool.sh install_deps
   - mvn clean package --batch-mode -DskipTest
