@@ -24,6 +24,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
 env:
   global:
+    - R_LIBS=$HOME/Library
     - R_LIBS_USER=$HOME/Library
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script: mvn cobertura:cobertura
