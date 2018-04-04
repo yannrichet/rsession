@@ -21,7 +21,7 @@ public class RserveFixesTest {
     RserveDaemon d;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         d = new RserveDaemon(new RserverConf(null, -1, null, null, null), new RLogSlf4j());
         String http_proxy_env = System.getenv("http_proxy");
         if (http_proxy_env != null) {

@@ -46,11 +46,14 @@ public class RserveDaemon {
         }
     }
 
-    public RserveDaemon(RserverConf conf, RLog log, String R_HOME) {
+    public RserveDaemon(RserverConf conf, RLog log, String R_HOME) throws Exception {
         this.conf = conf;
         this.log = log != null ? log : new RLogSlf4j();
-        findR_HOME(R_HOME);
-        this.log.log("Environment variables:\n  " + R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
+        if (!findR_HOME(R_HOME)) {
+            this.log.log("Failed to find "+R_HOME_KEY+" with default " + R_HOME + " and conf " + conf, Level.ERROR);
+            throw new Exception("Failed to find "+R_HOME_KEY+" with default " + R_HOME + " and conf " + conf);
+        }
+        this.log.log(R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -63,7 +66,7 @@ public class RserveDaemon {
         stop();
     }
 
-    public RserveDaemon(RserverConf conf, RLog log) {
+    public RserveDaemon(RserverConf conf, RLog log) throws Exception {
         this(conf, log, null);
     }
     public final static String R_HOME_KEY = "R_HOME";
@@ -106,6 +109,8 @@ public class RserveDaemon {
                             break;
                         }
                     }
+                } else if (isMacOSX()) {
+                    R_HOME = "/Library/Frameworks/R.framework/Resources";
                 } else {
                     R_HOME = "/usr/lib/R/";
                 }
@@ -268,7 +273,7 @@ public class RserveDaemon {
         return sb.toString();
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
         RserveDaemon d = new RserveDaemon(new RserverConf(null, -1, null, null, null), new RLogSlf4j());
         d.start(null);
         Thread.sleep(2000);
