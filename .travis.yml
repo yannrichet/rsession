@@ -25,6 +25,7 @@ before_install:
 env:
   global:
     - R_LIBS=$HOME/Library
+    - R_LIBS_SITE=$HOME/Library
     - R_LIBS_USER=$HOME/Library
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script: mvn cobertura:cobertura

@@ -163,10 +163,10 @@ public class StartRserve {
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("[1] TRUE")) {
-                Log.Out.println("Rserve is installed.");
+                Log.Out.println("Rserve is already installed.");
                 return true;
             } else if (result.toString().contains("[1] FALSE")) {
-                Log.Out.println("Rserve is not installed.");
+                Log.Out.println("Rserve is not yet installed.");
                 return false;
             } else {
                 Log.Err.println("Cannot check if Rserve is installed: " + result.toString());

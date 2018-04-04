@@ -24,6 +24,7 @@ install:
   - cmd: SET M2_HOME=C:\maven\apache-maven-3.2.5
   - cmd: SET R_HOME=C:\R
   - cmd: SET R_LIBS=C:\R\Library
+  - cmd: SET R_LIBS_SITE=C:\R\Library
   - cmd: SET R_LIBS_USER=C:\Users\appveyor\Library
 environment:
   global:
