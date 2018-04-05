@@ -248,7 +248,7 @@ public class RserveSessionTest {
 
     @Test
     public void testFileSize() throws Exception {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 1; i < 5; i++) {
             int size = (int) Math.pow(10.0, (double) (i + 1));
             System.err.println("Size " + size);
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");

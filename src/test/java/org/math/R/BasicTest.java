@@ -293,7 +293,7 @@ public class BasicTest {
         assert ((String) s.eval("s")).equals(str);
 
         File f = new File("Rserve" + Math.random() + ".save");
-        s.save(f, null);
+        s.save(f, (String)null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
         assert f.exists() : "Failed to create save file !";
@@ -316,7 +316,7 @@ public class BasicTest {
         assert ((String) r.eval("s")).equals(str);
 
         File f = new File("Rserve" + Math.random() + ".save");
-        r.save(f, null);
+        r.save(f, (String)null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
         assert f.exists() : "Failed to create save file !";

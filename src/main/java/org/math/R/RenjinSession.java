@@ -15,7 +15,11 @@ import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
 import org.math.array.DoubleArray;
+import org.renjin.aether.AetherPackageLoader;
+import org.renjin.eval.Session;
+import org.renjin.eval.SessionBuilder;
 import org.renjin.primitives.matrix.Matrix;
+import org.renjin.primitives.packaging.PackageLoader;
 import org.renjin.script.RenjinScriptEngine;
 import org.renjin.script.RenjinScriptEngineFactory;
 import org.renjin.sexp.DoubleArrayVector;
@@ -36,7 +40,7 @@ import org.renjin.sexp.StringVector;
  */
 public class RenjinSession extends Rsession implements RLog {
 
-    private RenjinScriptEngine R = null;
+    protected RenjinScriptEngine R = null;
     File wdir;
     Properties properties;
 

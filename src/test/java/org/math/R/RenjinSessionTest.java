@@ -59,9 +59,9 @@ public class RenjinSessionTest {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
         }
-
-        s.eval(".libPaths('" + new File(".").getAbsolutePath().replace("\\", "/") + "/tmp')");
-        assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install & load pso";
+        
+        String ret = s.installPackage("pso", true);
+        assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install & load pso: "+ret;
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
@@ -227,7 +227,7 @@ public class RenjinSessionTest {
 
     @Test
     public void testFileSize() throws Exception {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 1; i < 5; i++) {
             int size = (int) Math.pow(10.0, (double) (i + 1));
             System.err.println("Size " + size);
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
