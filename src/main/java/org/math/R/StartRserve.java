@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -138,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"'),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.APP_DIR + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -193,7 +194,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='"+RserveDaemon.APP_DIR+"')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -303,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL,lib='"+RserveDaemon.APP_DIR+"')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL,lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -409,7 +410,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
-        Process p = doInR("library(Rserve,lib.loc='"+RserveDaemon.APP_DIR+"');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.APP_DIR + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
@@ -479,17 +480,33 @@ public class StartRserve {
                 return false;
             }
             return launchRserve(installPath + "\\bin\\R.exe") != null;
+        } else if (RserveDaemon.isMacOSX()) {
+            return ((launchRserve("R") != null)
+                    || ((new File("/usr/local/Cellar/r/")).exists() && new File("/usr/local/Cellar/r/").list(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.startsWith("3.");
+                }
+            }).length > 0 && launchRserve(new File("/usr/local/Cellar/r/").list(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.startsWith("3.");
+                }
+            })[0] != null)
+                    || ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R") != null)
+                    || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R") != null)
+                    || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R") != null));
+        } else {
+            return ((launchRserve("R") != null)
+                    || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R") != null)
+                    || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R") != null)
+                    || ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R") != null)
+                    || ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R") != null)
+                    || ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R") != null)
+                    || ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R") != null));
         }
-        return ((launchRserve("R") != null)
-                || /* try some common unix locations of R */ ((new File("/Library/Frameworks/R.framework/Resources/bin/R")).exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R") != null)
-                || ((new File("/usr/local/lib/R/bin/R")).exists() && launchRserve("/usr/local/lib/R/bin/R") != null)
-                || ((new File("/usr/lib/R/bin/R")).exists() && launchRserve("/usr/lib/R/bin/R") != null)
-                || ((new File("/usr/local/bin/R")).exists() && launchRserve("/usr/local/bin/R") != null)
-                || ((new File("/sw/bin/R")).exists() && launchRserve("/sw/bin/R") != null)
-                || ((new File("/usr/common/bin/R")).exists() && launchRserve("/usr/common/bin/R") != null)
-                || ((new File("/opt/bin/R")).exists() && launchRserve("/opt/bin/R") != null));
     }
-
+    
     /**
      * check whether Rserve is currently running (on local machine and default
      * port).

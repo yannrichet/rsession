@@ -17,7 +17,17 @@ public class RserveDaemon {
     RserverConf conf;
     Process process;
     private final RLog log;
-    static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve");
+    static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
+        @Override
+        public String toString() {
+            if (isWindows()) {
+                return super.toString().replace("\\", "\\\\");
+            } else {
+                return super.toString();
+            }
+        }
+
+    };
     public static String R_HOME = null;
 
     private static String OS = System.getProperty("os.name").toLowerCase();
@@ -96,23 +106,42 @@ public class RserveDaemon {
                 if (isWindows()) {
                     for (int major = 20; major >= 0; major--) {
                         //int major = 10;//known to work with R 2.9 only.
-                        if (R_HOME == null) {
-                            for (int minor = 10; minor >= 0; minor--) {
-                                //int minor = 0;
-                                r_HOME = "C:\\Program Files\\R\\R-3." + major + "." + minor + "\\";
-                                if (new File(r_HOME).exists()) {
-                                    R_HOME = r_HOME;
-                                    break;
-                                }
+                        for (int minor = 10; minor >= 0; minor--) {
+                            //int minor = 0;
+                            r_HOME = "C:\\Program Files\\R\\R-3." + major + "." + minor + "\\";
+                            if (new File(r_HOME).isDirectory()) {
+                                R_HOME = r_HOME;
+                                break;
                             }
-                        } else {
-                            break;
                         }
                     }
                 } else if (isMacOSX()) {
-                    R_HOME = "/Library/Frameworks/R.framework/Resources";
+                    R_HOME = "/Library/Frameworks/R.framework/Resources"; // standard R install
+                    if (new File(R_HOME).isDirectory()) {
+                        return true;
+                    }
+
+                    for (int major = 20; major >= 0; major--) { // for homebrew install
+                        //int major = 10;//known to work with R 2.9 only.
+                        for (int minor = 10; minor >= 0; minor--) {
+                            //int minor = 0;
+                            r_HOME = "/usr/local/Cellar/r/3." + major + "." + minor;
+                            if (new File(r_HOME).isDirectory()) {
+                                R_HOME = r_HOME;
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     R_HOME = "/usr/lib/R/";
+                    if (new File(R_HOME).isDirectory()) {
+                        return true;
+                    }
+
+                    R_HOME = "/usr/lcoal/lib/R/";
+                    if (new File(R_HOME).isDirectory()) {
+                        return true;
+                    }
                 }
             }
         }
