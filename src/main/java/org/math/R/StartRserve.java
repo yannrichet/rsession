@@ -304,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath() + "',repos=NULL,lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "\\\\") + "',repos=NULL,lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;

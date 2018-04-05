@@ -26,7 +26,9 @@ public class RPanelsTest {
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
-        if (GraphicsEnvironment.isHeadless()) return;
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
         org.junit.runner.JUnitCore.main(RPanelsTest.class.getName());
     }
 
@@ -60,7 +62,7 @@ public class RPanelsTest {
             ex.printStackTrace();
         }
         try {
-            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"')[\"Rserve\",\"Version\"]"));
+            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='" + RserveDaemon.APP_DIR + "')[\"Rserve\",\"Version\"]"));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
