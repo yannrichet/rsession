@@ -13,7 +13,10 @@ matrix:
           #- r-base-dev	
           #- gcc-4.8
           #- r-cran-rserve
-
+        before_script:
+        - export DISPLAY=:99.0
+        - sh -e /etc/init.d/xvfb start
+        - sleep 3  
     - os: osx
       osx_image: xcode8.3
 before_install:
@@ -21,9 +24,6 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
 install: mvn install -DskipTests=true -Dgpg.skip=true
 before_script:
-  - export DISPLAY=:99.0
-  - sh -e /etc/init.d/xvfb start
-  - sleep 3  
   - export R_LIBS=$HOME/RLibrary
   - export R_LIBS_SITE=$HOME/RLibrary
   - export R_LIBS_USER=$HOME/RLibrary
