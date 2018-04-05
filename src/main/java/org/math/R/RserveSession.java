@@ -1183,7 +1183,7 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public void getFile(File localfile, String remoteFile) {
         try {
-            if (silentlyRawEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() != 1) {
+            if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "\\\\") + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
         } catch (Exception ex) {
@@ -1258,8 +1258,8 @@ public class RserveSession extends Rsession implements RLog {
             }
         }
         try {
-            if (silentlyRawEval("file.exists('" + remoteFile + "')", TRY_MODE).asInteger() == 1) {
-                silentlyVoidEval("file.remove('" + remoteFile + "')", TRY_MODE);
+            if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "\\\\") + "')", TRY_MODE).asInteger() == 1) {
+                silentlyVoidEval("file.remove('" + remoteFile.replace("\\", "\\\\") + "')", TRY_MODE);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
         } catch (REXPMismatchException ex) {
