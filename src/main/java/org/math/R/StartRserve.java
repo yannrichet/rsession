@@ -139,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.APP_DIR + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -194,7 +194,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -216,7 +216,7 @@ public class StartRserve {
             result.append(error.getOutput());
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
-            if (result.toString().contains("DONE")) {
+            if (result.toString().contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.toString().contains("* DONE (Rserve)")) {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
@@ -304,7 +304,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "\\\\") + "',repos=NULL,lib='" + RserveDaemon.APP_DIR + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -326,7 +326,7 @@ public class StartRserve {
             result.append(error.getOutput());
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
-            if (result.toString().contains("DONE")) {
+            if (result.toString().contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.toString().contains("* DONE (Rserve)")) {
                 Log.Out.println("Rserve install succeded.");
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
@@ -410,7 +410,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
-        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.APP_DIR + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.R_APP_DIR + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
