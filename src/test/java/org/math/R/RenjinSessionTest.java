@@ -60,7 +60,7 @@ public class RenjinSessionTest {
             assert !dir.exists() : "Cannot delete " + dir;
         }
 
-        s.eval(".libPaths('" + new File(".").getAbsolutePath() + "/tmp')");
+        s.eval(".libPaths('" + new File(".").getAbsolutePath().replace("\\", "/") + "/tmp')");
         assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install & load pso";
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {

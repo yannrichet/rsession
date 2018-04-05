@@ -17,11 +17,11 @@ public class RserveDaemon {
     RserverConf conf;
     Process process;
     private final RLog log;
-    static File APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
+    static File R_APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
         @Override
         public String toString() {
             if (isWindows()) {
-                return super.toString().replace("\\", "\\\\");
+                return super.toString().replace("\\", "/");
             } else {
                 return super.toString();
             }
@@ -46,13 +46,13 @@ public class RserveDaemon {
 
     static {
         boolean app_dir_ok = false;
-        if (!APP_DIR.exists()) {
-            app_dir_ok = APP_DIR.mkdir();
+        if (!R_APP_DIR.exists()) {
+            app_dir_ok = R_APP_DIR.mkdir();
         } else {
-            app_dir_ok = APP_DIR.isDirectory() && APP_DIR.canWrite();
+            app_dir_ok = R_APP_DIR.isDirectory() && R_APP_DIR.canWrite();
         }
         if (!app_dir_ok) {
-            Log.Err.println("Cannot write in " + APP_DIR.getAbsolutePath());
+            Log.Err.println("Cannot write in " + R_APP_DIR.getAbsolutePath());
         }
     }
 

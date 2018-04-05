@@ -77,7 +77,7 @@ public class RserveSessionTest {
             assert !dir.exists() : "Cannot delete " + dir;
         }
 
-        s.eval(".libPaths('" + new File(".").getAbsolutePath() + "/tmp')");
+        s.eval(".libPaths('" + new File(".").getAbsolutePath().replace("\\", "/") + "/tmp')");
         assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install pso";
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {
@@ -704,7 +704,7 @@ public class RserveSessionTest {
         //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
 
         System.err.println(s.eval("R.version.string"));
-        System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"')[\"Rserve\",\"Version\"]"));
+        System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.R_APP_DIR+"')[\"Rserve\",\"Version\"]"));
         System.err.println(s.eval("getwd()"));
     }
 

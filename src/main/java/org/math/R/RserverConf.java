@@ -189,23 +189,6 @@ public class RserverConf {
                 }
             }
 
-            /*Special libPath no more used.
-            try {
-            //if (RLibPath == null) {
-            boolean isWindows = connection.eval("as.logical(Sys.info()[1]=='Windows')").asInteger() == 1;
-            RLibPath = "paste(Sys.getenv(\"HOME\"),\"Rserve\",sep=\"" + (isWindows ? "\\\\" : "/") + "\")";
-            //}
-            if (RLibPath != null) {
-            connection.eval("if(!file.exists(" + RLibPath + ")) dir.create(" + RLibPath + ")");
-            connection.eval(".libPaths(new=" + RLibPath + ")");
-            }
-            } catch (REXPMismatchException r) {
-            r.printStackTrace();
-            } catch (RserveException r) {
-            r.printStackTrace();
-            }*/
-
-            //Logger.err.println("Connection " + toString()+" succeded.");
             return connection;
         } else {
             Log.Err.println("Connection " + toString() + " failed.");

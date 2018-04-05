@@ -1011,12 +1011,12 @@ public abstract class Rsession implements RLog {
     public void source(File f) {
         putFile(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getName().replace("\\", "\\\\") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getName().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("source('" + f.getName().replace("\\", "\\\\") + "')", TRY_MODE);
+            voidEval("source('" + f.getName().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1030,12 +1030,12 @@ public abstract class Rsession implements RLog {
     public void load(File f) {
         putFile(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "\\\\") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("load('" + f.getAbsolutePath().replace("\\", "\\\\") + "')", TRY_MODE);
+            voidEval("load('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1134,9 +1134,9 @@ public abstract class Rsession implements RLog {
             return;
         }
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName().replace("\\", "\\\\") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName().replace("\\", "\\\\") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);
@@ -1159,9 +1159,9 @@ public abstract class Rsession implements RLog {
             return;
         }
         if (vars.length == 1) {
-            voidEval("save(file='" + f.getName().replace("\\", "\\\\") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName().replace("\\", "\\\\") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);

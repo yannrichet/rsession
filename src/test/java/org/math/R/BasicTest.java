@@ -56,7 +56,7 @@ public class BasicTest {
             ex.printStackTrace();
         }
         try {
-            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.APP_DIR+"')[\"Rserve\",\"Version\"]"));
+            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
