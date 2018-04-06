@@ -369,7 +369,7 @@ public class RserveSessionTest {
             //System.out.println("openFile");
             is1 = s.R.openFile(remoteFile1);
             //System.out.println("OK");
-            os1 = new FileOutputStream(localfile1);
+            os1 = new FileOutputStream(localfile1.getAbsolutePath());
             byte[] buf = new byte[65536];
             try {
                 s.R.setSendBufferSize(buf.length);
