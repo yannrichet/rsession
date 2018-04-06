@@ -70,6 +70,7 @@ public class RPanelsTest {
         if (!(wdir.isDirectory() || wdir.mkdir())) {
             throw new IOException("Cannot access wdir=" + wdir);
         }
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
         s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
         System.out.println("| getwd():\t" + s.eval("getwd()"));
 
@@ -87,6 +88,7 @@ public class RPanelsTest {
         if (!(wdir.isDirectory() || wdir.mkdir())) {
             throw new IOException("Cannot access wdir=" + wdir);
         }
+        System.out.println("| getwd():\t" + r.eval("getwd()"));
         r.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
         System.out.println("| getwd():\t" + r.eval("getwd()"));
 
