@@ -1163,6 +1163,10 @@ public abstract class Rsession implements RLog {
             return;
         }
         if (vars.length == 1) {
+            if (vars[0] == null) {
+                log("Nothing to save.", Level.WARNING);
+                return;
+            }
             voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
             voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);

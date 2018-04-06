@@ -27,14 +27,14 @@ public class RenjinSessionTest {
         org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
     }
 
-    @Test
+    //@Test
     public void testExceed128Connections() throws Exception {
         for (int i = 0; i < 129; i++) {
             assert (boolean) s.eval("is.function(png)") : "Failed to call is.function";
         }
     }
 
-    @Test
+    //@Test
     public void testError() throws Exception {
         boolean error = false;
         try {
@@ -46,13 +46,13 @@ public class RenjinSessionTest {
         assert error : "Error not detected";
     }
 
-    @Test
+    //@Test
     public void testPrintIn() throws Exception {
         String str = s.eval("print('*')").toString();
         assert str.equals("*") : "Bad print: " + str;
     }
 
-    @Test
+    //@Test
     public void testInstallPackage() throws Exception {
         File dir = new File(new File("."), "tmp/pso");
         if (dir.exists()) {
@@ -68,7 +68,7 @@ public class RenjinSessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testInstallPackages() {
         String out = s.installPackage("sensitivity", true);
         assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: " + out;
@@ -76,7 +76,7 @@ public class RenjinSessionTest {
         assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: " + out2;
     }
 
-    @Test
+    //@Test
     public void testPackageErrorNotBlocking() {
         try {
             assert s.eval("packageDescription(\"Rserve\")") == Boolean.FALSE : "Failed to eval (without error) packageDescription: " + s.eval("packageDescription(\"Rserve\")");
@@ -95,7 +95,7 @@ public class RenjinSessionTest {
 
     }
 
-    @Test
+    //@Test
     public void testObject() throws Exception {
         Object l = s.eval("list(x=3)");
         System.err.println("l: " + l);
@@ -108,7 +108,7 @@ public class RenjinSessionTest {
         assert (l instanceof Map) : "Not a Map";
     }
 
-    @Test
+    //@Test
     public void testObjectFun() throws Exception {
         s.voidEval("f <- function(x) x");
         System.err.println("R: " + s.getLastOutput());
@@ -119,7 +119,7 @@ public class RenjinSessionTest {
         assert s.rawEval("f") != null : "Cannot get function object";
     }
 
-    @Test
+    //@Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
         System.err.println("fun: " + fun);
@@ -133,7 +133,7 @@ public class RenjinSessionTest {
         assert (double) (((Rsession.Function) fun).evaluate(1.0)) == 1.0 : "Bad function behavior: 1.0 != " + (double) (((Rsession.Function) fun).evaluate(1.0));
     }
 
-    // @Test
+    // //@Test
     public void testEnvir() throws Exception {
         Object e = s.eval("new.env()");
         System.err.println("e: " + e);
@@ -145,7 +145,7 @@ public class RenjinSessionTest {
         assert e != null : "Cannot eval e:" + s.getLastError();
     }
 
-    @Test
+    //@Test
     public void testNodename() {
         SEXP rexp = (SEXP) s.rawEval("Sys.info()[['nodename']]");
 
@@ -156,7 +156,7 @@ public class RenjinSessionTest {
 
     String f = "f <- function() {cat('cat');warning('warning');message('message');return(0)}";
 
-    @Test
+    //@Test
     public void testErrorNOSink() throws Exception {
         s.voidEval(f);
 
@@ -171,7 +171,7 @@ public class RenjinSessionTest {
         s.SINK_OUTPUT = true;
     }
 
-    // @Test
+    // //@Test
     public void testExplicitSink() throws Exception {
         s.SINK_OUTPUT = false;
         s.SINK_MESSAGE = false;
@@ -204,7 +204,7 @@ public class RenjinSessionTest {
         s.SINK_OUTPUT = true;
     }
 
-    @Test
+    //@Test
     public void testDefaultSink() throws Exception {
         s.voidEval(f);
 
@@ -238,7 +238,7 @@ public class RenjinSessionTest {
         }
     }
 
-    // @Test
+    // //@Test
     public void testJPEGSize() {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
@@ -250,7 +250,7 @@ public class RenjinSessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testPrint() throws Exception {
         //cast
         String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
@@ -259,7 +259,7 @@ public class RenjinSessionTest {
         }
     }
 
-    @Test
+    //@Test
     public void testEval() throws Exception {
 
         double a = -0.123;
@@ -281,7 +281,7 @@ public class RenjinSessionTest {
         assert Arrays.equals((double[]) s.proxyEval("A", null), A) : "variable A changed";
     }
 
-    @Test
+    //@Test
     public void testNullEval() throws Exception {
 
         double a = -0.123;
@@ -300,7 +300,7 @@ public class RenjinSessionTest {
 
     }
 
-    @Test
+    //@Test
     public void testEvalError() throws Exception {
         String[] exprs = {"a <- 1.0.0", "f <- function(x){((}"};
         for (String expr : exprs) {
@@ -327,13 +327,13 @@ public class RenjinSessionTest {
         }
     }
 
-    // @Test
+    // //@Test
     public void testLibrary() {
         s.rawEval("library(lhs)");
         s.rawEval("library(rgenoud)");
     }
 
-    /*@Test
+    /*//@Test
      public void testPerformance()  { //Performance rawEval
      long start = Calendar.getInstance().getTimeInMillis();
      System.out.println("tic");
@@ -345,7 +345,7 @@ public class RenjinSessionTest {
      long duration = Calendar.getInstance().getTimeInMillis() - start;
      System.out.println("Spent time:" + (duration) + " ms");
      }*/
-    @Test
+    //@Test
     public void testConcurrentEval() throws Exception {
         s.voidEval("id <- function(x){return(x)}");
         assert (double) s.eval("id(1.0)") == 1.0 : "Failed to eval id";
@@ -402,7 +402,7 @@ public class RenjinSessionTest {
         return true;
     }
 
-    @Test
+    //@Test
     public void testConcurrency() throws InterruptedException {
         final RenjinSession r1 = RenjinSession.newInstance(new RLog() {
 
@@ -471,7 +471,7 @@ public class RenjinSessionTest {
         r2.close();
     }
 
-    @Test
+    //@Test
     public void testHardConcurrency() throws InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final RenjinSession[] R = new RenjinSession[A.length];
