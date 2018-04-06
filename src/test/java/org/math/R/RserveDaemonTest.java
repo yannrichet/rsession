@@ -101,7 +101,7 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", false);
+            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla -q", false);
             if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
             }
