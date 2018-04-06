@@ -618,35 +618,6 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     @Override
-    public void getFile(File localfile, String remoteFile) {
-        try {
-            FileUtils.copyFile(new File(wdir, remoteFile), localfile);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void deleteFile(String remoteFile) {
-        try {
-            FileUtils.forceDelete(new File(wdir, remoteFile));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    public void putFile(File localfile, String remoteFile) {
-        if (!localfile.equals(new File(wdir, remoteFile))) {
-            try {
-                FileUtils.copyFile(localfile, new File(wdir, remoteFile));
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-
-    @Override
     public void close() {
         super.close();
         R.getSession().close();
@@ -752,44 +723,6 @@ public class RenjinSession extends Rsession implements RLog {
          ex.printStackTrace();
          }
          }*/
-    }
-
-    @Override
-    public void save(File f, String... vars) throws RException {
-        if (vars == null || vars.length == 0) {
-            log("Nothing to save.", Level.WARNING);
-            return;
-        }
-        if (vars.length == 1) {
-            if (vars[0] == null) {
-                log("Nothing to save.", Level.WARNING);
-                return;
-            }
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
-        } else {
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
-        }
-    }
-
-    @Override
-    public void savels(File f, String... vars) throws RException {
-        if (vars == null) {
-            log("Nothing to save.", Level.WARNING);
-            return;
-        }
-        if (vars.length == 1) {
-            if (vars[0] == null) {
-                log("Nothing to save.", Level.WARNING);
-                return;
-            }
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
-        } else {
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
-        }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-        }
     }
 
     /**

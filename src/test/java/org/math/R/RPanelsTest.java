@@ -2,6 +2,7 @@ package org.math.R;
 
 import java.awt.GraphicsEnvironment;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Properties;
@@ -33,7 +34,7 @@ public class RPanelsTest {
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         RLog l = new RLog() {
 
             public void log(String string, RLog.Level level) {
@@ -56,20 +57,32 @@ public class RPanelsTest {
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
-        try {
-            System.err.println(s.eval("R.version.string"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        System.out.println("| R.version:\t" + s.eval("R.version.string"));
+        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
+
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
-        try {
-            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+
+        s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
+
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
 
         r = RenjinSession.newInstance(l, prop);
 
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
+        }
+
+        r.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.out.println("| getwd():\t" + r.eval("getwd()"));
+
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) r.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls()));
     }
 
     @After
