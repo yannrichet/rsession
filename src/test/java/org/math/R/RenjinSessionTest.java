@@ -22,7 +22,7 @@ public class RenjinSessionTest {
     PrintStream p = System.err;
     RenjinSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File(System.getProperty("java.io.tmpdir"),"RenjinTest");
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RenjinTest");
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
@@ -60,9 +60,9 @@ public class RenjinSessionTest {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
         }
-        
+
         String ret = s.installPackage("pso", true);
-        assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install & load pso: "+ret;
+        assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install & load pso: " + ret;
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
@@ -553,17 +553,22 @@ public class RenjinSessionTest {
         }
 
         s = new RenjinSession(l, prop);
-        
+
         System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
-        
-        s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+
+        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        File wdir = new File(tmpdir, "" + rand);
+        if (!(wdir.isDirectory() || wdir.mkdir())) {
+            throw new IOException("Cannot access wdir=" + wdir);
+        }
+        s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
         System.out.println("| getwd():\t" + s.eval("getwd()"));
 
-        System.out.println("| list.files():\t" + Arrays.toString((String[])s.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[])s.ls()));
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
     }
 
     @After

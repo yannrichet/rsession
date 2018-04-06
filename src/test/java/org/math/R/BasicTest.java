@@ -59,8 +59,12 @@ public class BasicTest {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
 
-        // No! otherwise Rserve works in same dir that session, which conflicts when deleting files...
-        //s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        File wdir = new File(tmpdir, "" + rand);
+        if (!(wdir.isDirectory() || wdir.mkdir())) {
+            throw new IOException("Cannot access wdir=" + wdir);
+        }
+        s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
         System.out.println("| getwd():\t" + s.eval("getwd()"));
 
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
@@ -73,7 +77,11 @@ public class BasicTest {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
 
-        r.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        if (!(wdir.isDirectory() || wdir.mkdir())) {
+            throw new IOException("Cannot access wdir=" + wdir);
+        }
+        r.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
         System.out.println("| getwd():\t" + r.eval("getwd()"));
 
         System.out.println("| list.files():\t" + Arrays.toString((String[]) r.eval("list.files()")));
@@ -94,25 +102,23 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
-        String toto = "/tmp/toto.csv";
-        File totof = new File(toto);
+        File totof = new File("..", "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
         }
         assert !totof.exists() : "Indeed, did not deleted " + totof;
-        s.voidEval("write.csv(runif(10),'" + toto + "')");
+        s.voidEval("write.csv(runif(10),'" + totof.getAbsolutePath().replace("\\", "/") + "')");
         assert totof.isFile() : "Failed to write file";
     }
 
     @Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
-        String toto = "/tmp/toto.csv";
-        File totof = new File(toto);
+        File totof = new File("..", "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
         }
         assert !totof.exists() : "Indeed, did not deleted " + totof;
-        r.voidEval("write.csv(runif(10),'" + toto + "')");
+        r.voidEval("write.csv(runif(10),'" + totof.getAbsolutePath().replace("\\", "/") + "')");
         assert totof.isFile() : "Failed to write file";
     }
 
@@ -375,7 +381,7 @@ public class BasicTest {
 
         File local = new File(tmpdir, "c" + rand + ".Rdata");
         s.getFile(local);
-        assert local.exists(): "Cannot access file "+local.getAbsolutePath();
+        assert local.exists() : "Cannot access file " + local.getAbsolutePath();
         s.putFile(new File(tmpdir, "c" + rand + ".Rdata"));
 
         //save
