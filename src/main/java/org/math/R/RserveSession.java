@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
@@ -296,14 +295,11 @@ public class RserveSession extends Rsession implements RLog {
             } else {
                 log("Local Rserve started. (Version " + R.getServerVersion() + ")", Level.INFO);
             }
-
         }
         //if (r.getServerVersion() < MinRserveVersion) {
         //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
         //}
-
     }
-    //RSession previous;
 
     /**
      * correctly (depending on execution platform) shutdown Rsession.
@@ -543,14 +539,17 @@ public class RserveSession extends Rsession implements RLog {
         return (os == null ? "NA" : os);
     }
 
+    @Override
     public boolean isWindows() {
         return getRServeOS().startsWith("Windows");
     }
 
+    @Override
     public boolean isLinux() {
         return getRServeOS().startsWith("Linux");
     }
 
+    @Override
     public boolean isMacOSX() {
         return getRServeOS().startsWith("Darwin");
     }
@@ -1174,13 +1173,102 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
+    @Override
+    public String installPackage(File pack, boolean load) {
+        putFile(pack);
+        return super.installPackage(new File(getwd(), pack.getName()), load);
+    }
+
+    @Override
+    public void source(File f) {
+        putFile(f);
+        super.source(new File(getwd(), f.getName()));
+    }
+
+    @Override
+    public void load(File f) {
+        putFile(f);
+        super.load(new File(getwd(), f.getName()));
+    }
+
+    @Override
+    public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
+        File rf = new File(getwd(), f.getName());
+        super.toGraphic(rf, width, height, fileformat, commands);
+        getFile(f, rf.getAbsolutePath().replace("\\","/"));
+        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+    }
+
+    @Override
+    public String asR2HTML(String command) {
+        String html = super.asR2HTML(command);
+        deleteFile("htmlfile_" + command.hashCode());
+        return html;
+
+    }
+
+    String getwd() {
+        return asString(silentlyRawEval("getwd()"));
+    }
+
+    /**
+     * Save R variables in data file
+     *
+     * @param f file to store data (eg ".Rdata")
+     * @param vars R variables to save
+     * @throws org.math.R.Rsession.RException Could not do save
+     */
+    public void save(File f, String... vars) throws RException {
+        File rf = new File(getwd(), f.getName());
+        super.save(rf, vars);
+        if (vars == null || vars.length < 1 || vars[0] == null) {
+            return;
+        }
+        getFile(f, rf.getAbsolutePath().replace("\\","/"));
+        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+    }
+
+    /**
+     * Save R variables in data file
+     *
+     * @param f file to store data (eg ".Rdata")
+     * @param vars R variables names patterns to save
+     * @throws org.math.R.Rsession.RException Could not do save
+     */
+    public void savels(File f, String... vars) throws RException {
+        File rf = new File(getwd(), f.getName());
+        super.savels(rf, vars);
+        if (vars == null || vars.length < 1 || vars[0] == null) {
+            return;
+        }
+        getFile(f, rf.getAbsolutePath().replace("\\","/"));
+        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+    }
+
+    /**
+     * Get file from R environment to user filesystem
+     *
+     * @param localfile file to get (same name in R env. and user filesystem)
+     */
+    public void getFile(File localfile) {
+        getFile(localfile, localfile.getName());
+    }
+
+    /**
+     * Send user filesystem file in r environement (like data)
+     *
+     * @param localfile File to send
+     */
+    public void putFile(File localfile) {
+        putFile(localfile, localfile.getName());
+    }
+
     /**
      * Get file from R environment to user filesystem
      *
      * @param localfile local filesystem file
      * @param remoteFile R environment file name
      */
-    @Override
     public void getFile(File localfile, String remoteFile) {
         try {
             if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE).asInteger() != 1) {
@@ -1191,7 +1279,10 @@ public class RserveSession extends Rsession implements RLog {
             return;
         }
         if (localfile.exists()) {
-            localfile.delete();
+            if (!localfile.delete()) {
+                log(HEAD_ERROR + IO_HEAD + "file " + localfile + " cannot be deleted.", Level.ERROR);
+                return;
+            }
             if (!localfile.exists()) {
                 log(IO_HEAD + "Local file " + localfile.getAbsolutePath() + " deleted.", Level.INFO);
             } else {
@@ -1233,7 +1324,6 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param remoteFile filename to delete
      */
-    @Override
     public void deleteFile(String remoteFile) {
         try {
             synchronized (R) {
@@ -1250,7 +1340,6 @@ public class RserveSession extends Rsession implements RLog {
      * @param localfile File to send
      * @param remoteFile filename in R env.
      */
-    @Override
     public void putFile(File localfile, String remoteFile) {
         if (!localfile.exists()) {
             synchronized (R) {

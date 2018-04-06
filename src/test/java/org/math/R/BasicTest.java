@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;
@@ -20,14 +21,14 @@ public class BasicTest {
     RserveSession s;
     RenjinSession r;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"));
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(BasicTest.class.getName());
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         RLog l = new RLog() {
 
             public void log(String string, RLog.Level level) {
@@ -50,20 +51,33 @@ public class BasicTest {
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
-        try {
-            System.err.println(s.eval("R.version.string"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        System.out.println("| R.version:\t" + s.eval("R.version.string"));
+        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
+
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
-        try {
-            System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+
+        // No! otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        //s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
+
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
 
         r = RenjinSession.newInstance(l, prop);
 
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath());
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
+        }
+
+        r.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.out.println("| getwd():\t" + r.eval("getwd()"));
+
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) r.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls()));
     }
 
     @After
@@ -293,9 +307,9 @@ public class BasicTest {
         assert ((String) s.eval("s")).equals(str);
 
         File f2 = new File("Rserve" + Math.random() + ".save");
-        s.save(f2, (String[])null);        
+        s.save(f2, (String[]) null);
         File f = new File("Rserve" + Math.random() + ".save");
-        s.save(f, (String)null);
+        s.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
         assert f.exists() : "Failed to create save file !";
@@ -318,9 +332,9 @@ public class BasicTest {
         assert ((String) r.eval("s")).equals(str);
 
         File f2 = new File("Rserve" + Math.random() + ".save");
-        r.save(f2, (String[])null);
+        r.save(f2, (String[]) null);
         File f = new File("Rserve" + Math.random() + ".save");
-        r.save(f, (String)null);
+        r.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
         assert f.exists() : "Failed to create save file !";
@@ -361,16 +375,16 @@ public class BasicTest {
 
         File local = new File(tmpdir, "c" + rand + ".Rdata");
         s.getFile(local);
-        assert local.exists();
+        assert local.exists(): "Cannot access file "+local.getAbsolutePath();
         s.putFile(new File(tmpdir, "c" + rand + ".Rdata"));
 
         //save
         File f = new File(tmpdir, "save" + rand + ".Rdata");
         if (f.exists()) {
-            f.delete();
+            assert f.delete();
         }
         s.save(f, "c");
-        assert f.exists();
+        assert f.exists() : "Could not find file " + f.getAbsolutePath();
 
         p.println("ls=\n" + s.toString(s.eval("ls()")));
         //load
@@ -423,18 +437,13 @@ public class BasicTest {
         r.eval("load(file='c" + rand + ".Rdata')");
         p.println((r.eval("c")));
 
-        File local = new File(tmpdir, "c" + rand + ".Rdata");
-        r.getFile(local);
-        assert local.exists();
-        r.putFile(new File(tmpdir, "c" + rand + ".Rdata"));
-
         //save
         File f = new File(tmpdir, "save" + rand + ".Rdata");
         if (f.exists()) {
             f.delete();
         }
         r.save(f, "c");
-        assert f.exists(): "Could not find file "+f.getAbsolutePath();
+        assert f.exists() : "Could not find file " + f.getAbsolutePath();
 
         p.println("ls=\n" + r.toString(r.eval("ls()")));
         //load

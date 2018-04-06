@@ -562,24 +562,25 @@ public abstract class Rsession implements RLog {
      * @return installation status
      */
     public String installPackage(File pack, boolean load) {
-        putFile(pack);
         try {
-            rawEval("install.packages('" + pack.getName() + "',repos=NULL,quiet=T");
+            rawEval("install.packages('" + pack.getAbsolutePath().replace("\\", "/") + "',repos=NULL,quiet=T");
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
         log("  request package " + pack + " install...", Level.INFO);
 
         String name = pack.getName();
+        String version = null;
         if (name.contains("_")) {
             name = name.substring(0, name.indexOf("_"));
-        }
-        if (name.contains(".")) {
+            version = name.substring(name.indexOf("_") + 1);
+            version = version.substring(0, version.indexOf("."));
+        } else if (name.contains(".")) {
             name = name.substring(0, name.indexOf("."));
         }
 
-        if (isPackageInstalled(name, null)) {
-            log(_PACKAGE_ + pack + " installation sucessfull.", Level.INFO);
+        if (isPackageInstalled(name, version)) {
+            log(_PACKAGE_ + pack + " version " + version + " installation sucessfull.", Level.INFO);
             if (load) {
                 return loadPackage(name);
             } else {
@@ -587,11 +588,7 @@ public abstract class Rsession implements RLog {
             }
         } else {
             log(_PACKAGE_ + pack + " installation failed.", Level.ERROR);
-            if (load) {
-                return loadPackage(name);
-            } else {
-                return "Impossible to install package " + pack + " !";
-            }
+            return "Impossible to install package " + pack + " !";
         }
     }
 
@@ -650,25 +647,7 @@ public abstract class Rsession implements RLog {
             log("  found package " + pack + " : " + pack_files[0].getAbsolutePath(), Level.INFO);
         }
 
-        putFile(pack_files[0]);
-        rawEval("install.packages('" + pack_files[0].getName() + "',repos=NULL,quiet=T)", TRY_MODE);
-        log("  request package " + pack + " install...", Level.INFO);
-
-        if (isPackageInstalled(pack, null)) {
-            log(_PACKAGE_ + pack + " installation sucessfull.", Level.INFO);
-            if (load) {
-                return loadPackage(pack);
-            } else {
-                return PACKAGEINSTALLED;
-            }
-        } else {
-            log(_PACKAGE_ + pack + " installation failed.", Level.ERROR);
-            if (load) {
-                return loadPackage(pack);
-            } else {
-                return "Impossible to install package " + pack + " !";
-            }
-        }
+        return installPackage(pack_files[0], load);
     }
 
     /**
@@ -1009,14 +988,13 @@ public abstract class Rsession implements RLog {
      * @param f ".R" file to source
      */
     public void source(File f) {
-        putFile(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getName().replace("\\", "/") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("source('" + f.getName().replace("\\", "/") + "')", TRY_MODE);
+            voidEval("source('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1028,7 +1006,6 @@ public abstract class Rsession implements RLog {
      * @param f ".Rdata" file to load
      */
     public void load(File f) {
-        putFile(f);
         try {
             assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
@@ -1138,16 +1115,10 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException ex) {
-        }
-        getFile(f);
-        deleteFile(f.getName());
     }
 
     /**
@@ -1167,17 +1138,16 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getName().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
         }
-        getFile(f);
-        deleteFile(f.getName());
     }
+
     final static String[] types = {"data.frame", "null", "function", "array", "integer", "character", "double"};
 
     /**
@@ -1348,7 +1318,7 @@ public abstract class Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         try {
-            set("plotfile_" + h, f.getName());
+            set("plotfile_" + h, f.getAbsolutePath().replace("\\", "/"));
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1357,13 +1327,11 @@ public abstract class Rsession implements RLog {
             silentlyVoidEval(command);
         }
         silentlyRawEval("dev.off()");
-        getFile(f);
         try {
             rm("plotfile_" + h);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
-        deleteFile(f.getName());
     }
     public final static String GRAPHIC_PNG = "png";
     public final static String GRAPHIC_JPEG = "jpeg";
@@ -1423,7 +1391,6 @@ public abstract class Rsession implements RLog {
         } catch (Exception e) {
             return e.getMessage();
         }
-        deleteFile("htmlfile_" + h);
         if (lines == null) {
             return "";
         }
@@ -1485,47 +1452,6 @@ public abstract class Rsession implements RLog {
         }
     }
     final static String IO_HEAD = "[IO] ";
-
-    /**
-     * Get file from R environment to user filesystem
-     *
-     * @param localfile file to get (same name in R env. and user filesystem)
-     */
-    public void getFile(File localfile) {
-        getFile(localfile, localfile.getName());
-    }
-
-    /**
-     * Get file from R environment to user filesystem
-     *
-     * @param localfile local filesystem file
-     * @param remoteFile R environment file name
-     */
-    public abstract void getFile(File localfile, String remoteFile);
-
-    /**
-     * delete R environment file
-     *
-     * @param remoteFile filename to delete
-     */
-    public abstract void deleteFile(String remoteFile);
-
-    /**
-     * Send user filesystem file in r environement (like data)
-     *
-     * @param localfile File to send
-     */
-    public void putFile(File localfile) {
-        putFile(localfile, localfile.getName());
-    }
-
-    /**
-     * Send user filesystem file in r environement (like data)
-     *
-     * @param localfile File to send
-     * @param remoteFile filename in R env.
-     */
-    public abstract void putFile(File localfile, String remoteFile);
 
     final static String testExpression = "1+pi";
     final static double testResult = 1 + Math.PI;

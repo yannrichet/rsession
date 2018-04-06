@@ -697,19 +697,20 @@ public class RserveSessionTest {
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
-        System.err.println("| R.version:\t" + s.eval("R.version.string"));
-        System.err.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
+        System.out.println("| R.version:\t" + s.eval("R.version.string"));
+        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
 
         System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
         
-        s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
-        System.err.println("| getwd():\t" + s.eval("getwd()"));
+        // No! otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        //s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
 
-        System.err.println("| list.files():\t" + s.eval("list.files()"));
-        System.err.println("| ls():\t" + s.ls());
+        System.out.println("| list.files():\t" + Arrays.toString((String[])s.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[])s.ls()));
     }
 
     @After
