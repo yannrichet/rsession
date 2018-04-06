@@ -22,11 +22,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.renjin</groupId>
-            <artifactId>renjin-script-engine</artifactId>
-            <version>0.9.2620</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.12</version>
@@ -66,8 +61,13 @@
         <dependency>
             <groupId>org.renjin</groupId>
             <artifactId>renjin-aether-package-loader</artifactId>
-            <version>0.8.1938</version>
+            <version>0.9.2620</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.renjin</groupId>
+            <artifactId>renjin-script-engine</artifactId>
+            <version>0.9.2620</version>
         </dependency>
     </dependencies>
 
