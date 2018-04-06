@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.math.R.RLog.Level;
 
-import static org.math.R.RserveSession.*;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -38,7 +37,7 @@ public class RserveSessionTest {
     //RserverConf conf;
     RserveSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp/Rserve"/*System.getProperty("java.io.tmpdir")*/);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RserveTest");
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RserveSessionTest.class.getName());
@@ -47,10 +46,10 @@ public class RserveSessionTest {
     @Test
     public void testExceed128Connections() throws Exception {
         for (int i = 0; i < 129; i++) {
-            assert (boolean)s.eval("is.function(png)") : "Failed to call is.function";
+            assert (boolean) s.eval("is.function(png)") : "Failed to call is.function";
         }
     }
-    
+
     @Test
     public void testError() throws Exception {
         boolean error = false;
@@ -105,18 +104,18 @@ public class RserveSessionTest {
         assert l != null : "Cannot eval l:" + s.getLastError();
         assert (l instanceof Map) : "Not a Map";
     }
-    
+
     // @Test
     public void testObjectFun() throws Exception {
-       s.voidEval("f <- function(x) x");
+        s.voidEval("f <- function(x) x");
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
 
         assert s.asStrings(s.eval("ls()")).length == 1 : "Wrong environment: " + Arrays.asList(s.asStrings(s.eval("ls()")));
 
-        assert s.rawEval("f")!=null:"Cannot get function object";
+        assert s.rawEval("f") != null : "Cannot get function object";
     }
-    
+
     // @Test
     public void testFun() throws Exception {
         Object fun = s.eval("function(x) {return(x)}");
@@ -696,16 +695,21 @@ public class RserveSessionTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
 
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath() + " " + tmpdir.mkdir());
-
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
+        System.err.println("| R.version:\t" + s.eval("R.version.string"));
+        System.err.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
 
-        //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
+        }
+        
+        s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.err.println("| getwd():\t" + s.eval("getwd()"));
 
-        System.err.println(s.eval("R.version.string"));
-        System.err.println("Rserve version " + s.eval("installed.packages(lib.loc='"+RserveDaemon.R_APP_DIR+"')[\"Rserve\",\"Version\"]"));
-        System.err.println(s.eval("getwd()"));
+        System.err.println("| list.files():\t" + s.eval("list.files()"));
+        System.err.println("| ls():\t" + s.ls());
     }
 
     @After

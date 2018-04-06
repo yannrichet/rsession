@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,7 +22,7 @@ public class RenjinSessionTest {
     PrintStream p = System.err;
     RenjinSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp/Renjin"/*System.getProperty("java.io.tmpdir")*/);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"),"RenjinTest");
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
@@ -551,13 +552,18 @@ public class RenjinSessionTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
 
-        System.out.println("tmpdir=" + tmpdir.getAbsolutePath() + " " + tmpdir.mkdir());
-
         s = new RenjinSession(l, prop);
+        
+        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+            throw new IOException("Cannot access tmpdir=" + tmpdir);
+        }
+        
+        s.voidEval("setwd('" + tmpdir.getAbsolutePath().replace("\\", "/") + "')");
+        System.err.println("| getwd():\t" + s.eval("getwd()"));
 
-        //s.R.eval("setwd('" + tmpdir.getAbsolutePath() + "')"); will crash inside travis-ci (sec. issue, I think)
-        System.err.println(s.eval("R.version.string"));
-        System.err.println(s.eval("getwd()"));
+        System.err.println("| list.files():\t" + s.eval("list.files()"));
+        System.err.println("| ls():\t" + s.ls());
     }
 
     @After

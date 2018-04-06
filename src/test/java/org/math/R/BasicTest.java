@@ -434,7 +434,7 @@ public class BasicTest {
             f.delete();
         }
         r.save(f, "c");
-        assert f.exists();
+        assert f.exists(): "Could not find file "+f.getAbsolutePath();
 
         p.println("ls=\n" + r.toString(r.eval("ls()")));
         //load
