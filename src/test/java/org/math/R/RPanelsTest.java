@@ -66,12 +66,8 @@ public class RPanelsTest {
         }
 
         // otherwise Rserve works in same dir that session, which conflicts when deleting files...
-        File wdir = new File(tmpdir,""+rand);
-        if (!(wdir.isDirectory() || wdir.mkdir())) {
-            throw new IOException("Cannot access wdir=" + wdir);
-        }
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
+        s.voidEval("setwd(file.path(getwd(),'" + rand + "'))");
         System.out.println("| getwd():\t" + s.eval("getwd()"));
 
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
@@ -85,6 +81,7 @@ public class RPanelsTest {
         }
 
         // otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        File wdir = new File(tmpdir, "" + rand);
         if (!(wdir.isDirectory() || wdir.mkdir())) {
             throw new IOException("Cannot access wdir=" + wdir);
         }

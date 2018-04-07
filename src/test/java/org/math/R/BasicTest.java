@@ -60,12 +60,8 @@ public class BasicTest {
         }
 
         // otherwise Rserve works in same dir that session, which conflicts when deleting files...
-        File wdir = new File(tmpdir, "" + rand);
-        if (!(wdir.isDirectory() || wdir.mkdir())) {
-            throw new IOException("Cannot access wdir=" + wdir);
-        }
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
+        s.voidEval("setwd(file.path(getwd(),'" + rand + "'))");
         System.out.println("| getwd():\t" + s.eval("getwd()"));
 
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
@@ -79,6 +75,7 @@ public class BasicTest {
         }
 
         // otherwise Rserve works in same dir that session, which conflicts when deleting files...
+        File wdir = new File(tmpdir, "" + rand);
         if (!(wdir.isDirectory() || wdir.mkdir())) {
             throw new IOException("Cannot access wdir=" + wdir);
         }
@@ -102,7 +99,7 @@ public class BasicTest {
         r.close();
     }
 
-    @Test
+    //@Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
         File totof = new File("..", "toto.csv");
         if (totof.exists()) {
@@ -113,7 +110,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    @Test
+    //@Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
         File totof = new File("..", "toto.csv");
         if (totof.exists()) {
@@ -124,7 +121,7 @@ public class BasicTest {
         assert totof.isFile() : "Failed to write file";
     }
 
-    @Test
+    //@Test
     public void testCast_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //cast
@@ -144,7 +141,7 @@ public class BasicTest {
         assert ((String[]) s.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    @Test
+    //@Test
     public void testCast_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
         //cast
@@ -164,7 +161,7 @@ public class BasicTest {
         assert ((String[]) r.eval("c('abcd','sdfds')")).length == 2;
     }
 
-    @Test
+    //@Test
     public void testSet_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
 
@@ -202,7 +199,7 @@ public class BasicTest {
         assert (Double) (s.eval("df$x1[3]")) == 7;
     }
 
-    @Test
+    //@Test
     public void testMatrix_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
 
@@ -236,7 +233,7 @@ public class BasicTest {
         assert r.print("ld").contains("d1") && r.print("ld").contains("1 0") : "Bad print: " + r.print("ld");
     }
 
-    @Test
+    //@Test
     public void testMatrix_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
 
@@ -270,7 +267,7 @@ public class BasicTest {
         assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
     }
 
-    @Test
+    //@Test
     public void testSet_Renjin() throws Exception {
         System.err.println("====================================== Renjin");
 
@@ -308,7 +305,7 @@ public class BasicTest {
         assert (Double) (r.eval("df$x1[3]")) == 7;
     }
 
-    @Test
+    //@Test
     public void testSave_Rserve() throws Exception {
         String str = "abcd";
         s.set("s", str);
@@ -333,7 +330,7 @@ public class BasicTest {
         assert fa.exists() : "Failed to create save file !";
     }
 
-    @Test
+    //@Test
     public void testSave_Renjin() throws Exception {
         String str = "abcd";
         r.set("s", str);
@@ -358,7 +355,7 @@ public class BasicTest {
         assert fa.exists() : "Failed to create save file !";
     }
 
-    @Test
+    //@Test
     public void testIOFiles_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
         //set
