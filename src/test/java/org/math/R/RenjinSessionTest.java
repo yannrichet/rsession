@@ -64,9 +64,6 @@ public class RenjinSessionTest {
         String ret = s.installPackage("pso", true);
         assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install & load pso: " + ret;
         assert dir.exists() : "Package pso not well installed";
-        if (dir.exists()) {
-            FileUtils.deleteDirectory(dir);
-        }
     }
 
     @Test
