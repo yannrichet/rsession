@@ -76,6 +76,7 @@ public class RserveSessionTest {
             assert !dir.exists() : "Cannot delete " + dir;
         }
 
+        assert new File(tmpdir, "tmp").mkdir() : "Cannot create dir " + new File(tmpdir, "tmp").getAbsolutePath();
         s.eval(".libPaths('" + tmpdir.getAbsolutePath().replace("\\", "/") + "/tmp')");
         String ret = s.installPackage("pso", true);
         assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install pso: " + ret;
