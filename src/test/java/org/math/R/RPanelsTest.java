@@ -24,7 +24,7 @@ public class RPanelsTest {
     RserveSession s;
     RenjinSession r;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"),""+rand);
 
     public static void main(String args[]) {
         if (GraphicsEnvironment.isHeadless()) {
@@ -65,11 +65,7 @@ public class RPanelsTest {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
 
-        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        s.voidEval("setwd(file.path(getwd(),'" + rand + "'))");
-        System.out.println("| getwd():\t" + s.eval("getwd()"));
-
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
 
