@@ -22,7 +22,7 @@ public class RenjinSessionTest {
     PrintStream p = System.err;
     RenjinSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RenjinTest");
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RenjinTest" + rand);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RenjinSessionTest.class.getName());
@@ -55,7 +55,7 @@ public class RenjinSessionTest {
 
     @Test
     public void testInstallPackage() throws Exception {
-        File dir = new File(new File("."), "tmp/pso");
+        File dir = new File(System.getProperty("user.home"), ".m2/repository/org/renjin/cran/pso".replace("/",File.separator));
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
@@ -559,15 +559,7 @@ public class RenjinSessionTest {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
 
-        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
-        File wdir = new File(tmpdir, "" + rand);
-        if (!(wdir.isDirectory() || wdir.mkdir())) {
-            throw new IOException("Cannot access wdir=" + wdir);
-        }
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        s.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
-        System.out.println("| getwd():\t" + s.eval("getwd()"));
-
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
     }
