@@ -51,7 +51,7 @@ public class RenjinSession extends Rsession implements RLog {
     public RenjinSession(RLog console, Properties properties) {
         super(console);
 
-        Session session = new SessionBuilder().bind(PackageLoader.class, new AetherPackageLoader()).build();
+        Session session = new SessionBuilder().bind(PackageLoader.class, new AetherPackageLoader()).withDefaultPackages().build();
 
         R = new RenjinScriptEngineFactory().getScriptEngine(session);
         if (R == null) {
@@ -754,25 +754,6 @@ public class RenjinSession extends Rsession implements RLog {
         if (!url.equals(repos)) {
             log("Cannot use another repositroy that " + repos, Level.WARNING);
         }
-    }
-
-    @Override
-    public String loadPackage(String pack) {
-        log("  request package " + pack + " loading...", Level.INFO);
-        try {
-            boolean ok = asLogical(rawEval("library('" + pack + "')", TRY_MODE));
-            if (ok) {
-                log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
-                return PACKAGELOADED;
-            } else {
-                log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
-                return "Impossible to load package " + pack + ": " + getLastLogEntry();
-            }
-        } catch (Exception ex) {
-            log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
-            return "Impossible to load package " + pack + ": " + ex.getLocalizedMessage();
-        }
-
     }
 
     @Override

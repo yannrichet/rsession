@@ -716,16 +716,6 @@ public abstract class Rsession implements RLog {
             log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
             return "Impossible to load package " + pack + ": " + ex.getLocalizedMessage();
         }
-
-        /*rawEval("library(" + pack + ",logical.return=T)", TRY_MODE);
-         log("  request package " + pack + " loading...", Level.INFO);
-         if (isPackageLoaded(pack)) {
-         log(_PACKAGE_ + pack + " loading sucessfull.", Level.INFO);
-         return PACKAGELOADED;
-         } else {
-         log(_PACKAGE_ + pack + " loading failed.", Level.ERROR);
-         return "Impossible to load package " + pack + ": " + getLastError();
-         }*/
     }
     // </editor-fold>
     final static String HEAD_EVAL = "[eval] ";
