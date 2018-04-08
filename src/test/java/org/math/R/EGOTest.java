@@ -11,7 +11,6 @@ import java.util.Properties;
 
 import org.junit.Test;
 
-
 /**
  * Intended to reproduce the broken pipe failure.
  *
@@ -56,27 +55,153 @@ public class EGOTest {
         return Y;
     }
 
-    void initR()throws Exception  {
+    void initR() throws Exception {
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
-        R.installPackage("DiceOptim", true);
+        R.installPackage("pso", true);
         R.installPackage("DiceView", true);
 
-
-        R.voidEval("max_qEI.CL.fix <- function(model, npoints, L, lower, upper, parinit=NULL, control=NULL) {"
-                + "n1 <- nrow(model@X); "
-                + "for (s in 1:npoints) { "
-                + "oEGO <- max_EI(model, lower=lower, upper=upper, parinit=parinit, control=control); "
-                + "model@X <- rbind(model@X, oEGO$par); "
-                + "model@y <- rbind(model@y, L, deparse.level=0); "
-                + "model@F <- trendMatrix.update(model, Xnew=data.frame(oEGO$par)); "
-                + "if (model@noise.flag) { "
-                + "model@noise.var = c(model@noise.var, 0)"// here is the fix!
-                + " };"
-                + " model <- computeAuxVariables(model); "
-                + "};"
-                + " return(list(par = model@X[(n1+1):(n1+npoints),, drop=FALSE], value = model@y[(n1+1):(n1+npoints),, drop=FALSE])) "
+        R.voidEval("distXmin <- function (x, Xmin) \n"
+                + "{\n"
+                + "    return(min(sqrt(rowSums((Xmin - matrix(x, nrow = nrow(Xmin), \n"
+                + "        ncol = ncol(Xmin), byrow = TRUE))^2))))\n"
+                + "}\n"
+                + "\n"
+                + "EI <- function (x, model, plugin = NULL) \n"
+                + "{\n"
+                + "    if (is.null(plugin)) {\n"
+                + "        if (model@noise.flag) \n"
+                + "            plugin <- min(model@y - 2 * sqrt(model@noise.var))\n"
+                + "        else plugin <- min(model@y)\n"
+                + "    }\n"
+                + "    m <- plugin\n"
+                + "    if (!is.matrix(x)) \n"
+                + "        x <- matrix(x, ncol = model@d)\n"
+                + "    d <- ncol(x)\n"
+                + "    if (d != model@d) {\n"
+                + "        stop(\"x does not have the right number of columns (\", \n"
+                + "            d, \" instead of \", model@d, \")\")\n"
+                + "    }\n"
+                + "    newdata <- x\n"
+                + "    colnames(newdata) = colnames(model@X)\n"
+                + "    predx <- predict.km(object = model, newdata = newdata, type = \"UK\", \n"
+                + "        checkNames = FALSE)\n"
+                + "    kriging.mean <- predx$mean\n"
+                + "    kriging.sd <- predx$sd\n"
+                + "    xcr <- (m - kriging.mean)/kriging.sd\n"
+                + "    xcr.prob <- pnorm(xcr)\n"
+                + "    xcr.dens <- dnorm(xcr)\n"
+                + "    res <- (m - kriging.mean) * xcr.prob + kriging.sd * xcr.dens\n"
+                + "    too.close = which(kriging.sd/sqrt(model@covariance@sd2) < \n"
+                + "        1e-06)\n"
+                + "    res[too.close] <- max(0, m - kriging.mean)\n"
+                + "    return(res)\n"
+                + "}\n"
+                + "\n"
+                + "generate_knots <- function (knots.number = NULL, d, lower = NULL, upper = NULL) \n"
+                + "{\n"
+                + "    if (is.null(lower)) \n"
+                + "        lower <- rep(0, times = d)\n"
+                + "    if (is.null(upper)) \n"
+                + "        upper <- rep(1, times = d)\n"
+                + "    if (is.null(knots.number)) \n"
+                + "        return(NULL)\n"
+                + "    if (length(knots.number) == 1) {\n"
+                + "        if (knots.number > 1) {\n"
+                + "            knots.number <- rep(knots.number, times = d)\n"
+                + "        }\n"
+                + "        else {\n"
+                + "            return(NULL)\n"
+                + "        }\n"
+                + "    }\n"
+                + "    if (length(knots.number) != d) {\n"
+                + "        print(\"Error in function generate_knots. The size of the vector knots.number needs to be equal to d\")\n"
+                + "        return(NULL)\n"
+                + "    }\n"
+                + "    knots.number <- pmax(1, knots.number)\n"
+                + "    thelist <- NULL\n"
+                + "    for (i in 1:d) {\n"
+                + "        thelist[[i]] <- seq(from = lower[i], to = upper[i], length = knots.number[i])\n"
+                + "    }\n"
+                + "    return(thelist)\n"
+                + "}\n"
+                + "\n"
+                + "max_EI <- function (model, lower, upper, control = NULL) \n"
+                + "{\n"
+                + "    d <- ncol(model@X)\n"
+                + "    if (is.null(control$print.level)) \n"
+                + "        control$print.level <- 1\n"
+                + "    if (is.null(control$max.parinit.iter)) \n"
+                + "        control$max.parinit.iter <- 10^d\n"
+                + "    if (d <= 6) \n"
+                + "        N <- 10 * 2^d\n"
+                + "    else N <- 100 * d\n"
+                + "    if (is.null(control$pop.size)) \n"
+                + "        control$pop.size <- N\n"
+                + "    if (is.null(control$solution.tolerance)) \n"
+                + "        control$solution.tolerance <- 1e-15\n"
+                + "    pars = NULL\n"
+                + "    for (i in 1:d) pars = cbind(pars, matrix(runif(N, lower[i], \n"
+                + "        upper[i]), ncol = 1))\n"
+                + "    ei <- EI(pars, model)\n"
+                + "    good_start = which(ei == max(ei, na.rm = T))\n"
+                + "    par0 = matrix(pars[good_start[sample(1:length(good_start), \n"
+                + "        1)], ], nrow = 1)\n"
+                + "    o <- psoptim(par = par0, fn = function(x) {\n"
+                + "        EI(x, model)\n"
+                + "    }, lower = lower, upper = upper, control = list(fnscale = -1, \n"
+                + "        trace = control$print.level, maxit = 10 * d))\n"
+                + "    o$par <- t(as.matrix(o$par))\n"
+                + "    colnames(o$par) <- colnames(model@X)\n"
+                + "    o$value <- as.matrix(o$value)\n"
+                + "    colnames(o$value) <- \"EI\"\n"
+                + "    return(list(par = o$par, value = o$value, counts = o$counts, \n"
+                + "        par.all = o$par.all))\n"
+                + "}\n"
+                + "\n"
+                + "max_qEI <- function (model, npoints, L, lower, upper, control = NULL, ...) \n"
+                + "{\n"
+                + "    n1 <- nrow(model@X)\n"
+                + "    for (s in 1:npoints) {\n"
+                + "        oEGO <- max_EI(model = model, lower = lower, upper = upper, \n"
+                + "            control, ...)\n"
+                + "        if (distXmin(oEGO$par, model@X) <= prod(upper - lower) * \n"
+                + "            1e-10) {\n"
+                + "            warning(\"Proposed a point already in design !\")\n"
+                + "            npoints = s - 1\n"
+                + "            break\n"
+                + "        }\n"
+                + "        model@X <- rbind(model@X, oEGO$par)\n"
+                + "        if (L == \"min\") \n"
+                + "            l = min(model@y)\n"
+                + "        else if (L == \"max\") \n"
+                + "            l = max(model@y)\n"
+                + "        else if (L == \"upper95\") \n"
+                + "            l = predict.km(object = model, newdata = oEGO$par, \n"
+                + "                type = \"UK\", light.return = TRUE)$upper95\n"
+                + "        else if (L == \"lower95\") \n"
+                + "            l = predict.km(object = model, newdata = oEGO$par, \n"
+                + "                type = \"UK\", light.return = TRUE)$lower95\n"
+                + "        else l = L\n"
+                + "        model@y <- rbind(model@y, l, deparse.level = 0)\n"
+                + "        model@F <- trendMatrix.update(model, Xnew = data.frame(oEGO$par))\n"
+                + "        if (model@noise.flag) {\n"
+                + "            model@noise.var = c(model@noise.var, 0)\n"
+                + "        }\n"
+                + "        newmodel = NULL\n"
+                + "        try(newmodel <- computeAuxVariables(model))\n"
+                + "        if (is.null(newmodel)) {\n"
+                + "            warning(\"Unable to update model !\")\n"
+                + "            npoints = s - 1\n"
+                + "            break\n"
+                + "        }\n"
+                + "        model = newmodel\n"
+                + "    }\n"
+                + "    if (npoints == 0) \n"
+                + "        return()\n"
+                + "    return(list(par = model@X[(n1 + 1):(n1 + npoints), , drop = FALSE], \n"
+                + "        value = model@y[(n1 + 1):(n1 + npoints), , drop = FALSE]))\n"
                 + "}");
     }
 
@@ -132,8 +257,7 @@ public class EGOTest {
 
         R.savels(new File("km" + (currentiteration) + ".Rdata"), "" + (currentiteration));
 
-
-        R.voidEval("EGO" + currentiteration + " <- max_qEI.CL.fix(model=km" + currentiteration + ","
+        R.voidEval("EGO" + currentiteration + " <- max_qEI(model=km" + currentiteration + ","
                 + "npoints=10,"
                 //+ "L=c(" + liar + "(" + (search_min ? "" : "-") + "Y" + currentiteration + "_" + hcode + "$y)," + liar_noise + "),"
                 + "L=max(Y" + currentiteration + "$y),"
@@ -150,7 +274,7 @@ public class EGOTest {
         R.savels(new File("EGO" + (currentiteration) + ".Rdata"), "" + (currentiteration));
 
         R.voidEval("X" + (currentiteration + 1) + " <- rbind(X" + currentiteration + ",EGO" + currentiteration + "$par)");
-        
+
     }
 
     void cleanRdata() {
@@ -222,14 +346,14 @@ public class EGOTest {
         initDesign();
 
         for (currentiteration = 0; currentiteration < 5; currentiteration++) {
-            System.err.println("============================== iteration "+currentiteration);
+            System.err.println("============================== iteration " + currentiteration);
             run();
             nextDesign();
             cleanRdata();
         }
     }
 
-@Before
+    @Before
     public void setUp() {
         RLog l = new RLog() {
 
@@ -259,7 +383,7 @@ public class EGOTest {
             ex.printStackTrace();
         }
         try {
-            System.err.println("Rserve version " + R.eval("installed.packages(lib.loc='"+RserveDaemon.R_APP_DIR+"')[\"Rserve\",\"Version\"]"));
+            System.err.println("Rserve version " + R.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
