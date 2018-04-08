@@ -1218,8 +1218,10 @@ public class RserveSession extends Rsession implements RLog {
      * @param vars R variables to save
      * @throws org.math.R.Rsession.RException Could not do save
      */
+    @Override
     public void save(File f, String... vars) throws RException {
         File rf = new File(getwd(), f.getName());
+        System.err.println("Rserve.save f="+f.getAbsolutePath()+" rf="+rf.getAbsolutePath());
         super.save(rf, vars);
         if (vars == null || vars.length < 1 || vars[0] == null) {
             return;
@@ -1235,6 +1237,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param vars R variables names patterns to save
      * @throws org.math.R.Rsession.RException Could not do save
      */
+    @Override
     public void savels(File f, String... vars) throws RException {
         File rf = new File(getwd(), f.getName());
         super.savels(rf, vars);
