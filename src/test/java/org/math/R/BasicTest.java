@@ -21,7 +21,7 @@ public class BasicTest {
     RserveSession s;
     RenjinSession r;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File(System.getProperty("java.io.tmpdir"),""+rand);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "" + rand);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(BasicTest.class.getName());
@@ -309,6 +309,7 @@ public class BasicTest {
         assert s.asString(s.eval("s")).equals("abcd") : "bad restore of s";
 
         File fa = new File("Rserve" + Math.random() + ".all.save");
+        assert !fa.exists() : "Already created save file !";
         s.savels(fa, "*");
         assert fa.exists() : "Failed to create save file !";
     }
@@ -333,7 +334,8 @@ public class BasicTest {
         r.load(f);
         assert r.asString(r.eval("s")).equals("abcd") : "bad restore of s";
 
-        File fa = new File("Rserve" + Math.random() + ".all.save");
+        File fa = new File("Renjin" + Math.random() + ".all.save");
+        assert !fa.exists() : "Already created save file !";
         r.savels(fa, "*");
         assert fa.exists() : "Failed to create save file !";
     }
