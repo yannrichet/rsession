@@ -70,7 +70,7 @@ public class RserveSessionTest {
 
     @Test
     public void testInstallPackage() throws Exception {
-        File dir = new File(new File("."), "tmp/pso");
+        File dir = new File(new File(".").getAbsolutePath(), "tmp/pso".replace("/", File.separator));
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
