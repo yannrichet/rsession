@@ -67,7 +67,7 @@ public class RPanelsTest {
 
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
 
         r = RenjinSession.newInstance(l, prop);
 
@@ -86,7 +86,7 @@ public class RPanelsTest {
         System.out.println("| getwd():\t" + r.eval("getwd()"));
 
         System.out.println("| list.files():\t" + Arrays.toString((String[]) r.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls()));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
     }
 
     @After

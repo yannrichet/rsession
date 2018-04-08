@@ -558,7 +558,7 @@ public class RenjinSessionTest {
 
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
     }
 
     @After

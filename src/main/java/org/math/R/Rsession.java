@@ -1008,14 +1008,19 @@ public abstract class Rsession implements RLog {
         }
     }
 
+    public String[] ls() {
+        return ls(false);
+    }
+
     /**
      * list R variables in R env.
      *
+     * @param all
      * @return list of R objects names
      */
-    public String[] ls() {
+    public String[] ls(boolean all) {
         try {
-            String[] ls = asStrings(rawEval("ls()", false));
+            String[] ls = asStrings(rawEval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")", false));
             if (ls == null) {
                 return new String[]{};
             }
