@@ -37,7 +37,7 @@ public class RserveSessionTest {
     //RserverConf conf;
     RserveSession s;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RserveTest"+rand);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "RserveTest" + rand);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RserveSessionTest.class.getName());
@@ -77,7 +77,8 @@ public class RserveSessionTest {
         }
 
         s.eval(".libPaths('" + new File(".").getAbsolutePath().replace("\\", "/") + "/tmp')");
-        assert s.installPackage("pso", true).equals(Rsession.PACKAGELOADED) : "Failed to install pso";
+        String ret = s.installPackage("pso", true);
+        assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install pso: " + ret;
         assert dir.exists() : "Package pso not well installed";
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
@@ -704,10 +705,10 @@ public class RserveSessionTest {
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
-        
+
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        System.out.println("| list.files():\t" + Arrays.toString((String[])s.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[])s.ls()));
+        System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
     }
 
     @After
