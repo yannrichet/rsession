@@ -70,13 +70,13 @@ public class RserveSessionTest {
 
     @Test
     public void testInstallPackage() throws Exception {
-        File dir = new File(new File(".").getAbsolutePath(), "tmp/pso".replace("/", File.separator));
+        File dir = new File(tmpdir, "tmp/pso".replace("/", File.separator));
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
         }
 
-        s.eval(".libPaths('" + new File(".").getAbsolutePath().replace("\\", "/") + "/tmp')");
+        s.eval(".libPaths('" + tmpdir.getAbsolutePath().replace("\\", "/") + "/tmp')");
         String ret = s.installPackage("pso", true);
         assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install pso: " + ret;
         assert dir.exists() : "Package pso not well installed";
@@ -707,8 +707,8 @@ public class RserveSessionTest {
         }
 
         System.out.println("| getwd():\t" + s.eval("getwd()"));
-        System.out.println("| list.files():\t" + Arrays.toString((String[]) s.eval("list.files()")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls()));
+        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
     }
 
     @After
