@@ -1195,8 +1195,8 @@ public class RserveSession extends Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         File rf = new File(getwd(), f.getName());
         super.toGraphic(rf, width, height, fileformat, commands);
-        getFile(f, rf.getAbsolutePath().replace("\\","/"));
-        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+        getFile(f, rf.getAbsolutePath().replace("\\", "/"));
+        deleteFile(rf.getAbsolutePath().replace("\\", "/"));
     }
 
     @Override
@@ -1284,13 +1284,18 @@ public class RserveSession extends Rsession implements RLog {
             log(HEAD_ERROR + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
-        if (localfile.exists()) {
+        System.err.println("localfile.exists() "+localfile.exists());
+        System.err.println("localRserve == null "+localRserve == null);
+        System.err.println("!new File(asString(silentlyRawEval(\"getwd()\")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath()) "+!new File(asString(silentlyRawEval("getwd()")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath()));
+        if (localfile.exists() && 
+                localRserve == null && //remote host for Rserve
+                !new File(asString(silentlyRawEval("getwd()")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath())) { // different file remote & local
             if (!localfile.delete()) {
                 log(HEAD_ERROR + IO_HEAD + "file " + localfile + " cannot be deleted.", Level.ERROR);
                 return;
             }
             if (!localfile.exists()) {
-                log(IO_HEAD + "Local file " + localfile.getAbsolutePath() + " deleted.", Level.INFO);
+                log(IO_HEAD + "Local file " + localfile + " deleted.", Level.INFO);
             } else {
                 log(HEAD_ERROR + IO_HEAD + "file " + localfile + " still exists !", Level.ERROR);
                 return;
