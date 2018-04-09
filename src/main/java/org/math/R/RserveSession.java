@@ -1221,13 +1221,14 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public void save(File f, String... vars) throws RException {
         File rf = new File(getwd(), f.getName());
-        System.err.println("Rserve.save f="+f.getAbsolutePath()+" rf="+rf.getAbsolutePath());
         super.save(rf, vars);
         if (vars == null || vars.length < 1 || vars[0] == null) {
             return;
         }
-        getFile(f, rf.getAbsolutePath().replace("\\","/"));
-        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+        if (localRserve == null || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
+            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
+        }
     }
 
     /**
@@ -1244,8 +1245,10 @@ public class RserveSession extends Rsession implements RLog {
         if (vars == null || vars.length < 1 || vars[0] == null) {
             return;
         }
-        getFile(f, rf.getAbsolutePath().replace("\\","/"));
-        deleteFile(rf.getAbsolutePath().replace("\\","/"));
+        if (localRserve == null || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
+            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
+        }
     }
 
     /**
