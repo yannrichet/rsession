@@ -1278,7 +1278,7 @@ public class RserveSession extends Rsession implements RLog {
     public void getFile(File localfile, String remoteFile) {
         String wd = asString(silentlyRawEval("getwd()"));
         if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + File.pathSeparator + remoteFile;
+            remoteFile = wd + File.separator + remoteFile;
         }
         try {
             if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE).asInteger() != 1) {
@@ -1289,9 +1289,8 @@ public class RserveSession extends Rsession implements RLog {
             return;
         }
         if (localfile.exists()
-                && (!RserveConf.isLocal())
-                && //remote host for Rserve
-                !remoteFile.equals(localfile.getAbsolutePath())) { // different file remote & local
+                && (!RserveConf.isLocal()) //remote host for Rserve
+                && !remoteFile.equals(localfile.getAbsolutePath())) { // different file remote & local
             if (!localfile.delete()) {
                 log(HEAD_ERROR + IO_HEAD + "file " + localfile + " cannot be deleted.", Level.ERROR);
                 return;
@@ -1356,7 +1355,7 @@ public class RserveSession extends Rsession implements RLog {
     public void putFile(File localfile, String remoteFile) {
         String wd = asString(silentlyRawEval("getwd()"));
         if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + File.pathSeparator + remoteFile;
+            remoteFile = wd + File.separator + remoteFile;
         }
         if (!localfile.exists()) {
             synchronized (R) {
