@@ -1175,28 +1175,39 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public String installPackage(File pack, boolean load) {
-        putFile(pack);
+        File rp = new File(getwd(), pack.getName());
+        if (!RserveConf.isLocal() || !rp.getAbsolutePath().equals(pack.getAbsolutePath())) {
+            putFile(pack);
+        }
         return super.installPackage(new File(getwd(), pack.getName()), load);
     }
 
     @Override
     public void source(File f) {
-        putFile(f);
-        super.source(new File(getwd(), f.getName()));
+        File rf = new File(getwd(), f.getName());
+        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+            putFile(f);
+        }
+        super.source(rf);
     }
 
     @Override
     public void load(File f) {
-        putFile(f);
-        super.load(new File(getwd(), f.getName()));
+        File rf = new File(getwd(), f.getName());
+        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+            putFile(f);
+        }
+        super.load(rf);
     }
 
     @Override
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         File rf = new File(getwd(), f.getName());
         super.toGraphic(rf, width, height, fileformat, commands);
-        getFile(f, rf.getAbsolutePath().replace("\\", "/"));
-        deleteFile(rf.getAbsolutePath().replace("\\", "/"));
+        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
+            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
+        }
     }
 
     @Override
