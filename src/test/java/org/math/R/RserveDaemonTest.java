@@ -101,13 +101,19 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla -q", false);
+            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.R_APP_DIR + "');q(save='no')", Rcmd, "--vanilla --silent", false);
             if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
+                assert p.exitValue() == 0 : "Could not remove package Rserve...";
             }
-            assert p.exitValue() == 0 : "Could not remove package Rserve...";
+            
+            int n = 10;
+            while (StartRserve.isRserveInstalled(Rcmd) && (n--) > 0) {
+                Thread.sleep(2000);
+            }
+            assert n > 1 : "Package Rserve was not removed !";
         } else {
-            System.err.println("Rserve is not installed.");
+            System.err.println("Rserve is not installed. Continue.");
         }
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
