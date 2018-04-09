@@ -18,35 +18,35 @@ import static org.math.R.*;
 ...
  
     public static void main(String args[]) {
-        Rsession s = RserveSession.newInstanceTry(System.out, null);
+        Rsession r = RserveSession.newInstanceTry(System.out, null);
 
-        double[] rand = (double[]) s.eval("rnorm(10)"); //create java variable from R command
-
-        //...
-        s.set("c", Math.random()); //create R variable from java one
-
-        s.save(new File("save.Rdata"), "c"); //save variables in .Rdata
-        s.rm("c"); //delete variable in R environment
-        s.load(new File("save.Rdata")); //load R variable from .Rdata
+        double[] rand = (double[]) r.eval("rnorm(10)"); //create java variable from R command
 
         //...
-        s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3"); //create data frame from given vectors
-        double value = (double) (s.eval("df$x1[3]")); //access one value in data frame
+        r.set("c", Math.random()); //create R variable from java one
+
+        r.save(new File("save.Rdata"), "c"); //save variables in .Rdata
+        r.rm("c"); //delete variable in R environment
+        r.load(new File("save.Rdata")); //load R variable from .Rdata
 
         //...
-        s.toJPEG(new File("plot.jpg"), 400, 400, "plot(rnorm(10))"); //create jpeg file from R graphical command (like plot)
+        r.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3"); //create data frame from given vectors
+        double value = (double) (r.eval("df$x1[3]")); //access one value in data frame
 
-        String html = s.asHTML("summary(rnorm(100))"); //format in html using R2HTML
+        //...
+        r.toJPEG(new File("plot.jpg"), 400, 400, "plot(rnorm(10))"); //create jpeg file from R graphical command (like plot)
+
+        String html = r.asHTML("summary(rnorm(100))"); //format in html using R2HTML
         System.out.println(html);
 
-        String txt = s.asString("summary(rnorm(100))"); //format in text
+        String txt = r.asString("summary(rnorm(100))"); //format in text
         System.out.println(txt);
 
         //...
-        System.out.println(s.installPackage("sensitivity", true)); //install and load R package
-        System.out.println(s.installPackage("wavelets", true));
+        System.out.println(r.installPackage("sensitivity", true)); //install and load R package
+        System.out.println(r.installPackage("wavelets", true));
 
-        s.end();
+        r.end();
     }
 ```
 ## Use it ##
@@ -73,7 +73,7 @@ Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpat
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>2.0.3</version>
+      <version>2.0.4</version>
     </dependency>
 ...
 </dependencies>
@@ -84,30 +84,30 @@ Then, use it in your code:
   * create new Rsession:
     * Renjin (pure Java, no R install necessary):
       ```java
-      Rsession s = new RenjinSession(System.out,null);
+      Rsession r = new RenjinSession(System.out,null);
       ```
     * OR local spawning of Rserve (for Windows XP, Mac OS X, Linux 32 & 64):
       ```java
-      Rsession s = RserveSession.newInstanceTry(System.out,null);
+      Rsession r = RserveSession.newInstanceTry(System.out,null);
       ```
     * OR connect to remote Rserve (previously started with /usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf):
       ```java
-      Rsession s = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
+      Rsession r = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
       //connect to local Rserve (previously started with /usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf):
-      session s = RserveSession.newLocalInstance(System.out,null); 
+      Rsession r = RserveSession.newLocalInstance(System.out,null); 
       ```
   * do your work in R and get Java objects
     * create Java objects from R command using
     ```java
-    Object o = s.eval("...",HashMap<String,Object> vars)
+    Object o = r.eval("...",HashMap<String,Object> vars)
     ```
     (Object o is automatically cast to double, double[], double[][],String, String[], ...)
     * OR
-      * create your R objects using `s.set("...",...)`
-      * call any R command using `s.eval("...")`
+      * create your R objects using `r.set("...",...)`
+      * call any R command using `r.eval("...")`
       * cast to Java objects using `Rsession.cast(...)`
-      * if needed use remote R packages install & load: `s.installPackage("...", true);`
-      * you can access R command answers as string using: `s.asHTML("...")` `s.asString("...")` , `s.toJPEG(File f,"...")` 
-  * finally close your Rsession instance: `s.end(); `
+      * if needed use remote R packages install & load: `r.installPackage("...", true);`
+      * you can access R command answers as string using: `r.asHTML("...")` `r.asString("...")` , `r.toJPEG(File f,"...")` 
+  * finally close your Rsession instance: `r.end(); `
 
 ![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)
