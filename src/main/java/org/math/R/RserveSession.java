@@ -790,7 +790,7 @@ public class RserveSession extends Rsession implements RLog {
             } else if (v == null) {
                 l.put(o.toString(), new REXPNull());
             } else {
-                System.err.println("[asRList] Could not cast object " + o + " : " + v);
+                Log.Err.println("[asRList] Could not cast object " + o + " : " + v);
             }
         }
         return new REXPList(l);
@@ -1114,7 +1114,7 @@ public class RserveSession extends Rsession implements RLog {
         if (eval.isNull()) {
             return null;
         } else {
-            System.err.println(CAST_ERROR + eval + ": unsupported type " + eval.toDebugString());
+            Log.Err.println(CAST_ERROR + eval + ": unsupported type " + eval.toDebugString());
             throw new ClassCastException(CAST_ERROR + eval + ": unsupported type " + eval.toDebugString());
         }
         //return rawEval.toString();
