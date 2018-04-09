@@ -700,7 +700,7 @@ public class RserveSessionTest {
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
-        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
+        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 
         System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {

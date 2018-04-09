@@ -139,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -161,7 +161,6 @@ public class StartRserve {
             result.append(output.getOutput());
             result.append(error.getOutput());
 
-            //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("[1] TRUE")) {
                 Log.Out.println("Rserve is already installed.");
                 return true;
@@ -194,7 +193,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -253,7 +252,7 @@ public class StartRserve {
      * @return success
      */
     public static boolean installRserve(String Rcmd) {
-        Log.Out.println("Install Rserve from local filesystem");
+        Log.Out.println("Install Rserve from local filesystem...");
 
         String pack_suffix = ".tar.gz";
         if (RserveDaemon.isWindows()) {
@@ -304,7 +303,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.R_APP_DIR + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -341,7 +340,7 @@ public class StartRserve {
         }
 
         int n = 5;
-        while (n > 0) {
+        while (n-- > 0) {
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException ex) {
@@ -350,7 +349,6 @@ public class StartRserve {
                 Log.Out.print("Rserve is installed");
                 return true;
             }
-            n--;
         }
         Log.Out.print("Rserve is not installed");
         return false;
@@ -410,7 +408,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
-        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.R_APP_DIR + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
@@ -502,7 +500,7 @@ public class StartRserve {
                     || (new File("/opt/bin/R").exists() && launchRserve("/opt/bin/R") != null));
         }
     }
-    
+
     /**
      * check whether Rserve is currently running (on local machine and default
      * port).

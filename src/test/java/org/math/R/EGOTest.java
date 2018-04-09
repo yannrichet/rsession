@@ -383,7 +383,7 @@ public class EGOTest {
             ex.printStackTrace();
         }
         try {
-            System.err.println("Rserve version " + R.eval("installed.packages(lib.loc='" + RserveDaemon.R_APP_DIR + "')[\"Rserve\",\"Version\"]"));
+            System.err.println("Rserve version " + R.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
         } catch (Exception ex) {
             ex.printStackTrace();
         }

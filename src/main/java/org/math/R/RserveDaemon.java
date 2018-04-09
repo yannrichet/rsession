@@ -17,17 +17,30 @@ public class RserveDaemon {
     RserverConf conf;
     Process process;
     private final RLog log;
-    static File R_APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
+    private static File R_APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
         @Override
         public String toString() {
-            if (isWindows()) {
+            if (RserveDaemon.isWindows()) {
                 return super.toString().replace("\\", "/");
             } else {
                 return super.toString();
             }
         }
-
     };
+
+    static File app_dir() {
+        boolean app_dir_ok = false;
+        if (!R_APP_DIR.exists()) {
+            app_dir_ok = R_APP_DIR.mkdir();
+        } else {
+            app_dir_ok = R_APP_DIR.isDirectory() && R_APP_DIR.canWrite();
+        }
+        if (!app_dir_ok) {
+            Log.Err.println("Cannot write in " + R_APP_DIR.getAbsolutePath());
+        }
+        return R_APP_DIR;
+    }
+
     public static String R_HOME = null;
 
     private static String OS = System.getProperty("os.name").toLowerCase();
@@ -42,18 +55,6 @@ public class RserveDaemon {
 
     static boolean isLinux() {
         return OS.indexOf("inux") >= 0;
-    }
-
-    static {
-        boolean app_dir_ok = false;
-        if (!R_APP_DIR.exists()) {
-            app_dir_ok = R_APP_DIR.mkdir();
-        } else {
-            app_dir_ok = R_APP_DIR.isDirectory() && R_APP_DIR.canWrite();
-        }
-        if (!app_dir_ok) {
-            Log.Err.println("Cannot write in " + R_APP_DIR.getAbsolutePath());
-        }
     }
 
     public RserveDaemon(RserverConf conf, RLog log, String R_HOME) throws Exception {
