@@ -28,11 +28,8 @@ environment:
     WARNINGS_ARE_ERRORS: 0
     USE_RTOOLS: false
     R_VERSION: release
-build_script:
-  #- travis-tool.sh install_deps
-  - mvn clean package --batch-mode -DskipTest
 test_script:
-  - mvn clean install --batch-mode test
+  - mvn clean test
 cache:
   - C:\maven\
   - C:\Users\appveyor\.m2
