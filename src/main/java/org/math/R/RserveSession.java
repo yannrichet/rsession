@@ -1225,7 +1225,7 @@ public class RserveSession extends Rsession implements RLog {
         if (vars == null || vars.length < 1 || vars[0] == null) {
             return;
         }
-        if (localRserve == null || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
             getFile(f, rf.getAbsolutePath().replace("\\", "/"));
             deleteFile(rf.getAbsolutePath().replace("\\", "/"));
         }
@@ -1245,7 +1245,7 @@ public class RserveSession extends Rsession implements RLog {
         if (vars == null || vars.length < 1 || vars[0] == null) {
             return;
         }
-        if (localRserve == null || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
+        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
             getFile(f, rf.getAbsolutePath().replace("\\", "/"));
             deleteFile(rf.getAbsolutePath().replace("\\", "/"));
         }
@@ -1276,6 +1276,10 @@ public class RserveSession extends Rsession implements RLog {
      * @param remoteFile R environment file name
      */
     public void getFile(File localfile, String remoteFile) {
+        String wd = asString(silentlyRawEval("getwd()"));
+        if (!remoteFile.startsWith(wd)) {
+            remoteFile = wd + File.pathSeparator + remoteFile;
+        }
         try {
             if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
@@ -1284,14 +1288,10 @@ public class RserveSession extends Rsession implements RLog {
             log(HEAD_ERROR + ex.getMessage() + "\n  getFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
             return;
         }
-        System.err.println("localfile.exists() "+localfile.exists());
-        System.err.println("localRserve == null "+(localRserve == null));
-        System.err.println("!new File(asString(silentlyRawEval(\"getwd()\")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath()) "+!new File(asString(silentlyRawEval("getwd()")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath()));
-        System.err.println("new File(asString(silentlyRawEval(\"getwd()\")), remoteFile).getAbsolutePath() "+ new File(asString(silentlyRawEval("getwd()")), remoteFile).getAbsolutePath());
-        System.err.println("localfile.getAbsolutePath() "+ localfile.getAbsolutePath());
-        if (localfile.exists() && 
-                (localRserve == null) && //remote host for Rserve
-                !new File(asString(silentlyRawEval("getwd()")), remoteFile).getAbsolutePath().equals(localfile.getAbsolutePath())) { // different file remote & local
+        if (localfile.exists()
+                && (!RserveConf.isLocal())
+                && //remote host for Rserve
+                !remoteFile.equals(localfile.getAbsolutePath())) { // different file remote & local
             if (!localfile.delete()) {
                 log(HEAD_ERROR + IO_HEAD + "file " + localfile + " cannot be deleted.", Level.ERROR);
                 return;
@@ -1354,6 +1354,10 @@ public class RserveSession extends Rsession implements RLog {
      * @param remoteFile filename in R env.
      */
     public void putFile(File localfile, String remoteFile) {
+        String wd = asString(silentlyRawEval("getwd()"));
+        if (!remoteFile.startsWith(wd)) {
+            remoteFile = wd + File.pathSeparator + remoteFile;
+        }
         if (!localfile.exists()) {
             synchronized (R) {
                 log(HEAD_ERROR + IO_HEAD + R.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.", Level.ERROR);
