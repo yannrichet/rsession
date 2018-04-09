@@ -716,12 +716,11 @@ public class RserveSessionTest {
     public void tearDown() {
         try {
             //uncomment following for sequential call. 
-            //s.end();
+            s.end();
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        s.end();
         //A shutdown hook kills all Rserve at the end.
     }
 }

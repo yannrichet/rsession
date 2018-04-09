@@ -311,15 +311,12 @@ public class RserveSession extends Rsession implements RLog {
             cleanupListeners();
             return;
         }
-        if ((!isWindows()) && localRserve != null) {//if ((!UNIX_OPTIMIZE || isWindows()) && localRserve != null) {
-            log("Ending local session...", Level.INFO);
+        if (localRserve != null) {//if ((!UNIX_OPTIMIZE || isWindows()) && localRserve != null) {
+            log("Ending local service...", Level.INFO);
             localRserve.stop();
-            R.close();
-        } else {
-            log("Ending remote session...", Level.INFO);
-            R.close();
         }
-
+        log("Closing session...", Level.INFO);
+        R.close();
         log("Session teminated.", Level.INFO);
 
         R = null;

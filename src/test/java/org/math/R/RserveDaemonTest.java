@@ -72,7 +72,7 @@ public class RserveDaemonTest {
             System.err.println("Rserve is not installed.");
         }
 
-        assert StartRserve.installRserve(Rcmd, http_proxy_env, Rsession.DEFAULT_REPOS) : "Could not install Rserve";
+        boolean install = StartRserve.installRserve(Rcmd, http_proxy_env, Rsession.DEFAULT_REPOS);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -89,6 +89,8 @@ public class RserveDaemonTest {
                 System.err.println(f + ": " + ex.getMessage());
             }
         }
+
+        assert install : "Could not install Rserve";
 
         assert StartRserve.isRserveInstalled(Rcmd) : "Could not find package Rserve";
     }
@@ -106,7 +108,7 @@ public class RserveDaemonTest {
                 p.waitFor();
                 assert p.exitValue() == 0 : "Could not remove package Rserve...";
             }
-            
+
             int n = 10;
             while (StartRserve.isRserveInstalled(Rcmd) && (n--) > 0) {
                 Thread.sleep(2000);
@@ -120,7 +122,7 @@ public class RserveDaemonTest {
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
         assert classloader.getResource("org/math/R/Rserve_1.7-3.zip") != null : "cannot access resources...";
 
-        assert StartRserve.installRserve(Rcmd) : "Could not install Rserve";
+        boolean install = StartRserve.installRserve(Rcmd);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -137,6 +139,8 @@ public class RserveDaemonTest {
                 System.err.println(f + ": " + ex.getMessage());
             }
         }
+
+        assert install : "Could not install Rserve";
 
         assert StartRserve.isRserveInstalled(Rcmd) : "Could not find package Rserve";
     }
