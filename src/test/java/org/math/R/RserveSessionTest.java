@@ -70,14 +70,14 @@ public class RserveSessionTest {
 
     @Test
     public void testInstallPackage() throws Exception {
-        File dir = new File(tmpdir, "tmp/pso".replace("/", File.separator));
+        File dir = new File(tmpdir, "pso");
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
             assert !dir.exists() : "Cannot delete " + dir;
         }
 
-        assert new File(tmpdir, "tmp").mkdir() : "Cannot create dir " + new File(tmpdir, "tmp").getAbsolutePath();
-        s.eval(".libPaths('" + tmpdir.getAbsolutePath().replace("\\", "/") + "/tmp')");
+        assert dir.mkdir() : "Cannot create dir " + dir.getAbsolutePath();
+        s.eval(".libPaths('" + dir.getAbsolutePath().replace("\\", "/") + "')");
         String ret = s.installPackage("pso", true);
         assert ret.equals(Rsession.PACKAGELOADED) : "Failed to install pso: " + ret;
         assert dir.exists() : "Package pso not well installed";
