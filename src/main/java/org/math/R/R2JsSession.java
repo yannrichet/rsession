@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -62,8 +61,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * 
 	 * Initialize the Javascript engine and load external js libraries
 	 * 
-	 * @param console
-	 * @param properties
+	 * @param console - console
+	 * @param properties - properties
 	 */
 	public R2JsSession(RLog console, Properties properties) {
 		super(console);
@@ -251,11 +250,11 @@ public class R2JsSession extends Rsession implements RLog {
 	 * variable define in this JS object
 	 * 
 	 * WARNING: If two variables has the same name (because one is global and
-	 * the other is local for example), there will be error.
+	 * the other is local for example), there will be an error.
 	 * 
-	 * @param expr
-	 * @param variables
-	 * @return
+	 * @param expr - the expression to replace
+	 * @param variables - the variables to replace
+	 * @return the expression with replaced variables
 	 */
 	public static String replaceVariables(String expr, Iterable<String> variables) {
 		String result = expr;
@@ -327,8 +326,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * to mathjs expression: math.random([10], min, max)
 	 * 
 	 * 
-	 * @param e
-	 * @return
+	 * @param e - the expression to replace
+	 * @return the expression with runif replaced
 	 */
 	private static String createRunif(String expr) {
 
@@ -385,8 +384,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * )
 	 * TODO: implement the pattern argument
 	 * 
-	 * @param e
-	 * @return
+	 * @param e - the expression containing the function to replace
+	 * @return the expression with replaced function
 	 */
 	private static String createLs(String expr) {
 
@@ -437,9 +436,9 @@ public class R2JsSession extends Rsession implements RLog {
 	
 	/**
 	 * Split an array with the separator only if the separator string is not in parenthesis or bracket
-	 * @param expr
-	 * @param sep
-	 * @return
+	 * @param expr - the expression containing the array to replace
+	 * @param sep - the separator between values in the array
+	 * @return the split String array
 	 */
 	public static String[] splitString(String expr, String sep) {
 		List<String> splitList = new ArrayList<>();
@@ -459,8 +458,8 @@ public class R2JsSession extends Rsession implements RLog {
 	/**
 	 * Replace indexes by mathjs indexes
 	 * 
-	 * @param expr
-	 * @return
+	 * @param expr - the expression containing indexes to replace
+	 * @return the expression with replaced indexes
 	 */
 	private static String replaceIndexes(String expr) {
 		Pattern indexPattern = Pattern.compile("(\\w+)\\[(.[^\\]]*)\\]");
@@ -499,8 +498,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * expression: utils.writeCsv(file, data)
 	 * 
 	 * 
-	 * @param e
-	 * @return
+	 * @param expr - the expression containing the function to replace
+	 * @return the expression with replaced function
 	 */
 	private static String createWriteCSV(String expr) {
 
@@ -545,8 +544,8 @@ public class R2JsSession extends Rsession implements RLog {
 	}
 
 	/**
-	 * @param e
-	 * @return
+	 * @param expr - the expression containing the function to replace
+	 * @return the expression with replaced function
 	 */
 	private static String createMatrix(String expr) {
 
@@ -631,8 +630,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * function doesn't work recursively ( "array(array(...))") FIXME: this
 	 * function doesn't work with variables !!!
 	 * 
-	 * @param e
-	 * @return
+	 * @param expr - the expression containing the function to replace
+	 * @return the expression with replaced function
 	 */
 	private static String createArray(String expr) {
 
@@ -689,6 +688,12 @@ public class R2JsSession extends Rsession implements RLog {
 	}
 	
 	
+	/**
+	 * This function replaces the R function save by JS equivalent
+	 * 
+	 * @param expr - the expression containing the function to replace
+	 * @return the expression with replaced function
+	 */
 	private static String createSaveFunction(String expr) {
 
 		String result = expr;
@@ -735,8 +740,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * Load variables in a json 
 	 * TODO: Not implemented yet
 	 * 
-	 * @param expr
-	 * @return
+	 * @param expr - the expression containing the function to replace
+	 * @return the expression with replaced function
 	 */
 	private static String createLoadFunction(String expr) {
 
@@ -856,8 +861,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * replace '+' and '-'
 	 * 
 	 * 
-	 * @param expr
-	 * @return
+	 * @param expr - the expression containing operators to replace
+	 * @return the expression with replaced operators
 	 */
 	public static String replaceOperators(String expr) {
 
@@ -1006,7 +1011,7 @@ public class R2JsSession extends Rsession implements RLog {
 	/**
 	 * Store global variables in the List variablesList.
 	 * 
-	 * @param expr
+	 * @param expr - the expression containing global variables
 	 */
 	private static void storeGlobalVariables(String expr) {
 
@@ -1032,14 +1037,14 @@ public class R2JsSession extends Rsession implements RLog {
 	 * Get the index of the beginning of an expression The function starts at
 	 * the given startIndex and return the index of the first character founded
 	 * in the stoppingCharacters string. This function ignore characters inside
-	 * brackets or paranthesis
+	 * brackets or parenthesis
 	 * 
-	 * @param expr
+	 * @param expr - the expression to check
 	 * @param startIndex
 	 *            - index to start with to search a stopping characters
 	 * @param stoppingCharacters
 	 *            - a String containing stopping characters.
-	 * @return
+	 * @return the starting index of the previous expression
 	 */
 	public static int getPreviousExpressionFirstIndex(String expr, int startIndex, String stoppingCharacters) {
 
@@ -1097,12 +1102,12 @@ public class R2JsSession extends Rsession implements RLog {
 	 * the stoppingCharacters string. This function ignore characters inside
 	 * brackets or paranthesis
 	 * 
-	 * @param expr
+	 * @param expr - the expression to check
 	 * @param startIndex
 	 *            - index to start with to search a stopping characters
 	 * @param stoppingCharacters
 	 *            - a String containing stopping characters.
-	 * @return
+	 * @return the last index of the next expression
 	 */
 	public static int getNextExpressionLastIndex(String expr, int startIndex, String stoppingCharacters) {
 
@@ -1166,8 +1171,8 @@ public class R2JsSession extends Rsession implements RLog {
 	 * If an element haven't default value, it will be set to 'null'
 	 * automatically
 	 * 
-	 * @param arguments
-	 * @return
+	 * @param arguments - the R expression with default arguments
+	 * @return the javascript expression with default arguments
 	 */
 	public static String replaceFunctionDefaultArguments(String arguments) {
 
@@ -1212,28 +1217,6 @@ public class R2JsSession extends Rsession implements RLog {
 
 		String result = "(" + resultParameters + ") {" + resultValues;
 		return result;
-	}
-
-	/**
-	 * Create an array with integer between min and max
-	 * 
-	 * @param start
-	 * @param end
-	 * @return a string representing the array between range
-	 */
-	public static String createRangeArray(int start, int end) {
-		List<Integer> list = new LinkedList<Integer>();
-		if (start <= end) {
-			for (int i = start; i <= end; i++) {
-				list.add(i);
-			}
-		} else {
-			for (int i = start; i >= end; i--) {
-				list.add(i);
-			}
-		}
-
-		return list.toString();
 	}
 
 	@Override
