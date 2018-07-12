@@ -1313,8 +1313,6 @@ public class R2JsSession extends Rsession implements RLog {
 	 * @param var
 	 *            R object value
 	 * @return succeeded ?
-	 * @throws org.math.R.Rsession.RException
-	 *             Could not set
 	 */
 	@Override
 	public boolean set(String varname, Object var) {
