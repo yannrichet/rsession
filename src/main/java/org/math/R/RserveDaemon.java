@@ -139,7 +139,12 @@ public class RserveDaemon {
                         return true;
                     }
 
-                    R_HOME = "/usr/lcoal/lib/R/";
+                    R_HOME = "/usr/local/lib/R/";
+                    if (new File(R_HOME).isDirectory()) {
+                        return true;
+                    }
+                    
+                    R_HOME = "/usr/lib64/R";
                     if (new File(R_HOME).isDirectory()) {
                         return true;
                     }

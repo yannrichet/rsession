@@ -1015,7 +1015,7 @@ public abstract class Rsession implements RLog {
     /**
      * list R variables in R env.
      *
-     * @param all
+     * @param all - If TRUE, all object names are returned. If FALSE, names which begin with a . are omitted.
      * @return list of R objects names
      */
     public String[] ls(boolean all) {
