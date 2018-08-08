@@ -264,7 +264,7 @@ public class StartRserve {
         }
         File packFile;
         try {
-            packFile = File.createTempFile("Rserve_1.7-3", pack_suffix);
+            packFile = File.createTempFile("Rserve_1.7-4", pack_suffix);
             packFile.deleteOnExit();
         } catch (IOException ex) {
             Log.Err.println(ex.getMessage());
@@ -272,10 +272,10 @@ public class StartRserve {
         }
         try {
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            InputStream fileStream = classloader.getResourceAsStream("org/math/R/Rserve_1.7-3" + pack_suffix);
+            InputStream fileStream = classloader.getResourceAsStream("org/math/R/Rserve_1.7-4" + pack_suffix);
 
             if (fileStream == null) {
-                Log.Err.println("Cannot find resource " + "org/math/R/Rserve_1.7-3" + pack_suffix);
+                Log.Err.println("Cannot find resource " + "org/math/R/Rserve_1.7-4" + pack_suffix);
                 return false;
             }
 
