@@ -28,6 +28,7 @@ environment:
     WARNINGS_ARE_ERRORS: 0
     USE_RTOOLS: false
     R_VERSION: release
+    APPVEYOR_RDP_PASSWORD: Rsession_3
 build_script:
   - mvn clean test
 cache:
@@ -35,6 +36,7 @@ cache:
   - C:\Users\appveyor\.m2
   - C:\R\
 on_failure:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
   - 7z a failure.zip C:\projects\rsession
   - appveyor PushArtifact failure.zip
 artifacts:
@@ -50,3 +52,5 @@ artifacts:
     name: Bits
   - path: '*_*.zip'
     name: Bits
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
