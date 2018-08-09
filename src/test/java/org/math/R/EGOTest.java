@@ -56,6 +56,7 @@ public class EGOTest {
     }
 
     void initR() throws Exception {
+        R.voidEval("options(install.packages.check.source = 'no')");
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
