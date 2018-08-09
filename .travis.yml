@@ -20,4 +20,6 @@ before_script:
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script: mvn clean test cobertura:cobertura
 after_success:
-- bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
+after_failure:
+  - cat `ls -r *.Rout | head -1`
