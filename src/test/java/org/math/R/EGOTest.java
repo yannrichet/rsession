@@ -56,12 +56,11 @@ public class EGOTest {
     }
 
     void initR() throws Exception {
-        R.voidEval("options(install.packages.check.source = 'no')");
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
         R.installPackage("pso", true);
-        R.installPackage("DiceView", true);
+        //R.installPackage("DiceView", true);
 
         R.voidEval("distXmin <- function (x, Xmin) \n"
                 + "{\n"
@@ -282,7 +281,7 @@ public class EGOTest {
         new File("XY" + currentiteration + ".Rdata").delete();
         new File("km" + (currentiteration) + ".Rdata").delete();
         new File("EGO" + (currentiteration) + ".Rdata").delete();
-        new File("sectionview." + (currentiteration) + ".png").delete();
+        //new File("sectionview." + (currentiteration) + ".png").delete();
     }
     String control_km = "trace=FALSE";
     String control_ego = "trace=FALSE";
@@ -322,7 +321,8 @@ public class EGOTest {
 
                 File f = new File("sectionview." + (currentiteration - 1) + ".png");
                 R.set("bestX_" + (currentiteration - 1), x[i]);
-                R.toPNG(f, 600, 600, "sectionview.km(model=km" + (currentiteration - 1) + ",center=bestX_" + (currentiteration - 1) + ",type='UK', yscale = 1,yname='Y',Xname=" + RserveSession.buildListString(Xnames) + ")");
+                //R.toPNG(f, 600, 600, "sectionview.km(model=km" + (currentiteration - 1) + ",center=bestX_" + (currentiteration - 1) + ",type='UK', yscale = 1,yname='Y',Xname=" + RserveSession.buildListString(Xnames) + ")");
+                R.toPNG(f, 600, 600, "pairs(cbind(km" + (currentiteration - 1) + "@X,km" + (currentiteration - 1) + "@y))");
                 htmlout += "\n<br/>\n<img src='" + f.getName() + "' width='600' height='600'/>";
 
             } else {
