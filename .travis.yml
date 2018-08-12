@@ -10,7 +10,6 @@ matrix:
           packages:
           - r-base-core
     - os: osx
-      osx_image: xcode8.3
 before_install:
   #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
