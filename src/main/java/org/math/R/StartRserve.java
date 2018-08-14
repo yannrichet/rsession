@@ -139,7 +139,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("if (is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')) print(paste('Rserve version',packageDescription('Rserve')$Version)); else print('No Rserve');", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -161,10 +161,11 @@ public class StartRserve {
             result.append(output.getOutput());
             result.append(error.getOutput());
 
-            if (result.toString().contains("[1] TRUE")) {
-                Log.Out.println("Rserve is already installed.");
+            if (result.toString().contains("Rserve version ")) {
+                int i  = result.toString().indexOf("Rserve version ");
+                Log.Out.println(result.toString().substring(i,result.toString().indexOf("\n",i))+" is installed.");
                 return true;
-            } else if (result.toString().contains("[1] FALSE")) {
+            } else if (result.toString().contains("No Rserve")) {
                 Log.Out.println("Rserve is not yet installed.");
                 return false;
             } else {
@@ -408,7 +409,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
-        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        Process p = doInR("library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "');packageDescription('Rserve');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
