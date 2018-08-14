@@ -217,7 +217,7 @@ public class StartRserve {
 
             //Logger.err.println("output=\n===========\n" + result.toString() + "\n===========\n");
             if (result.toString().contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.toString().contains("* DONE (Rserve)")) {
-                Log.Out.println("Rserve install succeded.");
+                Log.Out.println("Rserve install succeded: " + result.toString().replace("\n", "\n| "));
                 //return true;
             } else if (result.toString().contains("FAILED") || result.toString().contains("Error")) {
                 Log.Out.println("Rserve install failed: " + result.toString().replace("\n", "\n| "));
