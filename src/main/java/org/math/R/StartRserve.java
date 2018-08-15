@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import org.rosuda.REngine.Rserve.RConnection;
 
@@ -162,8 +163,8 @@ public class StartRserve {
             result.append(error.getOutput());
 
             if (result.toString().contains("Rserve version ")) {
-                int i  = result.toString().indexOf("Rserve version ");
-                Log.Out.println(result.toString().substring(i,result.toString().indexOf("\n",i))+" is installed.");
+                int i = result.toString().indexOf("Rserve version ");
+                Log.Out.println(result.toString().substring(i, result.toString().indexOf("\n", i)) + " is installed.");
                 return true;
             } else if (result.toString().contains("No Rserve")) {
                 Log.Out.println("Rserve is not yet installed.");
@@ -391,7 +392,7 @@ public class StartRserve {
      * @return launcher Process
      */
     public static Process launchRserve(String cmd) {
-        return launchRserve(cmd, "--vanilla", "--vanilla", false);
+        return launchRserve(cmd, "--vanilla", "--vanilla --RS-enable-control", false);
     }
 
     static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
@@ -409,6 +410,7 @@ public class StartRserve {
      */
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
+        Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "');library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "');Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
