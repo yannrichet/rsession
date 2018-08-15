@@ -140,7 +140,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("if (is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')) print(paste('Rserve version',packageDescription('Rserve')$Version)); else print('No Rserve');", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -162,11 +162,10 @@ public class StartRserve {
             result.append(output.getOutput());
             result.append(error.getOutput());
 
-            if (result.toString().contains("Rserve version ")) {
-                int i = result.toString().indexOf("Rserve version ");
-                Log.Out.println(result.toString().substring(i, result.toString().indexOf("\n", i)) + " is installed.");
+            if (result.toString().contains("[1] TRUE")) {
+                Log.Out.println("Rserve is already installed.");
                 return true;
-            } else if (result.toString().contains("No Rserve")) {
+            } else if (result.toString().contains("[1] FALSE")) {
                 Log.Out.println("Rserve is not yet installed.");
                 return false;
             } else {
