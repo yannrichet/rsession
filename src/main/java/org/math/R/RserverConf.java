@@ -211,9 +211,11 @@ public class RserverConf {
         return true;
     }
 
+    public static final boolean UNIX_OPTIMIZE = false; // if we want to re-use older sessions. May wrongly fil if older session is already stucked...
+    
     public static RserverConf newLocalInstance(Properties p) {
         RserverConf server = null;
-        if (RserveDaemon.isWindows() || !RserveSession.UNIX_OPTIMIZE) {
+        if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
             while (!isPortAvailable(RserverPort)) {
                 RserverPort++;
             }

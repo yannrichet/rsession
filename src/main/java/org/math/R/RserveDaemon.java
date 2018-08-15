@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Properties;
 import org.math.R.RLog.Level;
 import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RserveException;
 
 /**
  *
@@ -234,8 +235,14 @@ public class RserveDaemon {
                 log.log("R daemon already stoped.", Level.INFO);
                 return;
             }
+            try {
+                s.serverShutdown();
+            } catch (RserveException ex) {
+                log.log("Could not shutdown server", Level.WARNING);
+            }
             s.shutdown();
-            if (rserve != null) {
+            if (rserve != null && rserve.isAlive()) {
+                rserve.destroyForcibly();
                 rserve.getInputStream().close();
                 rserve.getErrorStream().close();
             }
@@ -285,7 +292,7 @@ public class RserveDaemon {
 
         log.log("Starting R daemon... " + conf, Level.INFO);
 
-        StringBuffer RserveArgs = new StringBuffer("--vanilla");
+        StringBuffer RserveArgs = new StringBuffer("--vanilla --RS-enable-control");
         if (conf.port > 0) {
             RserveArgs.append(" --RS-port " + conf.port);
         }

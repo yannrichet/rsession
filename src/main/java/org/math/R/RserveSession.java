@@ -342,8 +342,6 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
-    public static final boolean UNIX_OPTIMIZE = true;
-
     /**
      * Silently (ie no log) launch R command without return value.
      *
