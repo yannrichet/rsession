@@ -51,9 +51,19 @@ public class RenjinSession extends Rsession implements RLog {
     public RenjinSession(RLog console, Properties properties) {
         super(console);
 
-        Session session = new SessionBuilder().bind(PackageLoader.class, new AetherPackageLoader()).withDefaultPackages().build();
+        try {
+            if (Class.forName("org.renjin.aether.AetherPackageLoader", false, this.getClass().getClassLoader()) != null) {
+                Session session = new SessionBuilder().bind(PackageLoader.class, new org.renjin.aether.AetherPackageLoader()).withDefaultPackages().build();
+                R = new RenjinScriptEngineFactory().getScriptEngine(session);
+            } else {
+                throw new ClassNotFoundException("org.renjin.aether.AetherPackageLoader missing");
+            }
+        } catch (ClassNotFoundException e) {
+            Log.Err.println("Could not access some Renjin dependency: " + e);
+            Log.Err.println("Using Renjin without packages repository");
+            R = new RenjinScriptEngineFactory().getScriptEngine();
+        }
 
-        R = new RenjinScriptEngineFactory().getScriptEngine(session);
         if (R == null) {
             throw new RuntimeException("Renjin Script Engine not found in the classpath.");
         }
