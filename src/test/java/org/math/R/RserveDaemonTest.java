@@ -120,7 +120,7 @@ public class RserveDaemonTest {
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
-        assert classloader.getResource("org/math/R/Rserve_1.7-4.zip") != null : "cannot access resources...";
+        assert classloader.getResource("org/math/R/Rserve_1.7-5.zip") != null : "cannot access resources...";
 
         boolean install = StartRserve.installRserve(Rcmd);
 
