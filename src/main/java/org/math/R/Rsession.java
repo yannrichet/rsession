@@ -29,6 +29,7 @@ public abstract class Rsession implements RLog {
     public static final String PACKAGEINSTALLED = "Package installed.";
     public static final String PACKAGELOADED = "Package loaded.";
     static String separator = ",";
+    String install_packages_moreargs = "";
 
     public class RException extends Exception {
 
@@ -563,7 +564,7 @@ public abstract class Rsession implements RLog {
      */
     public String installPackage(File pack, boolean load) {
         try {
-            rawEval("install.packages('" + pack.getAbsolutePath().replace("\\", "/") + "',repos=NULL,quiet=T");
+            rawEval("install.packages('" + pack.getAbsolutePath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -675,7 +676,7 @@ public abstract class Rsession implements RLog {
          log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
          return "Impossible to get package " + pack + " from " + repos;
          }*/
-        rawEval("install.packages('" + pack + "',repos='" + repos + "',quiet=T)", TRY_MODE);
+        rawEval("install.packages('" + pack + "',repos='" + repos + "',quiet=T" + install_packages_moreargs + ")", TRY_MODE);
         log("  request if package " + pack + " is installed...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {
@@ -1015,7 +1016,8 @@ public abstract class Rsession implements RLog {
     /**
      * list R variables in R env.
      *
-     * @param all - If TRUE, all object names are returned. If FALSE, names which begin with a . are omitted.
+     * @param all - If TRUE, all object names are returned. If FALSE, names
+     * which begin with a . are omitted.
      * @return list of R objects names
      */
     public String[] ls(boolean all) {
