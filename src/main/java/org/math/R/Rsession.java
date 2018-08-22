@@ -487,7 +487,7 @@ public abstract class Rsession implements RLog {
      * @return package loading status
      */
     public boolean isPackageInstalled(String pack, String version) {
-        silentlyVoidEval(packs + "<-installed.packages(noCache=TRUE)", false);
+        silentlyVoidEval(packs + "<-installed.packages(noCache=TRUE"+install_packages_moreargs+")", false);
         boolean isinstalled = false;
         Object r = silentlyRawEval("is.element(set=row.names(" + packs + "),el='" + pack + "')");
         try {
