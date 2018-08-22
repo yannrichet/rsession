@@ -36,12 +36,12 @@ public class R2jsSessionTest {
 		try {
 			
 			
-			assert (Integer) engine.eval("a = 1") == 1;
-			assert (Integer) engine.eval("a <- 1")  == 1;
+			assert (Integer) engine.eval("a = 1") == 1; // should be voidEval instead
+			assert (Integer) engine.eval("a <- 1")  == 1; // should be voidEval instead
 			assert (Integer) engine.eval("a")  == 1;
 			assert (Double) engine.eval("a+1") == 2;
 			assertEquals((Double)engine.eval("a+pi"),(1+Math.PI),epsilon);
-			assert (Integer)engine.eval("b <- (1)") == 1;
+			assert (Integer)engine.eval("b <- (1)") == 1; // should be voidEval instead
 
 			engine.voidEval("f = function(x) {return(1+x)}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
@@ -50,60 +50,60 @@ public class R2jsSessionTest {
 			engine.voidEval("f = function(x) 1+x");
 			assert (Double)engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f = function(x) {\nreturn(1+x)\n}");
+			engine.voidEval("f = function(x) {\nreturn(1+x)\n}");
 			assert (Double)engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f = function(x) {\n1+x;\n}");
+			engine.voidEval("f = function(x) {\n1+x;\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f=function(x){\n1+x;\n}");
+			engine.voidEval("f=function(x){\n1+x;\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f =function(x){\n1+x;\n}");
+			engine.voidEval("f =function(x){\n1+x;\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f= function(x){1+x;}");
+			engine.voidEval("f = function(x){1+x;}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f= function(x){1+x}");
+			engine.voidEval("f = function(x){1+x}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 
-			engine.eval("f = function(x) {\nif (x>1) return(1+x) else return(1-x)\n}");
-			assert (Double) engine.eval("f(1.23)") == 2.23;
-			assert (Double) engine.eval("f(0.23)") == 0.77;
-
-			engine.eval("f = function(x) {\nif (x>1) {return(1+x)} else {return(1-x)}\n}");
+			engine.voidEval("f = function(x) {\nif (x>1) return(1+x) else return(1-x)\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 			assert (Double) engine.eval("f(0.23)") == 0.77;
 
-			engine.eval("f = function(x) {\nif (x>1) return(1+x) \n else return(1-x)\n}"); 
+			engine.voidEval("f = function(x) {\nif (x>1) {return(1+x)} else {return(1-x)}\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 			assert (Double) engine.eval("f(0.23)") == 0.77;
 
-			engine.eval("f = function(x) {\ny = 0\nfor (i in 1:floor(x)) y=y+i\nreturn(y)\n}");
+			engine.voidEval("f = function(x) {\nif (x>1) return(1+x) \n else return(1-x)\n}"); 
+			assert (Double) engine.eval("f(1.23)") == 2.23;
+			assert (Double) engine.eval("f(0.23)") == 0.77;
+
+			engine.voidEval("f = function(x) {\ny = 0\nfor (i in 1:floor(x)) y=y+i\nreturn(y)\n}");
 			assert (Double) engine.eval("f(3.23)") == 6;
 
-			engine.eval("f = function(x) {\ny=0\nfor(i in 1:floor(x))y=y+i\nreturn(y)\n}");
+			engine.voidEval("f = function(x) {\ny=0\nfor(i in 1:floor(x))y=y+i\nreturn(y)\n}");
 			assert (Double) engine.eval("f(3.23)") == 6;
 
-			engine.eval("f = function(x) {\nif (x>1) {\ny = 0\nfor (i in 1:floor(x)) y=y+i\nreturn(y)\n} else return(1-x)\n}");
+			engine.voidEval("f = function(x) {\nif (x>1) {\ny = 0\nfor (i in 1:floor(x)) y=y+i\nreturn(y)\n} else return(1-x)\n}");
 			assert (Double) engine.eval("f(1.23)") == 1;
 			assert (Double) engine.eval("f(3.23)") == 6;
 
-			engine.eval("f = function(x) {\nif (x>1) {return(1+x)} else {return(1-x)}\n}");
+			engine.voidEval("f = function(x) {\nif (x>1) {return(1+x)} else {return(1-x)}\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 			assert (Double) engine.eval("f(0.23)") == 0.77;
 
-			engine.eval("f = function(x) {\nif (x>1) return(1+x) \n else return(1-x)\n}");
+			engine.voidEval("f = function(x) {\nif (x>1) return(1+x) \n else return(1-x)\n}");
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 			assert (Double) engine.eval("f(0.23)") == 0.77;
 
-			engine.eval("f = function(x,y) {return(x-y)}");
+			engine.voidEval("f = function(x,y) {return(x-y)}");
 			assertEquals((Double) engine.eval("f(1.23,4.56)"),-3.33,epsilon);
 			assertEquals((Double) engine.eval("f(x=1.23,y=4.56)"),-3.33,epsilon);
 			assertEquals((Double) engine.eval("f(x=4.56,y=1.23)"),3.33,epsilon);
 
-			engine.eval("f<-function(x,y){return(x-y)}");
+			engine.voidEval("f <- function(x,y){return(x-y)}");
 			assertEquals((Double) engine.eval("f(1.23,4.56)"),-3.33,epsilon);
 			assertEquals((Double) engine.eval("f(x=1.23,y=4.56)"),-3.33,epsilon);
 			assertEquals((Double) engine.eval("f(x=4.56,y=1.23)"),3.33,epsilon);
@@ -112,16 +112,16 @@ public class R2jsSessionTest {
 			// previous version of javascipt ES5, so named arguments are not supported)
 			//assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(y=1.23,x=4.56)")) == 3.33;
 
-			engine.eval("f = function(x) {sin(x)}");
+			engine.voidEval("f = function(x) {sin(x)}");
 			assertEquals(Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(1.23)")).toString()),Math.sin(1.23),epsilon);
 
-			engine.eval("f = function(x) {asin(x)}");
+			engine.voidEval("f = function(x) {asin(x)}");
 			assertEquals(Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(0.23)")).toString()),Math.asin(0.23),epsilon);
 
-			engine.eval("f <- function(temp_F) {\ntemp_K <- ((temp_F - 32) * (5 / 9)) + 273.15\nreturn(temp_K)\n}");
+			engine.voidEval("f <- function(temp_F) {\ntemp_K <- ((temp_F - 32) * (5 / 9)) + 273.15\nreturn(temp_K)\n}");
 			assert Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(32)")).toString()) == 273.15;
 
-			engine.eval("a=2; h<-function(x){1-x;};");
+			engine.voidEval("a=2; h <- function(x){1-x;};");
 			assert Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("h(1)")).toString()) == 0;
 
 			assert Double.parseDouble( engine.eval("c = 2 ^ 3").toString()) == 8;
@@ -140,17 +140,17 @@ public class R2jsSessionTest {
 			assert Boolean.parseBoolean( engine.eval("e=1!=2").toString()) == true;
 			assert Boolean.parseBoolean( engine.eval("e=d!=d").toString()) == false;
 
-			engine.eval("a = c(1,2,3,12);");
-			engine.eval("f=function(x) {res=0;\n for(y in x) {res+=y};\n return res;}");
+			engine.voidEval("a = c(1,2,3,12);");
+			engine.voidEval("f = function(x) {res=0;\n for(y in x) {res+=y};\n return res;}");
 			assert (Double) engine.eval("f(a)") == 18;
 
-			engine.eval("a1 = c(1,2,3,12);\n b_2 = 2;");
+			engine.voidEval("a1 = c(1,2,3,12);\n b_2 = 2;");
 			assert (Integer)engine.eval("a1[1]")  == 1;
 			assert (Integer)engine.eval("a1[4]") ==12;
 			assert (Integer)engine.eval("a1[b_2]") ==2;
 			assert (Integer)engine.eval("a1[b_2-1]") ==1;
 
-			engine.eval("f <- function(x=2,y=1) {return x+y}");
+			engine.voidEval("f <- function(x=2,y=1) {return x+y}");
 			assert (Double) engine.eval("f()") == 3;
 			assert (Double) engine.eval("f(1.23)") == 2.23;
 			assertEquals((Double) engine.eval("f(1.23, 4.56)"),5.79, epsilon);
@@ -161,17 +161,17 @@ public class R2jsSessionTest {
 			//			assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(3)")).toString()) == 3403;
 			//			assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(3, FALSE, FALSE)")).toString()) == -1197;
 
-			engine.eval("a <- c(0:4);");
+			engine.voidEval("a <- c(0:4);");
 	        double[] m = new double[]{0,1,2,3, 4};
 	        double[] res = (double[])engine.eval("a");
 	        assert Arrays.equals(m, res);
 
 
-			engine.eval("f=function(x) {res=0;\n for(y in x) {res+=y};\n return res;}");
+			engine.voidEval("f = function(x) {res=0;\n for(y in x) {res+=y};\n return res;}");
 			assert (Double) engine.eval("f(a)") == 10;
 
 
-			engine.eval("recur_factorial <- function(n) {\n if(n <= 1) {\n return(1)\n } else { \n return(n * recur_factorial(n-1))\n }\n }");
+			engine.voidEval("recur_factorial <- function(n) {\n if(n <= 1) {\n return(1)\n } else { \n return(n * recur_factorial(n-1))\n }\n }");
 			assert (Double) engine.eval("recur_factorial(3)") == 6;
 			assert (Double) engine.eval("recur_factorial(5)") == 120;
 
@@ -185,60 +185,60 @@ public class R2jsSessionTest {
 //			assert Double.parseDouble( engine.eval("kelvin_to_celsius(0)").toString()) == -273.15;
 
 			// Addition between arrays
-			engine.eval("a = c(4,5,6,7)");
-			engine.eval("b = c(1,2,1,2)");
-			engine.eval("c = a + b");
+			engine.voidEval("a = c(4,5,6,7)");
+			engine.voidEval("b = c(1,2,1,2)");
+			engine.voidEval("c = a + b");
 			assert Arrays.equals((double[]) engine.eval("c"), new double[]{5,7,7,9});
 
 			// Addiction between arrays in js function
-			engine.eval("fsum <- function(x, y) {return x+y}");
-			engine.eval("d = fsum(a , b)");
+			engine.voidEval("fsum <- function(x, y) {return x+y}");
+			engine.voidEval("d = fsum(a , b)");
 			assert Arrays.equals((double[]) engine.eval("d"), new double[]{5, 7, 7, 9});
 
 			// Matrix creation
-			engine.eval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
+			engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
 			assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2,4},{3,1},{5,7}});
 
-			engine.eval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2)");
+			engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2)");
 			assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2,1},{4,5},{3,7}});
 
-			engine.eval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
+			engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
 			assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2,1},{4,5},{3,7}});
 
 			// Operators
-			System.err.println(engine.eval("a = -4 * 10 -5* 100"));
+			System.err.println(engine.eval("a = -4 * 10 -5* 100")); // should be voidEval instead
 			assert (Double)engine.eval("a") == -540;
 
-			System.err.println(engine.eval("a =-4*10-5*100"));
+			System.err.println(engine.eval("a =-4*10-5*100")); // should be voidEval instead
 			assert (Double)engine.eval("a") == -540;
 
-			System.err.println(engine.eval("a = (-4 * 10) +(-5* 100)"));
+			System.err.println(engine.eval("a = (-4 * 10) +(-5* 100)")); // should be voidEval instead
 			assert (Double)engine.eval("a") == -540;
 
-			System.err.println(engine.eval("a = -4 * -10 -5*-100 + 18 * (-5*(3+9))"));
+			System.err.println(engine.eval("a = -4 * -10 -5*-100 + 18 * (-5*(3+9))")); // should be voidEval instead
 			assert (Double)engine.eval("a") == -540;
 
-			System.err.println(engine.eval("a = (3 - 5) * (-6 + 5) / 2 "));
+			System.err.println(engine.eval("a = (3 - 5) * (-6 + 5) / 2 ")); // should be voidEval instead
 			assert (Double)engine.eval("a") == 1;
 
 			// ------ Array operations -----------------
 			// Dot multiplication
-			engine.eval("a <- c(1., 2. ,3.)");
-			engine.eval("b <- c(2., 1. ,2.)");
-			engine.eval("c <- a*b");
+			engine.voidEval("a <- c(1., 2. ,3.)");
+			engine.voidEval("b <- c(2., 1. ,2.)");
+			engine.voidEval("c <- a*b");
 			assert Arrays.equals((double[]) engine.eval("c"), new double[]{2,2,6});
 
 			// Dot division
-			System.err.println(engine.eval("d <- a/b"));
+			System.err.println(engine.eval("d <- a/b")); // should be voidEval instead
 			assert Arrays.equals((double[]) engine.eval("d"), new double[]{0.5,2,1.5});
 
 			// Substraction
-			System.err.println(engine.eval("e <- a-b"));
+			System.err.println(engine.eval("e <- a-b")); // should be voidEval instead
 			// TODO: pass this test
 			//assert Arrays.equals((double[]) engine.eval("e"), new double[]{-1,1,1});
 
 			// Addition
-			engine.eval("f <- a+b");
+			engine.voidEval("f <- a+b");
 			assert Arrays.equals((double[]) engine.eval("f"), new double[]{3,3,5});
 
 			// TODO  multiplication and division '%*%'
@@ -248,34 +248,34 @@ public class R2jsSessionTest {
 			//assertTrue(engine.eval("h").toString().trim().equals("[todo]".trim()));
 
 			// Matrix transpose
-			engine.eval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
-			engine.eval("B = t(A)");
+			engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
+			engine.voidEval("B = t(A)");
 			assert Arrays.deepEquals((double[][]) engine.eval("B"), new double[][]{{2,3,5},{4,1,7}});
 
 			// Matrix dot multiplication
-			System.err.println(engine.eval("C = A*A"));
+			System.err.println(engine.eval("C = A*A")); // should be voidEval instead
 			assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{4,16},{9,1}, {25,49}});
 
 			// Matrix s
-			System.err.println(engine.eval("D = A^2"));
+			System.err.println(engine.eval("D = A^2")); // should be voidEval instead
 			assert Arrays.deepEquals((double[][]) engine.eval("D"), new double[][]{{4,16},{9,1}, {25,49}});
 
 			// Matrix multiplication
-			engine.eval("A = matrix( c(2, 4, 3.23, -1, -5.34, 7), nrow=3, ncol=2, byrow=TRUE)");
-			System.err.println(engine.eval("MA = A%*%t(A)"));
+			engine.voidEval("A = matrix( c(2, 4, 3.23, -1, -5.34, 7), nrow=3, ncol=2, byrow=TRUE)");
+			System.err.println(engine.eval("MA = A%*%t(A)")); // should be voidEval instead
 			assert Arrays.deepEquals((double[][]) engine.eval("MA"), new double[][]{{20, 2.46, 17.32}, {2.46, 11.4329, -24.2482}, {17.32, -24.2482, 77.5156}});
 			
 			// Matrix division
-			engine.eval("A = matrix( c(2, 4, 3.5, 13.5, 23.56, 7.1), nrow=3, ncol=2, byrow=TRUE)");
-			engine.eval("B = matrix( c(2.12, 2, 2.23, 2, 3, 10.4), nrow=3, ncol=2, byrow=TRUE)");
-			System.err.println(engine.eval("DA = A%/%B"));
+			engine.voidEval("A = matrix( c(2, 4, 3.5, 13.5, 23.56, 7.1), nrow=3, ncol=2, byrow=TRUE)");
+			engine.voidEval("B = matrix( c(2.12, 2, 2.23, 2, 3, 10.4), nrow=3, ncol=2, byrow=TRUE)");
+			System.err.println(engine.eval("DA = A%/%B")); // should be voidEval instead
 			assert Arrays.deepEquals((double[][]) engine.eval("DA"), new double[][]{{0,2}, {1,6}, {7,0}});
 
 
 			// Matrix mod
-			engine.eval("A = matrix( c(2, 4, 3.5, 13.5, 23.56, 7.1), nrow=3, ncol=2, byrow=TRUE)");
-			engine.eval("B = matrix( c(2.12, 2, 2.23, 2, 3, 10.4), nrow=3, ncol=2, byrow=TRUE)");
-			System.err.println(engine.eval("ModA = A%%B"));
+			engine.voidEval("A = matrix( c(2, 4, 3.5, 13.5, 23.56, 7.1), nrow=3, ncol=2, byrow=TRUE)");
+			engine.voidEval("B = matrix( c(2.12, 2, 2.23, 2, 3, 10.4), nrow=3, ncol=2, byrow=TRUE)");
+			System.err.println(engine.eval("ModA = A%%B")); // should be voidEval instead
 			System.out.println(Arrays.deepToString((double[][]) engine.eval("ModA")));
 
 			assert Arrays.deepEquals((double[][]) engine.eval("ModA"), new double[][]{{2,0}, {1.27,1.5}, {2.5599999999999987,7.1}});
