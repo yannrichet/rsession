@@ -557,6 +557,7 @@ public class RenjinSessionTest {
         }
 
         s = new RenjinSession(l, prop);
+        System.out.println("| R.version:\t" + s.eval("R.version.string"));
 
         System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {

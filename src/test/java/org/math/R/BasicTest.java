@@ -66,6 +66,7 @@ public class BasicTest {
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
 
         r = RenjinSession.newInstance(l, prop);
+        System.out.println("| R.version:\t" + r.eval("R.version.string"));
 
         System.out.println("| getwd():\t" + r.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));

@@ -70,6 +70,7 @@ public class RPanelsTest {
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
 
         r = RenjinSession.newInstance(l, prop);
+        System.out.println("| R.version:\t" + r.eval("R.version.string"));
 
         System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
