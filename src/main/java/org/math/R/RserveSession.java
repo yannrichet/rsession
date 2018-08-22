@@ -43,7 +43,6 @@ public class RserveSession extends Rsession implements RLog {
     public RserverConf RserveConf;
     public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
-    String install_packages_moreargs = ",lib='" + RserveDaemon.app_dir() + "'";
     
     // <editor-fold defaultstate="collapsed" desc="Conveniency static String methods">
     public static String cat(RList list) {
@@ -174,6 +173,8 @@ public class RserveSession extends Rsession implements RLog {
         }
 
         setenv(RserveConf.properties);
+        
+        install_packages_moreargs = ",lib='" + RserveDaemon.app_dir() + "'";
     }
 
     /**
