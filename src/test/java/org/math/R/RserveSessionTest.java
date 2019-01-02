@@ -261,12 +261,12 @@ public class RserveSessionTest {
     }
 
     @Test
-    public void testJPEGSize() throws Exception {
+    public void testImageSize() throws Exception {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
             File sfile = new File("tmp", size + ".jpg");
-            s.toJPEG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
+            s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
             assert sfile.exists() : "Size " + size + " failed";
             p.println(sfile.length());
         }
