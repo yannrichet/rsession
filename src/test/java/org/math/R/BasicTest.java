@@ -540,7 +540,7 @@ public class BasicTest {
 
         //toJPEG
         File jpg = new File(tmpdir, "titi" + rand + ".jpg");
-        s.toJPEG(jpg, 400, 400, "plot(rnorm(10))");
+        s.toPNG(jpg, 400, 400, "plot(rnorm(10))");
         assert jpg.exists();
 
         //to TXT
@@ -598,9 +598,10 @@ public class BasicTest {
         assert ls[0].equals("c") : r.toString(ls) + "=" + Arrays.asList(ls);
 
         //toJPEG
-        /*File jpg = new File(tmpdir, "titi" + rand + ".png");
+        File jpg = new File(tmpdir, "titi" + rand + ".png");
          r.toPNG(jpg, 400, 400, "plot(rnorm(10))");
-         assert jpg.exists();*/
+         assert jpg.exists();
+         
         //toTXT
         String txt = r.print("summary(rnorm(100))");
         System.out.println(txt);

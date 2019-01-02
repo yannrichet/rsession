@@ -239,18 +239,24 @@ public class RenjinSessionTest {
             File sfile = new File("tmp", size + ".Rdata");
             s.save(sfile.getAbsoluteFile(), "raw" + i);
             assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
+            assert sfile.length() > 0 : " empty file";
             sfile.delete();
         }
     }
 
-    // @Test
-    public void testJPEGSize() {
+    @Test
+    public void testImageSize() {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
             File sfile = new File("tmp", size + ".jpg");
-            s.toJPEG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
+            if (sfile.isFile()) {
+                assert sfile.delete() : "Cannot delete " + sfile;
+            }
+            s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
             assert sfile.exists() : "Size " + size + " failed";
+            assert sfile.length() > 0 : " empty file";
+            p.println(sfile.getAbsoluteFile());
             p.println(sfile.length());
         }
     }

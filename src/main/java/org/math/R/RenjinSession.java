@@ -1,27 +1,39 @@
 package org.math.R;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.color.ColorSpace;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
 import org.math.array.DoubleArray;
-import org.renjin.aether.AetherPackageLoader;
+import org.renjin.eval.Context;
 import org.renjin.eval.Session;
 import org.renjin.eval.SessionBuilder;
+import org.renjin.grDevices.AwtDevice;
+import org.renjin.grDevices.FileDevice;
+import org.renjin.grDevices.GraphicsDevices;
+import org.renjin.primitives.NativeStringVector;
 import org.renjin.primitives.matrix.Matrix;
 import org.renjin.primitives.packaging.PackageLoader;
 import org.renjin.script.RenjinScriptEngine;
 import org.renjin.script.RenjinScriptEngineFactory;
+import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleArrayVector;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.IntVector;
@@ -700,41 +712,17 @@ public class RenjinSession extends Rsession implements RLog {
         //throw new ClassCastException("Cannot cast to ? " + s + " (" + s.getTypeName() + ")");
     }
 
-    //protected Context topLevelContext = Context.newTopLevelContext();
+    protected Context topLevelContext = Context.newTopLevelContext();
+
     @Override
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
-        throw new UnsupportedOperationException("Graphics not yet available using Renjin");
-
-        /*BufferedImage image = new BufferedImage(width, height, ColorSpace.TYPE_RGB);
-
-         Graphics2D g2d = (Graphics2D) image.getGraphics();
-         g2d.setColor(Color.WHITE);
-         g2d.setBackground(Color.WHITE);
-         g2d.fill(g2d.getDeviceConfiguration().getBounds());
-
-         AwtGraphicsDevice driver = new AwtGraphicsDevice(g2d);
-         topLevelContext.getSingleton(GraphicsDevices.class).setActive(new org.renjin.graphics.GraphicsDevice(driver));
-
-         try {
-         StringWriter w = new StringWriter();
-         PrintWriter p = R.getSession().getStdErr();
-         R.getSession().setStdErr(new PrintWriter(w));
-
-         for (String command : commands) {
-         voidEval(command);
-         }
-         R.getSession().setStdErr(p);
-         System.err.println(w.getBuffer());
-         } finally {
-         try {
-         FileOutputStream fos = new FileOutputStream(f);
-
-         ImageIO.write(image, fileformat.toUpperCase(), fos);
-         fos.close();
-         } catch (IOException ex) {
-         ex.printStackTrace();
-         }
-         }*/
+//        ListVector.NamedBuilder b = ListVector.newNamedBuilder();
+//        b.add("filename", f.getAbsolutePath());
+//        b.add("format", fileformat);
+//
+//        FileDevice driver = new FileDevice(R.getSession(), b.build());
+//        driver.open(width, height);
+        super.toGraphic(f, width, height, fileformat, commands);
     }
 
     /**
@@ -762,7 +750,7 @@ public class RenjinSession extends Rsession implements RLog {
      */
     public void setCRANRepository(String url) {
         if (!url.equals(repos)) {
-            log("Cannot use another repositroy that " + repos, Level.WARNING);
+            log("Cannot use another repository that " + repos, Level.WARNING);
         }
     }
 

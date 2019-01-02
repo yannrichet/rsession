@@ -1304,7 +1304,7 @@ public abstract class Rsession implements RLog {
      return oo;
      }*/
     /**
-     * Create a JPEG file for R graphical command output
+     * Create a file for R graphical command output
      *
      * @param f File to store data (eg .jpg file)
      * @param width width of image
@@ -1354,11 +1354,7 @@ public abstract class Rsession implements RLog {
     }
 
     public void toPNG(File f, int width, int height, String... commands) {
-        if (isMacOSX()) {
-            toGraphic(f, width, height, GRAPHIC_JPEG, commands);
-        } else {
-            toGraphic(f, width, height, GRAPHIC_PNG, commands);
-        }
+        toGraphic(f, width, height, GRAPHIC_PNG, commands);
     }
 
     public void toBMP(File f, int width, int height, String... commands) {

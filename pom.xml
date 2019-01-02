@@ -70,6 +70,10 @@
             <version>0.9.2718</version>
         </dependency>
         <dependency>
+            <groupId>org.renjin</groupId>
+            <artifactId>grDevices</artifactId>
+            <version>0.9.2718</version>
+        </dependency>        <dependency>
 	    <groupId>com.coveo</groupId>
 	    <artifactId>nashorn-commonjs-modules</artifactId>
 	    <version>1.0.9</version>
