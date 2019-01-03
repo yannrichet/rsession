@@ -51,13 +51,13 @@ import static org.math.R.*;
 ```
 ## Use it ##
 
-### Using Renjin: ###
+### Using Renjin backend: ###
 
 Add `lib/rsession.jar:lib/renjin*.jar` in your project classpath: 
   * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version)
   * copy Renjin https://nexus.bedatadriven.com/service/local/artifact/maven/redirect?r=renjin-release&g=org.renjin&a=renjin-script-engine&c=jar-with-dependencies&v=RELEASE&e=jar
 
-### Using Rserve: ###
+### Using Rserve backend: ###
 
 Install R from http://cran.r-project.org.
 
@@ -66,7 +66,7 @@ Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpat
   * copy Rserve https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/Rserve/1.8.1/Rserve-1.8.1.jar
   * copy REngine https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/REngine/2.1.0/REngine-2.1.0.jar
 
-### Using a maven dependency ###
+### Through maven dependency: ###
 ```xml
 <dependencies>
 ...
@@ -80,34 +80,38 @@ Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpat
 ```
 
 
-Then, use it in your code:
+Then, use it in your code (for Windows XP, Mac OS X, Linux 32 & 64):
   * create new Rsession:
     * Renjin (pure Java, no R install necessary):
       ```java
       Rsession r = new RenjinSession(System.out,null);
       ```
-    * OR local spawning of Rserve (for Windows XP, Mac OS X, Linux 32 & 64):
+    * OR connect to local Rserve (previously started on localhost with `/usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf`):
+      ```java
+      Rsession r = RserveSession.newLocalInstance(System.out,null); 
+      ```
+    * OR connect to local auto-spawned Rserve:
       ```java
       Rsession r = RserveSession.newInstanceTry(System.out,null);
       ```
-    * OR connect to remote Rserve (previously started with /usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf):
+    * OR connect to remote Rserve (previously started on 192.168.1.1 with `/usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf`):
       ```java
       Rsession r = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
-      //connect to local Rserve (previously started with /usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf):
-      Rsession r = RserveSession.newLocalInstance(System.out,null); 
       ```
   * do your work in R and get Java objects
     * create Java objects from R command using
     ```java
-    Object o = r.eval("...",HashMap<String,Object> vars)
+    HashMap<String,Object> vars = ...
+    vars.put("a",42);
+    Object o = r.eval("pi+a",vars);
     ```
     (Object o is automatically cast to double, double[], double[][],String, String[], ...)
     * OR
-      * create your R objects using `r.set("...",...)`
-      * call any R command using `r.eval("...")`
+      * create your R objects using `r.set("a",42)`
+      * call any R command using `r.eval("pi+a")`
       * cast to Java objects using `Rsession.cast(...)`
-      * if needed use remote R packages install & load: `r.installPackage("...", true);`
-      * you can access R command answers as string using: `r.asHTML("...")` `r.asString("...")` , `r.toJPEG(File f,"...")` 
+      * if needed use remote R packages install & load: `r.installPackage("MASS", true);`
+      * you can access R command answers as string using: `r.asHTML("...")` `r.asString("...")` , `r.toPNG(File f,"plot(rnorm(10))")` 
   * finally close your Rsession instance: `r.end(); `
 
 ![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)
