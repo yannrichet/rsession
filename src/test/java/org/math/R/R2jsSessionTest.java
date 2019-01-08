@@ -21,7 +21,7 @@ public class R2jsSessionTest {
     final double epsilon = 1e-12;
     R2JsSession engine = R2JsSession.newInstance(null, null);
 
-    /*@Test
+    @Test
     public void testBasicSyntaxes() {
         try {
             assert (Integer) engine.eval("a = 1") == 1; // should be voidEval instead
@@ -312,18 +312,18 @@ public class R2jsSessionTest {
             e.printStackTrace();
             assertTrue(false);
         }
-    }*/
+    }
     
     @Test
     public void testSaveAndLoad() {
         try {
-            String str = "abcd";
-            engine.set("s", str);
-            assert ((String) engine.eval("s")).equals(str);
-
-            File f = new File("R2Js" + Math.random() + ".save");
+            double rand = (double) Math.random();
+            
+            engine.set("s", "abcdef");
+            File f = new File("R2Js" + rand + ".save");
             engine.save(f, "s");
-            assert f.exists() : "Failed to create save file !";
+            engine.load(f);
+            assert engine.asString(engine.eval("s")).equals("abcdef") : "bad restore of s";
         
         } catch (Exception e) {
             e.printStackTrace();

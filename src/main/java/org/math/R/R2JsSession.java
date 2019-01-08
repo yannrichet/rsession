@@ -20,6 +20,7 @@ import javax.script.ScriptException;
 
 import com.coveo.nashorn_modules.FilesystemFolder;
 import com.coveo.nashorn_modules.Require;
+import java.util.logging.Logger;
 
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -224,7 +225,10 @@ public class R2JsSession extends Rsession implements RLog {
 		// replace save fct expression
 		e = createSaveFunction(e);
 		
-
+                // replace load fct expression
+                e = createLoadFunction(e);
+                
+                
 		// Replace list by javascript object/map
 		// TODO
 
@@ -761,13 +765,26 @@ public class R2JsSession extends Rsession implements RLog {
 
 			String fileString = argumentsMap.get("file");
 			
+                        // Add all loaded variables to the java list of variables
+                        try {
+                            String readVariablesExpr = replaceNameByQuotes(quotesList,"utils.readVariables(" + fileString + ")", false);
+                            String[] loadedVariables = (String[])staticCast(engine.eval(readVariablesExpr));
+                            addGlobalVariables(loadedVariables);
+                        } catch (ScriptException ex) {
+                            Logger.getLogger(R2JsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                        }
 			
 			// Build the mathjs expression to create load data
 			StringBuilder loadSb = new StringBuilder();
-			
-			
+			loadSb.append("utils.loadVariables(");
+                        loadSb.append(fileString);
+                        loadSb.append(", '");
+                        loadSb.append(JS_VARIABLE_STORAGE_OBJECT);
+			loadSb.append("')");
+                        
+                        // TODO add loaded function as global variables: storeGlobalVariables(String expr)
 
-			// Replace the R matrix expression by the current matrix js
+			// Replace the R load expression by the current load js
 			// expression
 			StringBuilder sb = new StringBuilder();
 			sb.append(result.substring(0, startIndex));
@@ -776,7 +793,8 @@ public class R2JsSession extends Rsession implements RLog {
 			result = sb.toString();
 
 			// Search the next "load"
-			rFunctionArgumentsDTO = getFunctionArguments(result, "load");
+                        rFunctionArgumentsDTO = null; // TODO
+			//rFunctionArgumentsDTO = getFunctionArguments(result, "load");
 		}
 
 		return result;
@@ -1011,6 +1029,15 @@ public class R2JsSession extends Rsession implements RLog {
 		System.out.println(expr);
 		return expr;
 	}
+        
+        private static void addGlobalVariables(String[] variables) {
+            if (R2JsSession.variablesList == null) {
+                R2JsSession.variablesList = new HashSet<String>();
+            }
+            for(String variable : variables) {
+                R2JsSession.variablesList.add(variable);
+            }
+        }
 
 	/**
 	 * Store global variables in the List variablesList.
@@ -1415,9 +1442,8 @@ public class R2JsSession extends Rsession implements RLog {
 		return o.toString();
 	}
 
-	@Override
-	public Object cast(Object o) throws ClassCastException {
-		// If it's a ScriptObjectMirror, it can be an array or a matrix
+        public static Object staticCast(Object o) throws ClassCastException {
+            		// If it's a ScriptObjectMirror, it can be an array or a matrix
 		if (o instanceof ScriptObjectMirror) {
 
 			try {
@@ -1459,5 +1485,10 @@ public class R2JsSession extends Rsession implements RLog {
 			return null;
 		}
 		return o;
+        }
+        
+	@Override
+	public Object cast(Object o) throws ClassCastException {
+            return staticCast(o);
 	}
 }
