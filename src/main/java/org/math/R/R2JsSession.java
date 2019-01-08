@@ -690,6 +690,7 @@ public class R2JsSession extends Rsession implements RLog {
 	
 	/**
 	 * This function replaces the R function save by JS equivalent
+         * It writes in file the variable with its value sperated by ':' in the file (example: "variable:value")
 	 * 
 	 * @param expr - the expression containing the function to replace
 	 * @return the expression with replaced function
@@ -709,16 +710,19 @@ public class R2JsSession extends Rsession implements RLog {
 			String listString = argumentsMap.get("list");
 			String fileString = argumentsMap.get("file");
 			
-			listString = replaceNameByQuotes(quotesList, listString, true);
+                        String listStringUnquotted = listString.replace("\'", "");
+			String listStringReplaced = replaceNameByQuotes(quotesList, listString, true);
 			
 			// Build the mathjs expression to create an array/matrix
 			StringBuilder saveSb = new StringBuilder();
 			
-			// TODO: save the name of variable too
 			saveSb.append("utils.writeCsv(");
 			saveSb.append(fileString);
-			saveSb.append(", JSON.stringify(");
-			saveSb.append(listString);
+			saveSb.append(", ");
+                        saveSb.append(listStringUnquotted);
+                        saveSb.append("+\':\'+");
+                        saveSb.append("JSON.stringify(");
+			saveSb.append(listStringReplaced);
 			saveSb.append("))");
 
 			// Replace the R matrix expression by the current matrix js
@@ -729,7 +733,7 @@ public class R2JsSession extends Rsession implements RLog {
 			sb.append(result.substring(endIndex + 1));
 			result = sb.toString();
 
-			// Search the next "array"
+			// Search the next "save" in the expression
 			rFunctionArgumentsDTO = getFunctionArguments(result, "save");
 		}
 
@@ -771,7 +775,7 @@ public class R2JsSession extends Rsession implements RLog {
 			sb.append(result.substring(endIndex + 1));
 			result = sb.toString();
 
-			// Search the next "array"
+			// Search the next "load"
 			rFunctionArgumentsDTO = getFunctionArguments(result, "load");
 		}
 

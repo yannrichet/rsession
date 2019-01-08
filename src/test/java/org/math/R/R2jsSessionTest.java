@@ -1,5 +1,6 @@
 package org.math.R;
 
+import java.io.File;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -20,7 +21,7 @@ public class R2jsSessionTest {
     final double epsilon = 1e-12;
     R2JsSession engine = R2JsSession.newInstance(null, null);
 
-    @Test
+    /*@Test
     public void testBasicSyntaxes() {
         try {
             assert (Integer) engine.eval("a = 1") == 1; // should be voidEval instead
@@ -307,6 +308,23 @@ public class R2jsSessionTest {
             engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
             assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2,1},{4,5},{3,7}});
             
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertTrue(false);
+        }
+    }*/
+    
+    @Test
+    public void testSaveAndLoad() {
+        try {
+            String str = "abcd";
+            engine.set("s", str);
+            assert ((String) engine.eval("s")).equals(str);
+
+            File f = new File("R2Js" + Math.random() + ".save");
+            engine.save(f, "s");
+            assert f.exists() : "Failed to create save file !";
+        
         } catch (Exception e) {
             e.printStackTrace();
             assertTrue(false);
