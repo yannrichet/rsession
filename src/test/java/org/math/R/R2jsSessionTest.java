@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.junit.Test;
 
@@ -327,6 +329,58 @@ public class R2jsSessionTest {
         
         } catch (Exception e) {
             e.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
+    @Test
+    public void testRmFunction() {
+        try {
+            engine.set("a1", "test1");
+            engine.set("a2", "test2");
+            engine.set("a3", "test3");
+            engine.voidEval("a4 = 'test4'");
+            engine.voidEval("a5 <- 'test5'");
+            
+            assert ((String) engine.eval("a1")).equals("test1");
+            engine.rm("a1");
+            try {
+                engine.eval("a1");
+            } catch (Rsession.RException ex) {
+                assertTrue(true);
+            } 
+            
+            engine.rm(new String[]{"a2", "a3"});
+            try {
+                engine.eval("a2");
+            } catch (Rsession.RException ex) {
+                assertTrue(true);
+            }
+            
+            try {
+                engine.eval("a3");
+            } catch (Rsession.RException ex) {
+                assertTrue(true);
+            }
+            
+            assert ((String) engine.eval("a4")).equals("test4");
+            engine.rm("a4");
+            try {
+                engine.eval("a4");
+            } catch (Rsession.RException ex) {
+                assertTrue(true);
+            }
+            
+            assert ((String) engine.eval("a5")).equals("test5");
+            engine.rm("a5");
+            try {
+                engine.eval("a5");
+            } catch (Rsession.RException ex) {
+                assertTrue(true);
+            }
+            
+        } catch (Rsession.RException ex) {
+            ex.printStackTrace();
             assertTrue(false);
         }
     }

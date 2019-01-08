@@ -1362,6 +1362,31 @@ public class R2JsSession extends Rsession implements RLog {
 		return true;
 	}
 
+        /**
+        * delete R variables in R env.
+        *
+        * @param vars R objects names
+        * @return well removed ?
+        * @throws org.math.R.Rsession.RException Could not do rm
+        */
+        @Override
+       public boolean rm(String... vars) throws RException {
+            try {
+                synchronized (engine) {
+                    for(String var : vars) {
+                        engine.eval("delete " +JS_VARIABLE_STORAGE_OBJECT + "." + var+ ";");
+                        variablesList.remove(var);
+                        engine.eval("delete " + var + ";");
+                    }
+                }
+            } catch (Exception e) {
+                log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
+                return false;
+            }
+            
+            return true;
+        }
+        
 	@Override
 	public double asDouble(Object o) throws ClassCastException {
 		return (Double) o;
