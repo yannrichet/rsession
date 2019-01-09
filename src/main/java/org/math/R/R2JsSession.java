@@ -695,6 +695,7 @@ public class R2JsSession extends Rsession implements RLog {
 	/**
 	 * This function replaces the R function save by JS equivalent
          * It writes in file the variable with its value sperated by ':' in the file (example: "variable:value")
+         * WARNING the function works only if the variable to save is between quotes
 	 * 
 	 * @param expr - the expression containing the function to replace
 	 * @return the expression with replaced function

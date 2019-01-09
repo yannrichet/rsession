@@ -478,16 +478,16 @@ public class BasicTest {
         r2jsSession.save(f, "s");
         assert f.exists() : "Failed to create save file !";
 
-//        String ss = r2jsSession.asString(r2jsSession.eval("s"));
-//        assert ss.equals("abcd") : "bad eval of s";
-//        assert r2jsSession.rm("s") : "Failed to delete s";
-//        r2jsSession.load(f);
-//        assert r2jsSession.asString(r2jsSession.eval("s")).equals("abcd") : "bad restore of s";
-//
-//        File fa = new File("R2Js" + Math.random() + ".all.save");
-//        assert !fa.exists() : "Already created save file !";
-//        r2jsSession.savels(fa, "*");
-//        assert fa.exists() : "Failed to create save file !";
+        String ss = r2jsSession.asString(r2jsSession.eval("s"));
+        assert ss.equals("abcd") : "bad eval of s";
+        assert r2jsSession.rm("s") : "Failed to delete s";
+        r2jsSession.load(f);
+        assert r2jsSession.asString(r2jsSession.eval("s")).equals("abcd") : "bad restore of s";
+
+        //File fa = new File("R2Js" + Math.random() + ".all.save");
+        //assert !fa.exists() : "Already created save file !";
+        //r2jsSession.savels(fa, "*");
+        //assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
@@ -627,35 +627,35 @@ public class BasicTest {
         Arrays.sort(ls);
         assert ls.length == 2 : "ls.length != 2 : " + Arrays.asList(ls);
         assert ls[0].equals("c") : r2jsSession.toString(ls) + "[0]=" + ls[3];
-//        r2jsSession.eval("save(file='c" + rand + ".Rdata',c)");
-//        r2jsSession.rm("c");
+        r2jsSession.voidEval("save(file='c" + rand + ".Rdata','c')");
+        r2jsSession.rm("c");
         //ls = (String[]) castStrict(s.eval("ls()"));
-//        ls = r2jsSession.ls();
-//        Arrays.sort(ls);
-//        assert !ls[0].equals("c") : r2jsSession.toString(ls) + "[0]=" + ls[3];
-//        r2jsSession.eval("load(file='c" + rand + ".Rdata')");
-//        p.println((r2jsSession.eval("c")));
-//
-//        //save
-//        File f = new File(tmpdir, "save" + rand + ".Rdata");
-//        if (f.exists()) {
-//            f.delete();
-//        }
-//        r2jsSession.save(f, "c");
-//        assert f.exists() : "Could not find file " + f.getAbsolutePath();
-//
-//        p.println("ls=\n" + r2jsSession.toString(r2jsSession.eval("ls()")));
-//        //load
-//        ls = (String[]) r2jsSession.eval("ls()");
-//        Arrays.sort(ls);
-//        assert ls[0].equals("c") : r2jsSession.toString(ls) + "=" + Arrays.asList(ls);
-//        r2jsSession.rm("c");
-//        assert r2jsSession.eval("ls()") instanceof String : "More than 1 object in ls()";
-//        r2jsSession.load(f);
-//        ls = (String[]) r2jsSession.eval("ls()");
-//        Arrays.sort(ls);
-//        assert ls[0].equals("c") : r2jsSession.toString(ls) + "=" + Arrays.asList(ls);
-//
+        ls = r2jsSession.ls();
+        Arrays.sort(ls);
+        assert !ls[0].equals("c") : r2jsSession.toString(ls) + "[0]=" + ls[3];
+        r2jsSession.eval("load(file='c" + rand + ".Rdata')");
+        p.println((r2jsSession.eval("c")));
+
+        //save
+        File f = new File(tmpdir, "save" + rand + ".Rdata");
+        if (f.exists()) {
+            f.delete();
+        }
+        r2jsSession.save(f, "c");
+        assert f.exists() : "Could not find file " + f.getAbsolutePath();
+
+        p.println("ls=\n" + r2jsSession.toString(r2jsSession.eval("ls()")));
+        //load
+        ls = (String[]) r2jsSession.eval("ls()");
+        Arrays.sort(ls);
+        assert ls[0].equals("c") : r2jsSession.toString(ls) + "=" + Arrays.asList(ls);
+        r2jsSession.rm("c");
+        assert ((String[])r2jsSession.eval("ls()")).length == 1: "More than 1 object in ls()";
+        r2jsSession.load(f);
+        ls = (String[]) r2jsSession.eval("ls()");
+        Arrays.sort(ls);
+        assert ls[0].equals("c") : r2jsSession.toString(ls) + "=" + Arrays.asList(ls);
+
 //        //toJPEG
 //        /*File jpg = new File(tmpdir, "titi" + rand + ".png");
 //         r2jsSession.toPNG(jpg, 400, 400, "plot(rnorm(10))");

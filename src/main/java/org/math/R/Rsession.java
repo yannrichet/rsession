@@ -1022,7 +1022,7 @@ public abstract class Rsession implements RLog {
      */
     public String[] ls(boolean all) {
         try {
-            String[] ls = asStrings(rawEval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")", false));
+            String[] ls = asStrings(eval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")", false));
             if (ls == null) {
                 return new String[]{};
             }
