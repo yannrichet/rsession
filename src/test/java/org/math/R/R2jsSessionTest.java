@@ -404,4 +404,103 @@ public class R2jsSessionTest {
             assertTrue(false);
         }
     }
+    
+    @Test
+    public void testDataFrames() {
+        try {
+            engine.voidEval("a = c('aa','bb','cc')");
+            engine.voidEval("b = c(11,22,33)");
+            engine.voidEval("c = data.frame(first=a,second=b)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("c[['first']]") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c$second") ,new double[]{11,22,33}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c$second[2]")).equals(33);
+            
+            engine.voidEval("a2 = c('aa','bb','cc')");
+            engine.voidEval("b2 = c(11,22,33)");
+            engine.voidEval("c2 = data.frame(\"first\"=a2,\"second\"=b2)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c2$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c2$second") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c2$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c2$second[2]")).equals(33);
+            
+            engine.voidEval("a3 = c('aa','bb','cc')");
+            engine.voidEval("b3 = c(11,22,33)");
+            engine.voidEval("c3 = c(FALSE,TRUE,FALSE)");
+            engine.voidEval("d3 = data.frame(first=a3, second=b3, third=c3)");
+            engine.voidEval("e3 = data.frame(first2=d3$first, third3=d3$third)");
+            assertTrue(Arrays.equals((String[]) engine.eval("e3$first2") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("e3$third3") ,new String[]{"false","true","false"}));
+            assert ((String) engine.eval("e3$first2[1]")).equals("bb");
+            assert !(boolean)engine.eval("e3$third3[2]");
+            
+            // Test data.frame without column name
+            engine.voidEval("first = c('aa','bb','cc')");
+            engine.voidEval("second = c(11,22,33)");
+            engine.voidEval("c = data.frame(first,second)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("c[['first']]") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c$second") ,new double[]{11,22,33}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c$second[2]")).equals(33);
+            
+
+        } catch (Rsession.RException ex) {
+            ex.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
+        @Test
+    public void testList() {
+        try {
+            engine.voidEval("a = c('aa','bb','cc')");
+            engine.voidEval("b = c(11,22,33)");
+            engine.voidEval("c = list(first=a,second=b)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("c[['first']]") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c$second") ,new double[]{11,22,33}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c$second[2]")).equals(33);
+            
+            engine.voidEval("a2 = c('aa','bb','cc')");
+            engine.voidEval("b2 = c(11,22,33)");
+            engine.voidEval("c2 = list(\"first\"=a2,\"second\"=b2)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c2$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c2$second") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c2$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c2$second[2]")).equals(33);
+            
+            engine.voidEval("a3 = c('aa','bb','cc')");
+            engine.voidEval("b3 = c(11,22,33)");
+            engine.voidEval("c3 = c(FALSE,TRUE,FALSE)");
+            engine.voidEval("d3 = list(first=a3, second=b3, third=c3)");
+            engine.voidEval("e3 = list(first2=d3$first, third3=d3$third)");
+            assertTrue(Arrays.equals((String[]) engine.eval("e3$first2") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("e3$third3") ,new String[]{"false","true","false"}));
+            assert ((String) engine.eval("e3$first2[1]")).equals("bb");
+            assert !(boolean)engine.eval("e3$third3[2]");
+            
+            // Test list without column name
+            engine.voidEval("first = c('aa','bb','cc')");
+            engine.voidEval("second = c(11,22,33)");
+            engine.voidEval("c = list(first,second)");
+            assertTrue(Arrays.equals((String[]) engine.eval("c$first") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((String[]) engine.eval("c[['first']]") ,new String[]{"aa","bb","cc"}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c$second") ,new double[]{11,22,33}));
+            assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]") ,new double[]{11,22,33}));
+            assert ((String) engine.eval("c$first[1]")).equals("bb");
+            assert ((Integer)engine.eval("c$second[2]")).equals(33);
+            
+
+        } catch (Rsession.RException ex) {
+            ex.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
 }

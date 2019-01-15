@@ -109,7 +109,7 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Get all expression in quote and replace them by variables to not
         // modify them in this function
-        quotesList = replaceQuotesByVariables(e);
+        quotesList = replaceQuotesByVariables(e, 1);
         
         // Get the expression with replaced quotes (it's the first element of
         // the returned list)
@@ -219,6 +219,12 @@ public class R2JsSession extends Rsession implements RLog {
         // replace write csv expression
         e = createWriteCSV(e);
         
+        // replace data.frame expression
+        e = createDataFrame(e);
+        
+        // replace list expression
+        e = createList(e);
+        
         // replace runif fct expression
         e = createRunif(e);
         
@@ -246,6 +252,10 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Finally replace "quotes variables" by their expressions associated
         e = replaceNameByQuotes(quotesList, e, false);
+        
+        // Replace '$' accessor of data.frame by a '.'
+        e = e.replaceAll("\\$" + JS_VARIABLE_STORAGE_OBJECT + ".", "\\$"); // Remove the JS variable if there is a '$' before
+        e = e.replaceAll("\\$", ".");
         
         System.out.println("FINAL RES: " + e);
         
@@ -282,9 +292,11 @@ public class R2JsSession extends Rsession implements RLog {
      *
      * @param expr
      *            - the expression with quotes
+     * @param startIndex
+     *            - the index i of the first "QUOTE_EXPRESSION_i" replacement
      * @return a list containing all quotes expression
      */
-    private static List<String> replaceQuotesByVariables(String expr) {
+    private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
         
         Pattern quotesPattern = Pattern.compile("(\'[^\']*\')");
         Matcher quotesMatcher = quotesPattern.matcher(expr);
@@ -292,7 +304,7 @@ public class R2JsSession extends Rsession implements RLog {
         List<String> quotesList = new ArrayList<>();
         quotesList.add(expr);
         StringBuffer sb = new StringBuffer();
-        int cmp = 1;
+        int cmp = startIndex;
         while (quotesMatcher.find()) {
             quotesList.add(quotesMatcher.group(1));
             quotesMatcher.appendReplacement(sb, "QUOTE_EXPRESSION_" + cmp);
@@ -545,6 +557,124 @@ public class R2JsSession extends Rsession implements RLog {
             
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "write.csv");
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Convert the R expression of data.frame to js object.
+     *
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createDataFrame(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "data.frame");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            
+            StringBuilder dataFrameSb = new StringBuilder();
+            dataFrameSb.append("{");
+            
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(key.equals(value))
+                    dataFrameSb.append("'");
+                dataFrameSb.append(key);
+                if(key.equals(value))
+                    dataFrameSb.append("'");
+                dataFrameSb.append(":");
+                dataFrameSb.append(value);
+                dataFrameSb.append(",");
+            }
+            
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
+
+            
+            // Replace the R matrix expression by the current matrix js
+            // expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(dataFrameSb.toString());
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            List<String> newQuoteList = replaceQuotesByVariables(result,quotesList.size());
+            result = newQuoteList.get(0);
+            for(int i=1; i<newQuoteList.size(); i++) {
+                quotesList.add(newQuoteList.get(i));
+            }
+            
+            // Search the next "array"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "data.frame");
+        }
+        
+        return result;
+    }
+    
+        /**
+     * Convert the R expression of list to js object.
+     *
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createList(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "list");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            
+            StringBuilder dataFrameSb = new StringBuilder();
+            dataFrameSb.append("{");
+            
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(key.equals(value))
+                    dataFrameSb.append("'");
+                dataFrameSb.append(key);
+                if(key.equals(value))
+                    dataFrameSb.append("'");
+                dataFrameSb.append(":");
+                dataFrameSb.append(value);
+                dataFrameSb.append(",");
+            }
+            
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
+
+            
+            // Replace the R matrix expression by the current matrix js
+            // expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(dataFrameSb.toString());
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            List<String> newQuoteList = replaceQuotesByVariables(result,quotesList.size());
+            result = newQuoteList.get(0);
+            for(int i=1; i<newQuoteList.size(); i++) {
+                quotesList.add(newQuoteList.get(i));
+            }
+            
+            // Search the next "array"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "list");
         }
         
         return result;
@@ -827,6 +957,8 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("save", Arrays.asList("list", "file", "ascii", "all.names", "pattern", "sorted"));
         argumentNamesByFunctions.put("load", Arrays.asList("file", "envir", "verbose"));
         argumentNamesByFunctions.put("write.csv", Arrays.asList("data", "file", "row.names", "col.names", "sep", "na"));
+        argumentNamesByFunctions.put("data.frame", new ArrayList<String>());
+        argumentNamesByFunctions.put("list", new ArrayList<String>());
         // TODO: implement rnorm
         // TODO: implement cbind
         
@@ -856,9 +988,11 @@ public class R2JsSession extends Rsession implements RLog {
                 }
                 
                 if (argumentName == null) {
-                    // If argument has no "name", we take the first of the list
-                    argumentName = argumentNamesList.get(0);
-                    argumentNamesList.remove(0);
+                    if(argumentNamesList.size()>0) {
+                        // If argument has no "name", we take the first of the list
+                        argumentName = argumentNamesList.get(0);
+                        argumentNamesList.remove(0);
+                    }
                 } else {
                     // Remove the current argument name from the list
                     boolean removed = argumentNamesList.remove(argumentName);
@@ -868,6 +1002,12 @@ public class R2JsSession extends Rsession implements RLog {
                 }
                 
                 argument = expr.substring(currentIndex, argumentEndIndex + 1);
+                
+                // If there is not argument name and the list argumentNamesList is empty, the argumentName is the name of argument
+                if(argumentName == null) {
+                    argumentName = argument;
+                }
+                
                 System.err.println("argumentName: " + argumentName);
                 System.err.println("argument: " + argument);
                 argumentNamesAndValues.put(argumentName, argument);
