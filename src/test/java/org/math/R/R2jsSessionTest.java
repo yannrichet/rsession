@@ -43,9 +43,8 @@ public class R2jsSessionTest {
             assert Boolean.parseBoolean( engine.eval("1>=1").toString()) == true;
             assert Boolean.parseBoolean( engine.eval("1<=2").toString()) == true;
             assert Boolean.parseBoolean( engine.eval("1<=1").toString()) == true;
-            // FIXME
-            //assert Boolean.parseBoolean( engine.eval("1==2").toString()) == false;
-            //assert Boolean.parseBoolean( engine.eval("d==d").toString()) == true;
+            assert Boolean.parseBoolean( engine.eval("1==2").toString()) == false;
+            assert Boolean.parseBoolean( engine.eval("1==1").toString()) == true;
             assert Boolean.parseBoolean( engine.eval("1!=2").toString()) == true;
             assert Boolean.parseBoolean( engine.eval("1!=1").toString()) == false;
             

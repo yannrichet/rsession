@@ -1208,9 +1208,15 @@ public class R2JsSession extends Rsession implements RLog {
         int exprLength = expr.length();
         while (equalIndex < exprLength) {
             
-            int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
-            String variableName = expr.substring(startIndex, equalIndex).trim();
-            R2JsSession.variablesList.add(variableName);
+            
+            if((equalIndex>0 && expr.charAt(equalIndex-1)!='=') || (equalIndex<exprLength-1 && expr.charAt(equalIndex+1)!='=')) {
+                // If it is a '==' we ignore it
+                equalIndex+=1;
+            } else {
+                int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
+                String variableName = expr.substring(startIndex, equalIndex).trim();
+                R2JsSession.variablesList.add(variableName);
+            }
             
             // Get the next '=' character which is not in a parenthesis or
             // bracket
