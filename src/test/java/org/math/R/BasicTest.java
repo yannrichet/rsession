@@ -352,8 +352,7 @@ public class BasicTest {
         r2jsSession.set("CC", CC);
         assert ((double[][]) r2jsSession.eval("CC"))[9][1] == CC[9][1];
         
-        // TODO: support and uncomment these lines
-        //assert ((double[]) r2jsSession.eval("CC[1,]")).length == CC[0].length;
+        assert ((double[]) r2jsSession.eval("CC[1,]")).length == CC[0].length;
 
         //System.err.println(r2jsSession.cat(r2jsSession.ls("C")));
         //assert r2jsSession.ls("C").length == 2 : "invalid ls(\"C\") : " + r2jsSession.cat(r2jsSession.ls("C"));
@@ -484,8 +483,8 @@ public class BasicTest {
         r2jsSession.load(f);
         assert r2jsSession.asString(r2jsSession.eval("s")).equals("abcd") : "bad restore of s";
 
-        //File fa = new File("R2Js" + Math.random() + ".all.save");
-        //assert !fa.exists() : "Already created save file !";
+        File fa = new File("R2Js" + Math.random() + ".all.save");
+        assert !fa.exists() : "Already created save file !";
         //r2jsSession.savels(fa, "*");
         //assert fa.exists() : "Failed to create save file !";
     }

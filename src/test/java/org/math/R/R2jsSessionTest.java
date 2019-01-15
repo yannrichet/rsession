@@ -5,8 +5,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.junit.Test;
 
@@ -26,44 +24,51 @@ public class R2jsSessionTest {
     @Test
     public void testBasicSyntaxes() {
         try {
-            assert (Integer) engine.eval("a = 1") == 1; // should be voidEval instead
-            assert (Integer) engine.eval("a <- 1")  == 1; // should be voidEval instead
+            engine.voidEval("a = 1");
+            assert (Integer) engine.eval("a")  == 1;
+            engine.voidEval("a <- 1");
             assert (Integer) engine.eval("a")  == 1;
             assert (Double) engine.eval("a+1") == 2;
             assertEquals((Double)engine.eval("a+pi"),(1+Math.PI),epsilon);
-            assert (Integer)engine.eval("b <- (1)") == 1; // should be voidEval instead
+            engine.eval("b <- (1)");
+            assert (Integer) engine.eval("b")  == 1;
             
-            assert Double.parseDouble( engine.eval("c = 2 ^ 3").toString()) == 8;
-            assert Double.parseDouble( engine.eval("c=2^3").toString())== 8;
-            assert Double.parseDouble( engine.eval("c=2**3").toString())== 8;
-            assert Double.parseDouble( engine.eval("d = 2 ** 3").toString())== 8;
-            assert Boolean.parseBoolean( engine.eval("e=1>2").toString())== false;
-            assert Boolean.parseBoolean( engine.eval("e=d>d").toString()) == false;
-            assert Boolean.parseBoolean( engine.eval("e=1>=2").toString()) == false;
-            assert Boolean.parseBoolean( engine.eval("e=d>=d").toString()) == true;
-            assert Boolean.parseBoolean( engine.eval("e=1<=2").toString()) == true;
-            assert Boolean.parseBoolean( engine.eval("e=d<=d").toString()) == true;
+            assert Double.parseDouble( engine.eval("2 ^ 3").toString()) == 8;
+            assert Double.parseDouble( engine.eval("2^3").toString())== 8;
+            assert Double.parseDouble( engine.eval("2**3").toString())== 8;
+            assert Double.parseDouble( engine.eval("2 ** 3").toString())== 8;
+            assert Boolean.parseBoolean( engine.eval("1>2").toString())== false;
+            assert Boolean.parseBoolean( engine.eval("1>1").toString()) == false;
+            assert Boolean.parseBoolean( engine.eval("1>=2").toString()) == false;
+            assert Boolean.parseBoolean( engine.eval("1>=1").toString()) == true;
+            assert Boolean.parseBoolean( engine.eval("1<=2").toString()) == true;
+            assert Boolean.parseBoolean( engine.eval("1<=1").toString()) == true;
             // FIXME
-            //assert Boolean.parseBoolean( engine.eval("e=1==2").toString()) == false;
-            //assert Boolean.parseBoolean( engine.eval("e=d==d").toString()) == true;
-            assert Boolean.parseBoolean( engine.eval("e=1!=2").toString()) == true;
-            assert Boolean.parseBoolean( engine.eval("e=d!=d").toString()) == false;
+            //assert Boolean.parseBoolean( engine.eval("1==2").toString()) == false;
+            //assert Boolean.parseBoolean( engine.eval("d==d").toString()) == true;
+            assert Boolean.parseBoolean( engine.eval("1!=2").toString()) == true;
+            assert Boolean.parseBoolean( engine.eval("1!=1").toString()) == false;
             
             // Operators
-            System.err.println(engine.eval("a = -4 * 10 -5* 100")); // should be voidEval instead
+            engine.voidEval("a = -4 * 10 -5* 100");
             assert (Double)engine.eval("a") == -540;
 
-            System.err.println(engine.eval("a =-4*10-5*100")); // should be voidEval instead
+            engine.voidEval("a = -4*10-5*100");
             assert (Double)engine.eval("a") == -540;
 
-            System.err.println(engine.eval("a = (-4 * 10) +(-5* 100)")); // should be voidEval instead
+            engine.voidEval("a = (-4 * 10) +(-5* 100)");
             assert (Double)engine.eval("a") == -540;
 
-            System.err.println(engine.eval("a = -4 * -10 -5*-100 + 18 * (-5*(3+9))")); // should be voidEval instead
+            engine.voidEval("a = -4 * -10 -5*-100 + 18 * (-5*(3+9))");
             assert (Double)engine.eval("a") == -540;
 
-            System.err.println(engine.eval("a = (3 - 5) * (-6 + 5) / 2 ")); // should be voidEval instead
+            engine.voidEval("a = (3 - 5) * (-6 + 5) / 2 ");
             assert (Double)engine.eval("a") == 1;
+            
+            assertEquals((Double) engine.eval("(5*6+12/15)/48*56+(5)-48"),(5.*6.+12./15.)/48.*56.+(5.)-48.,epsilon);
+            assertEquals((Double) engine.eval("4-6-5+-7+(-5)-(-48+4)-(+56)"),4-6-5+-7+(-5)-(-48+4)-(+56), epsilon);
+            assertEquals((Double) engine.eval("45.*0.2/-65.5*45.+(45.-5.*7.)*(+8.-4.-(-1.)+(-1.))/1.2/41./-5.*12.*0.1+4.*(48.+1.2/4.)/4."),45.*0.2/-65.5*45.+(45.-5.*7.)*(+8.-4.-(-1.)+(-1.))/1.2/41./-5.*12.*0.1+4.*(48.+1.2/4.)/4., epsilon);
+            
         
         } catch (Exception e) {
             e.printStackTrace();
@@ -173,20 +178,20 @@ public class R2jsSessionTest {
             assert (Double) engine.eval("recur_factorial(3)") == 6;
             assert (Double) engine.eval("recur_factorial(5)") == 120;
 
-            // engine.eval(R2MathjsSession.R2js("g<-function(x){1+x;};\nh<-function(x){1-x;};"));
-            //assert Double.parseDouble( engine.eval(" g(1)").toString()) == 2;
-            //assert Double.parseDouble( engine.eval("h(1)").toString()) == 0;
+            // FIXME: multiple function in one line don't work
+            //engine.eval("g<-function(x){1+x;};\nh<-function(x){1-x;};");
+            //assert (Double) engine.eval(" g(1)") == 2;
+            //assert (Double) engine.eval("h(1)") == 0;
             //			
             //engine.eval(R2MathjsSession.R2js("fahrenheit_to_kelvin <- function(temp_F) {\n   temp_K <- ((temp_F - 32) * (5 / 9)) + 273.15\n   return(temp_K)\n };\n kelvin_to_celsius <- function(temp_K) {\n temp_C <- temp_K - 273.15\n   return(temp_C)\n };\n fahrenheit_to_celsius <- function(temp_F) {\n   temp_K <- fahrenheit_to_kelvin(temp_F)\n   temp_C <- kelvin_to_celsius(temp_K)\n   return(temp_C)\n };\n"));
             //assert Double.parseDouble( engine.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
             //assert Double.parseDouble( engine.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
             //assert Double.parseDouble( engine.eval("kelvin_to_celsius(0)").toString()) == -273.15;
-            
-            // FIXME: this test bug because: multiplication should have the priority on addition  
-            // engine.eval(R2MathjsSession.R2js("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }"));
-            // assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(1, TRUE, TRUE)")).toString()) == 3401;
-            // assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(3)")).toString()) == 3403;
-            // assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(3, FALSE, FALSE)")).toString()) == -1197;
+
+            engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
+            assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
+            assert (Double) engine.eval("f(3)") == 3403;
+            assert (Double) engine.eval("f(3, FALSE, FALSE)") == -1197;
 
         
         } catch (Exception e) {
@@ -232,13 +237,16 @@ public class R2jsSessionTest {
             assert Arrays.equals((double[]) engine.eval("d"), new double[]{0.5,2,1.5});
 
             // Substraction
-            System.err.println(engine.eval("e <- a-b")); // should be voidEval instead
-            // TODO: pass this test
-            //assert Arrays.equals((double[]) engine.eval("e"), new double[]{-1,1,1});
+            double[] e = (double[])engine.eval("e <- a-b");
+            assert Arrays.equals((double[]) engine.eval("e"), new double[]{-1,1,1});
 
             // Addition
             engine.voidEval("f <- a+b");
             assert Arrays.equals((double[]) engine.eval("f"), new double[]{3,3,5});
+            
+            // Multiplication and substraction
+            engine.voidEval("f <- a*b-b");
+            assert Arrays.equals((double[]) engine.eval("f"), new double[]{0,1,4});
 
             // TODO  multiplication and division '%*%'
             //System.err.println(engine.eval(R2MathjsSession.R2js("bt <- t(b)")));
@@ -309,6 +317,18 @@ public class R2jsSessionTest {
 
             engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
             assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2,1},{4,5},{3,7}});
+            
+            engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=2, ncol=3, byrow=TRUE)");
+            engine.voidEval("B = matrix( c(1, 2, 3, 4, 5, 6), nrow=2, ncol=3, byrow=TRUE)");
+            engine.voidEval("C = A + B");
+            assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{3,6,6},{5,10,13}});
+            
+            
+            engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=2, ncol=3, byrow=TRUE)");
+            engine.voidEval("B = matrix( c(1, 2, 3, 4, 5, 6), nrow=2, ncol=3, byrow=TRUE)");
+            engine.voidEval("D = A - B");
+            assert Arrays.deepEquals((double[][]) engine.eval("D"), new double[][]{{1,2,0},{-3,0,1}});
+            
             
         } catch (Exception e) {
             e.printStackTrace();
