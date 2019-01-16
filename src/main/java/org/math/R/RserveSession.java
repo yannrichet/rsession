@@ -43,7 +43,7 @@ public class RserveSession extends Rsession implements RLog {
     public RserverConf RserveConf;
     public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
-    
+
     // <editor-fold defaultstate="collapsed" desc="Conveniency static String methods">
     public static String cat(RList list) {
         if (list == null || list.names == null) {
@@ -173,7 +173,7 @@ public class RserveSession extends Rsession implements RLog {
         }
 
         setenv(RserveConf.properties);
-        
+
         install_packages_moreargs = ",lib='" + RserveDaemon.app_dir() + "'";
     }
 
@@ -352,7 +352,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return succeeded ?
      */
     @Override
-    public boolean silentlyVoidEval(String expression, boolean tryEval) {
+    protected boolean silentlyVoidEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
@@ -446,7 +446,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return REXP R expression
      */
     @Override
-    public REXP silentlyRawEval(String expression, boolean tryEval) {
+    protected REXP silentlyRawEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
@@ -558,7 +558,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param names names of columns
      * @return RList object
      */
-    public static RList buildRList(double[][] data, String... names) {
+    private static RList buildRList(double[][] data, String... names) {
         if (data == null) {
             if (names == null) {
                 return null;
@@ -576,10 +576,14 @@ public class RserveSession extends Rsession implements RLog {
         for (int i = 0; i < names.length; i++) {
             double[] coli = new double[data.length];
             for (int j = 0; j < coli.length; j++) {
-                if (data[j].length > i) {
-                    coli[j] = data[j][i];
-                } else {
+                if (data[j] == null) {
                     coli[j] = Double.NaN;
+                } else {
+                    if (data[j].length > i) {
+                        coli[j] = data[j][i];
+                    } else {
+                        coli[j] = Double.NaN;
+                    }
                 }
             }
             vals[i] = new REXPDouble(coli);
@@ -594,8 +598,29 @@ public class RserveSession extends Rsession implements RLog {
      * @param names names of columns
      * @return RList object
      */
-    public static RList buildRList(List<double[]> coldata, String... names) {
+    private static RList buildRList(List<double[]> coldata, String... names) {
         return buildRList(coldata.toArray(new double[coldata.size()][]), names);
+    }
+
+    protected static String toRcode(RList l) {
+        String sl = "list(";
+        for (String k : l.keys()) {
+            if (l.get(k) instanceof REXPDouble) {
+                REXPDouble v = (REXPDouble) l.get(k);
+                sl = sl + k + "=" + toRcode(v.asDoubles()) + ",";
+            } else {
+                sl = sl + k + "=" + l.get(k).toString() + ",";
+            }
+        }
+        return sl.substring(0, sl.length() - 2) + ")";
+    }
+
+    protected static String toRcode(Object o) {
+        if (o instanceof RList) {
+            return toRcode((RList) o);
+        } else {
+            return Rsession.toRcode(o);
+        }
     }
 
     /**
@@ -608,7 +633,14 @@ public class RserveSession extends Rsession implements RLog {
      */
     @Override
     public boolean set(String varname, double[][] data, String... names) {
+        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
+        note_code("names(" + varname + ") <- " + toRcode(names));
+        note_code(varname + " <- data.frame(" + varname + ")");
+
+        System.err.println("data: "+data.length+"/"+data[0].length);
+        
         RList list = buildRList(data, names);
+        System.err.println("list "+list);
         log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
             synchronized (R) {
@@ -636,6 +668,8 @@ public class RserveSession extends Rsession implements RLog {
      */
     @Override
     public boolean set(String varname, Object var) throws RException {
+        note_code(varname + " <- " + toRcode(var));
+
         //assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized. Please make sure that R.init() method was called first.", Level.ERROR);
@@ -1319,6 +1353,7 @@ public class RserveSession extends Rsession implements RLog {
             }
         }
 
+        note_code("file.copy(from='" + localfile + "',to='" + remoteFile + "') # Rserve.putFile");
         InputStream is = null;
         OutputStream os = null;
         synchronized (R) {
@@ -1344,7 +1379,7 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param remoteFile filename to delete
      */
-    public void deleteFile(String remoteFile) {
+    private void deleteFile(String remoteFile) {
         try {
             synchronized (R) {
                 R.removeFile(remoteFile);
@@ -1470,5 +1505,7 @@ public class RserveSession extends Rsession implements RLog {
         }
 
         R.close();
+
+        System.out.println(R.notebook());
     }
 }

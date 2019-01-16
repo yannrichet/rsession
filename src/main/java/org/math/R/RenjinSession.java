@@ -315,8 +315,11 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public boolean set(String varname, double[][] data, String... names) {
-        if (data == null) {
+        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
+        note_code("names(" + varname + ") <- " + toRcode(names));
+        note_code(varname + " <- data.frame(" + varname + ")");
 
+        if (data == null) {
             if (names == null) {
                 return false;
             }
@@ -340,7 +343,6 @@ public class RenjinSession extends Rsession implements RLog {
             return true;
 
         } else {
-
             DoubleVector[] d = new DoubleVector[data[0].length];
             for (int i = 0; i < d.length; i++) {
                 d[i] = new DoubleArrayVector(DoubleArray.getColumnCopy(data, i));
@@ -365,6 +367,8 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public boolean set(String varname, Object var) {
+        note_code(varname + " <- " + toRcode(var));
+
         if (var instanceof double[][]) {
             double[][] dd = (double[][]) var;
             double[] d = reshapeAsRow(dd);
@@ -712,19 +716,6 @@ public class RenjinSession extends Rsession implements RLog {
         //throw new ClassCastException("Cannot cast to ? " + s + " (" + s.getTypeName() + ")");
     }
 
-    protected Context topLevelContext = Context.newTopLevelContext();
-
-    @Override
-    public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
-//        ListVector.NamedBuilder b = ListVector.newNamedBuilder();
-//        b.add("filename", f.getAbsolutePath());
-//        b.add("format", fileformat);
-//
-//        FileDevice driver = new FileDevice(R.getSession(), b.build());
-//        driver.open(width, height);
-        super.toGraphic(f, width, height, fileformat, commands);
-    }
-
     /**
      * Get R command text output
      *
@@ -736,6 +727,7 @@ public class RenjinSession extends Rsession implements RLog {
         try {
             PrintWriter p = R.getSession().getStdOut();
             R.getSession().setStdOut(new PrintWriter(w));
+            note_code("print(" + command + ")");
             silentlyRawEval("print(" + command + ")");
             R.getSession().setStdOut(p);
             return w.toString();//.substring(l);
@@ -800,5 +792,7 @@ public class RenjinSession extends Rsession implements RLog {
         }
 
         R.close();
+
+        System.out.println(R.notebook());
     }
 }
