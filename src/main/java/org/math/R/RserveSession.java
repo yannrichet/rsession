@@ -637,10 +637,7 @@ public class RserveSession extends Rsession implements RLog {
         note_code("names(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
 
-        System.err.println("data: "+data.length+"/"+data[0].length);
-        
         RList list = buildRList(data, names);
-        System.err.println("list "+list);
         log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
             synchronized (R) {
