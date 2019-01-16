@@ -328,10 +328,18 @@ public class R2jsSessionTest {
             engine.voidEval("D = A - B");
             assert Arrays.deepEquals((double[][]) engine.eval("D"), new double[][]{{1,2,0},{-3,0,1}});
             
+            // Test determinant
             engine.voidEval("A = matrix( c(1,2,3,-4,-5,6,-2,-5,-1), nrow=3, ncol=3, byrow=TRUE)");
             assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{1,2,3},{-4,-5,6}, {-2,-5,-1}});
             engine.voidEval("b = determinant(A)");
             assert ((Double) engine.eval("b")) == 33.;
+            
+            // Test solve
+            engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(-2, 3, 2, 1), byrow=TRUE)");
+            engine.voidEval("B <- matrix(nrow = 2, ncol = 1, data = c(11,9), byrow=TRUE)");
+            engine.voidEval("X <- solve(A, B)");
+            assert Arrays.deepEquals((double[][]) engine.eval("X"), new double[][]{{2},{5}});
+            assert Arrays.deepEquals((double[][]) engine.eval("A %*% X - B"), new double[][]{{0},{0}});
             
             
         } catch (Exception e) {

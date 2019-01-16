@@ -115,6 +115,9 @@ public class R2JsSession extends Rsession implements RLog {
         // the returned list)
         e = quotesList.get(0);
         
+        // Remove '+' at begining
+        e = e.replaceAll("^ *\\+", "");
+        
         // Replace Math functions
         for (String f : MATH_FUN_js) {
             e = e.replaceAll("(\\b)" + f + "\\(", "$1 math." + f + "(");
@@ -130,6 +133,9 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Replace determinant(x) by math.det(x)
         e = e.replaceAll("([^a-zA-Z\\d:])determinant\\(", "$1math.det(");
+        
+        // Replace solve(A,B) by math.lusolve(A,B)
+        e = e.replaceAll("([^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
         
         // replace '->' by '='
         e = e.replaceAll("<-", "=");
@@ -1160,6 +1166,7 @@ public class R2JsSession extends Rsession implements RLog {
                         expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
                         expr = expr.replaceAll("\\+ +\\+", "+");
                         expr = expr.replaceAll("\\- +\\+", "-");
+                        expr = expr.replaceAll("^ *\\+", "");
                         
                         // Decrement i to be sure to not miss an operator
                         i = startingIndex - 1;
