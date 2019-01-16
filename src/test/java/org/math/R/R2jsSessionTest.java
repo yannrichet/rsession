@@ -341,6 +341,12 @@ public class R2jsSessionTest {
             assert Arrays.deepEquals((double[][]) engine.eval("X"), new double[][]{{2},{5}});
             assert Arrays.deepEquals((double[][]) engine.eval("A %*% X - B"), new double[][]{{0},{0}});
             
+            // Test dim
+            engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(-2, 3, 2, 1), byrow=TRUE)");
+            engine.voidEval("B <- matrix(nrow = 2, ncol = 1, data = c(11,9), byrow=TRUE)");
+            assert Arrays.equals((double[]) engine.eval("dim(A)"), new double[]{2,2});
+            assert Arrays.equals((double[]) engine.eval(" dim(B)"), new double[]{2,1});
+            
             
         } catch (Exception e) {
             e.printStackTrace();

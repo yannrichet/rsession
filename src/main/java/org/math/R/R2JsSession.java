@@ -129,13 +129,16 @@ public class R2JsSession extends Rsession implements RLog {
         }
         
         // Replace t(x) by math.transpose(x)
-        e = e.replaceAll("([^a-zA-Z\\d:])t\\(", "$1math.transpose(");
+        e = e.replaceAll("(^|[^a-zA-Z\\d:])t\\(", "$1math.transpose(");
         
         // Replace determinant(x) by math.det(x)
-        e = e.replaceAll("([^a-zA-Z\\d:])determinant\\(", "$1math.det(");
+        e = e.replaceAll("(^|[^a-zA-Z\\d:])determinant\\(", "$1math.det(");
         
         // Replace solve(A,B) by math.lusolve(A,B)
-        e = e.replaceAll("([^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
+        e = e.replaceAll("(^|[^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
+        
+        // Replace dim(A) by math.size(A)
+        e = e.replaceAll("(^|[^a-zA-Z\\d:])dim\\(", "$1math.size(");
         
         // replace '->' by '='
         e = e.replaceAll("<-", "=");
@@ -245,13 +248,6 @@ public class R2JsSession extends Rsession implements RLog {
         
         // replace load fct expression
         e = createLoadFunction(e);
-        
-        
-        // Replace list by javascript object/map
-        // TODO
-        
-        // Replace data.frames
-        // TODO
         
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
