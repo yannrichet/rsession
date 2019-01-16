@@ -328,6 +328,11 @@ public class R2jsSessionTest {
             engine.voidEval("D = A - B");
             assert Arrays.deepEquals((double[][]) engine.eval("D"), new double[][]{{1,2,0},{-3,0,1}});
             
+            engine.voidEval("A = matrix( c(1,2,3,-4,-5,6,-2,-5,-1), nrow=3, ncol=3, byrow=TRUE)");
+            assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{1,2,3},{-4,-5,6}, {-2,-5,-1}});
+            engine.voidEval("b = determinant(A)");
+            assert ((Double) engine.eval("b")) == 33.;
+            
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -434,6 +439,12 @@ public class R2jsSessionTest {
             assertTrue(Arrays.equals((String[]) engine.eval("e3$third3") ,new String[]{"false","true","false"}));
             assert ((String) engine.eval("e3$first2[1]")).equals("bb");
             assert !(boolean)engine.eval("e3$third3[2]");
+            
+            // Change value in a dataframe
+            engine.voidEval("e3$first2[0]='hello'");
+            assertTrue(Arrays.equals((String[]) engine.eval("e3$first2") ,new String[]{"hello","bb","cc"}));
+            engine.voidEval("e3$third3[2]=TRUE");
+            assert (boolean)engine.eval("e3$third3[2]");
             
             // Test data.frame without column name
             engine.voidEval("first = c('aa','bb','cc')");

@@ -128,6 +128,9 @@ public class R2JsSession extends Rsession implements RLog {
         // Replace t(x) by math.transpose(x)
         e = e.replaceAll("([^a-zA-Z\\d:])t\\(", "$1math.transpose(");
         
+        // Replace determinant(x) by math.det(x)
+        e = e.replaceAll("([^a-zA-Z\\d:])determinant\\(", "$1math.det(");
+        
         // replace '->' by '='
         e = e.replaceAll("<-", "=");
         
