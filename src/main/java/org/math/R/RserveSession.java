@@ -570,7 +570,9 @@ public class RserveSession extends Rsession implements RLog {
             return new RList(nulls, names);
         }
 
-        assert data[0].length == names.length : "Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names);
+        if (data[0].length != 0 && data[0].length != names.length) {
+            throw new IllegalArgumentException("Cannot build R list from " + Arrays.deepToString(data) + " & " + Arrays.toString(names));
+        }
         REXP[] vals = new REXP[names.length];
 
         for (int i = 0; i < names.length; i++) {
