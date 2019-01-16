@@ -1482,6 +1482,11 @@ public class R2JsSession extends Rsession implements RLog {
     // FIXME: for the moment names are not added to the data array
     @Override
     public boolean set(String varname, double[][] data, String... names) throws RException {
+        
+        note_code(varname + " <- " + (data==null?"list()":toRcode(data)));
+        note_code("names(" + varname + ") <- " + toRcode(names));
+        note_code(varname + " <- data.frame(" + varname + ")");
+        
         // RList list = buildRList(data, names);
         // log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
@@ -1511,6 +1516,8 @@ public class R2JsSession extends Rsession implements RLog {
     @Override
     public boolean set(String varname, Object var) {
 
+        note_code(varname + " <- " + toRcode(var));
+        
         try {
             synchronized (engine) {
                 engine.put(varname, var);

@@ -12,3 +12,5 @@ target
 *.Rout
 *.sav*
 *.png
+*.Rdata
+*.out

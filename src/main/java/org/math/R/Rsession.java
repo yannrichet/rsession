@@ -3,7 +3,10 @@ package org.math.R;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -378,6 +381,132 @@ public abstract class Rsession implements RLog {
             }
         }
 
+    }
+
+    String hostname() {
+        String hostname = "?";
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "?";
+        }
+        return hostname;
+    }
+
+    String nb_header = "---\n"
+            + "title: '" + this.getClass().getName() + " notebook'\n"
+            + "date: '" + Calendar.getInstance().getTime().toString() + "'\n"
+            + "author: '" + System.getProperty("user.name") + "'\n"
+            + "host: '" + hostname() + "'\n"
+            + "output: html_notebook\n"
+            + "---\n\n";
+
+    public void note_header(String title, String author) {
+        nb_header = "---\n"
+                + "title: '" + title + "'\n"
+                + "date: '" + Calendar.getInstance().getTime().toString() + "'\n"
+                + "author: '" + author + "'\n"
+                + "host: '" + hostname() + "'\n"
+                + "output: html_notebook\n"
+                + "---\n\n";
+    }
+
+    StringBuilder nb = new StringBuilder();
+
+    public void note_text(String txt) {
+        nb.append(txt).append("\n");
+    }
+
+    public void note_code(String... code) {
+        StringBuilder codes = new StringBuilder();
+        for (String c : code) {
+            codes.append(c + "\n");
+        }
+        note_code(codes.toString());
+    }
+
+    public void note_code(String code) {
+        nb.append("```{r}\n").append(code).append("\n```\n");
+    }
+
+    protected static String toRcode(Object o) {
+        if (o instanceof double[]) {
+            return toRcode((double[]) o);
+        } else if (o instanceof double[][]) {
+            return toRcode((double[][]) o);
+        } else if (o instanceof Double[]) {
+            return toRcode((Double[]) o);
+        } else if (o instanceof Double[][]) {
+            return toRcode((Double[][]) o);
+        } else if (o instanceof String[]) {
+            return toRcode((String[]) o);
+        } else if (o instanceof String) {
+            return "'" + o + "'";
+        } else if (o instanceof Integer) {
+            return o.toString();
+        } else if (o instanceof Double) {
+            return o.toString();
+        } else if (o instanceof File) {
+            return toRcode(((File) o).getName());
+        }
+        return "stop('Cannot code in R object:" + o + "')";
+    }
+
+    protected static String toRcode(double[] d) {
+        String ds = "c( ";
+        for (double e : d) {
+            ds = ds + e + ",";
+        }
+        return ds.substring(0, ds.length() - 1) + ")";
+    }
+
+    protected static String toRcode(Double[] d) {
+        String ds = "c( ";
+        for (double e : d) {
+            ds = ds + e + ",";
+        }
+        return ds.substring(0, ds.length() - 1) + ")";
+    }
+
+    protected static String toRcode(double[][] d) {
+        String ds = "rbind( ";
+        for (double[] e : d) {
+            ds = ds + toRcode(e) + ",";
+        }
+        return ds.substring(0, ds.length() - 1) + ")";
+    }
+
+    protected static String toRcode(Double[][] d) {
+        String ds = "rbind( ";
+        for (Double[] e : d) {
+            ds = ds + toRcode(e) + ",";
+        }
+        return ds.substring(0, ds.length() - 1) + ")";
+    }
+
+    protected static String toRcode(String[] d) {
+        String ds = "c( ";
+        for (String e : d) {
+            ds = ds + "'" + e + "',";
+        }
+        return ds.substring(0, ds.length() - 1) + ")";
+    }
+
+    protected static String toRcode(Map l) {
+        String sl = "list(";
+        for (Object k : l.keySet()) {
+            if (l.get(k) instanceof double[]) {
+                double[] v = (double[]) l.get(k);
+                sl = sl + k + "=" + toRcode(v) + ",";
+            } else {
+                sl = sl + k + "=" + l.get(k) + ",";
+            }
+        }
+        return sl.substring(0, sl.length() - 1) + ")";
+    }
+
+    public String notebook() {
+        return nb_header.toString() + "\n" + nb.toString().replace("```\n```{r}\n", "");
     }
 
     @Override
@@ -790,6 +919,7 @@ public abstract class Rsession implements RLog {
      */
     protected Object rawEval(String expression, boolean tryEval) {
         log(HEAD_EVAL + (tryEval ? HEAD_TRY : "") + expression, Level.INFO);
+        note_code(expression);
 
         Object e = silentlyRawEval(expression, tryEval);
 
@@ -825,9 +955,11 @@ public abstract class Rsession implements RLog {
      */
     public boolean voidEval(String expression, boolean tryEval) throws RException {
         log(HEAD_EVAL + (tryEval ? HEAD_TRY : " ") + expression, Level.INFO);
+        note_code(expression);
 
         boolean done = silentlyVoidEval(expression, tryEval);
         if (!done) {
+            note_text("Failed to evaluate " + expression);
             throw new RException("Failed to evaluate " + expression);
         }
 
@@ -1321,6 +1453,7 @@ public abstract class Rsession implements RLog {
         }
         silentlyRawEval(fileformat + "(plotfile_" + h + ", width=" + width + ", height=" + height + ")");
         for (String command : commands) {
+            note_code(command);
             silentlyVoidEval(command);
         }
         silentlyRawEval("dev.off()");
@@ -1377,6 +1510,7 @@ public abstract class Rsession implements RLog {
             return ret;
         }
         int h = Math.abs(command.hashCode());
+        note_code("HTML(" + command + ")");
         silentlyRawEval("HTML(file=\"htmlfile_" + h + "\", " + command + ")");
         String[] lines = null;
         try {
@@ -1438,6 +1572,7 @@ public abstract class Rsession implements RLog {
      */
     public String print(String command) {
         try {
+            note_code("print(" + command + ")");
             String s = asString(silentlyRawEval("paste(capture.output(print(" + command + ")),collapse='\\n')"));
             return s;
         } catch (Exception ex) {
@@ -1468,8 +1603,9 @@ public abstract class Rsession implements RLog {
         }
 
         try {
+            double d = Double.parseDouble(expression);
             log(HEAD_CACHE + "No evaluation needed for " + expression, Level.INFO);
-            return Double.parseDouble(expression);
+            return d;
         } catch (NumberFormatException ne) {
 
             if (!uses(expression, vars) && noVarsEvals.containsKey(expression)) {
