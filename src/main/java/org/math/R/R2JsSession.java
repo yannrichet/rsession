@@ -249,6 +249,12 @@ public class R2JsSession extends Rsession implements RLog {
         // replace load fct expression
         e = createLoadFunction(e);
         
+        // replace rbind fct expression
+        e = createRbindFunction(e);
+        
+        // replace rbind fct expression
+        e = createCbindFunction(e);
+        
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
         
@@ -941,6 +947,93 @@ public class R2JsSession extends Rsession implements RLog {
     
     
     /**
+     * This function replaces the R function rbind by JS equivalent with "math.concat()" 
+     * function from library mathjs.
+     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createRbindFunction(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "rbind");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder rbindSb = new StringBuilder();
+            
+            rbindSb.append("math.concat(");
+            rbindSb.append(values);
+            rbindSb.append(",0)");
+            
+            // Replace the R rbind expression by js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(rbindSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "rbind" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "rbind");
+        }
+        
+        return result;
+    }
+    
+    
+    /**
+     * This function replaces the R function cbind by JS equivalent with "math.concat()" 
+     * function from library mathjs.
+     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createCbindFunction(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "cbind");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder rbindSb = new StringBuilder();
+            
+            rbindSb.append("math.concat(");
+            rbindSb.append(values);
+            rbindSb.append(")");
+            
+            // Replace the R cbind expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(rbindSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "cbind" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "cbind");
+        }
+        
+        return result;
+    }
+    
+    /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
      * of "fctName" in the "expr" and return a DTO containing all these informations.
      * If an argument field is not informed, a default field will be affected.
@@ -964,8 +1057,9 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("write.csv", Arrays.asList("data", "file", "row.names", "col.names", "sep", "na"));
         argumentNamesByFunctions.put("data.frame", new ArrayList<String>());
         argumentNamesByFunctions.put("list", new ArrayList<String>());
+        argumentNamesByFunctions.put("cbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
+        argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         // TODO: implement rnorm
-        // TODO: implement cbind
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
@@ -996,7 +1090,9 @@ public class R2JsSession extends Rsession implements RLog {
                     if(argumentNamesList.size()>0) {
                         // If argument has no "name", we take the first of the list
                         argumentName = argumentNamesList.get(0);
-                        argumentNamesList.remove(0);
+                        // And we remove it from the list unless the name is "default"
+                        if(!argumentName.equals("default"))
+                            argumentNamesList.remove(0);
                     }
                 } else {
                     // Remove the current argument name from the list
@@ -1015,7 +1111,12 @@ public class R2JsSession extends Rsession implements RLog {
                 
                 System.err.println("argumentName: " + argumentName);
                 System.err.println("argument: " + argument);
-                argumentNamesAndValues.put(argumentName, argument);
+                // If the map already contains the argumentName, we add the new argument after and separated with comma
+                if(argumentNamesAndValues.containsKey(argumentName)){
+                    argumentNamesAndValues.put(argumentName, argumentNamesAndValues.get(argumentName) + "," + argument);
+                } else {
+                    argumentNamesAndValues.put(argumentName, argument);
+                }
                 
                 currentIndex = argumentEndIndex + 2;
             }

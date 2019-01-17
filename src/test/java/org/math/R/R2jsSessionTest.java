@@ -355,6 +355,34 @@ public class R2jsSessionTest {
     }
     
     @Test
+    public void testRbind() {
+        try {
+            engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
+            engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
+            engine.voidEval("C = rbind(A,B)");
+            assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1,2},{5,6},{3,4},{7,8}});
+        
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
+    @Test
+    public void testCbind() {
+        try {
+            engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
+            engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
+            engine.voidEval("C = cbind(A,B)");
+            assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1,2,3,4},{5,6,7,8}});
+        
+        } catch (Exception e) {
+            e.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
+    @Test
     public void testSaveAndLoad() {
         try {
             double rand = (double) Math.random();
