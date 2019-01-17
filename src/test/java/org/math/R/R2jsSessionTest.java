@@ -48,6 +48,16 @@ public class R2jsSessionTest {
             assert Boolean.parseBoolean( engine.eval("1!=2").toString()) == true;
             assert Boolean.parseBoolean( engine.eval("1!=1").toString()) == false;
             
+            // '++' operator
+            engine.voidEval("a <- 1");
+            engine.voidEval("a++");
+            assert ((Double)engine.eval("a") == 2);
+            
+            // '+=' operator
+            engine.voidEval("a <- 1");
+            engine.voidEval("a+=3");
+            assert ((Double)engine.eval("a") == 4);
+            
             // Operators
             engine.voidEval("a = -4 * 10 -5* 100");
             assert (Double)engine.eval("a") == -540;

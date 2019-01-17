@@ -182,8 +182,7 @@ public class R2JsSession extends Rsession implements RLog {
         // Replace array indexing
         e = replaceIndexes(e);
         
-        // replace the array in R defined by c(1, 2, ...) by array in js [1, 2,
-        // ...]
+        // replace the array in R defined by c(1, 2, ...) by array in js [1, 2, ...]
         // FIXME: this will not work with c(a(2), b) because of parenthesis (maybe treat c like other functions?)
         e = e.replaceAll("c[(]([.[^):]]*)[)]", "[$1]");
         e = e.replaceAll("c[(]([.[^)]]*)[)]", "$1");
@@ -199,8 +198,13 @@ public class R2JsSession extends Rsession implements RLog {
         e = e.replaceAll("TRUE", "true");
         e = e.replaceAll("FALSE", "false");
         
+        // Replace '++' operator by a=a+1
+        e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1"); 
         
-        // FIXME this doesn't support ++ and += ...
+        // Replace '+=' operator by a=a+x
+        e = e.replaceAll("([^ ]+) *\\+\\=", "$1=$1+");
+        
+        // FIXME this doesn't support += ...
         // Replace operators (+, -, *, /, ...)
         e = replaceOperators(e);
         
@@ -942,8 +946,7 @@ public class R2JsSession extends Rsession implements RLog {
             result = sb.toString();
             
             // Search the next "load"
-            rFunctionArgumentsDTO = null; // TODO
-            //rFunctionArgumentsDTO = getFunctionArguments(result, "load");
+            rFunctionArgumentsDTO = getFunctionArguments(result, "load");
         }
         
         return result;
@@ -1107,7 +1110,6 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("cbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
-        // TODO: implement rnorm
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
@@ -1115,7 +1117,7 @@ public class R2JsSession extends Rsession implements RLog {
         
         Map<String, String> argumentNamesAndValues = new HashMap<>();
         
-        Pattern pattern = Pattern.compile("(\\b)" + fctName);
+        Pattern pattern = Pattern.compile("(\\b)" + fctName + "\\(");
         Matcher matcher = pattern.matcher(expr);
         
         // If an occurrence has been found
@@ -1157,8 +1159,6 @@ public class R2JsSession extends Rsession implements RLog {
                     argumentName = argument;
                 }
                 
-                System.err.println("argumentName: " + argumentName);
-                System.err.println("argument: " + argument);
                 // If the map already contains the argumentName, we add the new argument after and separated with comma
                 if(argumentNamesAndValues.containsKey(argumentName)){
                     argumentNamesAndValues.put(argumentName, argumentNamesAndValues.get(argumentName) + "," + argument);
@@ -1189,13 +1189,8 @@ public class R2JsSession extends Rsession implements RLog {
         String previousStoppingCharacters = "=*/^;%+:, ";
         String nextStoppingCharacters = "=*+/^%;:, ";
         
-        // Add '+' before '-' if they are not preceding by '*' or '/' or ':'
         expr = expr.replaceAll("(\\*|/) *-", "$1-");
         expr = expr.replaceAll("-", " -");
-        //expr = expr.replaceAll("(?<!\\*|/|:)-(?! |,)", "+ (0 - $1)");
-        //expr = expr.replaceAll("(?<!\\*|/|:)-(?! |,)([^=\\*+/\\^%;:, ]*)", "+ (0 - $1)");
-        
-        System.err.println("!!! " + expr);
         
         Map<String, String> operatorsMap = new HashMap<>();
         operatorsMap.put("+", "math.add");
