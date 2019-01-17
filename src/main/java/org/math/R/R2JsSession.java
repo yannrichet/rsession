@@ -178,6 +178,7 @@ public class R2JsSession extends Rsession implements RLog {
         // TODO treat 'pow' as an operator like + - * /
         e = e.replaceAll("([\\w\\-]+) *(\\^|\\*\\*) *([\\w\\-]+)", "math.dotPow($1,$3)");
         
+        
         // Replace array indexing
         e = replaceIndexes(e);
         
@@ -254,6 +255,9 @@ public class R2JsSession extends Rsession implements RLog {
         
         // replace rbind fct expression
         e = createCbindFunction(e);
+        
+        // replace length fct expression
+        e = createLengthFunction(e);
         
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
@@ -1034,6 +1038,49 @@ public class R2JsSession extends Rsession implements RLog {
     }
     
     /**
+     * This function replaces the R function length by JS equivalent with "math.size()" 
+     * function from library mathjs.
+     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createLengthFunction(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "length");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder rbindSb = new StringBuilder();
+            
+            rbindSb.append("math.squeeze(math.subset(math.size(");
+            rbindSb.append(values);
+            rbindSb.append("), math.index(0)))");
+            
+            // Replace the R cbind expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(rbindSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "cbind" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "length");
+        }
+        
+        return result;
+    }
+    
+    /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
      * of "fctName" in the "expr" and return a DTO containing all these informations.
      * If an argument field is not informed, a default field will be affected.
@@ -1059,6 +1106,7 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("list", new ArrayList<String>());
         argumentNamesByFunctions.put("cbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
+        argumentNamesByFunctions.put("length", Arrays.asList("default"));
         // TODO: implement rnorm
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;

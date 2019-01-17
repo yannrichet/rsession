@@ -506,7 +506,7 @@ public class R2jsSessionTest {
         }
     }
     
-        @Test
+    @Test
     public void testList() {
         try {
             engine.voidEval("a = c('aa','bb','cc')");
@@ -549,6 +549,17 @@ public class R2jsSessionTest {
             assert ((Integer)engine.eval("c$second[2]")).equals(33);
             
 
+        } catch (Rsession.RException ex) {
+            ex.printStackTrace();
+            assertTrue(false);
+        }
+    }
+    
+    @Test
+    public void testLength() {
+        try {
+            engine.voidEval("a <- c(1,2,3,4)");
+            assert ((Integer) engine.eval("length(a)")) == 4;
         } catch (Rsession.RException ex) {
             ex.printStackTrace();
             assertTrue(false);
