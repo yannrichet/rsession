@@ -486,8 +486,8 @@ public class BasicTest {
 
         File fa = new File("R2Js" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
-        //q.savels(fa, "*");
-        //assert fa.exists() : "Failed to create save file !";
+        q.savels(fa, "*");
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test

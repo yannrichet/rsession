@@ -263,6 +263,9 @@ public class R2JsSession extends Rsession implements RLog {
         // replace length fct expression
         e = createLengthFunction(e);
         
+        // replace file.exist fct expression
+        e = createFileExist(e);
+        
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
         
@@ -1080,6 +1083,47 @@ public class R2JsSession extends Rsession implements RLog {
     }
     
     /**
+     * This function replaces the R function file.exist in JavaScript
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createFileExist(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "file.exists");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder fileExistSb = new StringBuilder();
+            
+            fileExistSb.append("utils.fileExists(");
+            fileExistSb.append(values);
+            fileExistSb.append(")");
+            
+            // Replace the R file.exist expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(fileExistSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "file.exist" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "file.exists");
+        }
+        
+        return result;
+    }
+    
+    /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
      * of "fctName" in the "expr" and return a DTO containing all these informations.
      * If an argument field is not informed, a default field will be affected.
@@ -1106,6 +1150,7 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("cbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
+        argumentNamesByFunctions.put("file.exists", Arrays.asList("default"));
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
