@@ -30,7 +30,53 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
  * This class evaluate an R expression by parsing it in javascript expression and then
  * evaluate the javascript expression with the Java ScriptEngine. This class
  * uses external javascript library like mathjs to evaluate expressions.
- *
+ * 
+ * 
+ * ------------------------------ Supported and unsupported syntaxes ------------------------------------------------------------------
+ * ## Basic syntaxes
+ *      - affectation (=, <-)
+ *      - mathematical expression (pi, ^, **, <, <=, >, >=, !=, ==, ++, +=, -=, priority of operators, for, for in, if, else, range)
+ * ## Functions
+ *      - All syntaxes of functions in R
+ *      - recursive functions
+ *      - Mathematical functions ("abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor", "log", "max", "min", "round", "sin", "sqrt", "tan" )
+ *      - NOT SUPPORTED: - function with named argument (ex: "f(y=1.23,x=4.56)") (impossible to support in the ES5)
+ *                 - multiple functions in one command (impossible just write multiple lines)
+ * ## Arrays
+ *      - definition of arrays (c(1,2,3), c(0:4), array(0.0,c(4,3)))
+ *      - accessor: a[1], 
+ *      - operations (+, -, *, /)
+ *      - function: length
+ *      - NOT SUPPORTED: %*%, %/% : create matrices instead of arrays to use theses operations
+ * ## Matrices
+ *      - definition of matrices with: nrow, ncol, byrow
+ *      - operations (transpose, +, -, *, ^, %*%, %/%, %%)
+ *      - column and row selection ([1,], [,1], [,], [c(1,2),])
+ *      - function supported: determinant, solve, dim
+ *      - TO SUPPORT: eigen
+ * ## DataFrames
+ *      - constructor: data.frame(first=a,second=b), data.frame('first'=a,'second'=b), data.frame(a,b)
+ *      - accessor: '$', "[['element']]"
+ *      NOT SUPPORTED: column extraction "[1:2,]"
+ * ## Lists
+ *      - constructor: list(first=a,second=b), list('first'=a,'second'=b), list(a,b)
+ *      - accessor: '$', "[['element']]"
+ *      NOT SUPPORTED: column extraction "[1:2,]", accessor "[[1]]"
+ * ## R functions
+ *      - write.csv
+ *      - runif
+ *      - save and load variables
+ *      - ls
+ *      - rm variables
+ *      - cbind (on matrices only)
+ *      - rbind (on matrices only)
+ *      - file.exists
+ *      - savels
+ *      TO SUPPORT: rnorm, capture.output
+ *      NOT SUPPORTED:  toPNG, asHTML, cbind (array and dataframe), rbind (array and dataframe), multiple imbricated functions
+ * 
+ * -----------------------------------------------------------------------------------------------------------------------------------
+ * 
  * @author Nicolas Chabalier
  */
 public class R2JsSession extends Rsession implements RLog {
