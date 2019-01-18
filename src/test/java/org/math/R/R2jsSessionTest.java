@@ -400,8 +400,30 @@ public class R2jsSessionTest {
             engine.set("s", "abcdef");
             File f = new File("R2Js" + rand + ".save");
             engine.save(f, "s");
+            engine.rm("s");
             engine.load(f);
             assert engine.asString(engine.eval("s")).equals("abcdef") : "bad restore of s";
+            
+            engine.set("a", "123");
+            engine.set("b", "456");
+            
+            rand = (double) Math.random();
+            File f2 = new File("R2Js" + rand + ".save");
+            engine.save(f, "s","a");
+            engine.rm("s");
+            engine.rm("a");
+            engine.rm("b");
+            engine.load(f);
+            assert engine.asString(engine.eval("a")).equals("123") : "bad restore of s";
+            assert engine.asString(engine.eval("s")).equals("abcdef") : "bad restore of s";
+            
+            try {
+                engine.eval("b");
+                assertTrue(false);
+            } catch (Exception e) {
+                assertTrue(true);
+            }
+   
         
         } catch (Exception e) {
             e.printStackTrace();

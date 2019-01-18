@@ -419,8 +419,6 @@ public class R2JsSession extends Rsession implements RLog {
     
     /**
      * LS function
-     * )
-     * TODO: implement the pattern argument
      *
      * @param e - the expression containing the function to replace
      * @return the expression with replaced function
@@ -868,7 +866,6 @@ public class R2JsSession extends Rsession implements RLog {
             String fileString = argumentsMap.get("file");
             
             String listStringUnquotted = listString.replace("\'", "");
-            String listStringReplaced = replaceNameByQuotes(quotesList, listString, true);
             
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
@@ -876,11 +873,11 @@ public class R2JsSession extends Rsession implements RLog {
             saveSb.append("utils.writeCsv(");
             saveSb.append(fileString);
             saveSb.append(", ");
+            saveSb.append("utils.createJsonString(");
             saveSb.append(listStringUnquotted);
-            saveSb.append("+\':\'+");
-            saveSb.append("JSON.stringify(");
-            saveSb.append(listStringReplaced);
-            saveSb.append("))");
+            saveSb.append(", '");
+            saveSb.append(JS_VARIABLE_STORAGE_OBJECT);
+            saveSb.append("'))");
             
             // Replace the R matrix expression by the current matrix js
             // expression
@@ -899,7 +896,6 @@ public class R2JsSession extends Rsession implements RLog {
     
     /**
      * Load variables in a json
-     * TODO: Not implemented yet
      *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
@@ -920,7 +916,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // Add all loaded variables to the java list of variables
             try {
-                String readVariablesExpr = replaceNameByQuotes(quotesList,"utils.readVariables(" + fileString + ")", false);
+                String readVariablesExpr = replaceNameByQuotes(quotesList,"utils.readJsonVariables(" + fileString + ")", false);
                 String[] loadedVariables = (String[])staticCast(engine.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
@@ -929,7 +925,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // Build the mathjs expression to create load data
             StringBuilder loadSb = new StringBuilder();
-            loadSb.append("utils.loadVariables(");
+            loadSb.append("utils.loadJson(");
             loadSb.append(fileString);
             loadSb.append(", '");
             loadSb.append(JS_VARIABLE_STORAGE_OBJECT);
