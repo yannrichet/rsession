@@ -1446,7 +1446,7 @@ public class R2JsSession extends Rsession implements RLog {
         while (equalIndex < exprLength) {
             
             
-            if((equalIndex>0 && expr.charAt(equalIndex-1)!='=') || (equalIndex<exprLength-1 && expr.charAt(equalIndex+1)!='=')) {
+            if((equalIndex>0 && expr.charAt(equalIndex-1)=='=') || (equalIndex<exprLength-1 && expr.charAt(equalIndex+1)=='=')) {
                 // If it is a '==' we ignore it
                 equalIndex+=1;
             } else {
