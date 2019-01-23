@@ -20,7 +20,15 @@ import javax.script.ScriptException;
 
 import com.coveo.nashorn_modules.FilesystemFolder;
 import com.coveo.nashorn_modules.Require;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -34,8 +42,8 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
  * 
  * ------------------------------ Supported and unsupported syntaxes ------------------------------------------------------------------
  * ## Basic syntaxes
- *      - affectation (=, <-)
- *      - mathematical expression (pi, ^, **, <, <=, >, >=, !=, ==, ++, +=, -=, priority of operators, for, for in, if, else, range)
+ *      - affectation (=, &lt;-)
+ *      - mathematical expression (pi, ^, **, &lt;, &lt;=, &gt;, &gt;=, !=, ==, ++, +=, -=, priority of operators, for, for in, if, else, range)
  * ## Functions
  *      - All syntaxes of functions in R
  *      - recursive functions
@@ -81,23 +89,24 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
  */
 public class R2JsSession extends Rsession implements RLog {
     
-    private static String[] MATH_FUN_js = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
+    private static final String[] MATH_FUN_JS = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
         "log", "max", "min", "round", "sin", "sqrt", "tan" };
-    private static String[] MATH_CONST_js = { "pi" };
+    private static final String[] MATH_CONST_JS = { "pi" };
     
-    private static String MATHJS_FILE = "./lib/math.js";
-    private static String MATHJS_URL = "http://cdnjs.cloudflare.com/ajax/libs/mathjs/0.16.0/math.js";
-    private static String JQUERY_CSV_FILE = "./lib/jquery.csv.js";
-    private static String R2JS_UTILS = "./lib/R2JsUtils.js";
+    // JavaScript libraries used to evaluate expression
+    private static final String MATH_JS_FILE = "org/math/R/math.js";
+    private static final String UTILS_JS_FILE = "org/math/R/utils.js";
     
-    static ScriptEngine engine;
+    private static ScriptEngine engine;
     
-    private static String JS_VARIABLE_STORAGE_OBJECT = "MyVariablesObject";
+    // The name of the object which store all variables defined in the current session
+    private static final String JS_VARIABLE_STORAGE_OBJECT = "MyVariablesObject";
     
     // Set of global variables declared
-    public static Set<String> variablesList;
+    private static Set<String> variablesSet;
     
-    public static List<String> quotesList;
+    // List of quotes expression
+    private static List<String> quotesList;
     
     public static R2JsSession newInstance(final RLog console, Properties properties) {
         return new R2JsSession(console, properties);
@@ -114,34 +123,49 @@ public class R2JsSession extends Rsession implements RLog {
     public R2JsSession(RLog console, Properties properties) {
         super(console);
         
-        R2JsSession.variablesList = new HashSet<>();
+        R2JsSession.variablesSet = new HashSet<>();
         
         TRY_MODE_DEFAULT = false;
         
         ScriptEngineManager manager = new ScriptEngineManager();
         engine = manager.getEngineByName("js");
-        FilesystemFolder rootFolder = FilesystemFolder.create(new File("."), "UTF-8");
+        
+        // Load external js libraries used by the engine to evaluate expressions
         try {
-            Require.enable((NashornScriptEngine) engine, rootFolder);
-        } catch (ScriptException e1) {
-            e1.printStackTrace();
+            loadJSLibraries();
+            
+            // Instantiate the variables storage object which store all variables defined in the current session
+            engine.eval("var " + JS_VARIABLE_STORAGE_OBJECT + " = {};");
+        } catch (ScriptException ex) {
+            Logger.getLogger(R2JsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         
-        try {
-            engine.eval("var $ = jQuery = require('" + JQUERY_CSV_FILE +"')");
-            engine.eval("var math = require('" + MATHJS_FILE + "')");
-            engine.eval("var utils = require('"+ R2JS_UTILS +"')");
-            engine.eval("var parser = math.parser();");
-            
-            // Instantiate the variables storage object
-            engine.eval("var " + JS_VARIABLE_STORAGE_OBJECT + " = {};");
-            
-            // Change 'Matrix' mathjs config by 'Array'
-            engine.eval("math.config({matrix: 'Array'})");
-        } catch (ScriptException e1) {
-            e1.printStackTrace();
-        }
+
     }
+    
+    /**
+     * Load external js libraries to evaluate js expresions:
+     * - 'math.js' : evaluate all mathematical expressions with numbers, arrays and matrices. 
+     * - 'utils.js': contains various function ( loading and saving files/variables, range function, ...)
+     * 
+     * @throws ScriptException 
+     */
+    private void loadJSLibraries() throws ScriptException {
+        
+        // Loading utils.js
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+	InputStream utilsInputStream = classLoader.getResourceAsStream(UTILS_JS_FILE);
+        engine.eval(new InputStreamReader(utilsInputStream));
+        engine.eval("utils = utils()");
+        
+        // Loading math.JS
+        InputStream mathInputStream = classLoader.getResourceAsStream(MATH_JS_FILE);
+        engine.eval(new InputStreamReader(mathInputStream));
+        engine.eval("var parser = math.parser();");
+        // Change 'Matrix' mathjs config by 'Array'
+        engine.eval("math.config({matrix: 'Array'})");
+        
+    } 
     
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are
@@ -165,12 +189,12 @@ public class R2JsSession extends Rsession implements RLog {
         e = e.replaceAll("^ *\\+", "");
         
         // Replace Math functions
-        for (String f : MATH_FUN_js) {
+        for (String f : MATH_FUN_JS) {
             e = e.replaceAll("(\\b)" + f + "\\(", "$1 math." + f + "(");
         }
         
         // Replace Math constants
-        for (String c : MATH_CONST_js) {
+        for (String c : MATH_CONST_JS) {
             e = e.replaceAll("(\\b)" + c + "(\\b)", "$1 math." + c.toUpperCase() + "$2");
         }
         
@@ -316,7 +340,7 @@ public class R2JsSession extends Rsession implements RLog {
         storeGlobalVariables(e);
         
         // Replace variables by variableStorageObject.variable
-        e = replaceVariables(e, R2JsSession.variablesList);
+        e = replaceVariables(e, R2JsSession.variablesSet);
         
         // Finally replace "quotes variables" by their expressions associated
         e = replaceNameByQuotes(quotesList, e, false);
@@ -1422,11 +1446,11 @@ public class R2JsSession extends Rsession implements RLog {
     }
     
     private static void addGlobalVariables(String[] variables) {
-        if (R2JsSession.variablesList == null) {
-            R2JsSession.variablesList = new HashSet<String>();
+        if (R2JsSession.variablesSet == null) {
+            R2JsSession.variablesSet = new HashSet<String>();
         }
         for(String variable : variables) {
-            R2JsSession.variablesList.add(variable);
+            R2JsSession.variablesSet.add(variable);
         }
     }
     
@@ -1437,8 +1461,8 @@ public class R2JsSession extends Rsession implements RLog {
      */
     private static void storeGlobalVariables(String expr) {
         
-        if (R2JsSession.variablesList == null) {
-            R2JsSession.variablesList = new HashSet<String>();
+        if (R2JsSession.variablesSet == null) {
+            R2JsSession.variablesSet = new HashSet<String>();
         }
         
         int equalIndex = getNextExpressionLastIndex(expr, -1, "=") + 1;
@@ -1452,7 +1476,7 @@ public class R2JsSession extends Rsession implements RLog {
             } else {
                 int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
                 String variableName = expr.substring(startIndex, equalIndex).trim();
-                R2JsSession.variablesList.add(variableName);
+                R2JsSession.variablesSet.add(variableName);
             }
             
             // Get the next '=' character which is not in a parenthesis or
@@ -1728,7 +1752,7 @@ public class R2JsSession extends Rsession implements RLog {
 
                 engine.put(JS_VARIABLE_STORAGE_OBJECT + "." + varname, data);
                 engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + "=" + varname);
-                variablesList.add(varname);
+                variablesSet.add(varname);
             }
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -1769,7 +1793,7 @@ public class R2JsSession extends Rsession implements RLog {
                 }
 
                 engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + "=" + varname);
-                variablesList.add(varname);
+                variablesSet.add(varname);
             }
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -1792,7 +1816,7 @@ public class R2JsSession extends Rsession implements RLog {
             synchronized (engine) {
                 for(String var : vars) {
                     engine.eval("delete " +JS_VARIABLE_STORAGE_OBJECT + "." + var+ ";");
-                    variablesList.remove(var);
+                    variablesSet.remove(var);
                     engine.eval("delete " + var + ";");
                 }
             }
