@@ -188,6 +188,11 @@ public class R2JsSession extends Rsession implements RLog {
         // Remove '+' at begining
         e = e.replaceAll("^ *\\+", "");
         
+        // Remove ';' after a bracket
+        e = e.replaceAll("\\{ *;", "\\{");
+        e = e.replaceAll("\\[ *;", "\\[");
+        e = e.replaceAll("\\( *;", "\\(");
+        
         // Replace Math functions
         for (String f : MATH_FUN_JS) {
             e = e.replaceAll("(\\b)" + f + "\\(", "$1 math." + f + "(");
@@ -234,8 +239,7 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Add "{" and "}" if the function doesn't have them
         e = e.replaceAll("function([.[^)]]*[)]) *([a-zA-Z0-9].*)$", "function$1 {$2}");
-        
-        
+                
         // Add return statement in function if there is no return yet
         // FIXME: multiple imbricated functions are not supported for the moment
         e = e.replaceAll("function([.[^)]]*[)]) *[{](((?!return|function).)*)[}];*$", "function$1 {return $2}");
