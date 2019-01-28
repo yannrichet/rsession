@@ -598,4 +598,21 @@ public class R2jsSessionTest {
         }
     }
     
+    @Test
+    public void testPow() {
+        try {
+            assertEquals((Double)engine.eval("10**(1/3)"),2.154434690031884,epsilon);
+            assertEquals((Double)engine.eval("10^(1/3)"),2.154434690031884,epsilon);
+            engine.voidEval("a <- 123*3/(4*pi*(1/2)*(4567/1000))^(1/3)");
+            assertEquals((Double)engine.eval("a"),120.528404101305372397928,epsilon);
+            engine.voidEval("b <- 123*3/(4*pi*(1/2)*(4567/1000))**(1/3)");
+            assertEquals((Double)engine.eval("b"),120.528404101305372397928,epsilon);
+            assertEquals((Double)engine.eval("2^3"),8,epsilon);
+            assertEquals((Double)engine.eval("2**3"),8,epsilon);
+            assertEquals((Double)engine.eval("pi*1.161024^2*12*6.789"),345.0001802967,epsilon);
+        } catch (Rsession.RException ex) {
+            ex.printStackTrace();
+            assertTrue(false);
+        }
+    }
 }

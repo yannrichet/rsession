@@ -1,6 +1,5 @@
 package org.math.R;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,19 +17,9 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 
-import com.coveo.nashorn_modules.FilesystemFolder;
-import com.coveo.nashorn_modules.Require;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
-import jdk.nashorn.api.scripting.NashornScriptEngine;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 
@@ -248,9 +237,8 @@ public class R2JsSession extends Rsession implements RLog {
         // e = e.replaceAll("function([.[^)]]*[)])
         // *[{](((?!return|function).)*)[}] *\n", "function$1 {return $2}\n");
         
-        // replace operator '^' or '**' by Math.dotPow()
-        // TODO treat 'pow' as an operator like + - * /
-        e = e.replaceAll("([\\w\\-]+) *(\\^|\\*\\*) *([\\w\\-]+)", "math.dotPow($1,$3)");
+        // replace operator '**' by '^'
+        e = e.replaceAll("\\*\\*", "\\^");
         
         
         // Replace array indexing
@@ -269,8 +257,12 @@ public class R2JsSession extends Rsession implements RLog {
                 "var $2Length = math.size($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
         
         // Replace "TRUE" by "true" and "FALSE" by "false"
+        // TODO: Check that 'TRUE' is not inside a variable ex: myTRUEvariable
         e = e.replaceAll("TRUE", "true");
         e = e.replaceAll("FALSE", "false");
+        
+        // TODO: Check that 'NULL' is not inside a variable ex: myNULLvariable
+        e = e.replaceAll("NULL", "null");
         
         // Replace '++' operator by a=a+1
         e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1"); 
@@ -1316,13 +1308,12 @@ public class R2JsSession extends Rsession implements RLog {
         operatorsMap.put("%/%", "math.floor(math.dotDivide");
         operatorsMap.put("%%", "math.mod");
         operatorsMap.put(":", "utils.range");
+        operatorsMap.put("^", "math.dotPow")
         
-        String notPriorityOperators = "+-";
-        String priorityOperators = "*/%:";
-        String operators = priorityOperators;
+        String[] operators = new String[] {"^", "*/%:", "+-" };
 
-        // If priority = true, replace * and / else replace + and -
-        boolean priority = true;
+        // replace '^' first then replace '*','/','%' and ':' and finaly replace '+' and '-'
+        int priority = 0;
         
         boolean continueReplacing = true;
         
@@ -1341,7 +1332,7 @@ public class R2JsSession extends Rsession implements RLog {
             }
             
             // If the character is a supported operator
-            if (operators.indexOf(currentChar) >= 0) {
+            if (operators[priority].indexOf(currentChar) >= 0) {
                 
                 // if the character is '%', it's a 3 character operator like
                 // "%*%" or "%/%", or the mod operator "%%"
@@ -1421,6 +1412,10 @@ public class R2JsSession extends Rsession implements RLog {
                         expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
                         expr = expr.replaceAll("\\+ +\\+", "+");
                         expr = expr.replaceAll("\\- +\\+", "-");
+                        expr = expr.replaceAll("\\* +\\+", "*");
+                        expr = expr.replaceAll("\\/ +\\+", "/");
+                        expr = expr.replaceAll("\\: +\\+", ":");
+                        expr = expr.replaceAll("\\^ +\\+", "^");
                         expr = expr.replaceAll("^ *\\+", "");
                         
                         // Decrement i to be sure to not miss an operator
@@ -1435,10 +1430,10 @@ public class R2JsSession extends Rsession implements RLog {
             i = i + 1;
             
             if (i >= expr.length()) {
-                if (priority == true) {
-                    priority = false;
-                    operators = notPriorityOperators;
-                    nextStoppingCharacters+="-";
+                if (priority < 2) {
+                    priority++;
+                    if(priority == 2)
+                        nextStoppingCharacters+="-";
                     i = 0;
                 } else {
                     continueReplacing = false;
