@@ -1308,7 +1308,7 @@ public class R2JsSession extends Rsession implements RLog {
         operatorsMap.put("%/%", "math.floor(math.dotDivide");
         operatorsMap.put("%%", "math.mod");
         operatorsMap.put(":", "utils.range");
-        operatorsMap.put("^", "math.dotPow")
+        operatorsMap.put("^", "math.dotPow");
         
         String[] operators = new String[] {"^", "*/%:", "+-" };
 
@@ -1385,41 +1385,44 @@ public class R2JsSession extends Rsession implements RLog {
                     int startingIndex = getPreviousExpressionFirstIndex(expr, i, previousStoppingCharacters);
                     String prevExp = expr.substring(startingIndex, i);
                     
-                    // If the left expression is not only whitespace (for
-                    // example a = -4 or a = +4)
-                    if (prevExp.trim().length() > 0) {
+                    if(!prevExp.trim().equals("return")) {
                         
-                        // Find the end of the right term
-                        int endingIndex = getNextExpressionLastIndex(expr, i, nextStoppingCharacters);
-                        
-                        String operatorName = operatorsMap.get(currentChar + "");
-                        StringBuilder resultExpr = new StringBuilder();
-                        // Add a "+" operator before:
-                        // Example: 1*2 -5*6 will be
-                        //          mult(1,2) + mult(-5,6) with a '+' between the two mult operators
-                        resultExpr.append(" + "); 
-                        resultExpr.append(operatorName);
-                        resultExpr.append("(");
-                        resultExpr.append(prevExp);
-                        resultExpr.append(",");
-                        resultExpr.append(expr.substring(i + 1, endingIndex + 1));
-                        resultExpr.append(")");
-                        
-                        expr = expr.substring(0, startingIndex) + resultExpr
-                                + expr.substring(endingIndex + 1, expr.length());
-                        
-                        //Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
-                        expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
-                        expr = expr.replaceAll("\\+ +\\+", "+");
-                        expr = expr.replaceAll("\\- +\\+", "-");
-                        expr = expr.replaceAll("\\* +\\+", "*");
-                        expr = expr.replaceAll("\\/ +\\+", "/");
-                        expr = expr.replaceAll("\\: +\\+", ":");
-                        expr = expr.replaceAll("\\^ +\\+", "^");
-                        expr = expr.replaceAll("^ *\\+", "");
-                        
-                        // Decrement i to be sure to not miss an operator
-                        i = startingIndex - 1;
+                        // If the left expression is not only whitespace (for
+                        // example a = -4 or a = +4)
+                        if (prevExp.trim().length() > 0) {
+
+                            // Find the end of the right term
+                            int endingIndex = getNextExpressionLastIndex(expr, i, nextStoppingCharacters);
+
+                            String operatorName = operatorsMap.get(currentChar + "");
+                            StringBuilder resultExpr = new StringBuilder();
+                            // Add a "+" operator before:
+                            // Example: 1*2 -5*6 will be
+                            //          mult(1,2) + mult(-5,6) with a '+' between the two mult operators
+                            resultExpr.append(" + "); 
+                            resultExpr.append(operatorName);
+                            resultExpr.append("(");
+                            resultExpr.append(prevExp);
+                            resultExpr.append(",");
+                            resultExpr.append(expr.substring(i + 1, endingIndex + 1));
+                            resultExpr.append(")");
+
+                            expr = expr.substring(0, startingIndex) + resultExpr
+                                    + expr.substring(endingIndex + 1, expr.length());
+
+                            //Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
+                            expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
+                            expr = expr.replaceAll("\\+ +\\+", "+");
+                            expr = expr.replaceAll("\\- +\\+", "-");
+                            expr = expr.replaceAll("\\* +\\+", "*");
+                            expr = expr.replaceAll("\\/ +\\+", "/");
+                            expr = expr.replaceAll("\\: +\\+", ":");
+                            expr = expr.replaceAll("\\^ +\\+", "^");
+                            expr = expr.replaceAll("^ *\\+", "");
+
+                            // Decrement i to be sure to not miss an operator
+                            i = startingIndex - 1;
+                        }
                     }
                     
                 } else {
