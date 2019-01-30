@@ -566,4 +566,11 @@ public class R2jsSessionTest {
         assertEquals((Double)engine.eval("pi*1.161024^2*12*6.789"),345.0001802967,epsilon);
         
     }
+    
+    @Test
+    public void testExistsFunction() throws Rsession.RException {
+        engine.set("s", "abcdef");
+        assertTrue((Boolean)engine.eval("exists('s')"));
+        assertTrue(!(Boolean)engine.eval("exists('a')"));
+    }
 }

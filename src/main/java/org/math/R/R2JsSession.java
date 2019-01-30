@@ -19,6 +19,7 @@ import javax.script.ScriptException;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.util.logging.Logger;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
@@ -130,6 +131,33 @@ public class R2JsSession extends Rsession implements RLog {
         }
         
 
+    }
+    
+    public R2JsSession(final PrintStream p, Properties properties) {
+        this(new RLog() {
+
+            public void log(String string, Level level) {
+                PrintStream pp = null;
+                if (p != null) {
+                    pp = p;
+                } else {
+                    pp = System.err;
+                }
+
+                if (level == Level.WARNING) {
+                    p.print("(!) ");
+                } else if (level == Level.ERROR) {
+                    p.print("(!!) ");
+                }
+                p.println(string);
+            }
+
+            public void close() {
+                if (p != null) {
+                    p.close();
+                }
+            }
+        }, properties);
     }
     
     /**
@@ -330,7 +358,9 @@ public class R2JsSession extends Rsession implements RLog {
         e = createLengthFunction(e);
         
         // replace file.exist fct expression
-        e = createFileExist(e);
+        e = createFileExistsFunction(e);
+        
+        e = createExistsFunction(e);
         
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
@@ -1154,7 +1184,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createFileExist(String expr) {
+    private static String createFileExistsFunction(String expr) {
         
         String result = expr;
         
@@ -1190,6 +1220,49 @@ public class R2JsSession extends Rsession implements RLog {
     }
     
     /**
+     * This function replaces the R function exists in JavaScript
+     * WARNING: arguments('where', 'envir', 'frame', 'mode' and 'inherits') are not supported yet and ignored
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createExistsFunction(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "exists");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String variable = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder fileExistSb = new StringBuilder();
+            
+            fileExistSb.append(JS_VARIABLE_STORAGE_OBJECT);
+            fileExistSb.append(".hasOwnProperty(");
+            fileExistSb.append(variable);
+            fileExistSb.append(")");
+            
+            // Replace the R exists expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(fileExistSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "exists" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "exists");
+        }
+        
+        return result;
+    }
+    
+    /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
      * of "fctName" in the "expr" and return a DTO containing all these informations.
      * If an argument field is not informed, a default field will be affected.
@@ -1217,6 +1290,7 @@ public class R2JsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
         argumentNamesByFunctions.put("file.exists", Arrays.asList("default"));
+        argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
