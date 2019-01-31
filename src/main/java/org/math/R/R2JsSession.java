@@ -87,16 +87,16 @@ public class R2JsSession extends Rsession implements RLog {
     private static final String MATH_JS_FILE = "org/math/R/math.js";
     private static final String UTILS_JS_FILE = "org/math/R/utils.js";
     
-    private static ScriptEngine engine;
+    public ScriptEngine engine;
     
     // The name of the object which store all variables defined in the current session
     private static final String JS_VARIABLE_STORAGE_OBJECT = "MyVariablesObject";
     
     // Set of global variables declared
-    private static Set<String> variablesSet;
+    public Set<String> variablesSet;
     
     // List of quotes expression
-    private static List<String> quotesList;
+    private List<String> quotesList;
     
     public static R2JsSession newInstance(final RLog console, Properties properties) {
         return new R2JsSession(console, properties);
@@ -113,7 +113,7 @@ public class R2JsSession extends Rsession implements RLog {
     public R2JsSession(RLog console, Properties properties) {
         super(console);
         
-        R2JsSession.variablesSet = new HashSet<>();
+        variablesSet = new HashSet<>();
         
         TRY_MODE_DEFAULT = false;
         
@@ -192,7 +192,7 @@ public class R2JsSession extends Rsession implements RLog {
      *            - the R expression
      * @return the js script expression
      */
-    public static String convertRtoJs(String e) {
+    private String convertRtoJs(String e) {
         
         // Get all expression in quote and replace them by variables to not
         // modify them in this function
@@ -366,7 +366,7 @@ public class R2JsSession extends Rsession implements RLog {
         storeGlobalVariables(e);
         
         // Replace variables by variableStorageObject.variable
-        e = replaceVariables(e, R2JsSession.variablesSet);
+        e = replaceVariables(e, variablesSet);
         
         // Finally replace "quotes variables" by their expressions associated
         e = replaceNameByQuotes(quotesList, e, false);
@@ -391,10 +391,12 @@ public class R2JsSession extends Rsession implements RLog {
      * @param variables - the variables to replace
      * @return the expression with replaced variables
      */
-    public static String replaceVariables(String expr, Iterable<String> variables) {
+    private static String replaceVariables(String expr, Iterable<String> variables) {
         String result = expr;
         for (String variable : variables) {
+            //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
             result = result.replaceAll("(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
+            result = result.replaceAll(JS_VARIABLE_STORAGE_OBJECT + "." + JS_VARIABLE_STORAGE_OBJECT, JS_VARIABLE_STORAGE_OBJECT);
         }
         return result;
         
@@ -575,7 +577,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param sep - the separator between values in the array
      * @return the split String array
      */
-    public static String[] splitString(String expr, String sep) {
+    private static String[] splitString(String expr, String sep) {
         List<String> splitList = new ArrayList<>();
         
         int sepIndex = -1;
@@ -685,7 +687,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createDataFrame(String expr) {
+    private String createDataFrame(String expr) {
         
         String result = expr;
         
@@ -744,7 +746,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createList(String expr) {
+    private String createList(String expr) {
         
         String result = expr;
         
@@ -999,7 +1001,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createLoadFunction(String expr) {
+    private String createLoadFunction(String expr) {
         
         String result = expr;
         
@@ -1271,7 +1273,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param fctName : the name of the wanted function
      * @return a DTO containing: start index , end index and arguments of the function found
      */
-    public static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
+    private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
         
         // Map containing possible arguments associated to each R functions
         Map<String, List<String>> argumentNamesByFunctions = new HashMap<>();
@@ -1365,7 +1367,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr - the expression containing operators to replace
      * @return the expression with replaced operators
      */
-    public static String replaceOperators(String expr) {
+    private static String replaceOperators(String expr) {
         
         String previousStoppingCharacters = "=*/^;%+:, ";
         String nextStoppingCharacters = "=*+/^%;:, ";
@@ -1521,12 +1523,12 @@ public class R2JsSession extends Rsession implements RLog {
         return expr;
     }
     
-    private static void addGlobalVariables(String[] variables) {
-        if (R2JsSession.variablesSet == null) {
-            R2JsSession.variablesSet = new HashSet<String>();
+    private void addGlobalVariables(String[] variables) {
+        if (variablesSet == null) {
+            variablesSet = new HashSet<String>();
         }
         for(String variable : variables) {
-            R2JsSession.variablesSet.add(variable);
+            variablesSet.add(variable);
         }
     }
     
@@ -1535,10 +1537,10 @@ public class R2JsSession extends Rsession implements RLog {
      *
      * @param expr - the expression containing global variables
      */
-    private static void storeGlobalVariables(String expr) {
+    private void storeGlobalVariables(String expr) {
         
-        if (R2JsSession.variablesSet == null) {
-            R2JsSession.variablesSet = new HashSet<String>();
+        if (variablesSet == null) {
+            variablesSet = new HashSet<String>();
         }
         
         int equalIndex = getNextExpressionLastIndex(expr, -1, "=") + 1;
@@ -1552,7 +1554,7 @@ public class R2JsSession extends Rsession implements RLog {
             } else {
                 int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
                 String variableName = expr.substring(startIndex, equalIndex).trim();
-                R2JsSession.variablesSet.add(variableName);
+                variablesSet.add(variableName);  
             }
             
             // Get the next '=' character which is not in a parenthesis or
@@ -1574,7 +1576,7 @@ public class R2JsSession extends Rsession implements RLog {
      *            - a String containing stopping characters.
      * @return the starting index of the previous expression
      */
-    public static int getPreviousExpressionFirstIndex(String expr, int startIndex, String stoppingCharacters) {
+    private static int getPreviousExpressionFirstIndex(String expr, int startIndex, String stoppingCharacters) {
         
         int firstIndex = 0;
         
@@ -1637,7 +1639,7 @@ public class R2JsSession extends Rsession implements RLog {
      *            - a String containing stopping characters.
      * @return the last index of the next expression
      */
-    public static int getNextExpressionLastIndex(String expr, int startIndex, String stoppingCharacters) {
+    private static int getNextExpressionLastIndex(String expr, int startIndex, String stoppingCharacters) {
         
         int lastIndex = expr.length() - 1;
         
@@ -1702,7 +1704,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param arguments - the R expression with default arguments
      * @return the javascript expression with default arguments
      */
-    public static String replaceFunctionDefaultArguments(String arguments) {
+    private static String replaceFunctionDefaultArguments(String arguments) {
         
         // Linked hash map to keep the same order of arguments
         Map<String, String> parametersAndValuesMap = new LinkedHashMap<>();
@@ -1865,7 +1867,7 @@ public class R2JsSession extends Rsession implements RLog {
                     double[][] var2DArray = (double[][]) var;
                     String dim  = "[" + var2DArray.length + "," + var2DArray[0].length +"]";
                     String stringMatrix = Arrays.deepToString(var2DArray);
-                    R2JsSession.engine.eval(varname + " = math.reshape("+ stringMatrix + ", " + dim + ")");
+                    engine.eval(varname + " = math.reshape("+ stringMatrix + ", " + dim + ")");
                 }
 
                 engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + "=" + varname);
@@ -1984,7 +1986,7 @@ public class R2JsSession extends Rsession implements RLog {
         return o.toString();
     }
 
-    public static Object staticCast(Object o) throws ClassCastException {
+    private static Object staticCast(Object o) throws ClassCastException {
         // If it's a ScriptObjectMirror, it can be an array or a matrix
         if (o instanceof ScriptObjectMirror) {
 

@@ -153,16 +153,16 @@ public class R2jsSessionTest {
         //assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(y=1.23,x=4.56)")) == 3.33;
         
         engine.voidEval("f = function(x) {sin(x)}");
-        assertEquals(Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(1.23)")).toString()),Math.sin(1.23),epsilon);
+        assertEquals(Double.parseDouble( engine.eval("f(1.23)").toString()),Math.sin(1.23),epsilon);
         
         engine.voidEval("f = function(x) {asin(x)}");
-        assertEquals(Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(0.23)")).toString()),Math.asin(0.23),epsilon);
+        assertEquals(Double.parseDouble( engine.eval("f(0.23)").toString()),Math.asin(0.23),epsilon);
         
         engine.voidEval("f <- function(temp_F) {\ntemp_K <- ((temp_F - 32) * (5 / 9)) + 273.15\nreturn(temp_K)\n}");
-        assert Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("f(32)")).toString()) == 273.15;
+        assert Double.parseDouble( engine.eval("f(32)").toString()) == 273.15;
         
         engine.voidEval("a=2; h <- function(x){1-x;};");
-        assert Double.parseDouble( engine.eval(R2JsSession.convertRtoJs("h(1)")).toString()) == 0;
+        assert Double.parseDouble( engine.eval("h(1)").toString()) == 0;
         
         engine.voidEval("a = c(1,2,3,12);");
         engine.voidEval("f = function(x) {res=0;\n for(y in x) {res+=y};\n return res;}");
