@@ -1308,7 +1308,7 @@ public class R2JsSession extends Rsession implements RLog {
         operatorsMap.put("%/%", "math.floor(math.dotDivide");
         operatorsMap.put("%%", "math.mod");
         operatorsMap.put(":", "utils.range");
-        operatorsMap.put("^", "math.dotPow")
+        operatorsMap.put("^", "math.dotPow");
         
         String[] operators = new String[] {"^", "*/%:", "+-" };
 
