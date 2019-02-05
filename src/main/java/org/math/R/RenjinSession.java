@@ -319,7 +319,7 @@ public class RenjinSession extends Rsession implements RLog {
         note_code("names(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
 
-        if (data == null) {
+        if (data == null || data[0].length==0) {
             if (names == null) {
                 return false;
             }
