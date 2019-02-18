@@ -310,7 +310,7 @@ public class BasicTest {
 
         double[] a = new double[]{0, 1};
         q.set("a", a);
-        // !!! R used to put arrays in column matrix when ar2jsSession.matrix called
+        // !!! R used to put arrays in column matrix when aq.matrix called
         assert Arrays.deepEquals(new double[][]{{a[0]}, {a[1]}}, q.asMatrix(q.eval("a"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{a[0]}, {a[1]}}) + " != " + Arrays.deepToString(q.asMatrix(q.eval("a")));
 
         double d = 0;
@@ -335,7 +335,7 @@ public class BasicTest {
     public void testSet_R2Js() throws Exception {
         System.err.println("====================================== Renjin");
 
-        assert q.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
+        //assert q.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
 
         assert q.set("n", null) : "Failed to create NULL object";
 
@@ -352,11 +352,12 @@ public class BasicTest {
         CC[9][1] = Math.random();
         q.set("CC", CC);
         assert ((double[][]) q.eval("CC"))[9][1] == CC[9][1];
+        
+        assert ((double[]) q.eval("CC[1,]")).length == CC[0].length;
 
-        // TODO: support and uncomment these lines
-        //assert ((double[]) q.eval("CC[1,]")).length == CC[0].length;
         //System.err.println(q.cat(q.ls("C")));
         //assert q.ls("C").length == 2 : "invalid ls(\"C\") : " + q.cat(q.ls("C"));
+
         String str = "abcd";
         q.set("s", str);
         assert ((String) q.eval("s")).equals(str);
@@ -477,16 +478,16 @@ public class BasicTest {
         q.save(f, "s");
         assert f.exists() : "Failed to create save file !";
 
-//        String ss = q.asString(q.eval("s"));
-//        assert ss.equals("abcd") : "bad eval of s";
-//        assert q.rm("s") : "Failed to delete s";
-//        q.load(f);
-//        assert q.asString(q.eval("s")).equals("abcd") : "bad restore of s";
-//
-//        File fa = new File("R2Js" + Math.random() + ".all.save");
-//        assert !fa.exists() : "Already created save file !";
-//        q.savels(fa, "*");
-//        assert fa.exists() : "Failed to create save file !";
+        String ss = q.asString(q.eval("s"));
+        assert ss.equals("abcd") : "bad eval of s";
+        assert q.rm("s") : "Failed to delete s";
+        q.load(f);
+        assert q.asString(q.eval("s")).equals("abcd") : "bad restore of s";
+
+        File fa = new File("R2Js" + Math.random() + ".all.save");
+        assert !fa.exists() : "Already created save file !";
+        q.savels(fa, ".*");
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
@@ -629,35 +630,35 @@ public class BasicTest {
         Arrays.sort(ls);
         assert ls.length == 2 : "ls.length != 2 : " + Arrays.asList(ls);
         assert ls[0].equals("c") : q.toString(ls) + "[0]=" + ls[3];
-//        q.eval("save(file='c" + rand + ".Rdata',c)");
-//        q.rm("c");
+        q.voidEval("save(file='c" + rand + ".Rdata','c')");
+        q.rm("c");
         //ls = (String[]) castStrict(s.eval("ls()"));
-//        ls = q.ls();
-//        Arrays.sort(ls);
-//        assert !ls[0].equals("c") : q.toString(ls) + "[0]=" + ls[3];
-//        q.eval("load(file='c" + rand + ".Rdata')");
-//        p.println((q.eval("c")));
-//
-//        //save
-//        File f = new File(tmpdir, "save" + rand + ".Rdata");
-//        if (f.exists()) {
-//            f.delete();
-//        }
-//        q.save(f, "c");
-//        assert f.exists() : "Could not find file " + f.getAbsolutePath();
-//
-//        p.println("ls=\n" + q.toString(q.eval("ls()")));
-//        //load
-//        ls = (String[]) q.eval("ls()");
-//        Arrays.sort(ls);
-//        assert ls[0].equals("c") : q.toString(ls) + "=" + Arrays.asList(ls);
-//        q.rm("c");
-//        assert q.eval("ls()") instanceof String : "More than 1 object in ls()";
-//        q.load(f);
-//        ls = (String[]) q.eval("ls()");
-//        Arrays.sort(ls);
-//        assert ls[0].equals("c") : q.toString(ls) + "=" + Arrays.asList(ls);
-//
+        ls = q.ls();
+        Arrays.sort(ls);
+        assert !ls[0].equals("c") : q.toString(ls) + "[0]=" + ls[3];
+        q.eval("load(file='c" + rand + ".Rdata')");
+        p.println((q.eval("c")));
+
+        //save
+        File f = new File(tmpdir, "save" + rand + ".Rdata");
+        if (f.exists()) {
+            f.delete();
+        }
+        q.save(f, "c");
+        assert f.exists() : "Could not find file " + f.getAbsolutePath();
+
+        p.println("ls=\n" + q.toString(q.eval("ls()")));
+        //load
+        ls = (String[]) q.eval("ls()");
+        Arrays.sort(ls);
+        assert ls[0].equals("c") : q.toString(ls) + "=" + Arrays.asList(ls);
+        q.rm("c");
+        assert ((String[])q.eval("ls()")).length == 1: "More than 1 object in ls()";
+        q.load(f);
+        ls = (String[]) q.eval("ls()");
+        Arrays.sort(ls);
+        assert ls[0].equals("c") : q.toString(ls) + "=" + Arrays.asList(ls);
+
 //        //toJPEG
 //        /*File jpg = new File(tmpdir, "titi" + rand + ".png");
 //         q.toPNG(jpg, 400, 400, "plot(rnorm(10))");
