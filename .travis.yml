@@ -8,8 +8,7 @@ matrix:
 before_install:
   #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
-  # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
+  # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start; sleep 3 ; fi

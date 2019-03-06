@@ -128,17 +128,17 @@ public class RserveDaemon {
                         for (int minor = 10; minor >= 0; minor--) {
                             //int minor = 0;
                             r_HOME = "/usr/local/Cellar/r/3." + major + "." + minor;
-                            if (new File(r_HOME).isDirectory()) {
-                                R_HOME = r_HOME;
-                                break;
-                            } else if (new File(r_HOME+"_1").isDirectory()) {
-                                R_HOME = r_HOME+"_1";
+                            if (new File(r_HOME+"_3").isDirectory()) {
+                                R_HOME = r_HOME+"_3";
                                 break;
                             } else if (new File(r_HOME+"_2").isDirectory()) {
                                 R_HOME = r_HOME+"_2";
                                 break;
-                            } else if (new File(r_HOME+"_3").isDirectory()) {
-                                R_HOME = r_HOME+"_3";
+                            } else if (new File(r_HOME+"_1").isDirectory()) {
+                                R_HOME = r_HOME+"_1";
+                                break;
+                            } else if (new File(r_HOME).isDirectory()) {
+                                R_HOME = r_HOME;
                                 break;
                             }
                         }
