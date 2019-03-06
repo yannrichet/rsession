@@ -131,6 +131,15 @@ public class RserveDaemon {
                             if (new File(r_HOME).isDirectory()) {
                                 R_HOME = r_HOME;
                                 break;
+                            } else if (new File(r_HOME+"_1").isDirectory()) {
+                                R_HOME = r_HOME+"_1";
+                                break;
+                            } else if (new File(r_HOME+"_2").isDirectory()) {
+                                R_HOME = r_HOME+"_2";
+                                break;
+                            } else if (new File(r_HOME+"_3").isDirectory()) {
+                                R_HOME = r_HOME+"_3";
+                                break;
                             }
                         }
                     }
