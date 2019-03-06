@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.math.R;
 
 import java.util.Arrays;
@@ -25,8 +20,8 @@ public class R2jsParserTest {
                 + "a; d\n"
                 + "e";
         List<String> result = R2jsUtils.parse(inputString);
-        String[]expected = new String[]{"a=1;","b=2;","c=3;","a;", "d","e"};
-        assert Arrays.equals(result.toArray(), expected);
+        String[]expected = new String[]{"a=1;","b=2;","c=3;","a;", "d\n","e"};
+        assert Arrays.equals(result.toArray(), expected) : result.toString();
     }
     
     @Test
@@ -38,8 +33,8 @@ public class R2jsParserTest {
                 + "# comment\n"
                 + "g(x) = 1; b=2";
         List<String> result = R2jsUtils.parse(inputString);
-        String[]expected = new String[]{"f(x) = a","g(x) = 1;","b=2"};
-        assert Arrays.equals(result.toArray(), expected);
+        String[]expected = new String[]{"f(x) = a","g(x) = 1;","b=2\n"};
+        assert Arrays.equals(result.toArray(), expected) : result;
     }
     
     @Test
@@ -50,10 +45,10 @@ public class R2jsParserTest {
                                 "    x_g/1000\n" +
                                 "};";
         List<String> result = R2jsUtils.parse(inputString);
-        String[]expected = new String[]{"g_to_kg <- function(x_g) {;" +
-                                "x_g/1000;" +
+        String[]expected = new String[]{"g_to_kg <- function(x_g) {;\n" +
+                                "x_g/1000;\n" +
                                 "};"};
-        assert Arrays.equals(result.toArray(), expected);
+        assert Arrays.equals(result.toArray(), expected) : result.toString() + "\n!=\n"+Arrays.asList(expected);
     }
     
     @Test
@@ -73,13 +68,13 @@ public class R2jsParserTest {
             "    x_cm3/1000\n" +
             "}";
         List<String> result = R2jsUtils.parse(inputString);
-        String[]expected = new String[]{"kg_to_g <- function(x_kg) {;" +
-            "1000*x_kg;" +
+        String[]expected = new String[]{"kg_to_g <- function(x_kg) {;\n" +
+            "1000*x_kg;\n" +
             "}",
-            "cm3_to_L <- function(x_cm3) {;" +
-            "x_cm3/1000;" +
+            "cm3_to_L <- function(x_cm3) {;\n" +
+            "x_cm3/1000;\n" +
             "}"};
-        assert Arrays.equals(result.toArray(), expected);
+        assert Arrays.equals(result.toArray(), expected): result.toString() + "\n!=\n"+Arrays.asList(expected);
     }
     
 }

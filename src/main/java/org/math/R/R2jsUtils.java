@@ -16,8 +16,7 @@ public class R2jsUtils {
     
     /**
      * Parse an expression containing multiple lines, functions or sub-expressions
-     * in a list of inline sub-expressions. This function also ignore comments at the
-     * begining of a line.
+     * in a list of inline sub-expressions. This function also cleanup comments.
      * 
      * @param expr
      * @return a list of inline sub-expressions
@@ -37,9 +36,13 @@ public class R2jsUtils {
             if(line.startsWith("#")) {
                 // Ignore commented lines
             } else {
+                char currentChar=0;
                 for (int i = 0; i < line.length(); i++) {
-                    char currentChar = line.charAt(i);
-                    if (currentChar == '(') {
+                    currentChar = line.charAt(i);
+                    if (currentChar == '#') {// Ignore rest of line
+                        line = line.substring(0,i);
+                        break; 
+                    } else if (currentChar == '(') {
                         parenthesis++;
                     } else if (currentChar == ')') {
                         parenthesis--;
@@ -59,18 +62,19 @@ public class R2jsUtils {
                             sb = new StringBuilder();
                                                         
                             String remainder = line.substring(i+1);
-                            line = remainder.trim();
+                            line = remainder.trim()+"\n";
                             i=0;
                         }
                     }
                 }
-                if(line.length()>0) {
+                if(line.trim().length()>0) {
                     sb.append(line);
                     if(parenthesis == 0 && brackets == 0 && brackets2 == 0) {
                         expressions.add(sb.toString());
                         sb = new StringBuilder();
                     } else {
-                        sb.append(";");
+                        if (currentChar!=',' && currentChar!='+' && currentChar!='-' && currentChar!='*' &&currentChar!='/')
+                        sb.append(";\n");
                     }
                 }
             }
