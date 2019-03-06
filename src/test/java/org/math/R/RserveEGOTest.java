@@ -1,22 +1,20 @@
 package org.math.R;
 
-import org.rosuda.REngine.REXP;
-import org.math.array.DoubleArray;
-import org.junit.After;
-import org.junit.Before;
-
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Properties;
-
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.math.array.DoubleArray;
+import org.rosuda.REngine.REXP;
 
 /**
  * Intended to reproduce the broken pipe failure.
  *
  * @author richet
  */
-public class EGOTest {
+public class RserveEGOTest {
 
     PrintStream p = System.err;
     //RserverConf conf;
@@ -25,7 +23,7 @@ public class EGOTest {
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
-        org.junit.runner.JUnitCore.main(EGOTest.class.getName());
+        org.junit.runner.JUnitCore.main(RserveEGOTest.class.getName());
     }
 
     /*

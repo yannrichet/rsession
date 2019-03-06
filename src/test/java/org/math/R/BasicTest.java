@@ -174,7 +174,7 @@ public class BasicTest {
         //cast
         assert Double.isNaN((Double) q.eval("NaN"));
         assert ((Boolean) q.eval("TRUE")) == true;
-        assert ((Double) q.eval("0.123")) == 0.123;
+        assert ((Double) q.eval("0.123")) == 0.123 : ((Double) q.eval("0.123")) + " != " + 0.123;
         assert ((Double) q.eval("pi")) - 3.141593 < 0.0001;
         assert ((Double) q.eval("0.123")) == 0.123 : s.eval("0.123").toString();
         assert ((Double) q.eval("(0.123)+pi")) - 3.264593 < 0.0001;
@@ -333,7 +333,7 @@ public class BasicTest {
 
     @Test
     public void testSet_R2Js() throws Exception {
-        System.err.println("====================================== Renjin");
+        System.err.println("====================================== R2Js");
 
         //assert q.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
 
@@ -413,6 +413,40 @@ public class BasicTest {
     }
 
     @Test
+    public void testSource_Rserve() throws Exception {
+        s.source(new File("src/test/R/test.R"));
+        assert s.asDouble(s.eval("a")) == 1;
+        assert s.asDouble(s.eval("b")) == 2;
+        double x = Math.random();
+
+        assert s.asDouble(s.eval("f(" + x + ")")) == x + 1;
+        assert s.asDouble(s.eval("g(" + x + ")")) == x + 2;
+        assert s.asDouble(s.eval("h(" + x + ")")) == x + 3;
+    }
+
+    @Test
+    public void testSource_Renjin() throws Exception {
+        r.source(new File("src/test/R/test.R"));
+        assert r.asDouble(r.eval("a")) == 1;
+        assert r.asDouble(r.eval("b")) == 2;
+        double x = Math.random();
+
+        assert r.asDouble(r.eval("f(" + x + ")")) == x + 1;
+        assert r.asDouble(r.eval("g(" + x + ")")) == x + 2;
+        assert r.asDouble(r.eval("h(" + x + ")")) == x + 3;
+    }
+
+    @Test
+    public void testSource_R2Js() throws Exception {
+        q.source(new File("src/test/R/test.R"));
+        assert q.asDouble(q.eval("a")) == 1;
+        assert q.asDouble(q.eval("b")) == 2;
+        double x = Math.random();
+
+        assert q.asDouble(q.eval("f(" + x + ")")) == x + 1;
+        assert q.asDouble(q.eval("g(" + x + ")")) == x + 2;
+        assert q.asDouble(q.eval("h(" + x + ")")) == x + 3;
+    }
     public void testSave_Rserve() throws Exception {
         String str = "abcd";
         s.set("s", str);
@@ -627,6 +661,7 @@ public class BasicTest {
 
         //get/put files
         String[] ls = (String[]) q.eval("ls()");
+        //System.err.println("ls ...> "+Arrays.asList(ls));
         Arrays.sort(ls);
         assert ls.length == 2 : "ls.length != 2 : " + Arrays.asList(ls);
         assert ls[0].equals("c") : q.toString(ls) + "[0]=" + ls[3];
