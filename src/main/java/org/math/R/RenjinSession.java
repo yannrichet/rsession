@@ -1,39 +1,26 @@
 package org.math.R;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.color.ColorSpace;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
 import org.math.array.DoubleArray;
-import org.renjin.eval.Context;
 import org.renjin.eval.Session;
 import org.renjin.eval.SessionBuilder;
-import org.renjin.grDevices.AwtDevice;
-import org.renjin.grDevices.FileDevice;
-import org.renjin.grDevices.GraphicsDevices;
-import org.renjin.primitives.NativeStringVector;
 import org.renjin.primitives.matrix.Matrix;
 import org.renjin.primitives.packaging.PackageLoader;
 import org.renjin.script.RenjinScriptEngine;
 import org.renjin.script.RenjinScriptEngineFactory;
-import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleArrayVector;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.IntVector;
@@ -232,7 +219,7 @@ public class RenjinSession extends Rsession implements RLog {
     public Object silentlyRawEval(String expression, boolean tryEval) {
         if (R == null) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
-            return null;
+            return new RException(HEAD_EXCEPTION + "R environment not initialized.");
         }
         if (expression == null) {
             return null;
@@ -243,7 +230,7 @@ public class RenjinSession extends Rsession implements RLog {
         for (EvalListener b : eval) {
             b.eval(expression);
         }
-        SEXP e = null;
+        Object e = null;
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
@@ -261,6 +248,7 @@ public class RenjinSession extends Rsession implements RLog {
                 }
             } catch (Exception ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+                return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
             } finally {
                 if (SINK_OUTPUT) {
                     try {
@@ -301,13 +289,13 @@ public class RenjinSession extends Rsession implements RLog {
 
         if (tryEval && e != null) {
             try {
-                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
-                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
-                    e = null;
+                if (((SEXP) e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + ((SEXP) e).asString() + "\n  " + expression, Level.WARNING);
+                    e = new RException(HEAD_EXCEPTION + ((SEXP) e).asString() + "\n  " + expression);
                 }
             } catch (Exception ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
-                return null;
+                return new RException(HEAD_ERROR + ex.getMessage() + "\n  " + expression);
             }
         }
         return e;

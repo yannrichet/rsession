@@ -537,8 +537,12 @@ public abstract class Rsession implements RLog {
             }
         }
 
-        for (RLog l : loggers) {
-            l.log(message, level);
+        if (loggers != null) {
+            for (RLog l : loggers) {
+                if (l != null) {
+                    l.log(message, level);
+                }
+            }
         }
     }
 
@@ -565,8 +569,7 @@ public abstract class Rsession implements RLog {
     public String repos = DEFAULT_REPOS;
 
     /**
-     * @param url CRAN repository to use for packages installation (eg
-     * http://cran.r-project.org)
+     * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
      */
     public void setCRANRepository(String url) {
         repos = url;
@@ -732,8 +735,7 @@ public abstract class Rsession implements RLog {
      * Start installation procedure of local R package
      *
      * @param pack package to install
-     * @param dir directory where package file (.zip, .tar.gz or .tgz) is
-     * located.
+     * @param dir directory where package file (.zip, .tar.gz or .tgz) is located.
      * @param load automatically load package after successfull installation
      * @return installation status
      */
@@ -871,8 +873,7 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Silently (ie no log) launch R command without return value. Encapsulate
-     * command in try() to cacth errors
+     * Silently (ie no log) launch R command without return value. Encapsulate command in try() to cacth errors
      *
      * @param expression R expresison to evaluate
      * @return well evaluated ?
@@ -891,8 +892,7 @@ public abstract class Rsession implements RLog {
     protected abstract boolean silentlyVoidEval(String expression, boolean tryEval);
 
     /**
-     * Silently (ie no log) launch R command and return value. Encapsulate
-     * command in try() to cacth errors.
+     * Silently (ie no log) launch R command and return value. Encapsulate command in try() to cacth errors.
      *
      * @param expression R expresison to evaluate
      * @return REXP R expression
@@ -935,8 +935,7 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Launch R command and return value. Encapsulate command in try() to cacth
-     * errors.
+     * Launch R command and return value. Encapsulate command in try() to cacth errors.
      *
      * @param expression R expresison to evaluate
      * @return REXP R expression
@@ -973,8 +972,7 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Launch R command without return value. Encapsulate command in try() to
-     * cacth errors.
+     * Launch R command without return value. Encapsulate command in try() to catch R errors.
      *
      * @param expression R expresison to evaluate
      * @return well evaluated ?
@@ -990,17 +988,13 @@ public abstract class Rsession implements RLog {
 
     public Object eval(String expression, boolean tryEval) throws RException {
         Object o = rawEval(expression, tryEval);
-        if (o == null) {
-            throw new RException("Failed to evaluate " + expression);
-        }
+        if (o != null && o instanceof RException) throw (RException)o;
         return cast(o);
     }
 
     public Object eval(String expression) throws RException {
         Object o = rawEval(expression);
-        if (o == null) {
-            throw new RException("Failed to evaluate " + expression);
-        }
+        if (o != null && o instanceof RException) throw (RException)o;
         return cast(o);
     }
 
@@ -1148,13 +1142,12 @@ public abstract class Rsession implements RLog {
     /**
      * list R variables in R env.
      *
-     * @param all - If TRUE, all object names are returned. If FALSE, names
-     * which begin with a . are omitted.
+     * @param all - If TRUE, all object names are returned. If FALSE, names which begin with a . are omitted.
      * @return list of R objects names
      */
     public String[] ls(boolean all) {
         try {
-            String[] ls = asStrings(eval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")", false));
+            String[] ls = asStrings(rawEval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")", false));
             if (ls == null) {
                 return new String[]{};
             }
@@ -1586,14 +1579,11 @@ public abstract class Rsession implements RLog {
     Map<String, Object> noVarsEvals = new HashMap<String, Object>();
 
     /**
-     * Method to rawEval expression. Holds many optimizations (@see noVarsEvals)
-     * and turn around for reliable usage (like engine auto restart). 1D Numeric
-     * "vars" are replaced using Java replace engine instead of R one. Intended
-     * to not interfer with current R env vars. Yes, it's hard-code :)
+     * Method to rawEval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart). 1D Numeric "vars" are replaced using
+     * Java replace engine instead of R one. Intended to not interfer with current R env vars. Yes, it's hard-code :)
      *
      * @param expression String to evaluate
-     * @param vars HashMap&lt;String, Object&gt; vars inside expression.
-     * Passively overload current R env variables.
+     * @param vars HashMap&lt;String, Object&gt; vars inside expression. Passively overload current R env variables.
      * @return java castStrict Object Warning, UNSTABLE and high CPU cost.
      * @throws org.math.R.Rsession.RException Could not proxyEval
      */

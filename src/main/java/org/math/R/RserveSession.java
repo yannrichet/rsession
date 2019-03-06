@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
 import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
@@ -446,11 +445,11 @@ public class RserveSession extends Rsession implements RLog {
      * @return REXP R expression
      */
     @Override
-    protected REXP silentlyRawEval(String expression, boolean tryEval) {
+    protected Object silentlyRawEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
-            return null;
+            return new RException(HEAD_EXCEPTION + "R environment not initialized.");
         }
         if (expression == null) {
             return null;
@@ -461,7 +460,7 @@ public class RserveSession extends Rsession implements RLog {
         for (EvalListener b : eval) {
             b.eval(expression);
         }
-        REXP e = null;
+        Object e = null;
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
@@ -479,6 +478,7 @@ public class RserveSession extends Rsession implements RLog {
                 }
             } catch (Exception ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
             } finally {
                 if (SINK_OUTPUT) {
                     try {
@@ -519,13 +519,13 @@ public class RserveSession extends Rsession implements RLog {
 
         if (tryEval && e != null) {
             try {
-                if (e.inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
-                    log(HEAD_EXCEPTION + e.asString() + "\n  " + expression, Level.WARNING);
-                    e = null;
+                if (((REXP)e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression, Level.WARNING);
+            e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
                 }
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
-                return null;
+                return new RException(HEAD_ERROR + ex.getMessage() + "\n  " + expression);
             }
         }
         return e;
@@ -1322,7 +1322,7 @@ public class RserveSession extends Rsession implements RLog {
             remoteFile = wd + File.separator + remoteFile;
         }
         try {
-            if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE).asInteger() != 1) {
+            if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
         } catch (Exception ex) {
@@ -1405,7 +1405,7 @@ public class RserveSession extends Rsession implements RLog {
             }
         }
         try {
-            if (silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE).asInteger() == 1) {
+            if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() == 1) {
                 silentlyVoidEval("file.remove('" + remoteFile.replace("\\", "/") + "')", TRY_MODE);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
