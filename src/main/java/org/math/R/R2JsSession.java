@@ -231,7 +231,7 @@ public class R2JsSession extends Rsession implements RLog {
     final static String AW = "((\\A)|(\\W)|(\\())(";
     final static String Az = ")((\\W)|(\\z)|(\\)))";
 
-    public boolean DEBUG_JS = true; 
+    public boolean DEBUG_JS = false; 
     
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are not supported yet

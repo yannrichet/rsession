@@ -170,6 +170,156 @@
         return array;
     }
 
+    /**
+    * @param {Array} matrix
+    * @returns {number} number of columns
+    * @private
+    */
+    function ncol (X) {
+        return math.subset(utils.dim(X), math.index(1));
+    }
+    function nrow (X) {
+        return math.subset(utils.dim(X), math.index(0));
+    }
+
+    function names (X) {
+        var n = X.names;
+        if (n != null) {
+            return n;
+        } else {
+            if (typeof(X)=="object") {
+                var ns = [], key, i=0;
+                for (key in X) {
+                    if (X.hasOwnProperty(key))
+                        if (key!="names" && key!="ncol" && key!="nrow")  ns[i++]=key;
+                }
+                return ns;
+            } else {
+                var ns = [];
+                for (var i=0;i<utils.length(X);i++) {
+                    ns[i] = "X"+(i+1);
+                }
+                return ns;
+            }
+        }
+    }
+
+    function colnames (X) {
+        return names(X);
+    }
+
+    // to support indexing starting from 0 in js, while starting from 1 in R
+    function index01 (i,j) {
+        if (typeof(j)=="undefined") {
+            if (typeof(i)=="number" || typeof(i)=="object") {
+                return math.index(math.subtract(i,1));
+            } else if (typeof(i)=="string" ) {
+                return math.index(i);
+            }
+        }
+
+        if ((typeof(i)=="number" || typeof(i)=="object") && (typeof(j)=="number" || typeof(j)=="object")) {
+            return math.index(math.subtract(i,1),math.subtract(j,1));
+        } else if ((typeof(i)=="number" || typeof(i)=="object") && (typeof(j)=="string" )) {
+            return math.index(math.subtract(i,1),j);
+        } else if ((typeof(i)=="string") && (typeof(j)=="string")) {
+            return math.index(i,j);
+        } else if (typeof(i)=="string" && (typeof(j)=="object" || typeof(j)=="number")) {
+            return math.index(i,math.subtract(j,1));
+        }
+    }
+
+
+    function dim(obj) {
+        if (Array.isArray(obj)) {
+            return math.size(obj);
+        } else if (typeof(obj)=="object") {
+            if (obj.hasOwnProperty("nrow") && obj.hasOwnProperty("ncol"))
+                return [obj.nrow,obj.ncol];
+            var s = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key))
+                    if (key!="names" && key!="ncol" && key!="nrow")  s++;
+            }
+            return [s,1];
+        } else {
+            return null;
+        }
+    }
+
+    function length(obj) {
+            var s = 0, key;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key))
+                    if (key!="names" && key!="ncol" && key!="nrow")  s++;
+            }
+            return s;
+    }
+
+    function rep(x,times) {
+        var array = [];
+        var i=0;
+        while (i < times) {
+            array.push(x);
+            i++;
+        }
+        return array;
+    }
+
+    function which(x) {
+        var array = [];
+        var i=0;
+        while (i < length(x)) {
+            if (x[i]==true)
+                array.push(i+1);
+            i++;
+        }
+        return array;
+    }
+
+    function whichmin(x) {
+        var array = [];
+        var i=1;
+        var m=x[0];
+        while (i < length(x)) {
+            if (x[i] == m) {
+                array.push(i+1);
+            } else if (x[i] < m) {
+                array = [];
+                array.push(i+1);
+                m = x[i];
+            }
+            i++;
+        }
+        return array;
+    }
+
+    function whichmax(x) {
+        var array = [];
+        var i=1;
+        var m=x[0];
+        while (i < length(x)) {
+            if (x[i] == m) {
+                array.push(i+1);
+            } else if (x[i] > m) {
+                array = [];
+                array.push(i+1);
+                m = x[i];
+            }
+            i++;
+        }
+        return array;
+    }
+
+    // No, ... needs ECS6
+    //function c(...args) {
+    //    var array = [];
+    //    for (arg of args) {
+    //        array.push(arg);
+    //    }
+    //    return array;
+    //}
+
     var proto = Utils.prototype;
     proto.fileExists = fileExists;
     proto.writeCsv = writeCsv;
@@ -179,7 +329,19 @@
     proto.loadJson = loadJson;
     proto.removeMatching = removeMatching;
     proto.expendArray = expendArray;
+    proto.index01 = index01;
+
     proto.range = range;
+    proto.ncol = ncol;
+    proto.nrow = nrow;
+    proto.names = names;
+    proto.dim = dim;
+    proto.length = length;
+    proto.rep = rep;
+    proto.which = which;
+    proto.whichmin = whichmin;
+    proto.whichmax = whichmax;
+    //proto.c = c;
 
     return hooks;
 
