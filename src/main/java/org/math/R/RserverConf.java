@@ -26,7 +26,7 @@ public class RserverConf {
         this.password = password;
         properties = props;
     }
-    public static long CONNECT_TIMEOUT = 1000;
+    public static long CONNECT_TIMEOUT = 2000;
 
     public abstract class TimeOut {
 
