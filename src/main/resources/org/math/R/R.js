@@ -3,7 +3,7 @@
 ;(function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    global.utils = factory()
+    global.R = factory()
 }(this, (function () { 'use strict';
 
     function hooks () {
@@ -11,11 +11,11 @@
     }
 
     function createLocal () {
-        return new Utils();
+        return new _R();
     }
 
-    // Utils prototype object
-    function Utils() {
+    // R prototype object
+    function _R() {
     }
     
     
@@ -176,10 +176,10 @@
     * @private
     */
     function ncol (X) {
-        return math.subset(utils.dim(X), math.index(1));
+        return math.subset(dim(X), math.index(1));
     }
     function nrow (X) {
-        return math.subset(utils.dim(X), math.index(0));
+        return math.subset(dim(X), math.index(0));
     }
 
     function names (X) {
@@ -196,7 +196,7 @@
                 return ns;
             } else {
                 var ns = [];
-                for (var i=0;i<utils.length(X);i++) {
+                for (var i=0;i<R.length(X);i++) {
                     ns[i] = "X"+(i+1);
                 }
                 return ns;
@@ -320,7 +320,12 @@
     //    return array;
     //}
 
-    var proto = Utils.prototype;
+    function Rprint(x) {
+        print(x);
+        return x;
+    }
+
+    var proto = _R.prototype;
     proto.fileExists = fileExists;
     proto.writeCsv = writeCsv;
     proto.readCsv = readCsv;
@@ -341,6 +346,7 @@
     proto.which = which;
     proto.whichmin = whichmin;
     proto.whichmax = whichmax;
+    proto.Rprint = Rprint;
     //proto.c = c;
 
     return hooks;
