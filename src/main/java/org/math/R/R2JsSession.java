@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.swing.SwingConstants;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 
@@ -80,22 +81,23 @@ import jdk.nashorn.api.scripting.ScriptUtils;
  * @author Nicolas Chabalier
  */
 public class R2JsSession extends Rsession implements RLog {
-    
+        
     private static final String[] MATH_FUN_JS = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
-        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign" };
+        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum","mean", "median", "std", "var" };
     private static final String[] MATH_CONST_JS = { "pi" };
     
     // JavaScript libraries used to evaluate expression
     private static final String MATH_JS_FILE = "org/math/R/math.js";
-    private static final String UTILS_JS_FILE = "org/math/R/utils.js";
+    private static final String R_JS_FILE = "org/math/R/R.js";
     
     public ScriptEngine engine;
     
     // The name of the object which store all variables defined in the current session
-    public static final String JS_VARIABLE_STORAGE_OBJECT = "__r2js__";
+    public static final String JS_VARIABLE_STORAGE_OBJECT = "__R2js__";
     
     // Set of global variables declared
     public Set<String> variablesSet;
+    public Set<String> functionsSet;
     
     // List of quotes expression
     private List<String> quotesList;
@@ -116,6 +118,7 @@ public class R2JsSession extends Rsession implements RLog {
         super(console);
         
         variablesSet = new HashSet<>();
+        functionsSet = new HashSet<>();
         
         TRY_MODE_DEFAULT = false;
         
@@ -126,20 +129,26 @@ public class R2JsSession extends Rsession implements RLog {
         try {
             loadJSLibraries();
             
-            engine.eval("function png(a,b,c,d) {return null;}");
-            engine.eval("function plot(a,b,c,d) {return null;}");
-            engine.eval("function abline(a,b,c,d) {return null;}");
-            engine.eval("function rgb(a,b,c,d) {return null;}");
+            for (String f : new String[]{"png","plot","abline","rgb","hist"})
+                addReturnNullFunction(f);
             
             // Instantiate the variables storage object which store all variables defined in the current session
             engine.eval("var " + JS_VARIABLE_STORAGE_OBJECT + " = {};");
         } catch (ScriptException ex) {
             Logger.getLogger(R2JsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        
-
     }
     
+    public void addReturnNullFunction(String name) throws ScriptException {
+        engine.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
+        functionsSet.add(name);
+    }
+
+    public void addJSFunction(String name, String js) throws ScriptException {
+        engine.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
+        functionsSet.add(name);
+    }
+
     public R2JsSession(final PrintStream p, Properties properties) {
         this(new RLog() {
 
@@ -170,17 +179,17 @@ public class R2JsSession extends Rsession implements RLog {
     /**
      * Load external js libraries to evaluate js expresions:
      * - 'math.js' : evaluate all mathematical expressions with numbers, arrays and matrices. 
-     * - 'utils.js': contains various function ( loading and saving files/variables, range function, ...)
+     * - 'r.js': contains various function ( loading and saving files/variables, range function, ...)
      * 
      * @throws ScriptException 
      */
     private void loadJSLibraries() throws ScriptException {
-        
-        // Loading utils.js
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-	InputStream utilsInputStream = classLoader.getResourceAsStream(UTILS_JS_FILE);
-        engine.eval(new InputStreamReader(utilsInputStream));
-        engine.eval("utils = utils()");
+	
+        // Loading R.js
+        InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
+        engine.eval(new InputStreamReader(RInputStream));
+        engine.eval("R = R()");
         
         // Loading math.JS
         InputStream mathInputStream = classLoader.getResourceAsStream(MATH_JS_FILE);
@@ -188,6 +197,8 @@ public class R2JsSession extends Rsession implements RLog {
         engine.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
         engine.eval("math.config({matrix: 'Array'})");
+        
+        engine.eval("var str = String.prototype;");
     }
         
     static final String POINT_CHAR_JS_KEY = "__";
@@ -208,10 +219,9 @@ public class R2JsSession extends Rsession implements RLog {
         return e;
     }
 
-    static Properties R_TO_JS;
-
+    public static Properties R_TO_JS = new Properties();
+    
     static {
-        R_TO_JS = new Properties();
         R_TO_JS.put("R.version.string", "'R2js'");
         R_TO_JS.put("stop(", "throw new Error(");
         R_TO_JS.put("as.numeric(", "parseFloat(");
@@ -221,6 +231,7 @@ public class R2JsSession extends Rsession implements RLog {
         R_TO_JS.put("which.min(", "whichmin(");
         R_TO_JS.put("which.max(", "whichmax(");
         R_TO_JS.put("paste(", "strconcat(");
+        R_TO_JS.put("print(", "Rprint(");
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
         R_TO_JS.put("dev.off()", "");
@@ -231,7 +242,7 @@ public class R2JsSession extends Rsession implements RLog {
     final static String AW = "((\\A)|(\\W)|(\\())(";
     final static String Az = ")((\\W)|(\\z)|(\\)))";
 
-    public boolean DEBUG_JS = false; 
+    public boolean debug_js = false; 
     
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are not supported yet
@@ -242,7 +253,7 @@ public class R2JsSession extends Rsession implements RLog {
     private String convertRtoJs(String e) {
        
         String R = null;
-        if (DEBUG_JS) R  =e;
+        if (debug_js) R  =e;
 
         // remove ; at end of lines. We will re-add it later
         e = e.replaceAll(";+ *\\n", "\n");
@@ -293,8 +304,8 @@ public class R2JsSession extends Rsession implements RLog {
         // Replace solve(A,B) by math.lusolve(A,B)
         e = e.replaceAll("(^|[^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
         
-        // Replace dim(A) by utils.dim(A)
-        e = e.replaceAll("(^|[^a-zA-Z\\d\\.:])dim\\(", "$1utils.dim(");
+        // Replace dim(A) by r.dim(A)
+        e = e.replaceAll("(^|[^a-zA-Z\\d\\.:])dim\\(", "$1R.dim(");
         
         // replace '->' by '='
         e = e.replaceAll("<<-", "=");
@@ -304,8 +315,29 @@ public class R2JsSession extends Rsession implements RLog {
         e = e.replaceAll("\\+ *-", "-");
         
         // replace 'f = function(x)' by 'function f(x)'
-        e = e.replaceAll("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]+)[)]", "function $1($2)");
-        
+        //e = e.replaceAll("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)]", "function $1($2)");
+        Matcher matcherFunction = Pattern.compile("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)](.*)").matcher(e);
+        if (matcherFunction.find()) {
+            matcherFunction.reset();
+            StringBuffer sb = new StringBuffer("");
+            while (matcherFunction.find()) {
+                                StringBuilder f = new StringBuilder();
+                f.append("function ");
+                String name = matcherFunction.group(1); 
+                f.append(name);
+                f.append("(");
+                f.append(matcherFunction.group(2));
+                f.append(")");
+                f.append(matcherFunction.group(3));
+                functionsSet.add(name);
+                System.err.println("++ "+name);
+                
+                matcherFunction.appendReplacement(sb, f.toString());
+            }
+            matcherFunction.appendTail(sb);
+            e = sb.toString();
+        }        
+                
         // replace the for expression
         e = e.replaceAll("[(]([^=\\s]+)\\s*in\\s*([\\w\\-]+)\\s*:\\s*([[\\w\\-][.][)][(]]+)[)]\\s*",
                 "($1=$2; $1<=$3; $1++) ");
@@ -315,13 +347,14 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Add "{" and "}" if the function doesn't have them
         e = e.replaceAll("function([.[^)]]*[)]) *([a-zA-Z0-9].*)$", "function$1 {$2}");
-                
+
         // Add return statement in function if there is no return yet
         // FIXME: multiple imbricated functions are not supported for the moment
         e = e.replaceAll("function([.[^)]]*[)]) *[{]\\s*(((?!return|function).)*)\\s*[}];*$", "function$1 {return $2}");
         // e = e.replaceAll("function([.[^)]]*[)])
         // *[{](((?!return|function).)*)[}] *;", "function$1 {return $2};");
         // e = e.replaceAll("function([.[^)]]*[)])
+        // *[{](((?!return|function).)*)[}] *;", "function$1 {return $2};");
         // *[{](((?!return|function).)*)[}] *\n", "function$1 {return $2}\n");
         
         // replace operator '**' by '^'
@@ -342,7 +375,7 @@ public class R2JsSession extends Rsession implements RLog {
         // We can't used the "for (x of array)" expression in javascript because
         // it's not supported by Java8 and his javascript evaluator
         e = e.replaceAll("for *[(]([\\w\\-]+) +in +([\\w\\-]+)[)] *[{]",
-                "var $2Length = utils.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
+                "var $2Length = R.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
         
         // Replace "TRUE" by "true" and "FALSE" by "false"
         // TODO: Check that 'TRUE' is not inside a variable ex: myTRUEvariable
@@ -362,10 +395,8 @@ public class R2JsSession extends Rsession implements RLog {
         // Replace operators (+, -, *, /, ...)
         e = replaceOperators(e);
         
-        // Default parameter ("function(arg = defaultValue) {...}") is defined
-        // after the version ES6 of javascript
-        // Java8 uses a previous version of javascript so we have to transform
-        // this expression in:
+        // Default parameter ("function(arg = defaultValue) {...}") is defined after the version ES6 of javascript
+        // Java8 uses a previous version of javascript so we have to transform this expression in:
         // function(arg) { arg = typeof arg !== 'undefined' ? arg :
         // defaultValue; ...}
         Matcher matcher = Pattern.compile("(function[.[^(]]*)[(]([.[^)]]*=[.[^)]]*)[)] *[{]").matcher(e);
@@ -446,31 +477,33 @@ public class R2JsSession extends Rsession implements RLog {
         
         // Remove unused ';' (after a bracket for instance)
         e = e.replaceAll("\\{ *;", "\\{");
-        e = e.replaceAll("\\} *;", "\\}");
+        //e = e.replaceAll("\\} *;", "\\}"); No! otherwise, will replace 'a={}; \n b=2' by 'a={} \n b=2'
         e = e.replaceAll("\\[ *;", "\\[");
         e = e.replaceAll("\\( *;", "\\(");
         e = e.replaceAll("; *;", ";");
+
+        e = e.replaceAll("(\\W*)strconcat\\(", "$1str.concat(");
         
-        e = e.replaceAll("(\\W*)ncol\\(", "$1utils.ncol(");
-        e = e.replaceAll("(\\W*)nrow\\(", "$1utils.nrow(");
+        e = e.replaceAll("(\\W*)ncol\\(", "$1R.ncol(");
+        e = e.replaceAll("(\\W*)nrow\\(", "$1R.nrow(");
         e = e.replaceAll("(\\W*)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
-        e = e.replaceAll("(\\W*)names\\(", "$1utils.names(");
-        e = e.replaceAll("(\\W*)length\\(", "$1utils.length(");
-        e = e.replaceAll("(\\W*)dim\\(", "$1utils.dim(");
-        e = e.replaceAll("(\\W*)rep\\(", "$1utils.rep(");
-        e = e.replaceAll("(\\W*)which\\(", "$1utils.which(");
-        e = e.replaceAll("(\\W*)whichmin\\(", "$1utils.whichmin(");
-        e = e.replaceAll("(\\W*)whichmax\\(", "$1utils.whichmax(");
-        e = e.replaceAll("(\\W*)strconcat\\(", "$1String.prototype.concat(");
-        
-        e = e.replaceAll("utils\\.utils\\.", "utils.");
-        
+        e = e.replaceAll("(\\W*)names\\(", "$1R.names(");
+        e = e.replaceAll("(\\W*)length\\(", "$1R.length(");
+        e = e.replaceAll("(\\W*)dim\\(", "$1R.dim(");
+        e = e.replaceAll("(\\W*)rep\\(", "$1R.rep(");
+        e = e.replaceAll("(\\W*)which\\(", "$1R.which(");
+        e = e.replaceAll("(\\W*)whichmin\\(", "$1R.whichmin(");
+        e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
+        e = e.replaceAll("(\\W*)Rprint\\(", "$1R.Rprint(");
+
+        e = e.replaceAll("R\\.R\\.", "R.");
+                
         // R Comments
         e = e.replaceAll("#", "//");
         //e = e.replaceAll("^(.*)#(.*)$", "$1/*$2*/");
         
         
-        if (DEBUG_JS) {
+        if (debug_js) {
             String[] lines_R = R.split("\n");
             String[] lines_JS = e.split("\n");
             int w = maxLength(lines_R);
@@ -530,7 +563,7 @@ public class R2JsSession extends Rsession implements RLog {
         return result;
 
     }
-    
+
     /**
      * Replace all quoted expression by variables to not parse them. All
      * expression in quotes will be replaced by QUOTE_EXPRESSION_ID with ID the
@@ -542,7 +575,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param expr
      *            - the expression with quotes
      * @param startIndex
-     *            - the index i of the first "QUOTE_EXPRESSION_i_" replacement
+     *            - the inall.namesdex i of the first "QUOTE_EXPRESSION_i_" replacement
      * @return a list containing all quotes expression
      */
     private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
@@ -674,7 +707,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // If there is a regex pattern argument
             if (pattern != null) {
-                unifRandomSb.append("utils.removeMatching(Object.keys(");
+                unifRandomSb.append("R.removeMatching(Object.keys(");
                 unifRandomSb.append(JS_VARIABLE_STORAGE_OBJECT);
                 unifRandomSb.append("), new RegExp(");
                 unifRandomSb.append(pattern);
@@ -700,16 +733,20 @@ public class R2JsSession extends Rsession implements RLog {
         return result;
     }
     
+    @Override
     public String[] ls(boolean all) {
-        try {
-            String[] ls = (String[])ScriptUtils.convert(eval("ls(all.names=" + (all ? "TRUE" : "FALSE") + ")"),String[].class);
-            if (ls == null) {
-                return new String[]{};
+        List<String> variablesandfunctions = new LinkedList<>();
+        variablesandfunctions.addAll(variablesSet);
+        variablesandfunctions.addAll(functionsSet);
+        
+        if (all) 
+            return variablesandfunctions.toArray(new String[]{});
+        else {
+        List<String> notall = new LinkedList<>();
+            for (String v : variablesandfunctions) {
+                if (!v.startsWith("_")) notall.add(v);
             }
-            return ls;
-        } catch (Exception re) {
-            log(re.getMessage(), Level.ERROR);
-            return new String[0];
+            return notall.toArray(new String[]{});
         }
     }
     
@@ -780,7 +817,7 @@ public class R2JsSession extends Rsession implements RLog {
             intricated.reset();
             List<String > found = new LinkedList<>();
             while(intricated.find()){
-            found.add(intricated.group(1)+intricated.group(2)+intricated.group(3));
+                found.add(intricated.group(1)+intricated.group(2)+intricated.group(3));
             }
             throw new UnsupportedOperationException("Intricated indexes 'abc[def[i]]' not supported at:"+String.join("\n", found));
         }
@@ -799,14 +836,14 @@ public class R2JsSession extends Rsession implements RLog {
                 for (int i = 0; i < indexesArray.length; i++) {
                     if (indexesArray[i].trim().equals("")) { // If the index is empty, we create an range array to select all the line
                         int dim = i;
-                        indexesArray[i] = "math.range(1, 1+math.subset(utils.dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because utils.rindex01 will apply -1
+                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.rindex01 will apply -1
                     }
                 }
 
                 StringBuilder result = new StringBuilder();
                 result.append("math.squeeze(math.subset(");
                 result.append(arrayName);
-                result.append(", utils.index01(");
+                result.append(", R.index01(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")))");
                 
@@ -847,14 +884,14 @@ public class R2JsSession extends Rsession implements RLog {
                     // If the index is empty, we create an range array to select all the line
                     if (indexesArray[i].trim().equals("")) {
                         int dim = i;
-                        indexesArray[i] = "math.range(1, 1+math.subset(utils.dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because utils.rindex01 will apply -1
+                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.rindex01 will apply -1
                     }
                 }
 
                 StringBuilder result = new StringBuilder();
                 result.append(arrayName + " = math.subset(");
                 result.append(arrayName);
-                result.append(", utils.index01(");
+                result.append(", R.index01(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")," + toset + ")");
 
@@ -871,7 +908,7 @@ public class R2JsSession extends Rsession implements RLog {
 
     /**
      * Convert the R expression or write csv: write.csv(data, file) to js
-     * expression: utils.writeCsv(file, data)
+     * expression: r.writeCsv(file, data)
      *
      *
      * @param expr - the expression containing the function to replace
@@ -898,7 +935,7 @@ public class R2JsSession extends Rsession implements RLog {
             // Build the mathjs expression to generate random uniform
             // distribution
             StringBuilder unifRandomSb = new StringBuilder();
-            unifRandomSb.append("utils.writeCsv(");
+            unifRandomSb.append("R.writeCsv(");
             unifRandomSb.append(file);
             unifRandomSb.append(", ");
             unifRandomSb.append(data.trim());
@@ -1063,16 +1100,16 @@ public class R2JsSession extends Rsession implements RLog {
             
             if (nrow == null && ncol == null) {
                 // We just create an array nrow and ncol are null
-                nrow = "math.prod(utils.dim(" + data + "))";
+                nrow = "math.prod(dim(" + data + "))";
                 ncol = "1";
             } else if (nrow != null) {
                 if (ncol == null) {
                     // compute the number of columns
-                    ncol = "math.ceil(math.dotDivide(math.prod(utils.dim(" + data + ")), " + nrow + "))";
+                    ncol = "math.ceil(math.dotDivide(math.prod(dim(" + data + ")), " + nrow + "))";
                 }
             } else if (ncol != null) {
                 // compute the number of rows
-                nrow = "math.ceil(math.dotDivide(math.prod(utils.dim(" + data + ")), " + ncol + "))";
+                nrow = "math.ceil(math.dotDivide(math.prod(dim(" + data + ")), " + ncol + "))";
             }
             
             // Create the array containing the dimension of the result matrix
@@ -1085,7 +1122,7 @@ public class R2JsSession extends Rsession implements RLog {
             String stringDimArray = stringDimArraybuilder.toString();
             
             if (byrow == null || byrow.equals("false")) {
-                arraySb.append("math.transpose(math.reshape(utils.expendArray(");
+                arraySb.append("math.transpose(math.reshape(R.expendArray(");
                 arraySb.append(data);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1093,7 +1130,7 @@ public class R2JsSession extends Rsession implements RLog {
                 arraySb.append(stringDimArray);
                 arraySb.append(".reverse()))");
             } else {
-                arraySb.append("math.reshape(utils.expendArray(");
+                arraySb.append("math.reshape(R.expendArray(");
                 arraySb.append(data);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1150,7 +1187,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // If the field 'dim' is not null
             if (stringDimArray != null) {
-                arraySb.append("math.transpose(math.reshape(utils.expendArray(");
+                arraySb.append("math.transpose(math.reshape(R.expendArray(");
                 arraySb.append(stringArray);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1161,7 +1198,7 @@ public class R2JsSession extends Rsession implements RLog {
                 // Else we flat the matrix
                 arraySb.append("math.reshape(");
                 arraySb.append(stringArray);
-                arraySb.append(", math.multiply(math.ones(1),math.prod(utils.dim(");
+                arraySb.append(", math.multiply(math.ones(1),math.prod(dim(");
                 arraySb.append(stringArray);
                 arraySb.append("))))");
             }
@@ -1210,10 +1247,10 @@ public class R2JsSession extends Rsession implements RLog {
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
             
-            saveSb.append("utils.writeCsv(");
+            saveSb.append("R.writeCsv(");
             saveSb.append(fileString);
             saveSb.append(", ");
-            saveSb.append("utils.createJsonString(");
+            saveSb.append("R.createJsonString(");
             saveSb.append(listStringUnquotted);
             saveSb.append(", '");
             saveSb.append(JS_VARIABLE_STORAGE_OBJECT);
@@ -1256,7 +1293,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // Add all loaded variables to the java list of variables
             try {
-                String readVariablesExpr = replaceNameByQuotes(quotesList,"utils.readJsonVariables(" + fileString + ")", false);
+                String readVariablesExpr = replaceNameByQuotes(quotesList,"R.readJsonVariables(" + fileString + ")", false);
                 String[] loadedVariables = (String[])staticCast(engine.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
@@ -1265,7 +1302,7 @@ public class R2JsSession extends Rsession implements RLog {
             
             // Build the mathjs expression to create load data
             StringBuilder loadSb = new StringBuilder();
-            loadSb.append("utils.loadJson(");
+            loadSb.append("R.loadJson(");
             loadSb.append(fileString);
             loadSb.append(", '");
             loadSb.append(JS_VARIABLE_STORAGE_OBJECT);
@@ -1377,7 +1414,7 @@ public class R2JsSession extends Rsession implements RLog {
     }
     
     /**
-     * This function replaces the R function length by JS equivalent with "utils.size()" 
+     * This function replaces the R function length by JS equivalent with "R.size()" 
      * function from library mathjs.
      * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
      *
@@ -1401,7 +1438,7 @@ public class R2JsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder rbindSb = new StringBuilder();
             
-            rbindSb.append("math.squeeze(math.subset(utils.dim(");
+            rbindSb.append("math.squeeze(math.subset(dim(");
             rbindSb.append(values);
             rbindSb.append("), math.index(0)))");
             
@@ -1442,7 +1479,7 @@ public class R2JsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
             
-            fileExistSb.append("utils.fileExists(");
+            fileExistSb.append("R.fileExists(");
             fileExistSb.append(values);
             fileExistSb.append(")");
             
@@ -1622,7 +1659,7 @@ public class R2JsSession extends Rsession implements RLog {
         operatorsMap.put("%*%", "math.multiply");
         operatorsMap.put("%/%", "math.floor(math.dotDivide");
         operatorsMap.put("%%", "math.mod");
-        operatorsMap.put(":", "utils.range");
+        operatorsMap.put(":", "R.range");
         operatorsMap.put("^", "math.dotPow");
 
         String[] operators = new String[] {"^", "*/%:", "+-" };
@@ -2342,4 +2379,31 @@ engine = null;
     public Object cast(Object o) throws ClassCastException {
         return staticCast(o);
     }
+
+//    public static void main(String[] args) throws RException {
+//        R2JsSession R = new R2JsSession(System.out, null);
+//        R.debug_js = true;
+//        
+//        R.voidEval("Sys__info = function() {return(list("
+//                        +"'sysname'='"+System.getProperty("os.name")+"',"
+//                        +"'version'='"+System.getProperty("os.version")+"',"
+//                        +"'user'='"+System.getProperty("user.name")+"')"                        
+//                        +")}");
+//        
+//        System.err.println(Arrays.asList(R.ls(true)));
+//        
+//                 R.voidEval("Sys__getenv = function(v) {env=list('R_HOME'=NULL)\nreturn(env[v])}");
+//                 
+//        System.err.println(Arrays.asList(R.ls(true)));
+//        
+//        R.voidEval("options = function() {return(list('OutDec'='.'))}");
+//    
+//        System.err.println(Arrays.asList(R.ls(true)));
+//    
+//         R.voidEval("a <- 1+pi");
+//        R.voidEval("f = function(x){b <- 1+pi \n d <- 1 \n return(d)}");
+// 
+//        System.err.println(Arrays.asList(R.ls(true)));
+//    }
+
 }
