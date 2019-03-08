@@ -37,13 +37,9 @@ getNextDesign <- function(gradientdescent,X,Y) {
     #normalize delta factor of gradient by fun range
     if (gradientdescent$i == 1) {gradientdescent$delta = gradientdescent$delta / (max(Y[,1])-min(Y[,1]))}
 
-    if (gradientdescent$i > gradientdescent$nmax) {
-        return();
-    }
+    if (gradientdescent$i > gradientdescent$nmax) return();
 
-    if (min(Y[,1]) < gradientdescent$target) {
-        return();
-    }
+    if (min(Y[,1]) < gradientdescent$target) return();
 
     X = as.matrix(X)
     names(X) <- names(gradientdescent$input)
