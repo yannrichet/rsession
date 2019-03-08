@@ -80,7 +80,7 @@ import jdk.nashorn.api.scripting.ScriptUtils;
  * 
  * @author Nicolas Chabalier
  */
-public class R2JsSession extends Rsession implements RLog {
+public class R2jsSession extends Rsession implements RLog {
         
     private static final String[] MATH_FUN_JS = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
         "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum","mean", "median", "std", "var" };
@@ -102,8 +102,8 @@ public class R2JsSession extends Rsession implements RLog {
     // List of quotes expression
     private List<String> quotesList;
     
-    public static R2JsSession newInstance(final RLog console, Properties properties) {
-        return new R2JsSession(console, properties);
+    public static R2jsSession newInstance(final RLog console, Properties properties) {
+        return new R2jsSession(console, properties);
     }
     
     /**
@@ -114,7 +114,7 @@ public class R2JsSession extends Rsession implements RLog {
      * @param console - console
      * @param properties - properties
      */
-    public R2JsSession(RLog console, Properties properties) {
+    public R2jsSession(RLog console, Properties properties) {
         super(console);
         
         variablesSet = new HashSet<>();
@@ -135,7 +135,7 @@ public class R2JsSession extends Rsession implements RLog {
             // Instantiate the variables storage object which store all variables defined in the current session
             engine.eval("var " + JS_VARIABLE_STORAGE_OBJECT + " = {};");
         } catch (ScriptException ex) {
-            Logger.getLogger(R2JsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
     }
     
@@ -149,7 +149,7 @@ public class R2JsSession extends Rsession implements RLog {
         functionsSet.add(name);
     }
 
-    public R2JsSession(final PrintStream p, Properties properties) {
+    public R2jsSession(final PrintStream p, Properties properties) {
         this(new RLog() {
 
             public void log(String string, Level level) {
@@ -1297,7 +1297,7 @@ public class R2JsSession extends Rsession implements RLog {
                 String[] loadedVariables = (String[])staticCast(engine.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
-                Logger.getLogger(R2JsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+                Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             }
             
             // Build the mathjs expression to create load data
