@@ -129,7 +129,7 @@ public class R2jsSession extends Rsession implements RLog {
         try {
             loadJSLibraries();
             
-            for (String f : new String[]{"png","plot","abline","rgb","hist"})
+            for (String f : new String[]{"png","plot","abline","rgb","hist", "pairs"})
                 addReturnNullFunction(f);
             
             // Instantiate the variables storage object which store all variables defined in the current session
@@ -232,6 +232,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("which.max(", "whichmax(");
         R_TO_JS.put("paste(", "strconcat(");
         R_TO_JS.put("print(", "Rprint(");
+        R_TO_JS.put("capture.output(", "Rprint("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
         R_TO_JS.put("dev.off()", "");
@@ -330,7 +331,6 @@ public class R2jsSession extends Rsession implements RLog {
                 f.append(")");
                 f.append(matcherFunction.group(3));
                 functionsSet.add(name);
-                System.err.println("++ "+name);
                 
                 matcherFunction.appendReplacement(sb, f.toString());
             }
@@ -495,6 +495,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)whichmin\\(", "$1R.whichmin(");
         e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
         e = e.replaceAll("(\\W*)Rprint\\(", "$1R.Rprint(");
+        e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
                 

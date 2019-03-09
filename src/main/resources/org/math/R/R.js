@@ -231,6 +231,7 @@
 
 
     function dim(obj) {
+        if (obj == null) return 0;
         if (Array.isArray(obj)) {
             return math.size(obj);
         } else if (typeof(obj)=="object") {
@@ -248,6 +249,7 @@
     }
 
     function length(obj) {
+            if (obj == null) return 0;
             var s = 0, key;
             for (key in obj) {
                 if (obj.hasOwnProperty(key))
@@ -325,6 +327,20 @@
         return x;
     }
 
+    function apply(x,margin, f) {
+        var y = [];
+        if (margin==1) {
+            for (var i=0;i<nrow(x); i++) {
+                y[i] = f(math.squeeze(math.subset(x,math.index(i,range(0,ncol(x)-1)))));
+            }
+        } else if (margin==2) {
+            for (var i=0;i<ncol(x); i++) {
+                y[i] = f(math.squeeze(math.subset(x,math.index(range(0,nrow(x)-1),i))));
+            }
+        } else throw new Error("margin "+margin+" not supported");
+        return y;
+    }
+
     var proto = _R.prototype;
     proto.fileExists = fileExists;
     proto.writeCsv = writeCsv;
@@ -348,6 +364,7 @@
     proto.whichmax = whichmax;
     proto.Rprint = Rprint;
     //proto.c = c;
+    proto.apply = apply;
 
     return hooks;
 

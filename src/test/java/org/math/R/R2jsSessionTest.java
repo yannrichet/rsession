@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 /**
- * Test the converter r->js of the class {@link R2JsSession}
+ * Test the converter r->js of the class {@link R2jsSession}
  *
  * @author Nicolas Chabalier
  *
@@ -16,7 +16,7 @@ public class R2jsSessionTest {
 
     // maximal epsilon wanted between actual and expected values
     final double epsilon = 1e-12;
-    R2JsSession engine = R2JsSession.newInstance(new RLogSlf4j(), null);
+    R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
 
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
@@ -75,6 +75,21 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("4-6-5+-7+(-5)-(-48+4)-(+56)"), 4 - 6 - 5 + -7 + (-5) - (-48 + 4) - (+56), epsilon);
         assertEquals((Double) engine.eval("45.*0.2/-65.5*45.+(45.-5.*7.)*(+8.-4.-(-1.)+(-1.))/1.2/41./-5.*12.*0.1+4.*(48.+1.2/4.)/4."), 45. * 0.2 / -65.5 * 45. + (45. - 5. * 7.) * (+8. - 4. - (-1.) + (-1.)) / 1.2 / 41. / -5. * 12. * 0.1 + 4. * (48. + 1.2 / 4.) / 4., epsilon);
 
+    }
+
+    @Test
+    public void testApply() throws Rsession.RException {
+        String apply_f = "apply(X,1,function (x) {\n"
+                + "     x1 <- x[1] * 15 - 5\n"
+                + "     x2 <- x[2] * 15\n"
+                + "     return((x2 - 5/(4 * pi^2) * (x1^2) + 5/pi * x1 - 6)^2 + 10 * (1 - 1/(8 * pi)) * cos(x1) + 10)\n"
+                + " })";
+
+        engine.voidEval("X = matrix(c(0,1,0,1),ncol=2)");
+        assert Arrays.equals((double[]) engine.eval(apply_f), new double[]{305.9563016021099, 152.01412645333116});
+
+        engine.voidEval("X = matrix(c(0,0),nrow=1)");
+        assert Arrays.equals((double[]) engine.eval(apply_f), new double[]{305.9563016021099});
     }
 
     @Test
@@ -255,6 +270,14 @@ public class R2jsSessionTest {
 
         // Matrix transpose
         engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
+        assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2, 4},{3, 1}, {5, 7}});
+ 
+        engine.voidEval("AA = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
+        assert Arrays.deepEquals((double[][]) engine.eval("AA"), new double[][]{{2, 1},{4,5}, {3, 7}});
+
+        engine.voidEval("AAA = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2)");
+        assert Arrays.deepEquals((double[][]) engine.eval("AAA"), new double[][]{{2, 1},{4,5}, {3, 7}});
+
         engine.voidEval("B = t(A)");
         assert Arrays.deepEquals((double[][]) engine.eval("B"), new double[][]{{2, 3, 5}, {4, 1, 7}});
 
@@ -355,7 +378,7 @@ public class R2jsSessionTest {
     @Test
     public void testInIndexNotSupported() {
         try {
-            String repl = R2JsSession.replaceIndexes("abc[def[i]]");
+            String repl = R2jsSession.replaceIndexes("abc[def[i]]");
             assert false : "Did not detect wrong index pattern: " + repl;
         } catch (UnsupportedOperationException e) {
             assert true;
@@ -363,26 +386,26 @@ public class R2jsSessionTest {
         }
 
         try {
-            String repl = R2JsSession.replaceIndexes("abc[[i]]");
+            String repl = R2jsSession.replaceIndexes("abc[[i]]");
             assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
         try {
-            String repl = R2JsSession.replaceIndexes("abc[i]");
+            String repl = R2jsSession.replaceIndexes("abc[i]");
             assert true ;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
           try {
-            String repl = R2JsSession.replaceIndexes("abc[i][j]");
+            String repl = R2jsSession.replaceIndexes("abc[i][j]");
             assert true ;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
         
         try {
-            String repl = R2JsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
+            String repl = R2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
                     + "    Y = Y[,1]\n"
                     + "    m = min(Y)\n"
                     + "    m.ix = which(Y==m)\n"
@@ -397,7 +420,7 @@ public class R2jsSessionTest {
             e.printStackTrace();
         }
       try {
-            String repl = R2JsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
+            String repl = R2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
                     + "    Y = Y[,1]\n"
                     + "    m = min(Y)\n"
                     + "    m.ix = which(Y==m)[1]\n"
