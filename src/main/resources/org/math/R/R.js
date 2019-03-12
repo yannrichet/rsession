@@ -353,7 +353,7 @@
 
     function getwd() {
         var File = Java.type('java.io.File');
-        return new File(".").getbsolutePath();
+        return new File(".").getAbsolutePath();
     }
     
     function sleep(t) {
