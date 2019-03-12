@@ -100,7 +100,7 @@ public class BrentTest {
 
     @Test
     public void testfrom01R2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -143,7 +143,7 @@ public class BrentTest {
 
     @Test
     public void testfrom01FunR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -191,7 +191,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -242,7 +242,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignFunR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -490,7 +490,7 @@ public class BrentTest {
 
     //@Test
     public void testErrorFunR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -595,7 +595,8 @@ public class BrentTest {
 
     @Test
     public void testR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
+        ((R2jsSession)R).debug_js = true;
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -622,7 +623,7 @@ public class BrentTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };
 

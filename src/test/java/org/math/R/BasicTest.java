@@ -20,7 +20,7 @@ public class BasicTest {
     //RserverConf conf;
     RserveSession s;
     RenjinSession r;
-    R2JsSession q;
+    R2jsSession q;
 
     int rand = Math.round((float) Math.random() * 10000);
     File tmpdir = new File(System.getProperty("java.io.tmpdir"), "" + rand);
@@ -37,7 +37,7 @@ public class BasicTest {
                 System.out.println("                               " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };/*RLogPanel();
          JFrame f = new JFrame("RLogPanel");
@@ -72,7 +72,7 @@ public class BasicTest {
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
 
-        q = R2JsSession.newInstance(l, null);
+        q = R2jsSession.newInstance(l, null);
     }
 
     @After
@@ -82,11 +82,11 @@ public class BasicTest {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        s.close();
+        s.closeLog();
         //A shutdown hook kills all Rserve at the end.
-        r.close();
+        r.closeLog();
 
-        q.close();
+        q.closeLog();
 
         System.out.println("========================================================================");
         System.out.println(s.notebook());

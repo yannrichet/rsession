@@ -171,7 +171,7 @@ public class GradientDescent1DTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };
 

@@ -41,7 +41,7 @@ public class RPanelsTest {
                 System.out.println("                               " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };/*RLogPanel();
          JFrame f = new JFrame("RLogPanel");
@@ -97,9 +97,9 @@ public class RPanelsTest {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        s.close();
+        s.closeLog();
         //A shutdown hook kills all Rserve at the end.
-        r.close();
+        r.closeLog();
     }
 
     void frame(JPanel p) {

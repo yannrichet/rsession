@@ -563,7 +563,7 @@ public class RserveSessionTest {
                 }
             }
 
-            public void close() {
+            public void closeLog() {
             }
         }, null);
         final RserveSession r2 = RserveSession.newInstanceTry(new RLog() {
@@ -576,7 +576,7 @@ public class RserveSessionTest {
                 }
             }
 
-            public void close() {
+            public void closeLog() {
             }
         }, null);
 
@@ -635,7 +635,7 @@ public class RserveSessionTest {
                     }
                 }
 
-                public void close() {
+                public void closeLog() {
                 }
             }, null);
         }
@@ -686,7 +686,7 @@ public class RserveSessionTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };
 

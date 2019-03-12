@@ -360,7 +360,7 @@ public class RserveEGOTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };/*RLogPanel();
          JFrame f = new JFrame("RLogPanel");

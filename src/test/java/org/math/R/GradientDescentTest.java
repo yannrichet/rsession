@@ -16,12 +16,16 @@ import org.math.array.DoubleArray;
 public class GradientDescentTest {
 
     /*
-# f <- function(X) matrix(Vectorize(function(x) {((x+5)/15)^3})(X),ncol=1)
-# 
+# f <- function(X) matrix(apply(X,1,function (x) {
+#     x1 <- x[1] * 15 - 5
+#     x2 <- x[2] * 15
+#     (x2 - 5/(4 * pi^2) * (x1^2) + 5/pi * x1 - 6)^2 + 10 * (1 - 1/(8 * pi)) * cos(x1) + 10
+# }),ncol=1)
+#
 # options = list(nmax = 10, delta = 0.1, epsilon = 0.01, target=0)
 # gd = GradientDescent(options)
-# 
-# X0 = getInitialDesign(gd, input=list(x=list(min=-5,max=10)), NULL)
+#
+# X0 = getInitialDesign(gd, input=list(x1=list(min=0,max=1),x2=list(min=0,max=1)), NULL)
 # Y0 = f(X0)
 # Xi = X0
 # Yi = Y0
@@ -41,9 +45,13 @@ public class GradientDescentTest {
 # print(displayResults(gd,Xi,Yi))
      */
     static double f(double[] x) {
-        return pow(((x[0] + 2.5) / 15), 2);
+        double x1 = x[0];// * 15 - 5;
+        double x2 = x[1];// * 15;
+        double y = Math.pow((x2 - 5 / (4 * Math.PI * Math.PI) * (x1 * x1) + 5 / Math.PI * x1 - 6), 2) + 10 * (1 - 1 / (8 * Math.PI)) * Math.cos(x1) + 10;
+        //System.err.println("f(" + x1 + "," + x2 + ") = " + y);
+        return (y);
     }
-    String[] Xnames = {"x"};
+    String[] Xnames = {"x1", "x2"};
 
     public double[] F(double[][] X) {
         double[] Y = new double[X.length];
@@ -69,23 +77,23 @@ public class GradientDescentTest {
             R.voidEval("options = list(nmax = 10, delta = 0.1, epsilon = 0.01, target=0)");
             R.voidEval("gd = GradientDescent(options)");
 
-            double[][] X0 = R.asMatrix(R.eval("getInitialDesign(gd, list(x=list(min=-5,max=10)), NULL)"));
-            System.err.println("X0=\n" + Arrays.deepToString(X0));
+            double[][] X0 = R.asMatrix(R.eval("getInitialDesign(gd, list(x1=list(min=-5,max=10),x2=list(min=0,max=15)), NULL)"));
+            System.err.println("X0=" + Arrays.deepToString(X0));
             double[] Y0 = F(X0);
-            System.err.println("Y0=\n" + Arrays.toString(Y0));
-            R.set("Xi", X0, "x");
+            System.err.println("Y0=" + Arrays.toString(Y0));
+            R.set("Xi", X0, "x1","x2");
             R.set("Yi", DoubleArray.columnVector(Y0));
 
             boolean finished = false;
             while (!finished) {
                 double[][] Xj = R.asMatrix(R.eval("getNextDesign(gd,Xi,Yi)"));
-                System.err.println("Xj=\n" + Arrays.deepToString(Xj));
+                System.err.println("Xj=" + Arrays.deepToString(Xj));
                 if (Xj == null || Xj.length == 0) {
                     finished = true;
                 } else {
                     double[] Yj = F(Xj);
-                    System.err.println("Yj=\n" + Arrays.toString(Yj));
-                    R.set("Xj", Xj, "x");
+                    System.err.println("Yj=" + Arrays.toString(Yj));
+                    R.set("Xj", Xj, "x1","x2");
                     R.set("Yj", DoubleArray.columnVector(Yj));
                     R.voidEval("Xi = rbind(Xi,Xj)");
                     R.voidEval("Yi = rbind(Yi,Yj)");
@@ -143,7 +151,8 @@ public class GradientDescentTest {
 
     @Test
     public void testR2js() {
-        R = new R2JsSession(l, prop);
+        R = new R2jsSession(l, prop);
+        ((R2jsSession)R).debug_js = true;
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -170,7 +179,7 @@ public class GradientDescentTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };
 

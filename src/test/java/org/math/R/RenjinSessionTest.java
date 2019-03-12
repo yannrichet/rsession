@@ -423,7 +423,7 @@ public class RenjinSessionTest {
                 }
             }
 
-            public void close() {
+            public void closeLog() {
             }
         }, null);
         final RenjinSession r2 = RenjinSession.newInstance(new RLog() {
@@ -436,7 +436,7 @@ public class RenjinSessionTest {
                 }
             }
 
-            public void close() {
+            public void closeLog() {
             }
         }, null);
 
@@ -476,8 +476,8 @@ public class RenjinSessionTest {
         }).start();
 
         Thread.sleep(5000);
-        r1.close();
-        r2.close();
+        r1.closeLog();
+        r2.closeLog();
     }
 
     @Test
@@ -495,7 +495,7 @@ public class RenjinSessionTest {
                     }
                 }
 
-                public void close() {
+                public void closeLog() {
                 }
             }, null);
         }
@@ -534,7 +534,7 @@ public class RenjinSessionTest {
         }
 
         for (int i = 0; i < R.length; i++) {
-            R[i].close();
+            R[i].closeLog();
         }
     }
 
@@ -546,7 +546,7 @@ public class RenjinSessionTest {
                 System.out.println("                              " + level + " " + string);
             }
 
-            public void close() {
+            public void closeLog() {
             }
         };/*RLogPanel();
          JFrame f = new JFrame("RLogPanel");
