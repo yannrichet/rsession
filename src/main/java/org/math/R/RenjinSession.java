@@ -100,14 +100,14 @@ public class RenjinSession extends Rsession implements RLog {
                 }
 
                 if (level == Level.WARNING) {
-                    p.print("(!) ");
+                    pp.print("(!) ");
                 } else if (level == Level.ERROR) {
-                    p.print("(!!) ");
+                    pp.print("(!!) ");
                 }
-                p.println(string);
+                pp.println(string);
             }
 
-            public void close() {
+            public void closeLog() {
                 if (p != null) {
                     p.close();
                 }
@@ -260,7 +260,7 @@ public class RenjinSession extends Rsession implements RLog {
                         log(lastOuput, Level.WARNING);
                     } finally {
                         try {
-                            R.eval("close(.f)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
                             R.eval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
@@ -634,8 +634,8 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void closeLog() {
+        super.closeLog();
         R.getSession().close();
     }
 
@@ -779,7 +779,7 @@ public class RenjinSession extends Rsession implements RLog {
             System.out.println(R.cast(R.rawEval(args[j])));
         }
 
-        R.close();
+        R.closeLog();
 
         System.out.println(R.notebook());
     }

@@ -195,7 +195,7 @@ public class RserveSession extends Rsession implements RLog {
                 p.println(string);
             }
 
-            public void close() {
+            public void closeLog() {
                 p.close();
             }
         }, serverconf, tryLocalRServe);
@@ -307,6 +307,7 @@ public class RserveSession extends Rsession implements RLog {
      */
     @Override
     public void end() {
+        super.end();
         if (R == null) {
             log("Void session terminated.", Level.INFO);
             cleanupListeners();
@@ -322,12 +323,6 @@ public class RserveSession extends Rsession implements RLog {
 
         R = null;
         cleanupListeners();
-    }
-
-    @Override
-    public void close() {
-        end();
-        super.close();
     }
 
     @Override
@@ -396,7 +391,7 @@ public class RserveSession extends Rsession implements RLog {
                         log(lastOuput, Level.WARNING);
                     } finally {
                         try {
-                            R.eval("close(.f)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
                             R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(ex.getMessage(), Level.ERROR);
@@ -413,7 +408,7 @@ public class RserveSession extends Rsession implements RLog {
                         log(lastMessage, Level.WARNING);
                     } finally {
                         try {
-                            R.eval("close(.fm)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
                             R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(ex.getMessage(), Level.ERROR);
@@ -490,7 +485,7 @@ public class RserveSession extends Rsession implements RLog {
                         log(lastOuput, Level.WARNING);
                     } finally {
                         try {
-                            R.eval("close(.f)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
                             R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
@@ -507,7 +502,7 @@ public class RserveSession extends Rsession implements RLog {
                         log(lastMessage, Level.WARNING);
                     } finally {
                         try {
-                            R.eval("close(.fm)"); // because Renjin.sink() do not properly close connection, so calling it explicitely
+                            R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
                             R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
@@ -1503,7 +1498,7 @@ public class RserveSession extends Rsession implements RLog {
             System.out.println(R.cast(R.rawEval(args[j])));
         }
 
-        R.close();
+        R.closeLog();
 
         System.out.println(R.notebook());
     }

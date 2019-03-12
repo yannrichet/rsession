@@ -19,7 +19,7 @@ public class RLogSlf4j implements RLog {
 	}
 
 	@Override
-	public void close() {
+	public void closeLog() {
 		          
 	}
         

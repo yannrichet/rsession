@@ -14,5 +14,5 @@ public interface RLog {
      * @param l Level*/
     public void log(String message, Level l);
 
-    public void close();
+    public void closeLog();
 }

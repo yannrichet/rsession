@@ -103,7 +103,7 @@ public abstract class Rsession implements RLog {
     public abstract boolean isAvailable();
 
     protected void finalize() throws Throwable {
-        close();
+        closeLog();
         super.finalize();
     }
 
@@ -115,23 +115,24 @@ public abstract class Rsession implements RLog {
 
     public void removeLogger(RLog l) {
         if (loggers.contains(l)) {
-            l.close();
+            l.closeLog();
             loggers.remove(l);
         }
     }
 
-    public void close() {
+    @Override
+    public void closeLog() {
         if (loggers != null) {
             for (RLog l : loggers) {
                 if (l != null) {
-                    l.close();
+                    l.closeLog();
                 }
             }
         }
     }
 
     public void end() {
-        close();
+        closeLog();
     }
 
     List<BusyListener> busy = new LinkedList<BusyListener>();
@@ -339,7 +340,7 @@ public abstract class Rsession implements RLog {
                 p.println(string);
             }
 
-            public void close() {
+            public void closeLog() {
                 p.close();
             }
         });

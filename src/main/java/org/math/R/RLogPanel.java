@@ -72,7 +72,7 @@ public class RLogPanel extends JPanel implements RLog {
     private OutputStream error_stream;
     private OutputStream warn_stream;
 
-    public void close() {
+    public void closeLog() {
         if (output_stream != null) {
             try {
                 output_stream.close();
@@ -105,7 +105,7 @@ public class RLogPanel extends JPanel implements RLog {
 
     @Override
     protected void finalize() throws Throwable {
-        close();
+        closeLog();
         super.finalize();
     }
     char level = 'i';
