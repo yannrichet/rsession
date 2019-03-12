@@ -351,6 +351,24 @@
             return Object.keys(x);
     }
 
+    function getwd() {
+        var File = Java.type('java.io.File');
+        return new File(".").getbsolutePath();
+    }
+    
+    function sleep(t) {
+        var Thread = Java.type('java.lang.Thread')
+        return Thread.sleep(t);
+    }
+    
+    function isfunction(f) {
+        return "function"==typeof(f);
+    }
+    
+    function isnull(o) {
+        return o==null;
+    }
+    
     var proto = _R.prototype;
     proto.fileExists = fileExists;
     proto.write = write;
@@ -376,6 +394,10 @@
     //proto.c = c;
     proto.apply = apply;
     proto._in = _in;
+    proto.getwd = getwd;
+    proto.sleep = sleep;
+    proto.isfunction = isfunction;
+    proto.isnull = isnull;
 
     return hooks;
 

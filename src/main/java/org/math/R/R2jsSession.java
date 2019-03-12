@@ -234,6 +234,9 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("which.max(", "whichmax(");
         R_TO_JS.put("paste(", "strconcat(");
         R_TO_JS.put("print(", "Rprint(");
+        R_TO_JS.put("is.function(", "isfunction(");
+        R_TO_JS.put("is.null(", "isnull(");
+        R_TO_JS.put("Sys.sleep(", "sleep(");
         R_TO_JS.put("capture.output(", "Rprint("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
@@ -339,7 +342,7 @@ public class R2jsSession extends Rsession implements RLog {
             matcherFunction.appendTail(sb);
             e = sb.toString();
         }        
-                
+
         // replace the for expression
         e = e.replaceAll("[(]([^=\\s]+)\\s*in\\s*([\\w\\-]+)\\s*:\\s*([[\\w\\-][.][)][(]]+)[)]\\s*",
                 "($1=$2; $1<=$3; $1++) ");
@@ -361,7 +364,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace operator '**' by '^'
         e = e.replaceAll("\\*\\*", "\\^");
-        
+
         
         // Replace array indexing
         e = replaceIndexesSet(e);
@@ -413,13 +416,13 @@ public class R2jsSession extends Rsession implements RLog {
             matcher.appendTail(sb);
             e = sb.toString();
         }
-        
+
         // replace matrix expression
         e = createMatrix(e);
         
         // replace array expression
         e = createArray(e);
-        
+
         // replace write csv expression
         e = createWriteCSV(e);
         
@@ -429,7 +432,7 @@ public class R2jsSession extends Rsession implements RLog {
         // replace list expression
         e = e.replace("list()","{}");
         e = createList(e);
-        
+
         // replace runif fct expression
         e = createRunif(e);
         
@@ -447,7 +450,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace rbind fct expression
         e = createCbindFunction(e);
-        
+
         // replace length fct expression
         e = createLengthFunction(e);
         
@@ -464,12 +467,12 @@ public class R2jsSession extends Rsession implements RLog {
         
         // Replace variables by variableStorageObject.variable
         e = replaceVariables(e, variablesSet);
-        
+
         // Finally replace "quotes variables" by their expressions associated
         e = replaceNameByQuotes(quotesList, e, false);
-        
+
         // Replace '$' accessor of data.frame by a '.'
-        e = e.replaceAll("\\$" + JS_VARIABLE_STORAGE_OBJECT + ".", "\\$"); // Remove the JS variable if there is a '$' before
+        e = e.replaceAll("\\$" + JS_VARIABLE_STORAGE_OBJECT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
         e = e.replaceAll("\\$", ".");
 
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
@@ -500,11 +503,15 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)whichmin\\(", "$1R.whichmin(");
         e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
         e = e.replaceAll("(\\W*)Rprint\\(", "$1R.Rprint(");
+        e = e.replaceAll("(\\W*)getwd\\(", "$1R.getwd(");
+        e = e.replaceAll("(\\W*)sleep\\(", "$1R.sleep(");
+        e = e.replaceAll("(\\W*)isfunction\\(", "$1R.isfunction(");
+        e = e.replaceAll("(\\W*)isnull\\(", "$1R.isnull(");
         e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
         e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
-                
+
         // R Comments
         e = e.replaceAll("#", "//");
         //e = e.replaceAll("^(.*)#(.*)$", "$1/*$2*/");
@@ -566,7 +573,7 @@ public class R2jsSession extends Rsession implements RLog {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
                 result = result.replaceAll("(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll(JS_VARIABLE_STORAGE_OBJECT + "." + JS_VARIABLE_STORAGE_OBJECT, JS_VARIABLE_STORAGE_OBJECT);
+                result = result.replaceAll(JS_VARIABLE_STORAGE_OBJECT + "\\." + JS_VARIABLE_STORAGE_OBJECT, JS_VARIABLE_STORAGE_OBJECT);
             }
         }
         return result;

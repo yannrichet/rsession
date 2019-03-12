@@ -20,6 +20,7 @@ public class R2jsSessionTest {
 
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
+        engine.debug_js = true;
 
         engine.voidEval("a = 1");
         assert (Integer) engine.eval("a") == 1;
@@ -457,6 +458,7 @@ public class R2jsSessionTest {
 
     @Test
     public void testSaveAndLoad() throws Rsession.RException {
+engine.debug_js = true;
 
         double rand = (double) Math.random();
 
@@ -488,8 +490,53 @@ public class R2jsSessionTest {
             assertTrue(true);
         }
 
+        engine.set("s", "abcdef");
+        engine.set("a", "123");
+        engine.set("b", "456");
+        engine.savels(f,"");
+         engine.rm("s");
+        engine.rm("a");
+        engine.rm("b");
+        engine.load(f);
+        assert Arrays.equals(engine.ls(), new String[]{"a", "b", "s"}) : Arrays.toString(engine.ls());
     }
 
+    @Test
+    public void testSaveGlobalEnv() throws Rsession.RException {
+        engine.debug_js = true;
+
+        engine.voidEval("l = list(a=1,b=2)");
+
+        assert engine.ls(true).length == 1 : "Not expected env: " + Arrays.toString(engine.ls(true));
+
+        engine.voidEval("for (n in names(l)) {\nprint(n);\n.GlobalEnv[[n]] = l[[n]]\n}");
+
+        //assert engine.ls(true).length == 3 : "Not expected env: " + Arrays.toString(engine.ls(true));
+        try {
+            engine.savels(File.createTempFile("___", "Rdata"), "");
+        } catch (Exception ex) {
+            assert false : ex;
+        }
+    }
+
+     @Test
+    public void testRegexGlobalEnv() throws Rsession.RException {
+        engine.debug_js = true;
+
+        engine.voidEval("f = function(x,y){\n print(x)\nif(is.null(y)) stop('null y')\nprint(y)\n}");
+        engine.voidEval("l = list(a=1,b=2)");
+
+        assert engine.ls(true).length == 2 : "Not expected env: " + Arrays.toString(engine.ls(true));
+
+        try {
+         System.err.println(engine.eval("f(.GlobalEnv,l)"));
+        } catch (Exception ex) {
+            assert false : ex;
+        }
+
+    }
+
+    
     @Test
     public void testRmFunction() throws Rsession.RException {
 
@@ -590,6 +637,7 @@ public class R2jsSessionTest {
 
     @Test
     public void testList() throws Rsession.RException {
+engine.debug_js = true;
 
         engine.voidEval("a = c('aa','bb','cc')");
         engine.voidEval("b = c(11,22,33)");
@@ -630,6 +678,9 @@ public class R2jsSessionTest {
         assert ((String) engine.eval("c$first[1]")).equals("aa");
         assert ((Integer) engine.eval("c$second[2]")).equals(22);
 
+        assert Arrays.equals((String[]) engine.eval("c[['first']]"),new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[])engine.eval("c[['first']]"));
+        engine.voidEval("f = 'first'");
+        assert Arrays.equals((String[]) engine.eval("c[[f]]"),new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[])engine.eval("c[['first']]"));
     }
 
     @Test
