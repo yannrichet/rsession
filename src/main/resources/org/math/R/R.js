@@ -26,7 +26,7 @@
     }
     
     // Write string to file at path
-    function writeCsv (path, data) {
+    function write (path, data) {
         var FileWriter=Java.type('java.io.FileWriter');
         var olinkfile = path;
         var fw = new FileWriter(olinkfile);
@@ -35,7 +35,7 @@
     }
 
     // Read a file and return a string
-    function readCsv (path) {
+    function read (path) {
         var Paths = Java.type('java.nio.file.Paths');
         var Files = Java.type('java.nio.file.Files');
         var lines = Files.readAllLines(Paths.get(path), Java.type('java.nio.charset.StandardCharsets').UTF_8);
@@ -191,12 +191,13 @@
                 var ns = [], key, i=0;
                 for (key in X) {
                     if (X.hasOwnProperty(key))
-                        if (key!="names" && key!="ncol" && key!="nrow")  ns[i++]=key;
+                        if (key!="names" && key!="ncol" && key!="nrow")  
+                            ns[i++]=key;
                 }
                 return ns;
             } else {
                 var ns = [];
-                for (var i=0;i<R.length(X);i++) {
+                for (var i=0; i < R.length(X); i++) {
                     ns[i] = "X"+(i+1);
                 }
                 return ns;
@@ -341,10 +342,19 @@
         return y;
     }
 
+    function _in(x) {
+        if (Array.isArray(x)) { // I want _in to return x values (like keys if x was a map), not indices of the array...
+            var y ={};
+            for (var i in x) y[x[i]] = 666; // ugly :)
+            return y;
+        } else 
+            return Object.keys(x);
+    }
+
     var proto = _R.prototype;
     proto.fileExists = fileExists;
-    proto.writeCsv = writeCsv;
-    proto.readCsv = readCsv;
+    proto.write = write;
+    proto.read = read;
     proto.readJsonVariables = readJsonVariables;
     proto.createJsonString = createJsonString;
     proto.loadJson = loadJson;
@@ -365,6 +375,7 @@
     proto.Rprint = Rprint;
     //proto.c = c;
     proto.apply = apply;
+    proto._in = _in;
 
     return hooks;
 

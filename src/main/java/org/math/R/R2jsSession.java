@@ -94,6 +94,7 @@ public class R2jsSession extends Rsession implements RLog {
     
     // The name of the object which store all variables defined in the current session
     public static final String JS_VARIABLE_STORAGE_OBJECT = "__R2js__";
+    public static final String[] DISABLED_FUNCTIONS = new String[]{"png","plot","abline","rgb","hist", "pairs"};
     
     // Set of global variables declared
     public Set<String> variablesSet;
@@ -129,7 +130,7 @@ public class R2jsSession extends Rsession implements RLog {
         try {
             loadJSLibraries();
             
-            for (String f : new String[]{"png","plot","abline","rgb","hist", "pairs"})
+            for (String f : DISABLED_FUNCTIONS)
                 addReturnNullFunction(f);
             
             // Instantiate the variables storage object which store all variables defined in the current session
@@ -161,14 +162,14 @@ public class R2jsSession extends Rsession implements RLog {
                 }
 
                 if (level == Level.WARNING) {
-                    p.print("(!) ");
+                    pp.print("(!) ");
                 } else if (level == Level.ERROR) {
-                    p.print("(!!) ");
+                    pp.print("(!!) ");
                 }
-                p.println(string);
+                pp.println(string);
             }
 
-            public void close() {
+            public void closeLog() {
                 if (p != null) {
                     p.close();
                 }
@@ -223,6 +224,7 @@ public class R2jsSession extends Rsession implements RLog {
     
     static {
         R_TO_JS.put("R.version.string", "'R2js'");
+        R_TO_JS.put(".GlobalEnv", JS_VARIABLE_STORAGE_OBJECT);
         R_TO_JS.put("stop(", "throw new Error(");
         R_TO_JS.put("as.numeric(", "parseFloat(");
         R_TO_JS.put("as.integer(", "parseInt(");
@@ -454,6 +456,9 @@ public class R2jsSession extends Rsession implements RLog {
         
         e = createExistsFunction(e);
         
+        // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
+        e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
+        
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
         
@@ -496,6 +501,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
         e = e.replaceAll("(\\W*)Rprint\\(", "$1R.Rprint(");
         e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
+        e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
                 
@@ -508,12 +514,14 @@ public class R2jsSession extends Rsession implements RLog {
             String[] lines_R = R.split("\n");
             String[] lines_JS = e.split("\n");
             int w = maxLength(lines_R);
+            System.err.println("------------------------------------------------------------------------------------");
             for (int i = 0; i < Math.max(lines_R.length, lines_JS.length); i++) {
                 System.err.println(
                         rightPad((lines_R.length > i ? lines_R[i] : ""), w)
                         + " | " + rightPad((i +1)+ "", 3) + " | "
                         + (lines_JS.length > i ? lines_JS[i] : ""));
             }
+            System.err.println("------------------------------------------------------------------------------------");
         }
 
         return e;
@@ -739,6 +747,7 @@ public class R2jsSession extends Rsession implements RLog {
         List<String> variablesandfunctions = new LinkedList<>();
         variablesandfunctions.addAll(variablesSet);
         variablesandfunctions.addAll(functionsSet);
+        variablesandfunctions.removeAll(Arrays.asList(DISABLED_FUNCTIONS));
         
         if (all) 
             return variablesandfunctions.toArray(new String[]{});
@@ -805,7 +814,8 @@ public class R2jsSession extends Rsession implements RLog {
     //X[Y[i]]
     //X[[Y[i]]]
    private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
-    
+   // to get only one '[': "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]"
+   
     /**
      * Replace indexes by mathjs indexes
      *
@@ -909,7 +919,7 @@ public class R2jsSession extends Rsession implements RLog {
 
     /**
      * Convert the R expression or write csv: write.csv(data, file) to js
-     * expression: r.writeCsv(file, data)
+     * expression: r.write(file, data)
      *
      *
      * @param expr - the expression containing the function to replace
@@ -936,7 +946,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression to generate random uniform
             // distribution
             StringBuilder unifRandomSb = new StringBuilder();
-            unifRandomSb.append("R.writeCsv(");
+            unifRandomSb.append("R.write(");
             unifRandomSb.append(file);
             unifRandomSb.append(", ");
             unifRandomSb.append(data.trim());
@@ -1248,7 +1258,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
             
-            saveSb.append("R.writeCsv(");
+            saveSb.append("R.write(");
             saveSb.append(fileString);
             saveSb.append(", ");
             saveSb.append("R.createJsonString(");
@@ -2028,8 +2038,9 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public void close() {
-engine = null;        
+    public void end() {
+        engine = null;       
+        super.end();
     }
     
     @Override
