@@ -24,7 +24,7 @@ getInitialDesign <- function(gradientdescent,input,output) {
     gradientdescent$i = 0
     gradientdescent$input <- input
     d = length(input)
-    x = matrix(askfinitedifferences(rep(0.5,d),gradientdescent$epsilon),ncol=d)
+    x = askfinitedifferences(rep(0.5,d),gradientdescent$epsilon)
     names(x) <- names(input)
     return(from01(x,gradientdescent$input))
 }
@@ -41,23 +41,23 @@ getNextDesign <- function(gradientdescent,X,Y) {
 
     if (min(Y[,1]) < gradientdescent$target) return();
 
-    X = as.matrix(X)
     names(X) <- names(gradientdescent$input)
     X = to01(X,gradientdescent$input)
 
     d = ncol(X)
     n = nrow(X)
 
-    prevXn = as.matrix(X[(n-d):n,])
-    prevYn = as.array(Y[(n-d):n,1])
+    prevXn = X[(n-d):n,] #as.matrix(X[(n-d):n,])
+    prevYn = Y[(n-d):n,1] #as.array(Y[(n-d):n,1])
 
     if (gradientdescent$i > 1) {
         if (Y[n-d,1] > Y[n-d-d,1]) {
             gradientdescent$delta <- gradientdescent$delta / 2
-            prevXn = as.matrix(X[(n-d-d-1):(n-d-1),])
-            prevYn = as.array(Y[(n-d-d-1):(n-d-1),1])
+            prevXn = X[(n-d-d-1):(n-d-1),] #as.matrix(X[(n-d-d-1):(n-d-1),])
+            prevYn = Y[(n-d-d-1):(n-d-1),1] #as.array(Y[(n-d-d-1):(n-d-1),1])
         }
     }
+    if (d==1) prevXn = matrix(prevXn,ncol=d)
 
     grad = gradient(prevXn,prevYn)
 
@@ -74,7 +74,7 @@ getNextDesign <- function(gradientdescent,X,Y) {
 
     gradientdescent$i <- gradientdescent$i+1
 
-    x = matrix(askfinitedifferences(xnext,gradientdescent$epsilon),ncol=d)
+    x = askfinitedifferences(xnext,gradientdescent$epsilon)
     names(x) <- names(gradientdescent$input)
 
     return(from01(x,gradientdescent$input))
@@ -88,7 +88,7 @@ displayResults <- function(gradientdescent,X,Y) {
     Y = Y[,1]
     m = min(Y)
     m.ix = which.min(Y)[1]
-    x = as.matrix(X)[m.ix,]
+    x = X[m.ix,] #as.matrix(X)[m.ix,]
 
     resolution <- 600
     d = dim(X)[2]
@@ -97,7 +97,7 @@ displayResults <- function(gradientdescent,X,Y) {
         gradientdescent$files <- paste("pairs_",gradientdescent$i-1,".png",sep="")
         png(file=gradientdescent$files,bg="transparent",height=resolution,width = resolution)
         red = (as.matrix(Y)-min(Y))/(max(Y)-min(Y))
-        pairs(X,col=rgb(r=red,g=0,b=1-red),Y=Y[[1]],d=d,panel=panel.vec)
+        pairs(X,col=rgb(r=red,g=0,b=1-red),Y=Y[[1]],d=d) #,panel=panel.vec)
         dev.off()
     } else {
         gradientdescent$files <- paste("plot_",gradientdescent$i-1,".png",sep="")
@@ -171,7 +171,7 @@ displayResultsTmp <- function(gradientdescent,X,Y) {
 ###################################################################
 
 askfinitedifferences <- function(x,epsilon) {
-    xd <- as.array(x);
+    xd <- matrix(x,nrow=1);
     for (i in 1:length(x)) {
         xdi <- as.array(x);
         if (xdi[i] + epsilon > 1.0) {
@@ -180,7 +180,7 @@ askfinitedifferences <- function(x,epsilon) {
             xdi[i] <- xdi[i] + epsilon;
         }
         # xd <- rbind(xd,xdi,deparse.level = 0)
-        xd <- rbind(xd,xdi)
+        xd <- rbind(xd,matrix(xdi,nrow=1))
     }
     return(xd)
 }
@@ -195,16 +195,18 @@ gradient <- function(xd,yd) {
 }
 
 from01 = function(X, inp) {
+    nX = names(X)
     for (i in 1:ncol(X)) {
-        namei = names(X)[i]
+        namei = nX[i]
         X[,i] = X[,i] * (inp[[ namei ]]$max-inp[[ namei ]]$min) + inp[[ namei ]]$min
     }
     return(X)
 }
 
 to01 = function(X, inp) {
+    nX = names(X)
     for (i in 1:ncol(X)) {
-        namei = names(X)[i]
+        namei = nX[i]
         X[,i] = (X[,i] - inp[[ namei ]]$min) / (inp[[ namei ]]$max-inp[[ namei ]]$min)
     }
     return(X)
