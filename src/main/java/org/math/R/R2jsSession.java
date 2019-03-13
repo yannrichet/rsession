@@ -233,11 +233,11 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("which.min(", "whichmin(");
         R_TO_JS.put("which.max(", "whichmax(");
         R_TO_JS.put("paste(", "strconcat(");
-        R_TO_JS.put("print(", "Rprint(");
+        R_TO_JS.put("print(", "_print(");
         R_TO_JS.put("is.function(", "isfunction(");
         R_TO_JS.put("is.null(", "isnull(");
         R_TO_JS.put("Sys.sleep(", "sleep(");
-        R_TO_JS.put("capture.output(", "Rprint("); //should use the output stream capture instead...
+        R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
         R_TO_JS.put("dev.off()", "");
@@ -502,7 +502,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)which\\(", "$1R.which(");
         e = e.replaceAll("(\\W*)whichmin\\(", "$1R.whichmin(");
         e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
-        e = e.replaceAll("(\\W*)Rprint\\(", "$1R.Rprint(");
+        e = e.replaceAll("(\\W*)_print\\(", "$1R._print(");
         e = e.replaceAll("(\\W*)getwd\\(", "$1R.getwd(");
         e = e.replaceAll("(\\W*)sleep\\(", "$1R.sleep(");
         e = e.replaceAll("(\\W*)isfunction\\(", "$1R.isfunction(");
@@ -854,14 +854,14 @@ public class R2jsSession extends Rsession implements RLog {
                 for (int i = 0; i < indexesArray.length; i++) {
                     if (indexesArray[i].trim().equals("")) { // If the index is empty, we create an range array to select all the line
                         int dim = i;
-                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.rindex01 will apply -1
+                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.r_index will apply -1
                     }
                 }
 
                 StringBuilder result = new StringBuilder();
                 result.append("math.squeeze(math.subset(");
                 result.append(arrayName);
-                result.append(", R.index01(");
+                result.append(", R._index(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")))");
                 
@@ -902,14 +902,14 @@ public class R2jsSession extends Rsession implements RLog {
                     // If the index is empty, we create an range array to select all the line
                     if (indexesArray[i].trim().equals("")) {
                         int dim = i;
-                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.rindex01 will apply -1
+                        indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.r_index will apply -1
                     }
                 }
 
                 StringBuilder result = new StringBuilder();
                 result.append(arrayName + " = math.subset(");
                 result.append(arrayName);
-                result.append(", R.index01(");
+                result.append(", R._index(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")," + toset + ")");
 

@@ -210,7 +210,7 @@
     }
 
     // to support indexing starting from 0 in js, while starting from 1 in R
-    function index01 (i,j) {
+    function _index (i,j) {
         if (typeof(j)=="undefined") {
             if (typeof(i)=="number" || typeof(i)=="object") {
                 return math.index(math.subtract(i,1));
@@ -323,7 +323,7 @@
     //    return array;
     //}
 
-    function Rprint(x) {
+    function _print(x) {
         print(x);
         return x;
     }
@@ -378,7 +378,7 @@
     proto.loadJson = loadJson;
     proto.removeMatching = removeMatching;
     proto.expendArray = expendArray;
-    proto.index01 = index01;
+    proto._index = _index;
 
     proto.range = range;
     proto.ncol = ncol;
@@ -390,7 +390,7 @@
     proto.which = which;
     proto.whichmin = whichmin;
     proto.whichmax = whichmax;
-    proto.Rprint = Rprint;
+    proto._print = _print;
     //proto.c = c;
     proto.apply = apply;
     proto._in = _in;
