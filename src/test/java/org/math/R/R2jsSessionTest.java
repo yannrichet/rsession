@@ -31,6 +31,9 @@ public class R2jsSessionTest {
         engine.eval("b <- (1)");
         assert (Integer) engine.eval("b") == 1;
 
+        assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4;
+        assert Double.parseDouble(engine.eval("1.23e-4").toString()) == 1.23E-4;
+        
         assert Double.parseDouble(engine.eval("2 ^ 3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2^3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2**3").toString()) == 8;
