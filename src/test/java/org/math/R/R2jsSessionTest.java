@@ -717,4 +717,58 @@ engine.debug_js = true;
         assertTrue(Arrays.deepToString(engine.ls()), (Boolean) engine.eval("exists('s')"));
         assertTrue(!(Boolean) engine.eval("exists('a')"));
     }
+
+    @Test
+    public void testIsFunction() throws Rsession.RException {
+        engine.voidEval("x1 <- function() { 0 }");
+        engine.voidEval("x2 <- 2");
+        assertTrue((boolean) engine.eval("is.function(x1)"));
+        assertTrue(!(boolean) engine.eval("is.function(x2)"));
+    }
+    
+    @Test
+    public void testStopIfNot() throws Rsession.RException {
+        engine.set("a", 1);
+        engine.set("b", 2);
+        engine.voidEval("stopifnot(a!=b)");
+        try {
+            engine.voidEval("stopifnot(a==b)");
+            assertTrue(false);
+        } catch (Rsession.RException ex) {
+            assertTrue(true);
+        }
+        
+        engine.voidEval("stopifnot(a<b)");
+        try {
+            engine.voidEval("stopifnot(a>b)");
+            assertTrue(false);
+        } catch (Rsession.RException ex) {
+            assertTrue(true);
+        }
+        
+        engine.voidEval("stopifnot(a<=b)");
+        try {
+            engine.voidEval("stopifnot(a>=b)");
+            assertTrue(false);
+        } catch (Rsession.RException ex) {
+            assertTrue(true);
+        }
+        
+        engine.voidEval("stopifnot((a)<=(b))");
+        try {
+            engine.voidEval("stopifnot((a)>=(b))");
+            assertTrue(false);
+        } catch (Rsession.RException ex) {
+            assertTrue(true);
+        }
+        
+        engine.voidEval("stopifnot((a)!=(b))");
+        try {
+            engine.voidEval("stopifnot((a)==(b))");
+            assertTrue(false);
+        } catch (Rsession.RException ex) {
+            assertTrue(true);
+        }
+        
+    }
 }

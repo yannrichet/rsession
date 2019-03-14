@@ -314,6 +314,18 @@
         return array;
     }
 
+    function isFunction(x) {
+        return typeof x === "function";
+    }
+    
+    // Thrown Error if the String expression is false
+    // The epxression need to be evaluated and the result passed in the argument 'isTrue'
+    function stopIfNot(isTrue, expression) {
+        if(!isTrue){
+            throw new Error(expression + " is not TRUE");
+        }
+    }
+
     // No, ... needs ECS6
     //function c(...args) {
     //    var array = [];
@@ -398,6 +410,7 @@
     proto.sleep = sleep;
     proto.isfunction = isfunction;
     proto.isnull = isnull;
+    proto.stopIfNot = stopIfNot;
 
     return hooks;
 

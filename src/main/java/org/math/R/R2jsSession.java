@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.swing.SwingConstants;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 
@@ -92,8 +91,12 @@ public class R2jsSession extends Rsession implements RLog {
     
     public ScriptEngine engine;
     
+    private static final String JS_ENVIRONMENT_DEFAULT = "__r2js__";
+    
     // The name of the object which store all variables defined in the current session
-    public static final String JS_VARIABLE_STORAGE_OBJECT = "__R2js__";
+    private String jsEnvName;
+    
+    
     public static final String[] DISABLED_FUNCTIONS = new String[]{"png","plot","abline","rgb","hist", "pairs"};
     
     // Set of global variables declared
@@ -107,6 +110,10 @@ public class R2jsSession extends Rsession implements RLog {
         return new R2jsSession(console, properties);
     }
     
+    public R2jsSession(RLog console, Properties properties) {
+        this(console, properties, null);
+    }
+
     /**
      * Default constructor
      *
@@ -114,9 +121,16 @@ public class R2jsSession extends Rsession implements RLog {
      *
      * @param console - console
      * @param properties - properties
+     * @param environmentName - name of the environment
      */
-    public R2jsSession(RLog console, Properties properties) {
+    public R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
+        
+        if(environmentName != null) {
+            jsEnvName = environmentName;
+        } else {
+            jsEnvName = JS_ENVIRONMENT_DEFAULT;
+        }
         
         variablesSet = new HashSet<>();
         functionsSet = new HashSet<>();
@@ -134,23 +148,17 @@ public class R2jsSession extends Rsession implements RLog {
                 addReturnNullFunction(f);
             
             // Instantiate the variables storage object which store all variables defined in the current session
-            engine.eval("var " + JS_VARIABLE_STORAGE_OBJECT + " = {};");
+            engine.eval("var " + jsEnvName + " = {};");
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
     }
-    
-    public void addReturnNullFunction(String name) throws ScriptException {
-        engine.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
-        functionsSet.add(name);
-    }
-
-    public void addJSFunction(String name, String js) throws ScriptException {
-        engine.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
-        functionsSet.add(name);
-    }
 
     public R2jsSession(final PrintStream p, Properties properties) {
+        this(p, properties, null);
+    }
+    
+    public R2jsSession(final PrintStream p, Properties properties, String environmentName) {
         this(new RLog() {
 
             public void log(String string, Level level) {
@@ -174,7 +182,17 @@ public class R2jsSession extends Rsession implements RLog {
                     p.close();
                 }
             }
-        }, properties);
+        }, properties, environmentName);
+    }
+
+    public void addReturnNullFunction(String name) throws ScriptException {
+        engine.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
+        functionsSet.add(name);
+    }
+
+    public void addJSFunction(String name, String js) throws ScriptException {
+        engine.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
+        functionsSet.add(name);
     }
     
     /**
@@ -224,7 +242,7 @@ public class R2jsSession extends Rsession implements RLog {
     
     static {
         R_TO_JS.put("R.version.string", "'R2js'");
-        R_TO_JS.put(".GlobalEnv", JS_VARIABLE_STORAGE_OBJECT);
+        R_TO_JS.put(".GlobalEnv", JS_ENVIRONMENT_DEFAULT);
         R_TO_JS.put("stop(", "throw new Error(");
         R_TO_JS.put("as.numeric(", "parseFloat(");
         R_TO_JS.put("as.integer(", "parseInt(");
@@ -459,7 +477,8 @@ public class R2jsSession extends Rsession implements RLog {
         e = createFileExistsFunction(e);
         
         e = createExistsFunction(e);
-        
+        e = createStopIfNotFunction(e);
+
         // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
         e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
         
@@ -473,7 +492,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = replaceNameByQuotes(quotesList, e, false);
 
         // Replace '$' accessor of data.frame by a '.'
-        e = e.replaceAll("\\$" + JS_VARIABLE_STORAGE_OBJECT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
+        e = e.replaceAll("\\$" + jsEnvName + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
         e = e.replaceAll("\\$", ".");
 
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
@@ -568,13 +587,13 @@ public class R2jsSession extends Rsession implements RLog {
      * @param variables - the variables to replace
      * @return the expression with replaced variables
      */
-    private static String replaceVariables(String expr, Iterable<String> variables) {
+    private String replaceVariables(String expr, Iterable<String> variables) {
         String result = expr;
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll(JS_VARIABLE_STORAGE_OBJECT + "\\." + JS_VARIABLE_STORAGE_OBJECT, JS_VARIABLE_STORAGE_OBJECT);
+                result = result.replaceAll("(\\b)(" + variable + ")(\\b)", jsEnvName + "." + variable);
+                result = result.replaceAll(jsEnvName + "\\." + jsEnvName, jsEnvName);
             }
         }
         return result;
@@ -592,7 +611,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr
      *            - the expression with quotes
      * @param startIndex
-     *            - the inall.namesdex i of the first "QUOTE_EXPRESSION_i_" replacement
+     *            - the index i of the first "QUOTE_EXPRESSION_i_" replacement
      * @return a list containing all quotes expression
      */
     private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
@@ -703,7 +722,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param e - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createLs(String expr) {
+    private String createLs(String expr) {
         
         String result = expr;
         
@@ -725,13 +744,13 @@ public class R2jsSession extends Rsession implements RLog {
             // If there is a regex pattern argument
             if (pattern != null) {
                 unifRandomSb.append("R.removeMatching(Object.keys(");
-                unifRandomSb.append(JS_VARIABLE_STORAGE_OBJECT);
+                unifRandomSb.append(jsEnvName);
                 unifRandomSb.append("), new RegExp(");
                 unifRandomSb.append(pattern);
                 unifRandomSb.append("))");
             } else {
                 unifRandomSb.append("Object.keys(");
-                unifRandomSb.append(JS_VARIABLE_STORAGE_OBJECT);
+                unifRandomSb.append(jsEnvName);
                 unifRandomSb.append(")");
             }
             
@@ -1246,7 +1265,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createSaveFunction(String expr) {
+    private String createSaveFunction(String expr) {
         
         String result = expr;
         
@@ -1272,7 +1291,7 @@ public class R2jsSession extends Rsession implements RLog {
             saveSb.append("R.createJsonString(");
             saveSb.append(listStringUnquotted);
             saveSb.append(", '");
-            saveSb.append(JS_VARIABLE_STORAGE_OBJECT);
+            saveSb.append(jsEnvName);
             saveSb.append("'))");
             
             // Replace the R matrix expression by the current matrix js
@@ -1324,7 +1343,7 @@ public class R2jsSession extends Rsession implements RLog {
             loadSb.append("R.loadJson(");
             loadSb.append(fileString);
             loadSb.append(", '");
-            loadSb.append(JS_VARIABLE_STORAGE_OBJECT);
+            loadSb.append(jsEnvName);
             loadSb.append("')");
             
             // TODO add loaded function as global variables: storeGlobalVariables(String expr)
@@ -1523,7 +1542,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private static String createExistsFunction(String expr) {
+    private String createExistsFunction(String expr) {
         
         String result = expr;
         
@@ -1540,7 +1559,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
             
-            fileExistSb.append(JS_VARIABLE_STORAGE_OBJECT);
+            fileExistSb.append(jsEnvName);
             fileExistSb.append(".hasOwnProperty(");
             fileExistSb.append(variable);
             fileExistSb.append(")");
@@ -1554,6 +1573,49 @@ public class R2jsSession extends Rsession implements RLog {
             
             // Search the next "exists" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "exists");
+        }
+        
+        return result;
+    }
+
+    /**
+     * This function replace stopifnot(...) by R.stopIfNot('...')
+     *
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createStopIfNotFunction(String expr) {
+        
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "stopifnot");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder fileExistSb = new StringBuilder();
+            
+            fileExistSb.append("R.stopIfNot(");
+            fileExistSb.append(values);
+            fileExistSb.append(",'");
+            fileExistSb.append(values);
+            fileExistSb.append("')");
+            
+            // Replace the R file.exist expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(fileExistSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "stopifnot" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "stopifnot");
         }
         
         return result;
@@ -1588,7 +1650,8 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
         argumentNamesByFunctions.put("file__exists", Arrays.asList("default"));
         argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));
-        
+        argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
         List<String> argumentNamesList = new ArrayList<>(argumentNamesByFunctions.get(fctName));
@@ -1606,7 +1669,11 @@ public class R2jsSession extends Rsession implements RLog {
             
             while (expr.charAt(currentIndex - 1) != ')') {
                 int argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, ",=");
-                String argumentName = null;
+                // Ignore if it is a comparison operator ( '!=', '<=', '>=' or '==')
+                if (expr.charAt(argumentEndIndex + 1) == '=' && ("!=<>".contains(""+expr.charAt(argumentEndIndex)) || expr.charAt(argumentEndIndex + 2)=='=')) {
+                    argumentEndIndex = getNextExpressionLastIndex(expr, argumentEndIndex+1, ",=");
+                }                
+		String argumentName = null;
                 String argument = null;
                 if (expr.charAt(argumentEndIndex + 1) == '=') {
                     argumentName = expr.substring(currentIndex, argumentEndIndex + 1).trim();
@@ -2080,7 +2147,7 @@ public class R2jsSession extends Rsession implements RLog {
         } catch (ScriptException e) {
             String ls = "?";
             try {
-                ls = (this.engine.eval("JSON.stringify(" + JS_VARIABLE_STORAGE_OBJECT + ")")).toString();
+                ls = (this.engine.eval("JSON.stringify(" + jsEnvName + ")")).toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
@@ -2102,7 +2169,7 @@ public class R2jsSession extends Rsession implements RLog {
             } catch (ScriptException e) {
                 String ls = "?";
                 try {
-                    ls = (String) this.engine.eval("JSON.stringify(" + JS_VARIABLE_STORAGE_OBJECT + ")").toString();
+                    ls = (String) this.engine.eval("JSON.stringify(" + jsEnvName + ")").toString();
                 } catch (Exception ee) {
                     ls = ee.getMessage();
                 }
@@ -2135,8 +2202,8 @@ public class R2jsSession extends Rsession implements RLog {
                 String stringMatrix = Arrays.deepToString(data);
                 engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + " = " + varname);
-                engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + ".names = [" + allnames + "]");
+                engine.eval(jsEnvName + "." + varname + " = " + varname);
+                engine.eval(jsEnvName + "." + varname + ".names = [" + allnames + "]");
                 variablesSet.add(varname);
             }
         } catch (Exception e) {
@@ -2175,13 +2242,13 @@ public class R2jsSession extends Rsession implements RLog {
                     String stringMatrix = Arrays.deepToString(var2DArray);
                     engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                    engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + " = " + varname);
+                    engine.eval(jsEnvName + "." + varname + " = " + varname);
                     String allnames = "";
                     for (int i = 0; i < var2DArray[0].length; i++) {
                         allnames = allnames + ",'X" + (i + 1) + "'";
                     }
                     allnames = allnames.substring(1);
-                    engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + ".names = [" + allnames + "]");
+                    engine.eval(jsEnvName + "." + varname + ".names = [" + allnames + "]");
                     variablesSet.add(varname);
                 } else if (var instanceof double[]) {
                     double[] var1DArray = (double[]) var;
@@ -2189,11 +2256,11 @@ public class R2jsSession extends Rsession implements RLog {
                     String stringMatrix = Arrays.toString(var1DArray);
                     engine.eval(varname + " = "+Arrays.toString(var1DArray));
 
-                    engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + " = " + varname);
+                    engine.eval(jsEnvName + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 } else {
                     engine.put(varname, var);
-                    engine.eval(JS_VARIABLE_STORAGE_OBJECT + "." + varname + " = " + varname);
+                    engine.eval(jsEnvName + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 }
 
@@ -2254,7 +2321,7 @@ public class R2jsSession extends Rsession implements RLog {
         try {
             synchronized (engine) {
                 for(String var : vars) {
-                    engine.eval("delete " +JS_VARIABLE_STORAGE_OBJECT + "." + var+ ";");
+                    engine.eval("delete " +jsEnvName + "." + var+ ";");
                     variablesSet.remove(var);
                     engine.eval("delete " + var + ";");
                 }
