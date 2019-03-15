@@ -17,11 +17,11 @@ public class R2jsSessionTest {
     // maximal epsilon wanted between actual and expected values
     final double epsilon = 1e-12;
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
-
+    
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         engine.debug_js = true;
-
+        
         engine.voidEval("a = 1");
         assert (Integer) engine.eval("a") == 1;
         engine.voidEval("a <- 1");
@@ -81,6 +81,17 @@ public class R2jsSessionTest {
 
     }
 
+    @Test
+    public void testRand() throws Rsession.RException {
+
+        assert ((double[])engine.eval("runif(10,0,1)")).length==10;
+    assert ((double[])engine.eval("rnorm(10,0,1)")).length==10;
+    assert ((double[])engine.eval("rpois(10,10)")).length==10;
+    assert ((double[])engine.eval("rchisq(10,2)")).length==10;
+    assert ((double[])engine.eval("rcauchy(10,1,1)")).length==10;
+    
+    }
+    
     @Test
     public void testApply() throws Rsession.RException {
         String apply_f = "apply(X,1,function (x) {\n"

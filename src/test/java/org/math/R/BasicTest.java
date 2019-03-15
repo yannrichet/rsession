@@ -182,9 +182,8 @@ public class BasicTest {
         assert ((double[][]) q.eval("array(0.0,c(4,3))")).length == 4;
         assert ((double[]) q.eval("array(array(0.0,c(4,3)))")).length == 12;
 
-        // TODO: uncomment theses tests
-        //assert ((double[][]) q.eval("cbind(runif(10),runif(10))")).length == 10;
-        //assert ((Map) q.eval("list(aa=rnorm(10),bb=rnorm(10))")).size() == 2;
+        assert ((double[][]) q.eval("cbind(runif(10),runif(10))")).length == 10;
+        assert ((Map) q.eval("list(aa=rnorm(10),bb=rnorm(10))")).size() == 2;
         assert ((String) q.eval("'abcd'")).equals("abcd");
         assert ((String[]) q.eval("c('abcd','sdfds')")).length == 2;
     }

@@ -88,6 +88,7 @@ public class R2jsSession extends Rsession implements RLog {
     // JavaScript libraries used to evaluate expression
     private static final String MATH_JS_FILE = "org/math/R/math.js";
     private static final String R_JS_FILE = "org/math/R/R.js";
+    private static final String RAND_JS_FILE = "org/math/R/rand.js";
     
     public ScriptEngine engine;
     
@@ -218,6 +219,10 @@ public class R2jsSession extends Rsession implements RLog {
         engine.eval("math.config({matrix: 'Array'})");
         
         engine.eval("var str = String.prototype;");
+        
+        InputStream randInputStream = classLoader.getResourceAsStream(RAND_JS_FILE);
+        engine.eval(new InputStreamReader(randInputStream));
+        engine.eval("rand = rand()");
     }
         
     static final String POINT_CHAR_JS_KEY = "__";
@@ -296,8 +301,7 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         //1E-8 -> 1*10^-8
-        e = e.replaceAll("e-(\\d)", "*10^-$1");
-        e = e.replaceAll("E-(\\d)", "*10^-$1");
+        e = e.replaceAll("([\\d|\\.]+)[eE]+[+-]*(\\d)", "$1*10^-$2");
 
         // Get all expression in quote and replace them by variables to not
         // modify them in this function
@@ -452,9 +456,6 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replace("list()","{}");
         e = createList(e);
 
-        // replace runif fct expression
-        e = createRunif(e);
-        
         // replace ls fct expression
         e = createLs(e);
         
@@ -493,12 +494,12 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + jsEnvName + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$", ".");
+        e = e.replaceAll("(\\w|\\))\\$(\\w)", "$1.$2");
 
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
         //e = e.replaceAll("=(.*)\n", "=$1 ;\n");
-        e = e.replaceAll("(.[^\\n]+)\n", "$1 ;\n");
+        e = e.replaceAll("(.[^\\n+-=/\\*]+)\n", "$1 ;\n");
                 
         // Remove '+' at begining
         e = e.replaceAll("^ *\\+", "");
@@ -510,7 +511,9 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("\\( *;", "\\(");
         e = e.replaceAll("; *;", ";");
 
+        
         e = e.replaceAll("(\\W*)strconcat\\(", "$1str.concat(");
+        
         
         e = e.replaceAll("(\\W*)ncol\\(", "$1R.ncol(");
         e = e.replaceAll("(\\W*)nrow\\(", "$1R.nrow(");
@@ -532,6 +535,16 @@ public class R2jsSession extends Rsession implements RLog {
 
         e = e.replaceAll("R\\.R\\.", "R.");
 
+        
+        e = e.replaceAll("(\\W*)runif\\(", "$1rand.runif(");
+        e = e.replaceAll("(\\W*)rnorm\\(", "$1rand.rnorm(");
+        e = e.replaceAll("(\\W*)rpois\\(", "$1rand.rpois(");
+        e = e.replaceAll("(\\W*)rcauchy\\(", "$1rand.rcauchy(");
+        e = e.replaceAll("(\\W*)rchisq\\(", "$1rand.rchisq(");
+
+        e = e.replaceAll("rand\\.rand\\.", "rand.");
+
+        
         // R Comments
         e = e.replaceAll("#", "//");
         //e = e.replaceAll("^(.*)#(.*)$", "$1/*$2*/");
@@ -656,64 +669,6 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         return expr;
-    }
-    
-    /**
-     * Convert the R expression or uniform distribution: runif(10, min=0, max=1)
-     * to mathjs expression: math.random([10], min, max)
-     *
-     *
-     * @param e - the expression to replace
-     * @return the expression with runif replaced
-     */
-    private static String createRunif(String expr) {
-        
-        String result = expr;
-        
-        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "runif");
-        
-        while (rFunctionArgumentsDTO != null) {
-            
-            int startIndex = rFunctionArgumentsDTO.getStartIndex();
-            int endIndex = rFunctionArgumentsDTO.getStopIndex();
-            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
-            // The number of value of the uniform distribution
-            String dimension = argumentsMap.get("dim");
-            
-            String min = argumentsMap.get("min");
-            if (min == null) {
-                min = "0.0";
-            }
-            String max = argumentsMap.get("max");
-            if (max == null) {
-                max = "1.0";
-            }
-            
-            // Build the mathjs expression to generate random uniform
-            // distribution
-            StringBuilder unifRandomSb = new StringBuilder();
-            unifRandomSb.append("math.random([");
-            unifRandomSb.append(dimension);
-            unifRandomSb.append("], ");
-            unifRandomSb.append(min);
-            unifRandomSb.append(", ");
-            unifRandomSb.append(max);
-            unifRandomSb.append(")");
-            
-            // Replace the R matrix expression by the current matrix js
-            // expression
-            StringBuilder sb = new StringBuilder();
-            sb.append(result.substring(0, startIndex));
-            sb.append(unifRandomSb.toString());
-            sb.append(result.substring(endIndex + 1));
-            result = sb.toString();
-            
-            // Search the next "array"
-            rFunctionArgumentsDTO = getFunctionArguments(result, "runif");
-        }
-        
-        return result;
     }
     
     /**
@@ -1638,7 +1593,6 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("vector", Arrays.asList("mode", "length"));
         argumentNamesByFunctions.put("matrix", Arrays.asList("data", "nrow", "ncol", "byrow", "dimnames"));
         argumentNamesByFunctions.put("c", Arrays.asList("data", "dim", "dimnames"));
-        argumentNamesByFunctions.put("runif", Arrays.asList("dim", "min", "max"));
         argumentNamesByFunctions.put("ls", Arrays.asList("name", "pos", "envir", "all.names", "pattern", "sorted"));
         argumentNamesByFunctions.put("save", Arrays.asList("list", "file", "ascii", "all.names", "pattern", "sorted"));
         argumentNamesByFunctions.put("load", Arrays.asList("file", "envir", "verbose"));
