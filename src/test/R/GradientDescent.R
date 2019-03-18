@@ -24,6 +24,7 @@ getInitialDesign <- function(gradientdescent,input,output) {
     gradientdescent$i = 0
     gradientdescent$input <- input
     d = length(input)
+print(rep(0.5,d))
     x = askfinitedifferences(rep(0.5,d),gradientdescent$epsilon)
     names(x) <- names(input)
     return(from01(x,gradientdescent$input))

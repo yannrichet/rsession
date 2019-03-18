@@ -516,7 +516,7 @@ public class RserveSession extends Rsession implements RLog {
             try {
                 if (((REXP)e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
                     log(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression, Level.WARNING);
-            e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
+                    e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
                 }
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
@@ -881,7 +881,6 @@ public class RserveSession extends Rsession implements RLog {
                     try {
                         v = (double[]) ((Map) o).get(k);
                     } catch (Exception ex) {
-                        ex.printStackTrace();
                         throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
                     }
                     if (v == null) {

@@ -140,7 +140,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         ScriptEngineManager manager = new ScriptEngineManager();
         engine = manager.getEngineByName("js");
-        
+
         // Load external js libraries used by the engine to evaluate expressions
         try {
             loadJSLibraries();
@@ -206,23 +206,24 @@ public class R2jsSession extends Rsession implements RLog {
     private void loadJSLibraries() throws ScriptException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 	
-        // Loading R.js
-        InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
-        engine.eval(new InputStreamReader(RInputStream));
-        engine.eval("R = R()");
-        
         // Loading math.JS
         InputStream mathInputStream = classLoader.getResourceAsStream(MATH_JS_FILE);
         engine.eval(new InputStreamReader(mathInputStream));
         engine.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
         engine.eval("math.config({matrix: 'Array'})");
-        
+
         engine.eval("var str = String.prototype;");
-        
+
+        // Loading rand.js
         InputStream randInputStream = classLoader.getResourceAsStream(RAND_JS_FILE);
         engine.eval(new InputStreamReader(randInputStream));
         engine.eval("rand = rand()");
+        
+        // Loading R.js
+        InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
+        engine.eval(new InputStreamReader(RInputStream));
+        engine.eval("R = R()");
     }
         
     static final String POINT_CHAR_JS_KEY = "__";
@@ -253,13 +254,13 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("as.integer(", "parseInt(");
         R_TO_JS.put("as.matrix(", "matrix(");
         R_TO_JS.put("as.array(", "array(");
-        R_TO_JS.put("which.min(", "whichmin(");
-        R_TO_JS.put("which.max(", "whichmax(");
+        R_TO_JS.put("which.min(", "whichMin(");
+        R_TO_JS.put("which.max(", "whichMax(");
         R_TO_JS.put("paste(", "strconcat(");
         R_TO_JS.put("print(", "_print(");
-        R_TO_JS.put("is.function(", "isfunction(");
-        R_TO_JS.put("is.null(", "isnull(");
-        R_TO_JS.put("Sys.sleep(", "sleep(");
+        R_TO_JS.put("is.function(", "isFunction(");
+        R_TO_JS.put("is.null(", "isNull(");
+        R_TO_JS.put("Sys.SysSleep(", "SysSleep(");
         R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
@@ -350,7 +351,7 @@ public class R2jsSession extends Rsession implements RLog {
             matcherFunction.reset();
             StringBuffer sb = new StringBuffer("");
             while (matcherFunction.find()) {
-                                StringBuilder f = new StringBuilder();
+                StringBuilder f = new StringBuilder();
                 f.append("function ");
                 String name = matcherFunction.group(1); 
                 f.append(name);
@@ -465,12 +466,6 @@ public class R2jsSession extends Rsession implements RLog {
         // replace load fct expression
         e = createLoadFunction(e);
         
-        // replace rbind fct expression
-        e = createRbindFunction(e);
-        
-        // replace rbind fct expression
-        e = createCbindFunction(e);
-
         // replace length fct expression
         e = createLengthFunction(e);
         
@@ -513,7 +508,8 @@ public class R2jsSession extends Rsession implements RLog {
 
         
         e = e.replaceAll("(\\W*)strconcat\\(", "$1str.concat(");
-        
+        e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
+
         
         e = e.replaceAll("(\\W*)ncol\\(", "$1R.ncol(");
         e = e.replaceAll("(\\W*)nrow\\(", "$1R.nrow(");
@@ -523,15 +519,16 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)dim\\(", "$1R.dim(");
         e = e.replaceAll("(\\W*)rep\\(", "$1R.rep(");
         e = e.replaceAll("(\\W*)which\\(", "$1R.which(");
-        e = e.replaceAll("(\\W*)whichmin\\(", "$1R.whichmin(");
-        e = e.replaceAll("(\\W*)whichmax\\(", "$1R.whichmax(");
+        e = e.replaceAll("(\\W*)whichMin\\(", "$1R.whichMin(");
+        e = e.replaceAll("(\\W*)whichMax\\(", "$1R.whichMax(");
         e = e.replaceAll("(\\W*)_print\\(", "$1R._print(");
         e = e.replaceAll("(\\W*)getwd\\(", "$1R.getwd(");
-        e = e.replaceAll("(\\W*)sleep\\(", "$1R.sleep(");
-        e = e.replaceAll("(\\W*)isfunction\\(", "$1R.isfunction(");
-        e = e.replaceAll("(\\W*)isnull\\(", "$1R.isnull(");
+        e = e.replaceAll("(\\W*)SysSleep\\(", "$1R.SysSleep(");
+        e = e.replaceAll("(\\W*)isFunction\\(", "$1R.isFunction(");
+        e = e.replaceAll("(\\W*)isNull\\(", "$1R.isNull(");
         e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
-        e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
+        e = e.replaceAll("(\\W*)rbind\\(", "$1R.rbind(");
+        e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
 
@@ -1027,7 +1024,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("{");
+            dataFrameSb.append("({");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1043,7 +1040,7 @@ public class R2jsSession extends Rsession implements RLog {
                 dataFrameSb.append(",");
             }
             
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
 
             
             // Replace the R matrix expression by the current matrix js
@@ -1287,7 +1284,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Add all loaded variables to the java list of variables
             try {
                 String readVariablesExpr = replaceNameByQuotes(quotesList,"R.readJsonVariables(" + fileString + ")", false);
-                String[] loadedVariables = (String[])staticCast(engine.eval(readVariablesExpr));
+                String[] loadedVariables = (String[])cast(engine.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
                 Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
@@ -1313,94 +1310,6 @@ public class R2jsSession extends Rsession implements RLog {
             
             // Search the next "load"
             rFunctionArgumentsDTO = getFunctionArguments(result, "load");
-        }
-        
-        return result;
-    }
-    
-    
-    /**
-     * This function replaces the R function rbind by JS equivalent with "math.concat()" 
-     * function from library mathjs.
-     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
-     *
-     * @param expr - the expression containing the function to replace
-     * @return the expression with replaced function
-     */
-    private static String createRbindFunction(String expr) {
-        
-        String result = expr;
-        
-        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "rbind");
-        
-        while (rFunctionArgumentsDTO != null) {
-            
-            int startIndex = rFunctionArgumentsDTO.getStartIndex();
-            int endIndex = rFunctionArgumentsDTO.getStopIndex();
-            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
-            String values = argumentsMap.get("default");
-            
-            // Build the mathjs expression
-            StringBuilder rbindSb = new StringBuilder();
-            
-            rbindSb.append("math.concat(");
-            rbindSb.append(values);
-            rbindSb.append(",0)");
-            
-            // Replace the R rbind expression by js expression
-            StringBuilder sb = new StringBuilder();
-            sb.append(result.substring(0, startIndex));
-            sb.append(rbindSb);
-            sb.append(result.substring(endIndex + 1));
-            result = sb.toString();
-            
-            // Search the next "rbind" in the expression
-            rFunctionArgumentsDTO = getFunctionArguments(result, "rbind");
-        }
-        
-        return result;
-    }
-    
-    
-    /**
-     * This function replaces the R function cbind by JS equivalent with "math.concat()" 
-     * function from library mathjs.
-     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
-     *
-     * @param expr - the expression containing the function to replace
-     * @return the expression with replaced function
-     */
-    private static String createCbindFunction(String expr) {
-        
-        String result = expr;
-        
-        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "cbind");
-        
-        while (rFunctionArgumentsDTO != null) {
-            
-            int startIndex = rFunctionArgumentsDTO.getStartIndex();
-            int endIndex = rFunctionArgumentsDTO.getStopIndex();
-            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
-            String values = argumentsMap.get("default");
-            
-            // Build the mathjs expression
-            StringBuilder rbindSb = new StringBuilder();
-            
-            rbindSb.append("math.concat(");
-            rbindSb.append(values);
-            rbindSb.append(")");
-            
-            // Replace the R cbind expression by the current js expression
-            StringBuilder sb = new StringBuilder();
-            sb.append(result.substring(0, startIndex));
-            sb.append(rbindSb);
-            sb.append(result.substring(endIndex + 1));
-            result = sb.toString();
-            
-            // Search the next "cbind" in the expression
-            rFunctionArgumentsDTO = getFunctionArguments(result, "cbind");
         }
         
         return result;
@@ -2121,6 +2030,7 @@ public class R2jsSession extends Rsession implements RLog {
             try {
                 result = this.engine.eval(jsExpr);
             } catch (ScriptException e) {
+                e.printStackTrace();
                 String ls = "?";
                 try {
                     ls = (String) this.engine.eval("JSON.stringify(" + jsEnvName + ")").toString();
@@ -2290,7 +2200,7 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public String loadPackage(String pack) {
-        throw new UnsupportedOperationException("Cannot lod any package in R2Js. Use 'source' for external static content loading.");
+        throw new UnsupportedOperationException("Cannot load any package in R2Js. Use 'source' for external static content loading.");
     }
 
     @Override
@@ -2314,8 +2224,41 @@ public class R2jsSession extends Rsession implements RLog {
             return t(new double[][]{(double[]) o});
         } else if (o instanceof Double) {
             return new double[][]{{(double) o}};
-        } else {
-            return (double[][]) ScriptUtils.convert(o, double[][].class);
+        } else /*if (o instanceof Map)*/ {
+            double[][] vals = null;
+            int i = 0;
+            try {
+                for (Object k : ((Map) o).keySet()) {
+                    double[] v = null;
+                    if (o instanceof ScriptObjectMirror)
+                        try {
+                            v = (double[]) ((ScriptObjectMirror) o).to(double[].class);
+                        } catch (Exception ex) {
+                            //ex.printStackTrace();
+                            throw new ClassCastException("[asMatrix] Cannot cast ScriptObjectMirror list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
+                        }
+                    else
+                        try {
+                            v = (double[]) ((Map) o).get(k);
+                        } catch (Exception ex) {
+                            //ex.printStackTrace();
+                            throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
+                        }
+                    if (v == null) {
+                        throw new ClassCastException("[asMatrix] Cannot get list element as double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
+                    }
+                    if (vals == null) {
+                        vals = new double[v.length][((Map) o).size()];
+                    }
+                    for (int j = 0; j < v.length; j++) {
+                        vals[j][i] = v[j];
+                    }
+                    i++;
+                }
+                return vals;
+            } catch (Exception ex) {
+                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: "+ex.getMessage());
+            }
         }
     }
 
@@ -2366,85 +2309,57 @@ public class R2jsSession extends Rsession implements RLog {
         return o.toString();
     }
 
-    private static Object staticCast(Object o) throws ClassCastException {
+    @Override
+    public Object cast(Object o) throws ClassCastException {
         // If it's a ScriptObjectMirror, it can be an array or a matrix
         if (o instanceof ScriptObjectMirror) {
-
             try {
-                // Casting of the ScriptObjectMirror to a double matrix
+//                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
                 return ((ScriptObjectMirror) o).to(double[][].class);
-            } catch (Exception e) {
+            } catch (Exception e) {//e.printStackTrace();
             }
 
             try {
-                // Casting of the ScriptObjectMirror to a string array
+//                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
                 String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
 
-                // Check if the String[] array can be cast to a double[] array
+//                 System.err.println("// Check if the String[] array can be cast to a double[] array");
                 try {
                     for (String string : stringArray) {
                         Double.valueOf(string);
                     }
-                } catch (Exception e) {
+                } catch (Exception e) {//e.printStackTrace();
                     // It can't be cast to double[] so we return String[]
                     return stringArray;
                 }
 
-                // return double[] array
+//                 System.err.println("// return double[] array");
                 return ((ScriptObjectMirror) o).to(double[].class);
 
-            } catch (Exception e) {
+            } catch (Exception e) {//e.printStackTrace();
             }
 
             try {
-                // Casting of the ScriptObjectMirror to a double array
+//                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
                 return ((ScriptObjectMirror) o).to(double[].class);
-            } catch (Exception e) {
+            } catch (Exception e) {//e.printStackTrace();
             }
 
             try {
-                // Casting of the ScriptObjectMirror to a list/map
-                return ((ScriptObjectMirror) o).to(Map.class);
-            } catch (Exception e) {
+//                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
+                Map m = ((ScriptObjectMirror) o).to(Map.class);
+                try {
+                    return asMatrix(m);
+                } catch (ClassCastException c) {
+                    //c.printStackTrace();
+                    return m;
+                }
+            } catch (Exception e) {//e.printStackTrace();
             }
 
-            System.err.println("Impossible to cast object: ScriptObjectMirror");
-
-            return null;
+            throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
         } else {
             return o;
         }
     }
-
-    @Override
-    public Object cast(Object o) throws ClassCastException {
-        return staticCast(o);
-    }
-
-//    public static void main(String[] args) throws RException {
-//        R2JsSession R = new R2JsSession(System.out, null);
-//        R.debug_js = true;
-//        
-//        R.voidEval("Sys__info = function() {return(list("
-//                        +"'sysname'='"+System.getProperty("os.name")+"',"
-//                        +"'version'='"+System.getProperty("os.version")+"',"
-//                        +"'user'='"+System.getProperty("user.name")+"')"                        
-//                        +")}");
-//        
-//        System.err.println(Arrays.asList(R.ls(true)));
-//        
-//                 R.voidEval("Sys__getenv = function(v) {env=list('R_HOME'=NULL)\nreturn(env[v])}");
-//                 
-//        System.err.println(Arrays.asList(R.ls(true)));
-//        
-//        R.voidEval("options = function() {return(list('OutDec'='.'))}");
-//    
-//        System.err.println(Arrays.asList(R.ls(true)));
-//    
-//         R.voidEval("a <- 1+pi");
-//        R.voidEval("f = function(x){b <- 1+pi \n d <- 1 \n return(d)}");
-// 
-//        System.err.println(Arrays.asList(R.ls(true)));
-//    }
-
 }
