@@ -1701,4 +1701,7 @@ public abstract class Rsession implements RLog {
     static boolean uses(String expression, Map<String, Object> vars) {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
+    
+    public String getJsEnv() {return "";}
+    public void setJsEnv(String jsEnvName) {};
 }

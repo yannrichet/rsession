@@ -98,7 +98,6 @@ public class R2jsSessionTest {
 
     @Test
     public void testFunctions() throws Rsession.RException {
-
         engine.voidEval("f = function(x) {return(1+x)}");
         assert (Double) engine.eval("f(1.23)") == 2.23;
         assert (Double) engine.eval("f(x=1.23)") == 2.23;
@@ -205,6 +204,7 @@ public class R2jsSessionTest {
         //assert Double.parseDouble( engine.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
         //assert Double.parseDouble( engine.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
         //assert Double.parseDouble( engine.eval("kelvin_to_celsius(0)").toString()) == -273.15;
+        
         engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
         assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
         assert (Double) engine.eval("f(3)") == 3403;
@@ -770,5 +770,13 @@ engine.debug_js = true;
             assertTrue(true);
         }
         
+    }
+    
+    @Test
+    public void testImbricatedFunctions() throws Rsession.RException {
+        // Test when the function is used before its definition
+        engine.voidEval("a <- function() { return b()}");
+        engine.voidEval("b <- function() { return 12.0}");
+        assertEquals((Double) engine.eval("b()"), 12.0, epsilon);
     }
 }

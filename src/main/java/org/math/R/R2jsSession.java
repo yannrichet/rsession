@@ -341,7 +341,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace 'f = function(x)' by 'function f(x)'
         //e = e.replaceAll("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)]", "function $1($2)");
-        Matcher matcherFunction = Pattern.compile("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)](.*)").matcher(e);
+        /*Matcher matcherFunction = Pattern.compile("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)](.*)").matcher(e);
         if (matcherFunction.find()) {
             matcherFunction.reset();
             StringBuffer sb = new StringBuffer("");
@@ -360,7 +360,7 @@ public class R2jsSession extends Rsession implements RLog {
             }
             matcherFunction.appendTail(sb);
             e = sb.toString();
-        }        
+        }   */     
 
         // replace the for expression
         e = e.replaceAll("[(]([^=\\s]+)\\s*in\\s*([\\w\\-]+)\\s*:\\s*([[\\w\\-][.][)][(]]+)[)]\\s*",
@@ -423,7 +423,7 @@ public class R2jsSession extends Rsession implements RLog {
         // Java8 uses a previous version of javascript so we have to transform this expression in:
         // function(arg) { arg = typeof arg !== 'undefined' ? arg :
         // defaultValue; ...}
-        Matcher matcher = Pattern.compile("(function[.[^(]]*)[(]([.[^)]]*=[.[^)]]*)[)] *[{]").matcher(e);
+        Matcher matcher = Pattern.compile("(.*function)[(](.*=.*)[)] *[{]").matcher(e);
         if (matcher.find()) {
             matcher.reset();
             StringBuffer sb = new StringBuffer("");
@@ -478,24 +478,13 @@ public class R2jsSession extends Rsession implements RLog {
         
         e = createExistsFunction(e);
         e = createStopIfNotFunction(e);
+        //e = createPredefinedFunction(e);
 
         // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
         e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
         
-        // Store global variables in the object containing all global variables
-        storeGlobalVariables(e);
         
-        // Replace variables by variableStorageObject.variable
-        e = replaceVariables(e, variablesSet);
-
-        // Finally replace "quotes variables" by their expressions associated
-        e = replaceNameByQuotes(quotesList, e, false);
-
-        // Replace '$' accessor of data.frame by a '.'
-        e = e.replaceAll("\\$" + jsEnvName + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$", ".");
-
-        // replace line return (\n) by ";" if there is a "=" or a "return" in the line
+                // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
         //e = e.replaceAll("=(.*)\n", "=$1 ;\n");
         e = e.replaceAll("(.[^\\n]+)\n", "$1 ;\n");
@@ -531,6 +520,25 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
+        
+        try {
+            e = convertFunction(e);
+        } catch (ScriptException ex) {
+            Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        
+        // Store global variables in the object containing all global variables
+        storeGlobalVariables(e);
+        
+        // Replace variables by variableStorageObject.variable
+        e = replaceVariables(e, variablesSet);
+
+        // Finally replace "quotes variables" by their expressions associated
+        e = replaceNameByQuotes(quotesList, e, false);
+
+        // Replace '$' accessor of data.frame by a '.'
+        e = e.replaceAll("\\$" + jsEnvName + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
+        e = e.replaceAll("\\$", ".");
 
         // R Comments
         e = e.replaceAll("#", "//");
@@ -552,6 +560,29 @@ public class R2jsSession extends Rsession implements RLog {
         }
 
         return e;
+    }
+    
+    private String convertFunction(String expr) throws ScriptException {
+        Pattern indexPattern = Pattern.compile("(^|[^\\.\\w])((?!function|if|for|while|switch|return)\\w+)[(]");
+        Matcher indexMatcher = indexPattern.matcher(expr);
+        
+        if (indexMatcher.find()) {
+            indexMatcher.reset();
+            while (indexMatcher.find()) {
+                String fctName = indexMatcher.group(2);
+                // Ignore if the functions is already defined
+                if(!this.variablesSet.contains(fctName)) {
+                    // If the function is not defined yet in js environment
+                    if(!this.asLogical(this.engine.eval("typeof "+ fctName +" !== 'undefined'"))) {
+                         this.variablesSet.add(fctName);
+                    }
+                }
+            }
+        } else {
+            return expr;
+        }
+        
+        return expr;
     }
 
     int maxLength(String... s) {
@@ -1622,6 +1653,69 @@ public class R2jsSession extends Rsession implements RLog {
     }
     
     /**
+     * This function replace f = function(x=1, y=2) by 
+     * f = function(x = typeof x != 'undefined' ? x : 1, y = typeof y != 'undefined' ? y : 2)
+     *
+     * 
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String createPredefinedFunction(String expr) {
+        
+        String result = expr;
+        String functionReplacementString = "__FUNCTION_REPLACEMENT";
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "function");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            
+            // Build the mathjs expression
+            StringBuilder functionSb = new StringBuilder();
+            functionSb.append(functionReplacementString);
+            functionSb.append("(");
+            
+            for(Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                
+                functionSb.append("(");
+                functionSb.append(key);
+                functionSb.append(" = typeof ");
+                functionSb.append(key);
+                functionSb.append(" !== 'undefined') ? ");
+                functionSb.append(key);
+                functionSb.append(" : ");
+                functionSb.append(value);
+                functionSb.append(",");
+                
+            }
+            
+            functionSb = functionSb.deleteCharAt(functionSb.length() -1);
+            functionSb.append(");");
+            
+            // Replace the R file.exist expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(functionSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "function" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "function");
+        }
+        
+        result = result.replaceAll(functionReplacementString, "function");
+        
+        return result;
+    }
+    
+    
+    /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
      * of "fctName" in the "expr" and return a DTO containing all these informations.
      * If an argument field is not informed, a default field will be affected.
@@ -1650,7 +1744,8 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
         argumentNamesByFunctions.put("file__exists", Arrays.asList("default"));
         argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));
-        argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));        
+        argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));   
+        argumentNamesByFunctions.put("function", Arrays.asList("default"));  
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
@@ -2466,6 +2561,12 @@ public class R2jsSession extends Rsession implements RLog {
     public Object cast(Object o) throws ClassCastException {
         return staticCast(o);
     }
+    
+    @Override
+    public String getJsEnv() {return this.jsEnvName;}
+    
+    @Override
+    public void setJsEnv(String jsEnvName) {this.jsEnvName = jsEnvName;};
 
 //    public static void main(String[] args) throws RException {
 //        R2JsSession R = new R2JsSession(System.out, null);
