@@ -262,7 +262,10 @@
         var array = [];
         var i=0;
         while (i < times) {
-            array.push(x);
+            if (Array.isArray(x))
+                array.push(x[i % length(x)]);
+            else
+                array.push(x);
             i++;
         }
         return array;
@@ -339,10 +342,72 @@
         return x;
     }
 
-    function apply(x,margin, f) {
+    function paste0(args) {
+        var args = Array.prototype.slice.call(arguments);
+        var n = 1;
+        for (var a in args)
+            if (Array.isArray(args[a]))
+                if (length(args[a]) > n)
+                    n = length(args[a]);
+        var fullargs = [];
+        for (var a in args) {
+//            if (Array.isArray(args[a]) && length(args[a]) < n) {
+                fullargs.push("");
+                fullargs[a] = rep(args[a], n);
+//            } else {
+//                fullargs.push("");
+//                fullargs[a] = args[a];
+//            }
+        }
+        var str = "";
+        for (var i = 0; i < n; i++) {
+            var stri = "";
+            for (var a in fullargs)
+                if (n>1) {
+                    stri = stri + "" + fullargs[a][i];
+                } else {
+                    stri = stri + "" + fullargs[a];
+                }
+            str = str + ";" + stri;
+        }
+        return str.substring(1);
+    }
+
+    function paste(args) {
+        var args = Array.prototype.slice.call(arguments);
+        var n = 1;
+        for (var a in args)
+            if (Array.isArray(args[a]))
+                if (length(args[a]) > n)
+                    n = length(args[a]);
+        var fullargs = [];
+        for (var a in args) {
+//            if (Array.isArray(args[a]) && length(args[a]) < n) {
+                fullargs.push("");
+                fullargs[a] = rep(args[a], n);
+//            } else {
+//                fullargs.push("");
+//                fullargs[a] = args[a];
+//            }
+        }
+        var str = "";
+        for (var i = 0; i < n; i++) {
+            var stri = "";
+            for (var a in fullargs)
+                if (n>1) {
+                    stri = stri + " " + fullargs[a][i];
+                } else {
+                    stri = stri + " " + fullargs[a];
+                }
+            str = str + ";" + stri.substring(1);
+        }
+        return str.substring(1);
+    }
+
+    function apply(x, margin, f) {
         var y = [];
-        if (margin===1) {
-            for (var i=0;i<nrow(x); i++) {
+        if (margin === 1) {
+            for (var i = 0; i < nrow(x); i++) {
                 y[i] = f(math.squeeze(math.subset(x,math.index(i,range(0,ncol(x)-1)))));
             }
         } else if (margin===2) {
@@ -378,7 +443,7 @@
     }
     
     function asMatrix(x,index) {
-        x = math.squeeze(x);
+        //x = math.squeeze(x);
         if (Array.isArray(x)) {
             x = math.matrix(x);
             var d = math.size(x);
@@ -392,7 +457,7 @@
                 //nothing to do, already a 2D matrix
             } else throw new Error("Bad size for matrix: "+d);
         } else {
-            x = asMatrix(math.squeeze(new Array(x)));
+            x = asMatrix([x]);
         }
         return x ;
     }
@@ -476,6 +541,8 @@
     proto.whichMin = whichMin;
     proto.whichMax = whichMax;
     proto._print = _print;
+    proto.paste = paste;
+    proto.paste0 = paste0;
     //proto.c = c;
     proto.apply = apply;
     proto._in = _in;

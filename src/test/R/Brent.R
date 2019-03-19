@@ -156,8 +156,7 @@ displayResults <- function(brent, X, Y) {
     abline(h = brent$ytarget,           lty = 2,           col = "grey70")
     dev.off()
 
-    html <- paste(sep = '',
-            ' <HTML name="Root">in iteration number ',brent$i,'.<br/>',
+    html <- paste0(' <HTML name="Root">in iteration number ',brent$i,'.<br/>',
             'the root approximation is ', X[3 * brent$i - 1, 1], '.<br/>',
             'corresponding to the value ', Y[3 * brent$i - 1, 1],'<br/>',
             '<img src="',  brent$files,  '" width="', width, '" height="', height, '"/>',

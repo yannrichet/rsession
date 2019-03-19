@@ -256,7 +256,6 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("as.array(", "array(");
         R_TO_JS.put("which.min(", "whichMin(");
         R_TO_JS.put("which.max(", "whichMax(");
-        R_TO_JS.put("paste(", "strconcat(");
         R_TO_JS.put("print(", "_print(");
         R_TO_JS.put("is.function(", "isFunction(");
         R_TO_JS.put("is.null(", "isNull(");
@@ -507,7 +506,6 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("; *;", ";");
 
         
-        e = e.replaceAll("(\\W*)strconcat\\(", "$1str.concat(");
         e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
 
         
@@ -529,6 +527,8 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
         e = e.replaceAll("(\\W*)rbind\\(", "$1R.rbind(");
         e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
+        e = e.replaceAll("(\\W*)paste\\(", "$1R.paste(");
+        e = e.replaceAll("(\\W*)paste0\\(", "$1R.paste0(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
 
