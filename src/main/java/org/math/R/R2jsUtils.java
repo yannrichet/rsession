@@ -73,7 +73,7 @@ public class R2jsUtils {
                         expressions.add(sb.toString());
                         sb = new StringBuilder();
                     } else {
-                        if (currentChar!=',' && currentChar!='+' && currentChar!='-' && currentChar!='*' &&currentChar!='/')
+                        if (currentChar!=',' && currentChar!='+' && currentChar!='-' && currentChar!='*' &&currentChar!='/' &&currentChar!='=')
                         sb.append(";\n");
                     }
                 }

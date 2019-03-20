@@ -114,7 +114,6 @@
 
             // If 'array' is only a number
             if(!Array.isArray(array)) {
-
                     while(length--) expendedArray[length] = array;
                     return expendedArray;
             } else {
@@ -187,17 +186,17 @@
         if (n != null) {
             return n;
         } else {
-            if (typeof(X)=="object") {
+            if (typeof(X)==="object") {
                 var ns = [], key, i=0;
                 for (key in X) {
                     if (X.hasOwnProperty(key))
-                        if (key!="names" && key!="ncol" && key!="nrow")  
+                        if (key!=="names" && key!=="ncol" && key!=="nrow")  
                             ns[i++]=key;
                 }
                 return ns;
             } else {
                 var ns = [];
-                for (var i=0; i < R.length(X); i++) {
+                for (var i=0; i < length(X); i++) {
                     ns[i] = "X"+(i+1);
                 }
                 return ns;
@@ -211,37 +210,37 @@
 
     // to support indexing starting from 0 in js, while starting from 1 in R
     function _index (i,j) {
-        if (typeof(j)=="undefined") {
-            if (typeof(i)=="number" || typeof(i)=="object") {
+        if (typeof(j)==="undefined") {
+            if (typeof(i)==="number" || typeof(i)==="object") {
                 return math.index(math.subtract(i,1));
-            } else if (typeof(i)=="string" ) {
+            } else if (typeof(i)==="string" ) {
                 return math.index(i);
             }
         }
 
-        if ((typeof(i)=="number" || typeof(i)=="object") && (typeof(j)=="number" || typeof(j)=="object")) {
+        if ((typeof(i)==="number" || typeof(i)==="object") && (typeof(j)==="number" || typeof(j)==="object")) {
             return math.index(math.subtract(i,1),math.subtract(j,1));
-        } else if ((typeof(i)=="number" || typeof(i)=="object") && (typeof(j)=="string" )) {
+        } else if ((typeof(i)==="number" || typeof(i)==="object") && (typeof(j)==="string" )) {
             return math.index(math.subtract(i,1),j);
-        } else if ((typeof(i)=="string") && (typeof(j)=="string")) {
+        } else if ((typeof(i)==="string") && (typeof(j)==="string")) {
             return math.index(i,j);
-        } else if (typeof(i)=="string" && (typeof(j)=="object" || typeof(j)=="number")) {
+        } else if (typeof(i)==="string" && (typeof(j)==="object" || typeof(j)==="number")) {
             return math.index(i,math.subtract(j,1));
         }
     }
 
 
     function dim(obj) {
-        if (obj == null) return 0;
+        if (obj === null) return 0;
         if (Array.isArray(obj)) {
             return math.size(obj);
-        } else if (typeof(obj)=="object") {
+        } else if (typeof(obj)==="object") {
             if (obj.hasOwnProperty("nrow") && obj.hasOwnProperty("ncol"))
                 return [obj.nrow,obj.ncol];
             var s = 0, key;
             for (key in obj) {
                 if (obj.hasOwnProperty(key))
-                    if (key!="names" && key!="ncol" && key!="nrow")  s++;
+                    if (key!=="names" && key!=="ncol" && key!=="nrow")  s++;
             }
             return [s,1];
         } else {
@@ -250,11 +249,11 @@
     }
 
     function length(obj) {
-            if (obj == null) return 0;
+            if (obj === null) return 0;
             var s = 0, key;
             for (key in obj) {
                 if (obj.hasOwnProperty(key))
-                    if (key!="names" && key!="ncol" && key!="nrow")  s++;
+                    if (key!=="names" && key!=="ncol" && key!=="nrow")  s++;
             }
             return s;
     }
@@ -263,7 +262,10 @@
         var array = [];
         var i=0;
         while (i < times) {
-            array.push(x);
+            if (Array.isArray(x))
+                array.push(x[i % length(x)]);
+            else
+                array.push(x);
             i++;
         }
         return array;
@@ -273,19 +275,19 @@
         var array = [];
         var i=0;
         while (i < length(x)) {
-            if (x[i]==true)
+            if (x[i]===true)
                 array.push(i+1);
             i++;
         }
         return array;
     }
 
-    function whichmin(x) {
+    function whichMin(x) {
         var array = [];
         var i=1;
         var m=x[0];
         while (i < length(x)) {
-            if (x[i] == m) {
+            if (x[i] === m) {
                 array.push(i+1);
             } else if (x[i] < m) {
                 array = [];
@@ -297,12 +299,12 @@
         return array;
     }
 
-    function whichmax(x) {
+    function whichMax(x) {
         var array = [];
         var i=1;
         var m=x[0];
         while (i < length(x)) {
-            if (x[i] == m) {
+            if (x[i] === m) {
                 array.push(i+1);
             } else if (x[i] > m) {
                 array = [];
@@ -340,13 +342,75 @@
         return x;
     }
 
-    function apply(x,margin, f) {
+    function paste0(args) {
+        var args = Array.prototype.slice.call(arguments);
+        var n = 1;
+        for (var a in args)
+            if (Array.isArray(args[a]))
+                if (length(args[a]) > n)
+                    n = length(args[a]);
+        var fullargs = [];
+        for (var a in args) {
+//            if (Array.isArray(args[a]) && length(args[a]) < n) {
+                fullargs.push("");
+                fullargs[a] = rep(args[a], n);
+//            } else {
+//                fullargs.push("");
+//                fullargs[a] = args[a];
+//            }
+        }
+        var str = "";
+        for (var i = 0; i < n; i++) {
+            var stri = "";
+            for (var a in fullargs)
+                if (n>1) {
+                    stri = stri + "" + fullargs[a][i];
+                } else {
+                    stri = stri + "" + fullargs[a];
+                }
+            str = str + ";" + stri;
+        }
+        return str.substring(1);
+    }
+
+    function paste(args) {
+        var args = Array.prototype.slice.call(arguments);
+        var n = 1;
+        for (var a in args)
+            if (Array.isArray(args[a]))
+                if (length(args[a]) > n)
+                    n = length(args[a]);
+        var fullargs = [];
+        for (var a in args) {
+//            if (Array.isArray(args[a]) && length(args[a]) < n) {
+                fullargs.push("");
+                fullargs[a] = rep(args[a], n);
+//            } else {
+//                fullargs.push("");
+//                fullargs[a] = args[a];
+//            }
+        }
+        var str = "";
+        for (var i = 0; i < n; i++) {
+            var stri = "";
+            for (var a in fullargs)
+                if (n>1) {
+                    stri = stri + " " + fullargs[a][i];
+                } else {
+                    stri = stri + " " + fullargs[a];
+                }
+            str = str + ";" + stri.substring(1);
+        }
+        return str.substring(1);
+    }
+
+    function apply(x, margin, f) {
         var y = [];
-        if (margin==1) {
-            for (var i=0;i<nrow(x); i++) {
+        if (margin === 1) {
+            for (var i = 0; i < nrow(x); i++) {
                 y[i] = f(math.squeeze(math.subset(x,math.index(i,range(0,ncol(x)-1)))));
             }
-        } else if (margin==2) {
+        } else if (margin===2) {
             for (var i=0;i<ncol(x); i++) {
                 y[i] = f(math.squeeze(math.subset(x,math.index(range(0,nrow(x)-1),i))));
             }
@@ -355,6 +419,7 @@
     }
 
     function _in(x) {
+        if (typeof(x)=="undefined") throw new Error("Cannot iterate on null object");
         if (Array.isArray(x)) { // I want _in to return x values (like keys if x was a map), not indices of the array...
             var y ={};
             for (var i in x) y[x[i]] = 666; // ugly :)
@@ -368,19 +433,90 @@
         return new File(".").getAbsolutePath();
     }
     
-    function sleep(t) {
+    function SysSleep(t) {
         var Thread = Java.type('java.lang.Thread')
         return Thread.sleep(t);
     }
     
-    function isfunction(f) {
-        return "function"==typeof(f);
+    function isNull(o) {
+        return o === null;
     }
     
-    function isnull(o) {
-        return o==null;
+    function asMatrix(x,index) {
+        //x = math.squeeze(x);
+        if (Array.isArray(x)) {
+            x = math.matrix(x);
+            var d = math.size(x);
+            if (d.size()==1) {
+                var n = math.subset(math.size(x),math.index(0));
+                if (index==0) 
+                    x = x.resize([n,1]);
+                else
+                    x = x.resize([1,n]);
+            } else if (d.size()==2) {
+                //nothing to do, already a 2D matrix
+            } else throw new Error("Bad size for matrix: "+d);
+        } else {
+            x = asMatrix([x]);
+        }
+        return x ;
     }
     
+    function isMatrix(x) {
+        if (Array.isArray(x)) {
+            x = math.matrix(x);
+            var d = math.size(x);
+            if (d.size()==2) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    
+    function rbind(a,b,c) {
+        if (!isMatrix(a)) a = asMatrix(a,1);
+        var x = math.matrix(a);
+        if (typeof(b)!=="undefined") {
+            if (!isMatrix(b)) b = asMatrix(b,1);
+            x = math.concat(x,b,0); 
+            if (typeof(c)!=="undefined") {
+                if (!isMatrix(c)) c = asMatrix(c,1);
+                x = math.concat(x,c,0);
+            }
+        }
+        x = x.toArray(); // needed to return a castable to double[][]
+        if (isMatrix(a) && (a.names != null)) x.names = a.names;
+        return x;
+    }
+
+    function cbind(a,b,c) {
+        if (!isMatrix(a)) a = asMatrix(a,0);
+        var x = math.matrix(a);
+        if (typeof(b)!=="undefined") {
+            if (!isMatrix(b)) b = asMatrix(b,0);
+            x = math.concat(x,b,1);
+            if (typeof(c)!=="undefined") {
+                if (!isMatrix(c)) c = asMatrix(c,0);
+                x = math.concat(x,c,1);
+            }
+        }
+        x = x.toArray(); // needed to return a castable to double[][]
+        if (isMatrix(a) && (a.names != null)) {
+            x.names = a.names;
+            if (typeof (b) !== "undefined")
+                if (isMatrix(b) && (b.names != null)) {
+                    x.names = a.names.concat(b.names);
+                    if (typeof (c) !== "undefined")
+                        if (isMatrix(c) && (c.names != null))
+                            x.names = a.names.concat(b.names).concat(c.names);
+                }
+        }
+        return x;
+    }
+
     var proto = _R.prototype;
     proto.fileExists = fileExists;
     proto.write = write;
@@ -399,17 +535,21 @@
     proto.dim = dim;
     proto.length = length;
     proto.rep = rep;
+    proto.cbind = cbind;
+    proto.rbind = rbind;
     proto.which = which;
-    proto.whichmin = whichmin;
-    proto.whichmax = whichmax;
+    proto.whichMin = whichMin;
+    proto.whichMax = whichMax;
     proto._print = _print;
+    proto.paste = paste;
+    proto.paste0 = paste0;
     //proto.c = c;
     proto.apply = apply;
     proto._in = _in;
     proto.getwd = getwd;
-    proto.sleep = sleep;
-    proto.isfunction = isfunction;
-    proto.isnull = isnull;
+    proto.SysSleep = SysSleep;
+    proto.isNull = isNull;
+    proto.isFunction = isFunction;
     proto.stopIfNot = stopIfNot;
 
     return hooks;

@@ -108,10 +108,9 @@ displayResults <- function(gradientdescent,X,Y) {
     }
 
     html=paste(sep='<br/>',
-        paste('<HTML name="minimum">minimum is ',m),
-        paste(sep='',
-            'found at ',
-            paste(collapse='; ',paste(names(x),'=',x)),
+        paste0('<HTML name="minimum">minimum is ',m),
+        paste0('found at ',
+            paste0(paste(names(X),'=',x)),
             '<br/><img src="',
             gradientdescent$files,
             '" width="',resolution,'" height="',resolution,
@@ -172,6 +171,7 @@ displayResultsTmp <- function(gradientdescent,X,Y) {
 
 askfinitedifferences <- function(x,epsilon) {
     xd <- matrix(x,nrow=1);
+print(length(x))
     for (i in 1:length(x)) {
         xdi <- as.array(x);
         if (xdi[i] + epsilon > 1.0) {

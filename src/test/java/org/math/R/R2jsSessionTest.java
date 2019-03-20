@@ -17,11 +17,11 @@ public class R2jsSessionTest {
     // maximal epsilon wanted between actual and expected values
     final double epsilon = 1e-12;
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
-
+    
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         engine.debug_js = true;
-
+        
         engine.voidEval("a = 1");
         assert (Integer) engine.eval("a") == 1;
         engine.voidEval("a <- 1");
@@ -80,6 +80,38 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("45.*0.2/-65.5*45.+(45.-5.*7.)*(+8.-4.-(-1.)+(-1.))/1.2/41./-5.*12.*0.1+4.*(48.+1.2/4.)/4."), 45. * 0.2 / -65.5 * 45. + (45. - 5. * 7.) * (+8. - 4. - (-1.) + (-1.)) / 1.2 / 41. / -5. * 12. * 0.1 + 4. * (48. + 1.2 / 4.) / 4., epsilon);
 
     }
+
+    @Test
+    public void testRand() throws Rsession.RException {
+
+        assert ((double[]) engine.eval("runif(10,0,1)")).length == 10;
+        assert ((double[]) engine.eval("rnorm(10,0,1)")).length == 10;
+        assert ((double[]) engine.eval("rpois(10,10)")).length == 10;
+        assert ((double[]) engine.eval("rchisq(10,2)")).length == 10;
+        assert ((double[]) engine.eval("rcauchy(10,1,1)")).length == 10;
+
+    }
+    
+    @Test
+    public void testPaste() throws Rsession.RException {
+        engine.debug_js = true;
+
+        assert engine.eval("paste('a1','b2')").equals("a1 b2") : engine.eval("paste('a1','b2')");
+        assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4"):  engine.eval("paste(c('a1','b2'),c('c3','d4'))");
+        assert engine.eval("paste(c('a1','b2'),'d4')").equals("a1 d4;b2 d4") : engine.eval("paste(c('a1','b2'),'d4')");
+        
+        
+        System.err.println(engine.eval("paste(sep='<br/>',\n" +
+"        paste('<HTML name=\"minimum\">minimum is ',0.1),\n" +
+"        paste(sep='',\n" +
+"            'found at ',\n" +
+"            paste(collapse='; ',paste(c('x1','x2'),'=',c(.5,.6))),\n" +
+"            '<br/><img src=\"',\n" +
+"            'files',\n" +
+"            '\" width=\"',600,'\" height=\"',600,\n" +
+"            '\"/></HTML>'))"));
+    }
+
 
     @Test
     public void testApply() throws Rsession.RException {
@@ -445,8 +477,32 @@ public class R2jsSessionTest {
         engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
         engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
         engine.voidEval("C = rbind(A,B)");
+        assert  engine.eval("C") instanceof double[][] : "Not double[][] : "+ engine.eval("C").getClass();
         assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1, 2}, {5, 6}, {3, 4}, {7, 8}});
 
+        engine.voidEval("A <- runif(10)");
+        engine.voidEval("B <- runif(10)");
+        engine.voidEval("C = rbind(A,B)");
+        assert  engine.eval("C") instanceof double[][] : "Not double[][] : "+ engine.eval("C").getClass();
+        double[][] C = (double[][]) engine.eval("C");
+        assert C.length == 2 : "Bad nrow";
+        assert C[0].length == 10 : "Bad ncol";
+
+        double[][] A = new double[][]{{1, 2, 3}, {4, 5, 6}};
+        engine.set("A", A, "x1", "x2", "x3");
+        double[][] B = new double[][]{{11, 12, 13}, {14, 15, 16}};
+        engine.set("B", B, "x1", "x2", "x3");
+        engine.voidEval("C = rbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
+        assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1, 2, 3}, {4, 5, 6}, {11, 12, 13}, {14, 15, 16}}) : Arrays.deepToString((double[][]) engine.eval("C"));
+        assert engine.eval("names(C)") instanceof String[] : "No names";
+        assert Arrays.deepEquals((String[]) engine.eval("names(C)"), new String[]{"x1", "x2", "x3"}) : "Bad names";
+        
+        engine.voidEval("A <- 0.5");
+        engine.voidEval("B <- 0.6");
+        engine.voidEval("C = rbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
+        assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{0.5}, {0.6}}) : Arrays.deepToString((double[][]) engine.eval("C"));
     }
 
     @Test
@@ -455,13 +511,37 @@ public class R2jsSessionTest {
         engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
         engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
         engine.voidEval("C = cbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
         assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1, 2, 3, 4}, {5, 6, 7, 8}}) : Arrays.deepToString((double[][]) engine.eval("C"));
 
+        engine.voidEval("A <- runif(10)");
+        engine.voidEval("B <- runif(10)");
+        engine.voidEval("C = cbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
+        double[][] C = (double[][]) engine.eval("C");
+        assert C.length == 10 : "Bad nrow";
+        assert C[0].length == 2 : "Bad ncol";
+
+        double[][] A = new double[][]{{1, 2, 3}, {4, 5, 6}};
+        engine.set("A", A, "x1", "x2", "x3");
+        double[][] B = new double[][]{{11, 12, 13}, {14, 15, 16}};
+        engine.set("B", B, "x1", "x2", "x3");
+        engine.voidEval("C = cbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
+        assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1, 2, 3, 11, 12, 13}, {4, 5, 6, 14, 15, 16}}) : Arrays.deepToString((double[][]) engine.eval("C"));
+        assert engine.eval("names(C)") instanceof String[] : "No names: " + engine.eval("names(C)");
+        assert Arrays.deepEquals((String[]) engine.eval("names(C)"), new String[]{"x1", "x2", "x3", "x1", "x2", "x3"}) : "Bad names";
+
+        engine.voidEval("A <- 0.5");
+        engine.voidEval("B <- 0.6");
+        engine.voidEval("C = cbind(A,B)");
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
+        assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{0.5, 0.6}}) : Arrays.deepToString((double[][]) engine.eval("C"));
     }
 
     @Test
     public void testSaveAndLoad() throws Rsession.RException {
-engine.debug_js = true;
+        engine.debug_js = true;
 
         double rand = (double) Math.random();
 
@@ -511,7 +591,7 @@ engine.debug_js = true;
         engine.voidEval("l = list(a=1,b=2)");
 
         assert engine.ls(true).length == 1 : "Not expected env: " + Arrays.toString(engine.ls(true));
-
+        
         engine.voidEval("for (n in names(l)) {\nprint(n);\n.GlobalEnv[[n]] = l[[n]]\n}");
 
         //assert engine.ls(true).length == 3 : "Not expected env: " + Arrays.toString(engine.ls(true));
@@ -640,7 +720,7 @@ engine.debug_js = true;
 
     @Test
     public void testList() throws Rsession.RException {
-engine.debug_js = true;
+        engine.debug_js = true;
 
         engine.voidEval("a = c('aa','bb','cc')");
         engine.voidEval("b = c(11,22,33)");

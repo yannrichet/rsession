@@ -488,7 +488,7 @@ public class BrentTest {
         assert false : "Did not raise error:" + Arrays.deepToString((double[][]) R.eval("X"));
     }
 
-    //@Test
+    @Test
     public void testErrorFunR2js() {
         R = new R2jsSession(l, prop);
         try {
@@ -528,10 +528,12 @@ public class BrentTest {
 
             R.set("Yi", DoubleArray.columnVector(Y0));
 
+            double[][] Xj = X0;
             boolean finished = false;
             while (!finished) {
-                double[][] Xj = R.asMatrix(R.eval("getNextDesign(b,Xi,Yi)"));
                 System.err.println("Xj=\n" + Arrays.deepToString(Xj));
+                Xj = R.asMatrix(R.eval("getNextDesign(b,Xi,Yi)"));
+                System.err.println("   Xj=\n" + Arrays.deepToString(Xj));
                 if (Xj == null || Xj.length == 0) {
                     finished = true;
                 } else {

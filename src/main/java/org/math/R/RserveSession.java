@@ -516,7 +516,7 @@ public class RserveSession extends Rsession implements RLog {
             try {
                 if (((REXP)e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
                     log(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression, Level.WARNING);
-            e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
+                    e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
                 }
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
@@ -871,6 +871,33 @@ public class RserveSession extends Rsession implements RLog {
         }
         if (o instanceof double[][]) {
             return (double[][]) o;
+        }
+        if (o instanceof Map) {
+            double[][] vals = null;
+            int i = 0;
+            try {
+                for (Object k : ((Map) o).keySet()) {
+                    double[] v = null;
+                    try {
+                        v = (double[]) ((Map) o).get(k);
+                    } catch (Exception ex) {
+                        throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
+                    }
+                    if (v == null) {
+                        throw new ClassCastException("[asMatrix] Cannot get list element as double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
+                    }
+                    if (vals == null) {
+                        vals = new double[v.length][((Map) o).size()];
+                    }
+                    for (int j = 0; j < v.length; j++) {
+                        vals[j][i] = v[j];
+                    }
+                    i++;
+                }
+                return vals;
+            } catch (Exception ex) {
+                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: "+ex.getMessage());
+            }
         }
         if (o instanceof double[]) {
             return t(new double[][]{(double[]) o});
