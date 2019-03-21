@@ -6,7 +6,12 @@ package org.math.R;
  */
 public abstract class Log {
 
-   public static Log Out = new Log() {
+    static { // should be changed to get logging from apache here...
+        System.setProperty("org.apache.commons.logging.Log",
+                "org.apache.commons.logging.impl.NoOpLog");
+    }
+
+    public static Log Out = new Log() {
 
         @Override
         public void print(String s) {

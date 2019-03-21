@@ -70,8 +70,13 @@
         }else {
             eval("newObject." + variables + "="+jsVariableStorageObject + "." + variables);
         }
-
-        var jsonString = JSON.stringify(newObject);
+        var jsonString = JSON.stringify(newObject,
+                function (key, val) {
+                    if (typeof val === 'function') {
+                        return val + ''; // implicitly `toString` it
+                    }
+                    return val;
+                });
         return jsonString;
     }
         
@@ -91,7 +96,10 @@
         varList.forEach(function(variable) { 
             var value = eval("jsonObject." + variable);
             eval(print(variable + '=' + value));
-            eval(jsVariableStorageObject + "." + variable + "='" + value + "'");
+            if (value.startsWith("function"))
+                eval(jsVariableStorageObject + "." + variable + "=" + value + "");
+            else
+                eval(jsVariableStorageObject + "." + variable + "='" + value + "'");
         });
         return true;
     }

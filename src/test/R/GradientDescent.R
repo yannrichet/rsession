@@ -126,7 +126,7 @@ displayResults <- function(gradientdescent,X,Y) {
         plotx=paste('<PlotnD name="argmin">[',paste(collapse=',',x),']</PlotnD>')
     }
 
-    return(paste(html,plotmin,plotx))
+    return(paste(html,plotmin,plotx,collapse=';'))
 }
 
 # panel.vec <- function(x, y , col, Y, d, ...) {
