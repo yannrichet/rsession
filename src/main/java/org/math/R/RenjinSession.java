@@ -13,6 +13,10 @@ import java.util.Map;
 import java.util.Properties;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.impl.DefaultFileReplicator;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
+import org.apache.commons.vfs2.provider.TemporaryFileStore;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
 import org.math.array.DoubleArray;
 import org.renjin.eval.Session;
@@ -42,7 +46,7 @@ public class RenjinSession extends Rsession implements RLog {
     protected RenjinScriptEngine R = null;
     File wdir;
     Properties properties;
-
+    
     public static RenjinSession newInstance(final RLog console, Properties properties) {
         return new RenjinSession(console, properties);
     }

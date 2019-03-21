@@ -160,7 +160,8 @@ displayResults <- function(brent, X, Y) {
             'the root approximation is ', X[3 * brent$i - 1, 1], '.<br/>',
             'corresponding to the value ', Y[3 * brent$i - 1, 1],'<br/>',
             '<img src="',  brent$files,  '" width="', width, '" height="', height, '"/>',
-            '<br/>Exit due to ', exit.txt, '<br/></HTML>')
+            '<br/>Exit due to ', exit.txt, '<br/></HTML>',collapse=';')
+
     return(html)
 }
 

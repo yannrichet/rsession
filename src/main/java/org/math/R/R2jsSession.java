@@ -97,9 +97,8 @@ public class R2jsSession extends Rsession implements RLog {
     // The name of the object which store all variables defined in the current session
     private String jsEnvName;
     
-    
-    public static final String[] DISABLED_FUNCTIONS = new String[]{"png","plot","abline","rgb","hist", "pairs"};
-    
+    public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
+
     // Set of global variables declared
     public Set<String> variablesSet;
     public Set<String> functionsSet;
@@ -259,7 +258,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("print(", "_print(");
         R_TO_JS.put("is.function(", "isFunction(");
         R_TO_JS.put("is.null(", "isNull(");
-        R_TO_JS.put("Sys.SysSleep(", "SysSleep(");
+        R_TO_JS.put("Sys.sleep(", "SysSleep(");
         R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
@@ -1043,7 +1042,6 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private String createList(String expr) {
-        
         String result = expr;
         
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "list");
@@ -1054,7 +1052,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("({");
+            dataFrameSb.append("{");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1070,7 +1068,7 @@ public class R2jsSession extends Rsession implements RLog {
                 dataFrameSb.append(",");
             }
             
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
 
             
             // Replace the R matrix expression by the current matrix js
@@ -1090,7 +1088,8 @@ public class R2jsSession extends Rsession implements RLog {
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "list");
         }
-        
+        if (result.startsWith("{") && result.endsWith("}")) 
+            result = "("+result+")"; //hack to avoid passing "{a:1,b:2}" to javascript, which is then misinterpredted as an expression, and not as a list declaration.
         return result;
     }
     
@@ -2283,6 +2282,22 @@ public class R2jsSession extends Rsession implements RLog {
                     variablesSet.remove(var);
                     engine.eval("delete " + var + ";");
                 }
+            }
+        } catch (Exception e) {
+            log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
+            return false;
+        }
+
+        return true;
+    }
+    
+    @Override
+    public boolean rmAll() {
+        try {
+            synchronized (engine) {
+                engine.eval("delete " + jsEnvName + ";");
+                variablesSet.clear();
+                engine.eval("var " + jsEnvName + " = {};");
             }
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);

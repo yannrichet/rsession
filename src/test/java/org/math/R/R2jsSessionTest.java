@@ -576,12 +576,28 @@ public class R2jsSessionTest {
         engine.set("s", "abcdef");
         engine.set("a", "123");
         engine.set("b", "456");
-        engine.savels(f,"");
-         engine.rm("s");
+        engine.savels(f, "");
+        engine.rm("s");
         engine.rm("a");
         engine.rm("b");
         engine.load(f);
         assert Arrays.equals(engine.ls(), new String[]{"a", "b", "s"}) : Arrays.toString(engine.ls());
+        
+        assert engine.rmAll();
+        assert Arrays.equals(engine.ls(), new String[]{}) : Arrays.toString(engine.ls());
+        engine.eval("fun = function(x) {return(x)}");
+        engine.set("a", "123");
+        engine.set("b", "456");
+        System.err.println( Arrays.toString(engine.ls()));
+        assert Arrays.equals(engine.ls(), new String[]{"a", "b", "fun"}) : Arrays.toString(engine.ls());
+        engine.savels(f, "");
+        engine.rm("fun");
+        engine.rm("a");
+        engine.rm("b");
+        assert Arrays.equals(engine.ls(), new String[]{}) : Arrays.toString(engine.ls());
+        engine.load(f);
+        assert Arrays.equals(engine.ls(), new String[]{"a", "b", "fun"}) : Arrays.toString(engine.ls());
+        assert (double)engine.eval("fun(0.123)")==0.123:engine.eval("fun(0.123)");
     }
 
     @Test
