@@ -22,7 +22,7 @@ Brent <- function(options) {
 #' @param input variables description (min/max, properties, ...)
 #' @param output values of interest description
 getInitialDesign <- function(brent, input, output) {
-    if (length(input)!=1) stop("Cannot find root of >1D function")
+    if (length(input)!=1) stop("Cannot find root of more than 1D function")
     brent$i <- 0
     brent$input <- input
     brent$exit <- -1    # Reason end of algo

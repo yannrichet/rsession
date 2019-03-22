@@ -1,10 +1,15 @@
 package org.math.R;
 
 import java.io.File;
+import static java.lang.Double.NaN;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.script.ScriptException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import org.math.R.Rsession.RException;
 
 /**
  * Test the converter r->js of the class {@link R2jsSession}
@@ -21,6 +26,10 @@ public class R2jsSessionTest {
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         engine.debug_js = true;
+        
+        engine.voidEval("a <- NaN");
+        assert Double.isNaN((Double)engine.eval("a")): engine.eval("a");
+        assert Double.isNaN((Double)engine.eval("a+1")): engine.eval("a");
         
         engine.voidEval("a = 1");
         assert (Integer) engine.eval("a") == 1;
@@ -39,6 +48,21 @@ public class R2jsSessionTest {
         assert Double.parseDouble(engine.eval("2**3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2 ** 3").toString()) == 8;
         assert Boolean.parseBoolean(engine.eval("1>2").toString()) == false;
+        
+        try {
+            engine.voidEval("if (1<2) print('toto') else print('titi')");
+            assert true;
+        } catch (Exception e) {
+            assert false :"Throw error: " + e;
+        }
+        
+        assert !(engine.eval("1<NaN") instanceof Boolean) : "Sadly eval NaN test as boolean: " + engine.eval("1<NaN");
+        try {
+            engine.voidEval("if (1<NaN) print('toto') else print('titi')");
+            assert false : "Did not raise error";
+        } catch (Exception e) {
+            assert e instanceof RException : "Bad error: " + e;
+        }
         assert Boolean.parseBoolean(engine.eval("1>1").toString()) == false;
         assert Boolean.parseBoolean(engine.eval("1>=2").toString()) == false;
         assert Boolean.parseBoolean(engine.eval("1>=1").toString()) == true;

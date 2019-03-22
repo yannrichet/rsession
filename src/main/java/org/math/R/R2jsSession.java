@@ -224,7 +224,7 @@ public class R2jsSession extends Rsession implements RLog {
         engine.eval(new InputStreamReader(RInputStream));
         engine.eval("R = R()");
     }
-        
+
     static final String POINT_CHAR_JS_KEY = "__";
 
     /**
@@ -249,8 +249,8 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("R.version.string", "'R2js'");
         R_TO_JS.put(".GlobalEnv", JS_ENVIRONMENT_DEFAULT);
         R_TO_JS.put("stop(", "throw new Error(");
-        R_TO_JS.put("as.numeric(", "parseFloat(");
-        R_TO_JS.put("as.integer(", "parseInt(");
+        R_TO_JS.put("as.numeric(", "asNumeric(");
+        R_TO_JS.put("as.integer(", "asInteger(");
         R_TO_JS.put("as.matrix(", "matrix(");
         R_TO_JS.put("as.array(", "array(");
         R_TO_JS.put("which.min(", "whichMin(");
@@ -477,8 +477,10 @@ public class R2jsSession extends Rsession implements RLog {
         // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
         e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
         
+        // force regular 'if' to throw error when arg is null
+        e = e.replaceAll("if \\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (R._if($1)) $2");
         
-                // replace line return (\n) by ";" if there is a "=" or a "return" in the line
+        // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
         //e = e.replaceAll("=(.*)\n", "=$1 ;\n");
         e = e.replaceAll("(.[^\\n+-=/\\*]+)\n", "$1 ;\n");
@@ -517,6 +519,8 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
         e = e.replaceAll("(\\W*)paste\\(", "$1R.paste(");
         e = e.replaceAll("(\\W*)paste0\\(", "$1R.paste0(");
+        e = e.replaceAll("(\\W*)asNumeric\\(", "$1R.asNumeric(");
+        e = e.replaceAll("(\\W*)asInteger\\(", "$1R.asInteger(");
 
         e = e.replaceAll("R\\.R\\.", "R.");
         
@@ -1687,13 +1691,18 @@ public class R2jsSession extends Rsession implements RLog {
      */
     private static String replaceOperators(String expr) {
         
-        String previousStoppingCharacters = "=*/^;%+:, \n";
-        String nextStoppingCharacters = "=*+/^%;:, \n";
+        String previousStoppingCharacters = "=*/^;%+:,>< \n";
+        String nextStoppingCharacters = "=*+/^%;:,>< \n";
         
         expr = expr.replaceAll("(\\*|/) *-", "$1-");
         expr = expr.replaceAll("-", " -");
         
         Map<String, String> operatorsMap = new HashMap<>();
+        operatorsMap.put(">", "R._gt");
+        operatorsMap.put("<", "R._lt");
+        operatorsMap.put(">=", "R._get");
+        operatorsMap.put("<=", "R._let");
+        operatorsMap.put("==", "R._eq");
         operatorsMap.put("+", "math.add");
         operatorsMap.put("-", "math.subtract");
         operatorsMap.put("*", "math.dotMultiply");
@@ -1704,7 +1713,7 @@ public class R2jsSession extends Rsession implements RLog {
         operatorsMap.put(":", "R.range");
         operatorsMap.put("^", "math.dotPow");
 
-        String[] operators = new String[] {"^", "*/%:", "+-" };
+        String[] operators = new String[] {"^", "*/%:", "+-><" };
 
         // replace '^' first then replace '*','/','%' and ':' and finaly replace '+' and '-'
         int priority = 0;

@@ -530,6 +530,56 @@
         return x;
     }
 
+function asNumeric(x) {
+    return parseFloat(x);
+}
+
+
+function asInteger(x) {
+    return parseInt(x);
+}
+
+
+function _lt(x,y) {
+    if (isNaN(x)) return null;
+    if (isNaN(y)) return null;
+    return x < y;
+}
+
+
+function _gt(x,y) {
+    if (isNaN(x)) return null;
+    if (isNaN(y)) return null;
+    return x > y;
+}
+
+function _let(x,y) {
+    if (isNaN(x)) return null;
+    if (isNaN(y)) return null;
+    return x <= y;
+}
+
+
+
+function _get(x,y) {
+    if (isNaN(x)) return null;
+    if (isNaN(y)) return null;
+    return x >= y;
+}
+
+function _eq(x,y) {
+    if (isNaN(x)) return null;
+    if (isNaN(y)) return null;
+    return x == y;
+}
+
+function _if(x) {
+    if (x == null) throw new Error('null argument');
+    if (x === undefined) throw new Error('undefined argument');
+    if (x == 'undefined') throw new Error('\'undefined\' argument');
+    return x === true;
+}
+
     var proto = _R.prototype;
     proto.fileExists = fileExists;
     proto.write = write;
@@ -564,6 +614,15 @@
     proto.isNull = isNull;
     proto.isFunction = isFunction;
     proto.stopIfNot = stopIfNot;
+proto.asNumeric = asNumeric;
+proto.asInteger = asInteger;
+proto._lt = _lt;
+proto._gt = _gt;
+proto._let = _let;
+proto._get = _get;
+proto._eq = _eq;
+proto._if = _if;
+
 
     return hooks;
 

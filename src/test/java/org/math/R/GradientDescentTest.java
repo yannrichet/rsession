@@ -167,6 +167,108 @@ public class GradientDescentTest {
         }
     }
 
+    public void testFail() throws Exception {
+        assert R != null : "No Rsession available";
+        String result = null;
+        try {
+            R.source(new File("src/test/R/GradientDescent.R"));
+
+            R.voidEval("options = list(nmax = 'NaN', delta = 0.1, epsilon = 0.01, target=0)");
+            R.voidEval("gd = GradientDescent(options)");
+
+            double[][] X0 = R.asMatrix(R.eval("getInitialDesign(gd, list(x1=list(min=-5,max=10),x2=list(min=0,max=15)), NULL)"));
+            System.err.println("X0=" + Arrays.deepToString(X0));
+            double[] Y0 = F(X0);
+            System.err.println("Y0=" + Arrays.toString(Y0));
+            R.set("Xi", X0, "x1","x2");
+            R.set("Yi", DoubleArray.columnVector(Y0));
+
+            boolean finished = false;
+            while (!finished) {
+                double[][] Xj = R.asMatrix(R.eval("getNextDesign(gd,Xi,Yi)"));
+                
+                assert false : "Did not correctly failed !";
+
+                System.err.println("Xj=" + Arrays.deepToString(Xj));
+                if (Xj == null || Xj.length == 0) {
+                    finished = true;
+                } else {
+                    double[] Yj = F(Xj);
+                    System.err.println("Yj=" + Arrays.toString(Yj));
+                    R.set("Xj", Xj, "x1","x2");
+                    R.set("Yj", DoubleArray.columnVector(Yj));
+                    R.voidEval("Xi = rbind(Xi,Xj)");
+                    R.voidEval("Yi = rbind(Yi,Yj)");
+                }
+            }
+
+            result = R.asString(R.eval("displayResults(gd,Xi,Yi)"));
+        } catch (RException r) {
+            assert true;
+            return;
+        }
+        assert false : "Did not correctly failed !";
+    }
+
+    @Test
+    public void testFailRserve() {
+        RserverConf conf = new RserverConf(null, -1, null, null, prop);
+        R = RserveSession.newInstanceTry(l, conf);
+        try {
+            System.err.println(R.eval("R.version.string"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        try {
+            System.err.println("Rserve version " + R.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            testFail();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println(R.notebook());
+        }
+    }
+
+    @Test
+    public void testFailRenjin() {
+        R = new RenjinSession(l, prop);
+        try {
+            System.err.println(R.eval("R.version.string"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            testFail();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println(R.notebook());
+        }
+    }
+
+    @Test
+    public void testFailR2js() {
+        R = new R2jsSession(l, prop);
+        ((R2jsSession)R).debug_js = true;
+        try {
+            System.err.println(R.eval("R.version.string"));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        try {
+            testFail();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.err.println(R.notebook());
+        }
+    }
+
+    
     RLog l;
     Properties prop;
     Rsession R;
