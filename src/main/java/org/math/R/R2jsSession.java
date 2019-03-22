@@ -2430,7 +2430,9 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public Object cast(Object o) throws ClassCastException {
         // If it's a ScriptObjectMirror, it can be an array or a matrix
-        if (o instanceof ScriptObjectMirror) {
+         if (o instanceof Integer) {
+             return Double.valueOf((int)o);
+         } else if (o instanceof ScriptObjectMirror) {
             try {
 //                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
                 return ((ScriptObjectMirror) o).to(double[][].class);
