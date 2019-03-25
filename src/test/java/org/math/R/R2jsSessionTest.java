@@ -32,13 +32,13 @@ public class R2jsSessionTest {
         assert Double.isNaN((Double)engine.eval("a+1")): engine.eval("a");
         
         engine.voidEval("a = 1");
-        assert (Integer) engine.eval("a") == 1;
+        assert (Double) engine.eval("a") == 1;
         engine.voidEval("a <- 1");
-        assert (Integer) engine.eval("a") == 1;
+        assert (Double) engine.eval("a") == 1;
         assert (Double) engine.eval("a+1") == 2;
         assertEquals((Double) engine.eval("a+pi"), (1 + Math.PI), epsilon);
         engine.eval("b <- (1)");
-        assert (Integer) engine.eval("b") == 1;
+        assert (Double) engine.eval("b") == 1;
 
         assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4;
         assert Double.parseDouble(engine.eval("1.23e-4").toString()) == 1.23E-4;
@@ -103,6 +103,31 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("4-6-5+-7+(-5)-(-48+4)-(+56)"), 4 - 6 - 5 + -7 + (-5) - (-48 + 4) - (+56), epsilon);
         assertEquals((Double) engine.eval("45.*0.2/-65.5*45.+(45.-5.*7.)*(+8.-4.-(-1.)+(-1.))/1.2/41./-5.*12.*0.1+4.*(48.+1.2/4.)/4."), 45. * 0.2 / -65.5 * 45. + (45. - 5. * 7.) * (+8. - 4. - (-1.) + (-1.)) / 1.2 / 41. / -5. * 12. * 0.1 + 4. * (48. + 1.2 / 4.) / 4., epsilon);
 
+        assert engine.asLogical(engine.eval("TRUE | TRUE")) == true : engine.eval("TRUE | TRUE");
+        assert engine.asLogical(engine.eval("FALSE | TRUE")) == true;
+        assert engine.asLogical(engine.eval("FALSE | FALSE")) == false;
+        assert engine.eval("FALSE | NULL") == null;
+
+        
+        assert engine.asLogical(engine.eval("TRUE || TRUE")) == true : engine.eval("TRUE || TRUE");
+        assert engine.asLogical(engine.eval("FALSE || TRUE")) == true;
+        assert engine.asLogical(engine.eval("FALSE || FALSE")) == false;
+        try {
+            engine.eval("FALSE || NULL");
+            assert false : "Did not raise error";
+        } catch (Exception e) {
+            assert e instanceof RException : "Bad error: " + e;
+        }
+
+        assert engine.asLogical(engine.eval("TRUE & TRUE")) == true : engine.eval("TRUE & TRUE");
+        assert engine.asLogical(engine.eval("FALSE & TRUE")) == false;
+        assert engine.asLogical(engine.eval("FALSE & FALSE")) == false;
+        assert engine.eval("FALSE & NULL") == null;
+        
+        assert engine.asLogical(engine.eval("TRUE && TRUE")) == true : engine.eval("TRUE && TRUE");
+        assert engine.asLogical(engine.eval("FALSE && TRUE")) == false;
+        assert engine.asLogical(engine.eval("FALSE && FALSE")) == false;
+        assert engine.asLogical(engine.eval("FALSE && NULL")) == false;
     }
 
     @Test
@@ -115,7 +140,7 @@ public class R2jsSessionTest {
         assert ((double[]) engine.eval("rcauchy(10,1,1)")).length == 10;
 
     }
-    
+
     @Test
     public void testPaste() throws Rsession.RException {
         engine.debug_js = true;
@@ -267,17 +292,17 @@ public class R2jsSessionTest {
         assert (Double) engine.eval("f(3, FALSE, FALSE)") == -1197;
 
         engine.voidEval("m_g <- function() { -1 }");
-        assert (Integer) engine.eval("m_g()") == -1;
+        assert (Double) engine.eval("m_g()") == -1;
     }
 
     @Test
     public void testArrays() throws Rsession.RException {
 
         engine.voidEval("a1 = c(1,2,3,12);\n b_2 = 2;");
-        assert (Integer) engine.eval("a1[1]") == 1;
-        assert (Integer) engine.eval("a1[4]") == 12;
-        assert (Integer) engine.eval("a1[b_2]") == 2 : engine.eval("a1[b_2]");
-        assert (Integer) engine.eval("a1[b_2-1]") == 1 : engine.eval("a1[b_2-1]");
+        assert (Double) engine.eval("a1[1]") == 1;
+        assert (Double) engine.eval("a1[4]") == 12;
+        assert (Double) engine.eval("a1[b_2]") == 2 : engine.eval("a1[b_2]");
+        assert (Double) engine.eval("a1[b_2-1]") == 1 : engine.eval("a1[b_2-1]");
 
         engine.voidEval("a <- c(0:4);");
         double[] m = new double[]{0, 1, 2, 3, 4};
@@ -372,7 +397,7 @@ public class R2jsSessionTest {
         double[][] matrix11 = (double[][]) engine.eval("A = matrix(c(1:9), nrow = 3, byrow = TRUE)");
 
         System.out.println(Arrays.deepToString(matrix11));
-        assert (Integer) engine.eval("A[2,2]") == 5 : Arrays.deepToString((double[][]) engine.eval("A"));
+        assert (Double) engine.eval("A[2,2]") == 5 : Arrays.deepToString((double[][]) engine.eval("A"));
         assert Arrays.equals((double[]) engine.eval("A[,2]"), new double[]{2, 5, 8}) : Arrays.toString((double[]) engine.eval("A[,2]"));
 
         engine.eval("i=2");
@@ -719,7 +744,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("c$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c$first[1]")).equals("aa");
-        assert ((Integer) engine.eval("c$second[2]")).equals(22);
+        assert ((Double) engine.eval("c$second[2]")).equals(22.0):engine.eval("c$second[2]");
 
         engine.voidEval("a2 = c('aa','bb','cc')");
         engine.voidEval("b2 = c(11,22,33)");
@@ -727,7 +752,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((String[]) engine.eval("c2$first"), new String[]{"aa", "bb", "cc"}));
         assertTrue(Arrays.equals((double[]) engine.eval("c2$second"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c2$first[1]")).equals("aa");
-        assert ((Integer) engine.eval("c2$second[2]")).equals(22);
+        assert ((Double) engine.eval("c2$second[2]")).equals(22.0);
 
         engine.voidEval("a3 = c('aa','bb','cc')");
         engine.voidEval("b3 = c(11,22,33)");
@@ -754,7 +779,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("c$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c$first[1]")).equals("aa");
-        assert ((Integer) engine.eval("c$second[2]")).equals(22);
+        assert ((Double) engine.eval("c$second[2]")).equals(22.0);
 
     }
 
@@ -770,7 +795,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("C$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("C[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("C$first[1]")).equals("aa") : ((String) engine.eval("C$first[1]"));
-        assert ((Integer) engine.eval("C$second[2]")).equals(22);
+        assert ((Double) engine.eval("C$second[2]")).equals(22.0): engine.eval("C$second[2]");
 
         engine.voidEval("a2 = c('aa','bb','cc')");
         engine.voidEval("b2 = c(11,22,33)");
@@ -778,7 +803,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((String[]) engine.eval("c2$first"), new String[]{"aa", "bb", "cc"}));
         assertTrue(Arrays.equals((double[]) engine.eval("c2$second"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c2$first[1]")).equals("aa");
-        assert ((Integer) engine.eval("c2$second[2]")).equals(22);
+        assert ((Double) engine.eval("c2$second[2]")).equals(22.0);
 
         engine.voidEval("a3 = c('aa','bb','cc')");
         engine.voidEval("b3 = c(11,22,33)");
@@ -799,7 +824,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("c$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c$first[1]")).equals("aa");
-        assert ((Integer) engine.eval("c$second[2]")).equals(22);
+        assert ((Double) engine.eval("c$second[2]")).equals(22.0);
 
         assert Arrays.equals((String[]) engine.eval("c[['first']]"),new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[])engine.eval("c[['first']]"));
         engine.voidEval("f = 'first'");
@@ -810,7 +835,7 @@ public class R2jsSessionTest {
     public void testLength() throws Rsession.RException {
         engine.voidEval("a <- c(1,2,3,4)");
         try {
-            assert ((Integer) engine.eval("length(a)")) == 4 : "Cannot get length:" + engine.eval("length(a)");
+            assert ((Double) engine.eval("length(a)")) == 4 : "Cannot get length:" + engine.eval("length(a)");
         } catch (Exception e) {
             assert false : "Cannot get length:" + engine.eval("length(a)") + " : " + e.getMessage();
         }

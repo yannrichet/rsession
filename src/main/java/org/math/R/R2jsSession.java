@@ -420,6 +420,11 @@ public class R2jsSession extends Rsession implements RLog {
         
         // FIXME this doesn't support += ...
         // Replace operators (+, -, *, /, ...)
+        e = e.replaceAll("\\=\\=","ê");
+        e = e.replaceAll("\\<\\=","î");
+        e = e.replaceAll("\\>\\=","ŝ");
+        e = e.replaceAll("\\|\\|","ô");
+        e = e.replaceAll("\\&\\&","â"); // to avoid replacing 'tolerance &' by two _and
         e = replaceOperators(e);
         
         // Default parameter ("function(arg = defaultValue) {...}") is defined after the version ES6 of javascript
@@ -1691,8 +1696,8 @@ public class R2jsSession extends Rsession implements RLog {
      */
     private static String replaceOperators(String expr) {
         
-        String previousStoppingCharacters = "=*/^;%+:,>< \n";
-        String nextStoppingCharacters = "=*+/^%;:,>< \n";
+        String previousStoppingCharacters = "=*/^;%+:,><&|ôâêîŝ \n";
+        String nextStoppingCharacters = "=*+/^%;:,><&|ôâêîŝ \n";
         
         expr = expr.replaceAll("(\\*|/) *-", "$1-");
         expr = expr.replaceAll("-", " -");
@@ -1700,9 +1705,13 @@ public class R2jsSession extends Rsession implements RLog {
         Map<String, String> operatorsMap = new HashMap<>();
         operatorsMap.put(">", "R._gt");
         operatorsMap.put("<", "R._lt");
-        operatorsMap.put(">=", "R._get");
-        operatorsMap.put("<=", "R._let");
-        operatorsMap.put("==", "R._eq");
+        operatorsMap.put("ŝ", "R._get");
+        operatorsMap.put("î", "R._let");
+        operatorsMap.put("ê", "R._eq");
+        operatorsMap.put("|", "R._or");
+        operatorsMap.put("ô", "R._oror");
+        operatorsMap.put("&", "R._and");
+        operatorsMap.put("â", "R._andand");
         operatorsMap.put("+", "math.add");
         operatorsMap.put("-", "math.subtract");
         operatorsMap.put("*", "math.dotMultiply");
@@ -1712,8 +1721,8 @@ public class R2jsSession extends Rsession implements RLog {
         operatorsMap.put("%%", "math.mod");
         operatorsMap.put(":", "R.range");
         operatorsMap.put("^", "math.dotPow");
-
-        String[] operators = new String[] {"^", "*/%:", "+-><" };
+        
+        String[] operators = new String[] {"^", "*/%:ê", "+-&|ôâîŝ><" };
 
         // replace '^' first then replace '*','/','%' and ':' and finaly replace '+' and '-'
         int priority = 0;
@@ -1781,7 +1790,7 @@ public class R2jsSession extends Rsession implements RLog {
                     }
                 }
                 // if the next character is not and operator or "=" (not supported yet)
-                else if (!("+*/=".indexOf(expr.charAt(i + 1)) >= 0)) { // WHY not "-" also ?
+                else if (!("+*/=".indexOf(expr.charAt(i + 1)) >= 0)) { 
                     
                     // Find the beginning of the left term
                     int startingIndex = getPreviousExpressionFirstIndex(expr, i, previousStoppingCharacters);

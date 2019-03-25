@@ -329,6 +329,17 @@
         return array;
     }
 
+
+    function isNull(x) {
+        if (x == null)
+            return true;
+        if (x === undefined)
+            return true;
+        if (x == 'undefined')
+            return true;
+        return false;
+    }
+
     function isFunction(x) {
         return typeof x === "function";
     }
@@ -451,10 +462,6 @@
         return Thread.sleep(t);
     }
     
-    function isNull(o) {
-        return o === null;
-    }
-    
     function asMatrix(x,index) {
         //x = math.squeeze(x);
         if (Array.isArray(x)) {
@@ -530,55 +537,98 @@
         return x;
     }
 
-function asNumeric(x) {
-    return parseFloat(x);
-}
+    function asNumeric(x) {
+        return parseFloat(x);
+    }
 
 
-function asInteger(x) {
-    return parseInt(x);
-}
+    function asInteger(x) {
+        return parseInt(x);
+    }
+
+    function _lt(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x < y;
+    }
 
 
-function _lt(x,y) {
-    if (isNaN(x)) return null;
-    if (isNaN(y)) return null;
-    return x < y;
-}
+    function _gt(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x > y;
+    }
+
+    function _let(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x <= y;
+    }
+
+    function _get(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x >= y;
+    }
+
+    function _eq(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x == y;
+    }
+
+    function _or(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x || y;
+    }    
+    
+    function _oror(x, y) {
+        if (isNaN(x) || isNull(x))
+            throw new Error('null argument');
+        if (x == true)
+            return true;
+        if (isNaN(y) || isNull(y))
+            throw new Error('null argument');
+        return x || y;
+    }
+
+    function _and(x, y) {
+        if (isNaN(x) || isNull(x))
+            return null;
+        if (isNaN(y) || isNull(y))
+            return null;
+        return x && y;
+    }
+    
+    function _andand(x, y) {
+        if (isNaN(x) || isNull(x))
+            throw new Error('null argument');
+        if (x == false)
+            return false;
+        if (isNaN(y) || isNull(y))
+            throw new Error('null argument');
+        return x && y;
+    }
 
 
-function _gt(x,y) {
-    if (isNaN(x)) return null;
-    if (isNaN(y)) return null;
-    return x > y;
-}
-
-function _let(x,y) {
-    if (isNaN(x)) return null;
-    if (isNaN(y)) return null;
-    return x <= y;
-}
-
-
-
-function _get(x,y) {
-    if (isNaN(x)) return null;
-    if (isNaN(y)) return null;
-    return x >= y;
-}
-
-function _eq(x,y) {
-    if (isNaN(x)) return null;
-    if (isNaN(y)) return null;
-    return x == y;
-}
-
-function _if(x) {
-    if (x == null) throw new Error('null argument');
-    if (x === undefined) throw new Error('undefined argument');
-    if (x == 'undefined') throw new Error('\'undefined\' argument');
-    return x === true;
-}
+    function _if(x) {
+        if (isNull(x))
+            throw new Error('null argument');
+        return x === true;
+    }
 
     var proto = _R.prototype;
     proto.fileExists = fileExists;
@@ -614,15 +664,18 @@ function _if(x) {
     proto.isNull = isNull;
     proto.isFunction = isFunction;
     proto.stopIfNot = stopIfNot;
-proto.asNumeric = asNumeric;
-proto.asInteger = asInteger;
-proto._lt = _lt;
-proto._gt = _gt;
-proto._let = _let;
-proto._get = _get;
-proto._eq = _eq;
-proto._if = _if;
-
+    proto.asNumeric = asNumeric;
+    proto.asInteger = asInteger;
+    proto._lt = _lt;
+    proto._gt = _gt;
+    proto._let = _let;
+    proto._get = _get;
+    proto._eq = _eq;
+    proto._or = _or;
+    proto._oror = _oror;
+    proto._and = _and;
+    proto._andand = _andand;
+    proto._if = _if;
 
     return hooks;
 
