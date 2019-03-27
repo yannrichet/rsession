@@ -7,8 +7,12 @@ matrix:
   include:
     - os: linux
       dist: trusty
+    - os: linux
+      dist: xenial
     - os: osx
       osx_image: xcode8.3
+    - os: osx
+      osx_image: xcode10.1
 before_install:
   #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
