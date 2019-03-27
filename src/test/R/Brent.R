@@ -79,7 +79,7 @@ getNextDesign <- function(brent, X, Y) {
 
     tol1 = 2. * brent$ytol * abs(b) + 0.5 * brent$xtol # Convergence check tolerance.
     xm = .5 * (c - b)
-    if (abs(xm) <= tol1 | fb == 0) {
+    if ((abs(xm) <= tol1) | (fb == 0)) {
         # stop if fb = 0 return root b or tolerance reached
         brent$exit <- 0
         return(NULL)

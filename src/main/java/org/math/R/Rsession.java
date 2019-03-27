@@ -377,7 +377,6 @@ public abstract class Rsession implements RLog {
             try {
                 message = message + "\n R> " + getLastLogEntry();
             } catch (Exception e) {
-                e.printStackTrace();
                 message = message + "\n ! " + e.getMessage();
             }
         }

@@ -2141,7 +2141,6 @@ public class R2jsSession extends Rsession implements RLog {
             try {
                 result = this.engine.eval(jsExpr);
             } catch (ScriptException e) {
-                e.printStackTrace();
                 String ls = "?";
                 try {
                     ls = (String) this.engine.eval("JSON.stringify(" + jsEnvName + ")").toString();

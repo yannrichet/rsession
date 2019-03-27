@@ -13,10 +13,6 @@ import java.util.Map;
 import java.util.Properties;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.impl.DefaultFileReplicator;
-import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
-import org.apache.commons.vfs2.provider.TemporaryFileStore;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
 import org.math.array.DoubleArray;
 import org.renjin.eval.Session;
@@ -328,7 +324,7 @@ public class RenjinSession extends Rsession implements RLog {
                     R.eval("names(" + varname + ") <- " + varname + ".names");
                     //R.eval(varname + " <- data.frame(" + varname + ")");
                 } catch (ScriptException ex) {
-                    ex.printStackTrace();
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
             }
@@ -349,7 +345,7 @@ public class RenjinSession extends Rsession implements RLog {
                     R.eval("names(" + varname + ") <- " + varname + ".names");
                     R.eval(varname + " <- data.frame(" + varname + ")");
                 } catch (ScriptException ex) {
-                    ex.printStackTrace();
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
             }
@@ -369,7 +365,7 @@ public class RenjinSession extends Rsession implements RLog {
                 try {
                     R.eval(varname + " <- matrix(" + varname + ",nrow=" + dd.length + ")");
                 } catch (ScriptException ex) {
-                    ex.printStackTrace();
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
             }
@@ -722,7 +718,7 @@ public class RenjinSession extends Rsession implements RLog {
                                 return new Function(name);
                             }
                         } catch (Exception ex) {
-                            ex.printStackTrace();
+                            log(ex.getMessage(), Level.ERROR);
                         }
                     }
                 case "NULL":

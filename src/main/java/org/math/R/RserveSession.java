@@ -641,7 +641,6 @@ public class RserveSession extends Rsession implements RLog {
                 R.assign(varname, REXP.createDataFrame(list));
             }
         } catch (REXPMismatchException re) {
-            re.printStackTrace();
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
             return false;
         } catch (RserveException ex) {
@@ -1386,7 +1385,6 @@ public class RserveSession extends Rsession implements RLog {
                 is.close();
                 os.close();
             } catch (IOException e) {
-                e.printStackTrace();
                 log(HEAD_ERROR + IO_HEAD + R.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
             } finally {
                 IOUtils.closeQuietly(is);
