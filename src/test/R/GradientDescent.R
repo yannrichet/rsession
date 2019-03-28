@@ -111,7 +111,7 @@ displayResults <- function(gradientdescent,X,Y) {
     html=paste(sep='<br/>',
         paste0('<HTML name="minimum">minimum is ',m),
         paste0('found at ',
-            paste0(paste(names(X),'=',x)),
+            paste0(paste(collapse=',',names(X),'=',x)),
             '<br/><img src="',
             gradientdescent$files,
             '" width="',resolution,'" height="',resolution,
