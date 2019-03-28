@@ -1282,20 +1282,17 @@ public class R2jsSession extends Rsession implements RLog {
 
             dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), ")");
 
-            System.err.println("dataFrameSb "+dataFrameSb);
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(dataFrameSb.toString());
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            System.err.println("results "+result);
 
             List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
             result = newQuoteList.get(0);
             for (int i = 1; i < newQuoteList.size(); i++) {
                 quotesList.add(newQuoteList.get(i));
             }
-            System.err.println("results "+result);
 
             // Search the next "paste"
             rFunctionArgumentsDTO = getFunctionArguments(result, "paste");
