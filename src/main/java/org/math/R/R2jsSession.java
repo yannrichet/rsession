@@ -234,6 +234,9 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the js script expression
      */
     public static String nameRtoJs(String e) {
+        
+        System.err.println("");
+        
         // Replace "." char by a dedicated key
         if (e.contains(POINT_CHAR_JS_KEY)) {
             throw new IllegalArgumentException("Cannot use " + POINT_CHAR_JS_KEY + " in expression (reserved substring)");
@@ -516,6 +519,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)whichMax\\(", "$1R.whichMax(");
         e = e.replaceAll("(\\W*)_print\\(", "$1R._print(");
         e = e.replaceAll("(\\W*)getwd\\(", "$1R.getwd(");
+        e = e.replaceAll("(\\W*)setwd\\(", "$1R.setwd(");
         e = e.replaceAll("(\\W*)SysSleep\\(", "$1R.SysSleep(");
         e = e.replaceAll("(\\W*)isFunction\\(", "$1R.isFunction(");
         e = e.replaceAll("(\\W*)isNull\\(", "$1R.isNull(");

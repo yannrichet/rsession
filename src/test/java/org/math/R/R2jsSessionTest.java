@@ -1,11 +1,7 @@
 package org.math.R;
 
 import java.io.File;
-import static java.lang.Double.NaN;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.script.ScriptException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -924,4 +920,15 @@ public class R2jsSessionTest {
         engine.voidEval("b <- function() { return 12.0}");
         assertEquals((Double) engine.eval("b()"), 12.0, epsilon);
     }
+    
+    @Test
+    public void testSetWDFunctions() throws Rsession.RException {
+        // Test when the function is used before its definition
+        String initialWD = (String) engine.eval("getwd()");
+        engine.voidEval("setwd('"+ initialWD +"/test')");
+        String otherWD = (String) engine.eval("getwd()");
+        assertTrue(!initialWD.equals(otherWD));
+        engine.voidEval("setwd('"+ initialWD +"')");
+    }
+    
 }
