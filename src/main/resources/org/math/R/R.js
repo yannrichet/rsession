@@ -367,38 +367,13 @@
     }
 
     function paste0(args) {
-        var args = Array.prototype.slice.call(arguments);
-        var n = 1;
-        for (var a in args)
-            if (Array.isArray(args[a]))
-                if (length(args[a]) > n)
-                    n = length(args[a]);
-        var fullargs = [];
-        for (var a in args) {
-//            if (Array.isArray(args[a]) && length(args[a]) < n) {
-                fullargs.push("");
-                fullargs[a] = rep(args[a], n);
-//            } else {
-//                fullargs.push("");
-//                fullargs[a] = args[a];
-//            }
-        }
-        var str = "";
-        for (var i = 0; i < n; i++) {
-            var stri = "";
-            for (var a in fullargs)
-                if (n>1) {
-                    stri = stri + "" + fullargs[a][i];
-                } else {
-                    stri = stri + "" + fullargs[a];
-                }
-            str = str + ";" + stri;
-        }
-        return str.substring(1);
+        return paste("",args);
     }
 
     function paste(args) {
         var args = Array.prototype.slice.call(arguments);
+        var sep = args.shift();
+        var collapse = args.shift();
         var n = 1;
         for (var a in args)
             if (Array.isArray(args[a]))
@@ -419,13 +394,13 @@
             var stri = "";
             for (var a in fullargs)
                 if (n>1) {
-                    stri = stri + " " + fullargs[a][i];
+                    stri = stri + sep + fullargs[a][i];
                 } else {
-                    stri = stri + " " + fullargs[a];
+                    stri = stri + sep + fullargs[a];
                 }
-            str = str + ";" + stri.substring(1);
+            str = str + collapse + stri.substring(length(sep));
         }
-        return str.substring(1);
+        return str.substring(length(sep));
     }
 
     function apply(x, margin, f) {

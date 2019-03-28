@@ -460,6 +460,9 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replace("list()","{}");
         e = createList(e);
 
+        // format paste function (with sep & collapse args)
+        e = createPaste(e);
+        
         // replace ls fct expression
         e = createLs(e);
         
@@ -522,7 +525,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
         e = e.replaceAll("(\\W*)rbind\\(", "$1R.rbind(");
         e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
-        e = e.replaceAll("(\\W*)paste\\(", "$1R.paste(");
+        e = e.replaceAll("(\\W*)Rpaste\\(", "$1R.paste(");
         e = e.replaceAll("(\\W*)paste0\\(", "$1R.paste0(");
         e = e.replaceAll("(\\W*)asNumeric\\(", "$1R.asNumeric(");
         e = e.replaceAll("(\\W*)asInteger\\(", "$1R.asInteger(");
@@ -1246,6 +1249,56 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
     
+    private String createPaste(String expr) {
+        String result = expr;
+
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "paste");
+
+        while (rFunctionArgumentsDTO != null) {
+
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+
+            StringBuilder dataFrameSb = new StringBuilder();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            String sep = argumentsMap.getOrDefault("sep", "' '");
+            String collapse = argumentsMap.getOrDefault("collapse", "';'");
+
+            dataFrameSb.append("Rpaste(" + sep + "," + collapse + ",");
+            //startIndex = startIndex+sep.length()+1+collapse.length()+1; //to move after sep & collapse args
+
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                if (!key.equals("sep") && !key.equals("collapse")) {
+                    String value = entry.getValue();
+                    dataFrameSb.append(value);
+                    dataFrameSb.append(",");
+                }
+            }
+
+            dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), ")");
+
+            System.err.println("dataFrameSb "+dataFrameSb);
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(dataFrameSb.toString());
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            System.err.println("results "+result);
+
+            List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
+            result = newQuoteList.get(0);
+            for (int i = 1; i < newQuoteList.size(); i++) {
+                quotesList.add(newQuoteList.get(i));
+            }
+            System.err.println("results "+result);
+
+            // Search the next "paste"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "paste");
+        }
+
+        return result;
+    }
     
     /**
      * This function replaces the R function save by JS equivalent
@@ -1600,6 +1653,7 @@ public class R2jsSession extends Rsession implements RLog {
         // Map containing possible arguments associated to each R functions
         Map<String, List<String>> argumentNamesByFunctions = new HashMap<>();
         argumentNamesByFunctions.put("array", Arrays.asList("data", "dim", "dimnames"));
+        argumentNamesByFunctions.put("paste", new ArrayList<String>());
         argumentNamesByFunctions.put("vector", Arrays.asList("mode", "length"));
         argumentNamesByFunctions.put("matrix", Arrays.asList("data", "nrow", "ncol", "byrow", "dimnames"));
         argumentNamesByFunctions.put("c", Arrays.asList("data", "dim", "dimnames"));
@@ -1609,8 +1663,6 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("write__csv", Arrays.asList("data", "file", "row.names", "col.names", "sep", "na"));
         argumentNamesByFunctions.put("data__frame", new ArrayList<String>());
         argumentNamesByFunctions.put("list", new ArrayList<String>());
-        argumentNamesByFunctions.put("cbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
-        argumentNamesByFunctions.put("rbind", Arrays.asList("default", "deparse.level", "make.row.names", "stringsAsFactors"));
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
         argumentNamesByFunctions.put("file__exists", Arrays.asList("default"));
         argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));

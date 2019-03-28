@@ -18,7 +18,7 @@ public class R2jsUtils {
      * Parse an expression containing multiple lines, functions or sub-expressions
      * in a list of inline sub-expressions. This function also cleanup comments.
      * 
-     * @param expr
+     * @param expr expression to parse
      * @return a list of inline sub-expressions
      */
     public static List<String> parse(String expr) {
