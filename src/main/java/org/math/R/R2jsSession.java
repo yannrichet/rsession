@@ -2335,11 +2335,13 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public double asDouble(Object o) throws ClassCastException {
+        if (o instanceof Double) return (Double)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (double) ScriptUtils.convert(o, double.class);
     }
 
     @Override
     public double[] asArray(Object o) throws ClassCastException {
+        if (o instanceof double[]) return (double[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (double[]) ScriptUtils.convert(o, double[].class);
     }
 
@@ -2394,36 +2396,43 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public String asString(Object o) throws ClassCastException {
+        if (o instanceof String) return (String)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (String) ScriptUtils.convert(o, String.class);
     }
 
     @Override
     public String[] asStrings(Object o) throws ClassCastException {
+        if (o instanceof String[]) return (String[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (String[]) ScriptUtils.convert(o, String[].class);
     }
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
+        if (o instanceof Integer) return (Integer)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (int) ScriptUtils.convert(o, int.class);
     }
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
+        if (o instanceof int[]) return (int[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (int[]) ScriptUtils.convert(o, int[].class);
     }
 
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
+        if (o instanceof Boolean) return (Boolean)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (boolean) ScriptUtils.convert(o, boolean.class);
     }
 
     @Override
     public boolean[] asLogicals(Object o) throws ClassCastException {
-        return (boolean[]) ScriptUtils.convert(o, boolean[].class);
+       if (o instanceof boolean[]) return (boolean[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+       return (boolean[]) ScriptUtils.convert(o, boolean[].class);
     }
 
     @Override
     public Map asList(Object o) throws ClassCastException {
+        if (o instanceof Map) return (Map)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
         return (Map) ScriptUtils.convert(o, Map.class);
     }
 
