@@ -432,6 +432,11 @@
         return new File(".").getAbsolutePath();
     }
     
+    function setwd(dir) {
+        var System = Java.type('java.lang.System');
+        System.setProperty("user.dir", dir);
+    }
+    
     function SysSleep(t) {
         var Thread = Java.type('java.lang.Thread')
         return Thread.sleep(t);
@@ -635,6 +640,7 @@
     proto.apply = apply;
     proto._in = _in;
     proto.getwd = getwd;
+    proto.setwd = setwd;
     proto.SysSleep = SysSleep;
     proto.isNull = isNull;
     proto.isFunction = isFunction;
