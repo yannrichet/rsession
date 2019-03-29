@@ -142,9 +142,12 @@ public class R2jsSessionTest {
         engine.debug_js = true;
 
         assert engine.eval("paste('a','b','c',sep='v')").equals("avbvc"): engine.eval("paste('a','b','c',sep='v')");
+        assert engine.eval("paste0('a','b','c')").equals("abc"): engine.eval("paste0('a','b','c')");
+
 
         engine.voidEval("x = matrix(c(1,2,3,4,5,6),ncol=2)");
         assert engine.eval("paste(x[1,],collapse='v')").equals("1v4"): engine.eval("paste(x[1,],collapse='v')");
+        assert engine.eval("paste0(x[1,],collapse='v')").equals("1v4"): engine.eval("paste0(x[1,],collapse='v')");
   
         assert engine.eval("paste('a1','b2')").equals("a1 b2") : engine.eval("paste('a1','b2')");
         assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4"):  engine.eval("paste(c('a1','b2'),c('c3','d4'))");

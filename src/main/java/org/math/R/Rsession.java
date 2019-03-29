@@ -1027,12 +1027,16 @@ public abstract class Rsession implements RLog {
      *
      * @return well removed ?
      */
-    public boolean rmAll() {
+    public boolean rmAll(boolean all) {
         try {
-            return voidEval("rm(list=ls(all=TRUE))", TRY_MODE);
+            return voidEval("rm(list=ls(all=" + (all ? "TRUE" : "FALSE") + "))", TRY_MODE);
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    public boolean rmAll() {
+        return rmAll(false);
     }
 
     /**
@@ -1701,6 +1705,8 @@ public abstract class Rsession implements RLog {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
     
-    public String getJsEnv() {return "";}
-    public void setJsEnv(String jsEnvName) {};
+    public abstract void setGlobalEnv(String envName);
+    
+    public abstract void copyGlobalEnv(String newEnvName);
+
 }

@@ -330,6 +330,64 @@ public class BasicTest {
     }
 
     @Test
+    public void testEnv_R2Js() throws Exception {
+        System.err.println("====================================== R2Js");
+        q.debug_js = true;
+        
+        double v = 123.456;
+        assert q.set("v", v);
+        assert Arrays.deepEquals(q.ls(false), new String[]{"v"}) : Arrays.deepToString(q.ls(false));
+        
+        q.copyGlobalEnv("myenv");
+        q.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(q.ls(false), new String[]{"v"}) : Arrays.deepToString(q.ls(false));
+
+        q.setGlobalEnv("myenv2");
+        assert Arrays.deepEquals(q.ls(false), new String[]{}) : Arrays.deepToString(q.ls(false));
+        
+        q.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(q.ls(false), new String[]{"v"}) : Arrays.deepToString(q.ls(false));
+    }
+
+    @Test
+    public void testEnv_Renjin() throws Exception {
+        System.err.println("====================================== Renjin");
+        
+        double v = 123.456;
+        assert r.set("v", v);
+        assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
+        
+        r.copyGlobalEnv("myenv");
+        r.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
+
+        r.setGlobalEnv("myenv2");
+        assert Arrays.deepEquals(r.ls(false), new String[]{}) : Arrays.deepToString(r.ls(false));
+        
+        r.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
+    }
+    
+    @Test
+    public void testEnv_Rserve() throws Exception {
+        System.err.println("====================================== Rserve");
+        
+        double v = 123.456;
+        assert s.set("v", v);
+        assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
+        
+        s.copyGlobalEnv("myenv");
+        s.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
+
+        s.setGlobalEnv("myenv2");
+        assert Arrays.deepEquals(s.ls(false), new String[]{}) : Arrays.deepToString(s.ls(false));
+        
+        s.setGlobalEnv("myenv");
+        assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
+    }
+    
+    @Test
     public void testSet_R2Js() throws Exception {
         System.err.println("====================================== R2Js");
 

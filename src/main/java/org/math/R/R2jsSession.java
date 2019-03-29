@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,7 +96,7 @@ public class R2jsSession extends Rsession implements RLog {
     private static final String JS_ENVIRONMENT_DEFAULT = "__r2js__";
     
     // The name of the object which store all variables defined in the current session
-    private String jsEnvName;
+    private String jsEnvName = JS_ENVIRONMENT_DEFAULT;
     
     public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
 
@@ -128,8 +129,6 @@ public class R2jsSession extends Rsession implements RLog {
         
         if(environmentName != null) {
             jsEnvName = environmentName;
-        } else {
-            jsEnvName = JS_ENVIRONMENT_DEFAULT;
         }
         
         variablesSet = new HashSet<>();
@@ -465,6 +464,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         // format paste function (with sep & collapse args)
         e = createPaste(e);
+        e = createPaste0(e);
         
         // replace ls fct expression
         e = createLs(e);
@@ -530,7 +530,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)rbind\\(", "$1R.rbind(");
         e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
         e = e.replaceAll("(\\W*)Rpaste\\(", "$1R.paste(");
-        e = e.replaceAll("(\\W*)paste0\\(", "$1R.paste0(");
+        e = e.replaceAll("(\\W*)Rpaste0\\(", "$1R.paste0(");
         e = e.replaceAll("(\\W*)asNumeric\\(", "$1R.asNumeric(");
         e = e.replaceAll("(\\W*)asInteger\\(", "$1R.asInteger(");
 
@@ -773,10 +773,11 @@ public class R2jsSession extends Rsession implements RLog {
         variablesandfunctions.addAll(functionsSet);
         variablesandfunctions.removeAll(Arrays.asList(DISABLED_FUNCTIONS));
         
+        // replace by Obejct.keys() ?
         if (all) 
             return variablesandfunctions.toArray(new String[]{});
         else {
-        List<String> notall = new LinkedList<>();
+            List<String> notall = new LinkedList<>();
             for (String v : variablesandfunctions) {
                 if (!v.startsWith("_")) notall.add(v);
             }
@@ -1265,6 +1266,7 @@ public class R2jsSession extends Rsession implements RLog {
 
             StringBuilder dataFrameSb = new StringBuilder();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
             String sep = argumentsMap.getOrDefault("sep", "' '");
             String collapse = argumentsMap.getOrDefault("collapse", "';'");
 
@@ -1296,6 +1298,54 @@ public class R2jsSession extends Rsession implements RLog {
 
             // Search the next "paste"
             rFunctionArgumentsDTO = getFunctionArguments(result, "paste");
+        }
+
+        return result;
+    }
+    
+    private String createPaste0(String expr) {
+        String result = expr;
+
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "paste0");
+
+        while (rFunctionArgumentsDTO != null) {
+
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+
+            StringBuilder dataFrameSb = new StringBuilder();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String collapse = argumentsMap.getOrDefault("collapse", "';'");
+
+            dataFrameSb.append("Rpaste0(" + collapse + ",");
+            //startIndex = startIndex+sep.length()+1+collapse.length()+1; //to move after sep & collapse args
+
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                if (!key.equals("collapse")) {
+                    String value = entry.getValue();
+                    dataFrameSb.append(value);
+                    dataFrameSb.append(",");
+                }
+            }
+
+            dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), ")");
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(dataFrameSb.toString());
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+
+            List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
+            result = newQuoteList.get(0);
+            for (int i = 1; i < newQuoteList.size(); i++) {
+                quotesList.add(newQuoteList.get(i));
+            }
+
+            // Search the next "paste"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "paste0");
         }
 
         return result;
@@ -1652,8 +1702,9 @@ public class R2jsSession extends Rsession implements RLog {
     private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
         
         // Map containing possible arguments associated to each R functions
-        Map<String, List<String>> argumentNamesByFunctions = new HashMap<>();
+        Map<String, List<String>> argumentNamesByFunctions = new LinkedHashMap<>();
         argumentNamesByFunctions.put("array", Arrays.asList("data", "dim", "dimnames"));
+        argumentNamesByFunctions.put("paste0", new ArrayList<String>());
         argumentNamesByFunctions.put("paste", new ArrayList<String>());
         argumentNamesByFunctions.put("vector", Arrays.asList("mode", "length"));
         argumentNamesByFunctions.put("matrix", Arrays.asList("data", "nrow", "ncol", "byrow", "dimnames"));
@@ -1674,7 +1725,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         List<String> argumentNamesList = new ArrayList<>(argumentNamesByFunctions.get(fctName));
         
-        Map<String, String> argumentNamesAndValues = new HashMap<>();
+        Map<String, String> argumentNamesAndValues = new LinkedHashMap<>(); //because we need to keep order of arguments, by default
         
         Pattern pattern = Pattern.compile("(\\b)" + fctName + "\\(");
         Matcher matcher = pattern.matcher(expr);
@@ -1710,9 +1761,9 @@ public class R2jsSession extends Rsession implements RLog {
                 } else {
                     // Remove the current argument name from the list
                     boolean removed = argumentNamesList.remove(argumentName);
-                    if (!removed) {
-                        Log.Err.println("Unknown argument:" + argumentName + " in function: " + fctName);
-                    }
+//                    if (!removed) {
+//                        Log.Err.println("Unknown argument:" + argumentName + " in function: " + fctName);
+//                    }
                 }
                 
                 argument = expr.substring(currentIndex, argumentEndIndex + 1);
@@ -1733,7 +1784,7 @@ public class R2jsSession extends Rsession implements RLog {
             }
             rFunctionArgumentsDTO = new RFunctionArgumentsDTO(startIndex, currentIndex - 1, argumentNamesAndValues);
         }
-        
+
         return rFunctionArgumentsDTO;
     }
     
@@ -2552,11 +2603,62 @@ public class R2jsSession extends Rsession implements RLog {
             return o;
         }
     }
-    
-    @Override
-    public String getJsEnv() {return this.jsEnvName;}
-    
-    @Override
-    public void setJsEnv(String jsEnvName) {this.jsEnvName = jsEnvName;};
 
+    Map<String,Set<String>> envVariables = new HashMap<>();
+    
+    @Override
+    public void setGlobalEnv(String jsEnvName) {
+        if (jsEnvName == null) {
+            jsEnvName = JS_ENVIRONMENT_DEFAULT;
+        } else {
+            jsEnvName = "__" + jsEnvName + "__";
+        }
+        
+        try {
+            if (asLogical(engine.eval("typeof " + jsEnvName + " == 'undefined'"))) // env still not exists            
+                engine.eval("var " + jsEnvName + " = {};");
+        } catch (ScriptException ex) {
+            Log.Err.println(ex.getMessage());
+        }
+        
+        String oldEnv = this.jsEnvName;
+        envVariables.put(oldEnv, new TreeSet(variablesSet));
+
+        variablesSet.clear();
+        if (envVariables.containsKey(jsEnvName)) 
+            variablesSet.addAll(envVariables.get(jsEnvName));
+        
+        this.jsEnvName = jsEnvName;
+    }
+
+    @Override
+    public void copyGlobalEnv(String jsEnvName) {
+        if (jsEnvName == null) {
+            jsEnvName = JS_ENVIRONMENT_DEFAULT;
+        } else {
+            jsEnvName = "__" + jsEnvName + "__";
+        }
+        
+        try {
+            if (asLogical(engine.eval("typeof " + jsEnvName + " == 'undefined'"))) // env still not exists            
+                engine.eval("var " + jsEnvName + " = {};");
+        } catch (ScriptException ex) {
+            Log.Err.println(ex.getMessage());
+        }
+
+        String[] ls = ls(true);
+        for (String o : ls) {
+            try {
+                engine.put(jsEnvName + "." + o, engine.eval(this.jsEnvName + "." + o));
+
+            } catch (ScriptException ex) {
+                Log.Err.println(ex.getMessage());
+            }
+        }
+        if (!envVariables.containsKey(jsEnvName)) {
+            envVariables.put(jsEnvName, new TreeSet(variablesSet));
+        } else {
+            envVariables.get(jsEnvName).addAll(new TreeSet(variablesSet));
+        }
+    }
 }

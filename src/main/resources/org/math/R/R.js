@@ -367,7 +367,36 @@
     }
 
     function paste0(args) {
-        return paste("",args);
+        var args = Array.prototype.slice.call(arguments);
+        var sep = "";
+        var collapse = args.shift();
+        var n = 1;
+        for (var a in args)
+            if (Array.isArray(args[a]))
+                if (length(args[a]) > n)
+                    n = length(args[a]);
+        var fullargs = [];
+        for (var a in args) {
+//            if (Array.isArray(args[a]) && length(args[a]) < n) {
+                fullargs.push("");
+                fullargs[a] = rep(args[a], n);
+//            } else {
+//                fullargs.push("");
+//                fullargs[a] = args[a];
+//            }
+        }
+        var str = "";
+        for (var i = 0; i < n; i++) {
+            var stri = "";
+            for (var a in fullargs)
+                if (n>1) {
+                    stri = stri + sep + fullargs[a][i];
+                } else {
+                    stri = stri + sep + fullargs[a];
+                }
+            str = str + collapse + stri.substring(length(sep));
+        }
+        return str.substring(length(collapse));
     }
 
     function paste(args) {
@@ -400,7 +429,7 @@
                 }
             str = str + collapse + stri.substring(length(sep));
         }
-        return str.substring(length(sep));
+        return str.substring(length(collapse));
     }
 
     function apply(x, margin, f) {

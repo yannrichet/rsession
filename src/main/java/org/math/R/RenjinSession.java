@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
@@ -43,6 +44,9 @@ public class RenjinSession extends Rsession implements RLog {
     File wdir;
     Properties properties;
     
+    private static final String ENVIRONMENT_DEFAULT = "..renjin..";
+    private String envName = ENVIRONMENT_DEFAULT;
+
     public static RenjinSession newInstance(final RLog console, Properties properties) {
         return new RenjinSession(console, properties);
     }
@@ -809,5 +813,48 @@ public class RenjinSession extends Rsession implements RLog {
         R.closeLog();
 
         System.out.println(R.notebook());
+    }
+
+    @Override
+    public void setGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = ".." + envName + "..";
+        }
+        try {
+            //save previous env for later restore if needed
+            if (!asLogical(R.eval("exists('" + this.envName + "')"))) {
+                R.eval(this.envName + " = new.env()");
+            }
+            R.eval("for (.n in ls()) {\n " + this.envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
+            
+            rmAll();
+            if (!asLogical(R.eval("exists('" + envName + "')")))
+                R.eval(envName + " = new.env()");
+            R.eval("for (.n in ls("+envName+")) {\n .GlobalEnv[[.n]] = " + envName + "[[.n]]\n}");
+
+        } catch (ScriptException ex) {
+            Log.Err.println(ex.getMessage());
+        }
+        this.envName = envName;
+    }
+
+    @Override
+    public void copyGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = ".." + envName + "..";
+        }
+        try {
+             if (!asLogical(R.eval("exists('" + envName + "')"))) {
+                R.eval(envName + " = new.env()");
+            }
+            
+            R.eval("for (.n in ls()) {\n " + envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
+        } catch (ScriptException ex) {
+            Log.Err.println(ex.getMessage());
+        }
     }
 }

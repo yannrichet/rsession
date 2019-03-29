@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.script.ScriptException;
 import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
@@ -42,6 +43,9 @@ public class RserveSession extends Rsession implements RLog {
     public RserverConf RserveConf;
     public final static String STATUS_NOT_SET = "Unknown status", STATUS_READY = "Ready", STATUS_ERROR = "Error", STATUS_ENDED = "End", STATUS_NOT_CONNECTED = "Not connected", STATUS_CONNECTING = "Connecting...";
     public String status = STATUS_NOT_SET;
+
+    private static final String ENVIRONMENT_DEFAULT = "..rserve..";
+    private String envName = ENVIRONMENT_DEFAULT;
 
     // <editor-fold defaultstate="collapsed" desc="Conveniency static String methods">
     public static String cat(RList list) {
@@ -1526,5 +1530,48 @@ public class RserveSession extends Rsession implements RLog {
         R.closeLog();
 
         System.out.println(R.notebook());
+    }
+    
+    @Override
+    public void setGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = ".." + envName + "..";
+        }
+        try {
+            //save previous env for later restore if needed
+            if (!asLogical(R.eval("exists('" + this.envName + "')"))) {
+                R.eval(this.envName + " = new.env()");
+            }
+            R.eval("for (.n in ls()) {\n " + this.envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
+            
+            rmAll();
+            if (!asLogical(R.eval("exists('" + envName + "')")))
+                R.eval(envName + " = new.env()");
+            R.eval("for (.n in ls("+envName+")) {\n .GlobalEnv[[.n]] = " + envName + "[[.n]]\n}");
+
+        } catch (RserveException ex) {
+            Log.Err.println(ex.getMessage());
+        }
+        this.envName = envName;
+    }
+
+    @Override
+    public void copyGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = ".." + envName + "..";
+        }
+        try {
+             if (!asLogical(R.eval("exists('" + envName + "')"))) {
+                R.eval(envName + " = new.env()");
+            }
+            
+            R.eval("for (.n in ls()) {\n " + envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
+        } catch (RserveException ex) {
+            Log.Err.println(ex.getMessage());
+        }
     }
 }
