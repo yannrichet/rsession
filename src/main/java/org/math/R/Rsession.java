@@ -1025,6 +1025,7 @@ public abstract class Rsession implements RLog {
     /**
      * delete all variables in R environment
      *
+     * @param all also shadow variables?
      * @return well removed ?
      */
     public boolean rmAll(boolean all) {
