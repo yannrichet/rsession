@@ -1708,6 +1708,10 @@ public abstract class Rsession implements RLog {
     
     public abstract void setGlobalEnv(String envName);
     
+    protected String envName = "UNDEFINED_ENV";
+
+    public String getGlobalEnv() {return envName.substring(2,envName.length()-2);};
+    
     public abstract void copyGlobalEnv(String newEnvName);
 
 }

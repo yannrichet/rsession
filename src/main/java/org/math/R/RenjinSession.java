@@ -45,7 +45,6 @@ public class RenjinSession extends Rsession implements RLog {
     Properties properties;
     
     private static final String ENVIRONMENT_DEFAULT = "..renjin..";
-    private String envName = ENVIRONMENT_DEFAULT;
 
     public static RenjinSession newInstance(final RLog console, Properties properties) {
         return new RenjinSession(console, properties);
@@ -53,6 +52,7 @@ public class RenjinSession extends Rsession implements RLog {
 
     public RenjinSession(RLog console, Properties properties) {
         super(console);
+        envName = ENVIRONMENT_DEFAULT;
 
         try {
             if (Class.forName("org.renjin.aether.AetherPackageLoader", false, this.getClass().getClassLoader()) != null) {

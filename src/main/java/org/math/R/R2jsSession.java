@@ -90,13 +90,12 @@ public class R2jsSession extends Rsession implements RLog {
     private static final String MATH_JS_FILE = "org/math/R/math.js";
     private static final String R_JS_FILE = "org/math/R/R.js";
     private static final String RAND_JS_FILE = "org/math/R/rand.js";
+    private static final String PLOT_JS_FILE = "org/math/R/plotly.js";
     
     public ScriptEngine engine;
     
-    private static final String JS_ENVIRONMENT_DEFAULT = "__r2js__";
-    
-    // The name of the object which store all variables defined in the current session
-    private String jsEnvName = JS_ENVIRONMENT_DEFAULT;
+    private static final String ENVIRONMENT_DEFAULT = "__r2js__";
+    private static final String THIS_ENVIRONMENT = "__this__";
     
     public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
 
@@ -126,14 +125,15 @@ public class R2jsSession extends Rsession implements RLog {
      */
     public R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
-        
-        if(environmentName != null) {
-            jsEnvName = environmentName;
+        if (environmentName != null) {
+            envName = "__" + environmentName + "__";
+        } else {
+            envName = ENVIRONMENT_DEFAULT;
         }
-        
+
         variablesSet = new HashSet<>();
         functionsSet = new HashSet<>();
-        
+
         TRY_MODE_DEFAULT = false;
         
         ScriptEngineManager manager = new ScriptEngineManager();
@@ -145,9 +145,10 @@ public class R2jsSession extends Rsession implements RLog {
             
             for (String f : DISABLED_FUNCTIONS)
                 addReturnNullFunction(f);
-            
+
             // Instantiate the variables storage object which store all variables defined in the current session
-            engine.eval("var " + jsEnvName + " = {};");
+            engine.eval("var " + envName + " = {};");
+            engine.eval(THIS_ENVIRONMENT + " = " + envName);
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
@@ -218,6 +219,11 @@ public class R2jsSession extends Rsession implements RLog {
         engine.eval(new InputStreamReader(randInputStream));
         engine.eval("rand = rand()");
         
+        // Loading plotly.js
+//        InputStream RInputStream = classLoader.getResourceAsStream(PLOT_JS_FILE);
+//        engine.eval(new InputStreamReader(RInputStream));
+//        engine.eval("Plotly = Plotly()");
+        
         // Loading R.js
         InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
         engine.eval(new InputStreamReader(RInputStream));
@@ -249,7 +255,7 @@ public class R2jsSession extends Rsession implements RLog {
     
     static {
         R_TO_JS.put("R.version.string", "'R2js'");
-        R_TO_JS.put(".GlobalEnv", JS_ENVIRONMENT_DEFAULT);
+        R_TO_JS.put(".GlobalEnv", ENVIRONMENT_DEFAULT);
         R_TO_JS.put("stop(", "throw new Error(");
         R_TO_JS.put("as.numeric(", "asNumeric(");
         R_TO_JS.put("as.integer(", "asInteger(");
@@ -561,7 +567,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = replaceNameByQuotes(quotesList, e, false);
 
         // Replace '$' accessor of data.frame by a '.'
-        e = e.replaceAll("\\$" + jsEnvName + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
+        e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
         e = e.replaceAll("\\$", ".");
         
         // R Comments
@@ -647,8 +653,8 @@ public class R2jsSession extends Rsession implements RLog {
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("(\\b)(" + variable + ")(\\b)", jsEnvName + "." + variable);
-                result = result.replaceAll(jsEnvName + "\\." + jsEnvName, jsEnvName);
+                result = result.replaceAll("(\\b)(" + variable + ")(\\b)", THIS_ENVIRONMENT + "." + variable);
+                result = result.replaceAll(THIS_ENVIRONMENT + "\\." + THIS_ENVIRONMENT, THIS_ENVIRONMENT);
             }
         }
         return result;
@@ -741,13 +747,13 @@ public class R2jsSession extends Rsession implements RLog {
             // If there is a regex pattern argument
             if (pattern != null) {
                 unifRandomSb.append("R.removeMatching(Object.keys(");
-                unifRandomSb.append(jsEnvName);
+                unifRandomSb.append(THIS_ENVIRONMENT);
                 unifRandomSb.append("), new RegExp(");
                 unifRandomSb.append(pattern);
                 unifRandomSb.append("))");
             } else {
                 unifRandomSb.append("Object.keys(");
-                unifRandomSb.append(jsEnvName);
+                unifRandomSb.append(THIS_ENVIRONMENT);
                 unifRandomSb.append(")");
             }
             
@@ -1385,7 +1391,7 @@ public class R2jsSession extends Rsession implements RLog {
             saveSb.append("R.createJsonString(");
             saveSb.append(listStringUnquotted);
             saveSb.append(", '");
-            saveSb.append(jsEnvName);
+            saveSb.append(THIS_ENVIRONMENT);
             saveSb.append("'))");
             
             // Replace the R matrix expression by the current matrix js
@@ -1437,7 +1443,7 @@ public class R2jsSession extends Rsession implements RLog {
             loadSb.append("R.loadJson(");
             loadSb.append(fileString);
             loadSb.append(", '");
-            loadSb.append(jsEnvName);
+            loadSb.append(THIS_ENVIRONMENT);
             loadSb.append("')");
             
             // TODO add loaded function as global variables: storeGlobalVariables(String expr)
@@ -1565,7 +1571,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
             
-            fileExistSb.append(jsEnvName);
+            fileExistSb.append(THIS_ENVIRONMENT);
             fileExistSb.append(".hasOwnProperty(");
             fileExistSb.append(variable);
             fileExistSb.append(")");
@@ -2225,7 +2231,7 @@ public class R2jsSession extends Rsession implements RLog {
         } catch (ScriptException e) {
             String ls = "?";
             try {
-                ls = (this.engine.eval("JSON.stringify(" + jsEnvName + ")")).toString();
+                ls = (this.engine.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
@@ -2247,7 +2253,7 @@ public class R2jsSession extends Rsession implements RLog {
             } catch (ScriptException e) {
                 String ls = "?";
                 try {
-                    ls = (String) this.engine.eval("JSON.stringify(" + jsEnvName + ")").toString();
+                    ls = (String) this.engine.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
                 } catch (Exception ee) {
                     ls = ee.getMessage();
                 }
@@ -2280,8 +2286,8 @@ public class R2jsSession extends Rsession implements RLog {
                 String stringMatrix = Arrays.deepToString(data);
                 engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                engine.eval(jsEnvName + "." + varname + " = " + varname);
-                engine.eval(jsEnvName + "." + varname + ".names = [" + allnames + "]");
+                engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                engine.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                 variablesSet.add(varname);
             }
         } catch (Exception e) {
@@ -2320,13 +2326,13 @@ public class R2jsSession extends Rsession implements RLog {
                     String stringMatrix = Arrays.deepToString(var2DArray);
                     engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                    engine.eval(jsEnvName + "." + varname + " = " + varname);
+                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     String allnames = "";
                     for (int i = 0; i < var2DArray[0].length; i++) {
                         allnames = allnames + ",'X" + (i + 1) + "'";
                     }
                     allnames = allnames.substring(1);
-                    engine.eval(jsEnvName + "." + varname + ".names = [" + allnames + "]");
+                    engine.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                     variablesSet.add(varname);
                 } else if (var instanceof double[]) {
                     double[] var1DArray = (double[]) var;
@@ -2334,11 +2340,11 @@ public class R2jsSession extends Rsession implements RLog {
                     String stringMatrix = Arrays.toString(var1DArray);
                     engine.eval(varname + " = "+Arrays.toString(var1DArray));
 
-                    engine.eval(jsEnvName + "." + varname + " = " + varname);
+                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 } else {
                     engine.put(varname, var);
-                    engine.eval(jsEnvName + "." + varname + " = " + varname);
+                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 }
 
@@ -2399,7 +2405,7 @@ public class R2jsSession extends Rsession implements RLog {
         try {
             synchronized (engine) {
                 for(String var : vars) {
-                    engine.eval("delete " +jsEnvName + "." + var+ ";");
+                    engine.eval("delete " +THIS_ENVIRONMENT + "." + var+ ";");
                     variablesSet.remove(var);
                     engine.eval("delete " + var + ";");
                 }
@@ -2416,9 +2422,10 @@ public class R2jsSession extends Rsession implements RLog {
     public boolean rmAll() {
         try {
             synchronized (engine) {
-                engine.eval("delete " + jsEnvName + ";");
+                engine.eval("delete " + envName + ";");
                 variablesSet.clear();
-                engine.eval("var " + jsEnvName + " = {};");
+                engine.eval("var " + envName + " = {};");
+                engine.eval(THIS_ENVIRONMENT+" = "+envName);
             }
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2607,41 +2614,43 @@ public class R2jsSession extends Rsession implements RLog {
     Map<String,Set<String>> envVariables = new HashMap<>();
     
     @Override
-    public void setGlobalEnv(String jsEnvName) {
-        if (jsEnvName == null) {
-            jsEnvName = JS_ENVIRONMENT_DEFAULT;
+    public void setGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
         } else {
-            jsEnvName = "__" + jsEnvName + "__";
+            envName = "__" + envName + "__";
         }
         
         try {
-            if (asLogical(engine.eval("typeof " + jsEnvName + " == 'undefined'"))) // env still not exists            
-                engine.eval("var " + jsEnvName + " = {};");
+            if (asLogical(engine.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
+                engine.eval("var " + envName + " = {};");
+            }                
+            engine.eval(THIS_ENVIRONMENT+" = "+envName);
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
         
-        String oldEnv = this.jsEnvName;
+        String oldEnv = this.envName;
         envVariables.put(oldEnv, new TreeSet(variablesSet));
 
         variablesSet.clear();
-        if (envVariables.containsKey(jsEnvName)) 
-            variablesSet.addAll(envVariables.get(jsEnvName));
+        if (envVariables.containsKey(envName)) 
+            variablesSet.addAll(envVariables.get(envName));
         
-        this.jsEnvName = jsEnvName;
+        this.envName = envName;
     }
 
     @Override
-    public void copyGlobalEnv(String jsEnvName) {
-        if (jsEnvName == null) {
-            jsEnvName = JS_ENVIRONMENT_DEFAULT;
+    public void copyGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
         } else {
-            jsEnvName = "__" + jsEnvName + "__";
+            envName = "__" + envName + "__";
         }
         
         try {
-            if (asLogical(engine.eval("typeof " + jsEnvName + " == 'undefined'"))) // env still not exists            
-                engine.eval("var " + jsEnvName + " = {};");
+            if (asLogical(engine.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
+                engine.eval("var " + envName + " = {};");
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
@@ -2649,16 +2658,15 @@ public class R2jsSession extends Rsession implements RLog {
         String[] ls = ls(true);
         for (String o : ls) {
             try {
-                engine.put(jsEnvName + "." + o, engine.eval(this.jsEnvName + "." + o));
-
+                engine.eval(envName + "." + o + " = " + this.envName + "." + o);
             } catch (ScriptException ex) {
                 Log.Err.println(ex.getMessage());
             }
         }
-        if (!envVariables.containsKey(jsEnvName)) {
-            envVariables.put(jsEnvName, new TreeSet(variablesSet));
+        if (!envVariables.containsKey(envName)) {
+            envVariables.put(envName, new TreeSet(variablesSet));
         } else {
-            envVariables.get(jsEnvName).addAll(new TreeSet(variablesSet));
+            envVariables.get(envName).addAll(new TreeSet(variablesSet));
         }
     }
 }

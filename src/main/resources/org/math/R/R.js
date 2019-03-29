@@ -74,6 +74,8 @@
                 function (key, val) {
                     if (typeof val === 'function') {
                         return val + ''; // implicitly `toString` it
+                    } else if (isNull(val)) {
+                        return 'null';
                     }
                     return val;
                 });

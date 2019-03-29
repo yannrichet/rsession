@@ -45,7 +45,6 @@ public class RserveSession extends Rsession implements RLog {
     public String status = STATUS_NOT_SET;
 
     private static final String ENVIRONMENT_DEFAULT = "..rserve..";
-    private String envName = ENVIRONMENT_DEFAULT;
 
     // <editor-fold defaultstate="collapsed" desc="Conveniency static String methods">
     public static String cat(RList list) {
@@ -163,6 +162,7 @@ public class RserveSession extends Rsession implements RLog {
      */
     public RserveSession(final RLog console, RserverConf serverconf, boolean tryLocalRServe) {
         super(console);
+        envName = ENVIRONMENT_DEFAULT;
 
         RserveConf = serverconf;
         this.tryLocalRServe = tryLocalRServe;

@@ -340,6 +340,7 @@ public class BasicTest {
         
         q.copyGlobalEnv("myenv");
         q.setGlobalEnv("myenv");
+        assert q.getGlobalEnv().equals("myenv"):q.getGlobalEnv();
         assert Arrays.deepEquals(q.ls(false), new String[]{"v"}) : Arrays.deepToString(q.ls(false));
 
         q.setGlobalEnv("myenv2");
@@ -347,6 +348,43 @@ public class BasicTest {
         
         q.setGlobalEnv("myenv");
         assert Arrays.deepEquals(q.ls(false), new String[]{"v"}) : Arrays.deepToString(q.ls(false));
+        
+        System.err.println("# cleanup first env");
+        // cleanup
+        q.setGlobalEnv(null);
+        assert q.rmAll();
+        assert Arrays.deepEquals(q.ls(false), new String[]{}) : Arrays.deepToString(q.ls(false));
+
+                System.err.println("# put f1 f2 in env");
+        String f2 = "f2 = function(x) {return(1-x)}";
+        String f1 = "f1 = function(x) {return(f2(x))}";
+        assert q.voidEval(f2);
+        assert q.voidEval(f1);
+        assert Arrays.deepEquals(q.ls(false), new String[]{"f1", "f2"}) : Arrays.deepToString(q.ls(false));
+        assert q.set("v", v);
+        assert (Double) q.eval("f1(v)") == 1 - v : q.eval("f1(v)");
+
+//        q.savels(new File("1.save"), "");
+        System.err.println("# copy env to myenvf");
+        q.copyGlobalEnv("myenvf");
+        System.err.println("# cleanup previous env");
+        assert q.rmAll();
+        System.err.println("# switch env to myenvf");
+        q.setGlobalEnv("myenvf");
+
+//        q.savels(new File("2.save"), "");
+        assert Arrays.deepEquals(q.ls(false), new String[]{"v", "f1", "f2"}) : Arrays.deepToString(q.ls(false));
+        System.err.println(q.eval("print(f1)"));
+        assert (Double) q.eval("f1(v)") == 1 - v : q.eval("f1(v)");
+
+        System.err.println("# switch env to myenvf2");
+        q.setGlobalEnv("myenvf2");
+        assert Arrays.deepEquals(q.ls(false), new String[]{}) : Arrays.deepToString(q.ls(false));
+
+        System.err.println("# switch env to myenvf");
+        q.setGlobalEnv("myenvf");
+        assert Arrays.deepEquals(q.ls(false), new String[]{"v", "f1", "f2"}) : Arrays.deepToString(q.ls(false));
+        assert (Double) q.eval("f1(v)") == 1 - v : q.eval("f1(v)");
     }
 
     @Test
@@ -356,35 +394,119 @@ public class BasicTest {
         double v = 123.456;
         assert r.set("v", v);
         assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
-        
+
         r.copyGlobalEnv("myenv");
         r.setGlobalEnv("myenv");
+        assert r.getGlobalEnv().equals("myenv") : r.getGlobalEnv();
         assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
 
         r.setGlobalEnv("myenv2");
         assert Arrays.deepEquals(r.ls(false), new String[]{}) : Arrays.deepToString(r.ls(false));
-        
+
         r.setGlobalEnv("myenv");
         assert Arrays.deepEquals(r.ls(false), new String[]{"v"}) : Arrays.deepToString(r.ls(false));
+        
+        System.err.println("# cleanup first env");
+        // cleanup
+        r.setGlobalEnv(null);
+        assert r.rmAll();
+        assert Arrays.deepEquals(r.ls(false), new String[]{}) : Arrays.deepToString(r.ls(false));
+
+        System.err.println("# put f1 f2 in env");
+        String f2 = "f2 = function(x) {return(1-x)}";
+        String f1 = "f1 = function(x) {return(f2(x))}";
+        assert r.voidEval(f2);
+        assert r.voidEval(f1);
+        assert Arrays.deepEquals(r.ls(false), new String[]{"f1", "f2"}) : Arrays.deepToString(r.ls(false));
+        assert r.set("v", v);
+        assert (Double) r.eval("f1(v)") == 1 - v : r.eval("f1(v)");
+
+//        r.savels(new File("1.save"), "");
+        System.err.println("# copy env to myenvf");
+        r.copyGlobalEnv("myenvf");
+        System.err.println("# cleanup previous env");
+        assert r.rmAll();
+        System.err.println("# switch env to myenvf");
+        r.setGlobalEnv("myenvf");
+
+//        r.savels(new File("2.save"), "");
+        String[] ls = r.ls(false);
+        Arrays.sort(ls);
+        assert Arrays.deepEquals(ls, new String[]{"f1", "f2","v"}) : Arrays.deepToString(ls);
+        System.err.println(r.eval("print(f1)"));
+        assert (Double) r.eval("f1(v)") == 1 - v : r.eval("f1(v)");
+
+        System.err.println("# switch env to myenvf2");
+        r.setGlobalEnv("myenvf2");
+        assert Arrays.deepEquals(r.ls(false), new String[]{}) : Arrays.deepToString(r.ls(false));
+
+        System.err.println("# switch env to myenvf");
+        r.setGlobalEnv("myenvf");
+        ls = r.ls(false);
+        Arrays.sort(ls);
+        assert Arrays.deepEquals(ls, new String[]{"f1", "f2","v"}) : Arrays.deepToString(ls);
+        assert (Double) r.eval("f1(v)") == 1 - v : r.eval("f1(v)");
     }
     
     @Test
     public void testEnv_Rserve() throws Exception {
         System.err.println("====================================== Rserve");
-        
+
         double v = 123.456;
         assert s.set("v", v);
         assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
-        
+
         s.copyGlobalEnv("myenv");
         s.setGlobalEnv("myenv");
+        assert s.getGlobalEnv().equals("myenv") : s.getGlobalEnv();
         assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
 
         s.setGlobalEnv("myenv2");
         assert Arrays.deepEquals(s.ls(false), new String[]{}) : Arrays.deepToString(s.ls(false));
-        
+
         s.setGlobalEnv("myenv");
         assert Arrays.deepEquals(s.ls(false), new String[]{"v"}) : Arrays.deepToString(s.ls(false));
+
+        System.err.println("# cleanup first env");
+        // cleanup
+        s.setGlobalEnv(null);
+        assert s.rmAll();
+        assert Arrays.deepEquals(s.ls(false), new String[]{}) : Arrays.deepToString(s.ls(false));
+
+        System.err.println("# put f1 f2 in env");
+        String f2 = "f2 = function(x) {return(1-x)}";
+        String f1 = "f1 = function(x) {return(f2(x))}";
+        assert s.voidEval(f2);
+        assert s.voidEval(f1);
+        assert Arrays.deepEquals(s.ls(false), new String[]{"f1", "f2"}) : Arrays.deepToString(s.ls(false));
+        assert s.set("v", v);
+        assert (Double) s.eval("f1(v)") == 1 - v : s.eval("f1(v)");
+
+//        s.savels(new File("1.save"), "");
+        System.err.println("# copy env to myenvf");
+        s.copyGlobalEnv("myenvf");
+        System.err.println("# cleanup previous env");
+        assert s.rmAll();
+        System.err.println("# switch env to myenvf");
+        s.setGlobalEnv("myenvf");
+
+//        s.savels(new File("2.save"), "");
+        String[] ls = s.ls(false);
+        Arrays.sort(ls);
+        assert Arrays.deepEquals(ls, new String[]{"f1", "f2","v"}) : Arrays.deepToString(ls);
+        System.err.println(s.eval("print(f1)"));
+        assert (Double) s.eval("f1(v)") == 1 - v : s.eval("f1(v)");
+
+        System.err.println("# switch env to myenvf2");
+        s.setGlobalEnv("myenvf2");
+        assert Arrays.deepEquals(s.ls(false), new String[]{}) : Arrays.deepToString(s.ls(false));
+
+        System.err.println("# switch env to myenvf");
+        s.setGlobalEnv("myenvf");
+        ls = s.ls(false);
+        Arrays.sort(ls);
+        assert Arrays.deepEquals(ls, new String[]{"f1", "f2","v"}) : Arrays.deepToString(ls);
+        assert (Double) s.eval("f1(v)") == 1 - v : s.eval("f1(v)");
     }
     
     @Test
