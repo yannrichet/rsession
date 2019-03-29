@@ -90,9 +90,9 @@ public class R2jsSession extends Rsession implements RLog {
     private static final String MATH_JS_FILE = "org/math/R/math.js";
     private static final String R_JS_FILE = "org/math/R/R.js";
     private static final String RAND_JS_FILE = "org/math/R/rand.js";
-    private static final String PLOT_JS_FILE = "org/math/R/plotly.js";
+//    private static final String PLOT_JS_FILE = "org/math/R/plotly.js";
     
-    public ScriptEngine engine;
+    public ScriptEngine js;
     
     private static final String ENVIRONMENT_DEFAULT = "__r2js__";
     private static final String THIS_ENVIRONMENT = "__this__";
@@ -116,8 +116,8 @@ public class R2jsSession extends Rsession implements RLog {
 
     /**
      * Default constructor
-     *
-     * Initialize the Javascript engine and load external js libraries
+
+ Initialize the Javascript js and load external js libraries
      *
      * @param console - console
      * @param properties - properties
@@ -137,9 +137,9 @@ public class R2jsSession extends Rsession implements RLog {
         TRY_MODE_DEFAULT = false;
         
         ScriptEngineManager manager = new ScriptEngineManager();
-        engine = manager.getEngineByName("js");
+        js = manager.getEngineByName("js");
 
-        // Load external js libraries used by the engine to evaluate expressions
+        // Load external js libraries used by the js to evaluate expressions
         try {
             loadJSLibraries();
             
@@ -147,8 +147,8 @@ public class R2jsSession extends Rsession implements RLog {
                 addReturnNullFunction(f);
 
             // Instantiate the variables storage object which store all variables defined in the current session
-            engine.eval("var " + envName + " = {};");
-            engine.eval(THIS_ENVIRONMENT + " = " + envName);
+            js.eval("var " + envName + " = {};");
+            js.eval(THIS_ENVIRONMENT + " = " + envName);
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
@@ -186,12 +186,12 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     public void addReturnNullFunction(String name) throws ScriptException {
-        engine.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
+        js.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
         functionsSet.add(name);
     }
 
     public void addJSFunction(String name, String js) throws ScriptException {
-        engine.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
+        this.js.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
         functionsSet.add(name);
     }
     
@@ -207,27 +207,27 @@ public class R2jsSession extends Rsession implements RLog {
 	
         // Loading math.JS
         InputStream mathInputStream = classLoader.getResourceAsStream(MATH_JS_FILE);
-        engine.eval(new InputStreamReader(mathInputStream));
-        engine.eval("var parser = math.parser();");
+        js.eval(new InputStreamReader(mathInputStream));
+        js.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
-        engine.eval("math.config({matrix: 'Array'})");
+        js.eval("math.config({matrix: 'Array'})");
 
-        engine.eval("var str = String.prototype;");
+        js.eval("var str = String.prototype;");
 
         // Loading rand.js
         InputStream randInputStream = classLoader.getResourceAsStream(RAND_JS_FILE);
-        engine.eval(new InputStreamReader(randInputStream));
-        engine.eval("rand = rand()");
+        js.eval(new InputStreamReader(randInputStream));
+        js.eval("rand = rand()");
         
         // Loading plotly.js
 //        InputStream RInputStream = classLoader.getResourceAsStream(PLOT_JS_FILE);
-//        engine.eval(new InputStreamReader(RInputStream));
-//        engine.eval("Plotly = Plotly()");
+//        js.eval(new InputStreamReader(RInputStream));
+//        js.eval("Plotly = Plotly()");
         
         // Loading R.js
         InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
-        engine.eval(new InputStreamReader(RInputStream));
-        engine.eval("R = R()");
+        js.eval(new InputStreamReader(RInputStream));
+        js.eval("R = R()");
     }
 
     static final String POINT_CHAR_JS_KEY = "__";
@@ -603,7 +603,7 @@ public class R2jsSession extends Rsession implements RLog {
                 // Ignore if the functions is already defined
                 if(!this.variablesSet.contains(fctName)) {
                     // If the function is not defined yet in js environment
-                    if(!this.asLogical(this.engine.eval("typeof "+ fctName +" !== 'undefined'"))) {
+                    if(!this.asLogical(this.js.eval("typeof "+ fctName +" !== 'undefined'"))) {
                          this.variablesSet.add(fctName);
                     }
                 }
@@ -1432,7 +1432,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Add all loaded variables to the java list of variables
             try {
                 String readVariablesExpr = replaceNameByQuotes(quotesList,"R.readJsonVariables(" + fileString + ")", false);
-                String[] loadedVariables = (String[])cast(engine.eval(readVariablesExpr));
+                String[] loadedVariables = (String[])cast(js.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
                 Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
@@ -2198,7 +2198,7 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public void end() {
-        engine = null;       
+        js = null;       
         super.end();
     }
     
@@ -2227,11 +2227,11 @@ public class R2jsSession extends Rsession implements RLog {
 
         String jsExpr = convertRtoJs(expression);
         try {
-            this.engine.eval(jsExpr);
+            this.js.eval(jsExpr);
         } catch (ScriptException e) {
             String ls = "?";
             try {
-                ls = (this.engine.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
+                ls = (this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
@@ -2249,11 +2249,11 @@ public class R2jsSession extends Rsession implements RLog {
         String jsExpr = convertRtoJs(expression);
         if (jsExpr != null) {
             try {
-                result = this.engine.eval(jsExpr);
+                result = this.js.eval(jsExpr);
             } catch (ScriptException e) {
                 String ls = "?";
                 try {
-                    ls = (String) this.engine.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
+                    ls = (String) this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
                 } catch (Exception ee) {
                     ls = ee.getMessage();
                 }
@@ -2281,13 +2281,13 @@ public class R2jsSession extends Rsession implements RLog {
         }
         allnames = allnames.substring(1);
         try {
-            synchronized (engine) {
+            synchronized (js) {
                 String dim = "[" + data.length + "," + data[0].length + "]";
                 String stringMatrix = Arrays.deepToString(data);
-                engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+                js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-                engine.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                 variablesSet.add(varname);
             }
         } catch (Exception e) {
@@ -2314,7 +2314,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         varname = nameRtoJs(varname);
         try {
-            synchronized (engine) {
+            synchronized (js) {
                 // FIXME: find a better solution than this
                 // For 2d double array, we need to instanciate the matrix with the function "math.reshape"
                 // I don't know why but the function math.matrix doesn't create the same js object than math.reshape and
@@ -2324,27 +2324,27 @@ public class R2jsSession extends Rsession implements RLog {
                     double[][] var2DArray = (double[][]) var;
                     String dim = "[" + var2DArray.length + "," + var2DArray[0].length + "]";
                     String stringMatrix = Arrays.deepToString(var2DArray);
-                    engine.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+                    js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     String allnames = "";
                     for (int i = 0; i < var2DArray[0].length; i++) {
                         allnames = allnames + ",'X" + (i + 1) + "'";
                     }
                     allnames = allnames.substring(1);
-                    engine.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+                    js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                     variablesSet.add(varname);
                 } else if (var instanceof double[]) {
                     double[] var1DArray = (double[]) var;
                     String dim = "[" + var1DArray.length + ",1]";
                     String stringMatrix = Arrays.toString(var1DArray);
-                    engine.eval(varname + " = "+Arrays.toString(var1DArray));
+                    js.eval(varname + " = "+Arrays.toString(var1DArray));
 
-                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 } else {
-                    engine.put(varname, var);
-                    engine.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                    js.put(varname, var);
+                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 }
 
@@ -2403,11 +2403,11 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public boolean rm(String... vars) throws RException {
         try {
-            synchronized (engine) {
+            synchronized (js) {
                 for(String var : vars) {
-                    engine.eval("delete " +THIS_ENVIRONMENT + "." + var+ ";");
+                    js.eval("delete " +THIS_ENVIRONMENT + "." + var+ ";");
                     variablesSet.remove(var);
-                    engine.eval("delete " + var + ";");
+                    js.eval("delete " + var + ";");
                 }
             }
         } catch (Exception e) {
@@ -2421,11 +2421,11 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public boolean rmAll() {
         try {
-            synchronized (engine) {
-                engine.eval("delete " + envName + ";");
+            synchronized (js) {
+                js.eval("delete " + envName + ";");
                 variablesSet.clear();
-                engine.eval("var " + envName + " = {};");
-                engine.eval(THIS_ENVIRONMENT+" = "+envName);
+                js.eval("var " + envName + " = {};");
+                js.eval(THIS_ENVIRONMENT+" = "+envName);
             }
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2622,10 +2622,10 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         try {
-            if (asLogical(engine.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
-                engine.eval("var " + envName + " = {};");
+            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
+                js.eval("var " + envName + " = {};");
             }                
-            engine.eval(THIS_ENVIRONMENT+" = "+envName);
+            js.eval(THIS_ENVIRONMENT+" = "+envName);
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
@@ -2649,8 +2649,8 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         try {
-            if (asLogical(engine.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
-                engine.eval("var " + envName + " = {};");
+            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
+                js.eval("var " + envName + " = {};");
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
@@ -2658,7 +2658,7 @@ public class R2jsSession extends Rsession implements RLog {
         String[] ls = ls(true);
         for (String o : ls) {
             try {
-                engine.eval(envName + "." + o + " = " + this.envName + "." + o);
+                js.eval(envName + "." + o + " = " + this.envName + "." + o);
             } catch (ScriptException ex) {
                 Log.Err.println(ex.getMessage());
             }

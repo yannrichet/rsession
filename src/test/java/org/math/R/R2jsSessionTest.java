@@ -250,7 +250,7 @@ public class R2jsSessionTest {
 
         // WARNING: named arguments work only with ES6 and higher version (java8 use a
         // previous version of javascipt ES5, so named arguments are not supported)
-        //assert Double.parseDouble( engine.eval(R2MathjsSession.R2js("f(y=1.23,x=4.56)")) == 3.33;
+        //assert Double.parseDouble( js.eval(R2MathjsSession.R2js("f(y=1.23,x=4.56)")) == 3.33;
         engine.voidEval("f = function(x) {sin(x)}");
         assertEquals(Double.parseDouble(engine.eval("f(1.23)").toString()), Math.sin(1.23), epsilon);
 
@@ -282,13 +282,13 @@ public class R2jsSessionTest {
 
         // FIXME: multiple function in one line don't work
         //engine.eval("g<-function(x){1+x;};\nh<-function(x){1-x;};");
-        //assert (Double) engine.eval(" g(1)") == 2;
-        //assert (Double) engine.eval("h(1)") == 0;
+        //assert (Double) js.eval(" g(1)") == 2;
+        //assert (Double) js.eval("h(1)") == 0;
         //
         //engine.eval(R2MathjsSession.R2js("fahrenheit_to_kelvin <- function(temp_F) {\n   temp_K <- ((temp_F - 32) * (5 / 9)) + 273.15\n   return(temp_K)\n };\n kelvin_to_celsius <- function(temp_K) {\n temp_C <- temp_K - 273.15\n   return(temp_C)\n };\n fahrenheit_to_celsius <- function(temp_F) {\n   temp_K <- fahrenheit_to_kelvin(temp_F)\n   temp_C <- kelvin_to_celsius(temp_K)\n   return(temp_C)\n };\n"));
-        //assert Double.parseDouble( engine.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
-        //assert Double.parseDouble( engine.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
-        //assert Double.parseDouble( engine.eval("kelvin_to_celsius(0)").toString()) == -273.15;
+        //assert Double.parseDouble( js.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
+        //assert Double.parseDouble( js.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
+        //assert Double.parseDouble( js.eval("kelvin_to_celsius(0)").toString()) == -273.15;
         
         engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
         assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
@@ -348,10 +348,10 @@ public class R2jsSessionTest {
         assert Arrays.equals((double[]) engine.eval("f"), new double[]{0, 1, 4});
 
         // TODO  multiplication and division '%*%'
-        //System.err.println(engine.eval(R2MathjsSession.R2js("bt <- t(b)")));
-        //System.err.println(engine.eval("h <- a * bt"));
-        //System.err.println(engine.eval(R2MathjsSession.R2js("h <- a %*% bt")));
-        //assertTrue(engine.eval("h").toString().trim().equals("[todo]".trim()));
+        //System.err.println(js.eval(R2MathjsSession.R2js("bt <- t(b)")));
+        //System.err.println(js.eval("h <- a * bt"));
+        //System.err.println(js.eval(R2MathjsSession.R2js("h <- a %*% bt")));
+        //assertTrue(js.eval("h").toString().trim().equals("[todo]".trim()));
     }
 
     @Test
@@ -663,7 +663,7 @@ public class R2jsSessionTest {
         
         engine.voidEval("for (n in names(l)) {\nprint(n);\n.GlobalEnv[[n]] = l[[n]]\n}");
 
-        //assert engine.ls(true).length == 3 : "Not expected env: " + Arrays.toString(engine.ls(true));
+        //assert js.ls(true).length == 3 : "Not expected env: " + Arrays.toString(js.ls(true));
         try {
             engine.savels(File.createTempFile("___", "Rdata"), "");
         } catch (Exception ex) {
