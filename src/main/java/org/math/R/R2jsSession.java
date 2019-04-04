@@ -87,10 +87,10 @@ public class R2jsSession extends Rsession implements RLog {
     private static final String[] MATH_CONST_JS = { "pi" };
     
     // JavaScript libraries used to evaluate expression
-    private static final String MATH_JS_FILE = "org/math/R/math.js";
-    private static final String R_JS_FILE = "org/math/R/R.js";
-    private static final String RAND_JS_FILE = "org/math/R/rand.js";
-//    private static final String PLOT_JS_FILE = "org/math/R/plotly.js";
+    private static final String MATH_JS_FILE = "/org/math/R/math.js";
+    private static final String R_JS_FILE = "/org/math/R/R.js";
+    private static final String RAND_JS_FILE = "/org/math/R/rand.js";
+//    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
     
     public ScriptEngine js;
     
@@ -203,10 +203,9 @@ public class R2jsSession extends Rsession implements RLog {
      * @throws ScriptException 
      */
     private void loadJSLibraries() throws ScriptException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-	
+        
         // Loading math.JS
-        InputStream mathInputStream = classLoader.getResourceAsStream(MATH_JS_FILE);
+        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
         js.eval(new InputStreamReader(mathInputStream));
         js.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
@@ -215,17 +214,17 @@ public class R2jsSession extends Rsession implements RLog {
         js.eval("var str = String.prototype;");
 
         // Loading rand.js
-        InputStream randInputStream = classLoader.getResourceAsStream(RAND_JS_FILE);
+        InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
         js.eval(new InputStreamReader(randInputStream));
         js.eval("rand = rand()");
         
         // Loading plotly.js
-//        InputStream RInputStream = classLoader.getResourceAsStream(PLOT_JS_FILE);
+//        InputStream RInputStream = this.getClass().getResourceAsStream(PLOT_JS_FILE);
 //        js.eval(new InputStreamReader(RInputStream));
 //        js.eval("Plotly = Plotly()");
         
         // Loading R.js
-        InputStream RInputStream = classLoader.getResourceAsStream(R_JS_FILE);
+        InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
         js.eval(new InputStreamReader(RInputStream));
         js.eval("R = R()");
     }
