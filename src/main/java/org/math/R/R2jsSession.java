@@ -375,9 +375,9 @@ public class R2jsSession extends Rsession implements RLog {
         // replace the for expression
         e = e.replaceAll("[(]([^=\\s]+)\\s*in\\s*([\\w\\-]+)\\s*:\\s*([[\\w\\-][.][)][(]]+)[)]\\s*",
                 "($1=$2; $1<=$3; $1++) ");
-        
-        // Add '{}' between the 'if' and the 'else'
-        e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else(.*)", "if$1{$2} else{$3}");
+      
+        // Add '{}' for 'if' and 'else'
+        e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else\\s*(\\S+)", "if $1 {$2} else {$3}");
         
         // Add "{" and "}" if the function doesn't have them
         e = e.replaceAll("function([.[^)]]*[)]) *([a-zA-Z0-9].*)$", "function$1 {$2}");
@@ -676,19 +676,32 @@ public class R2jsSession extends Rsession implements RLog {
      */
     private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
         
-        Pattern quotesPattern = Pattern.compile("(\'[^\']*\')");
-        Matcher quotesMatcher = quotesPattern.matcher(expr);
+        Pattern squotesPattern = Pattern.compile("(\'[^\']*\')");
+        Matcher squotesMatcher = squotesPattern.matcher(expr);
         
         List<String> quotesList = new ArrayList<>();
         quotesList.add(expr);
         StringBuffer sb = new StringBuffer();
         int cmp = startIndex;
+        while (squotesMatcher.find()) {
+            quotesList.add(squotesMatcher.group(1));
+            squotesMatcher.appendReplacement(sb, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
+            cmp++;
+        }
+        squotesMatcher.appendTail(sb);
+        
+        
+        Pattern quotesPattern = Pattern.compile("(\"[^\"]*\")");
+        Matcher quotesMatcher = quotesPattern.matcher(expr);
+        
+        sb = new StringBuffer();
         while (quotesMatcher.find()) {
             quotesList.add(quotesMatcher.group(1));
             quotesMatcher.appendReplacement(sb, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
             cmp++;
         }
         quotesMatcher.appendTail(sb);
+        
         quotesList.set(0, sb.toString());
         return quotesList;
     }
