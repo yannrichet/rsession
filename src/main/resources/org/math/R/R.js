@@ -62,13 +62,15 @@
         
     // Create a json string containing the variable and its value
     function createJsonString (variables, jsVariableStorageObject) {
-        var newObject = {};
+        var newObject = math.clone({});
         if(Array.isArray(variables)) {
             variables.forEach(function(variable) { 
-                eval("newObject." + variable + "="+jsVariableStorageObject + "." + variable);
+                newObject[variable] = jsVariableStorageObject[variable];
+                //eval("newObject." + variable + "="+jsVariableStorageObject + "." + variable);
             });
         }else {
-            eval("newObject." + variables + "="+jsVariableStorageObject + "." + variables);
+            newObject[variables] = jsVariableStorageObject[variables];
+            //eval("newObject." + variables + "="+jsVariableStorageObject + "." + variables);
         }
         var jsonString = JSON.stringify(newObject,
                 function (key, val) {
@@ -100,12 +102,12 @@
             eval(print(variable + '=' + value));
             if (typeof (value) == "string") {
                 if (value.startsWith("function")) {
-                    eval(jsVariableStorageObject + "." + variable + "=" + value + "");
+                    jsVariableStorageObject[variable] = eval(value);
                 } else {
-                    eval(jsVariableStorageObject + "." + variable + "='" + value + "'");
+                    jsVariableStorageObject[variable] = value;
                 }
             } else {
-                eval(jsVariableStorageObject + "." + variable + "='" + value + "'");
+                jsVariableStorageObject[variable] = value;
             }
         });
         return true;
@@ -223,6 +225,12 @@
         return names(X);
     }
 
+    function createMathObject(srcObj) {
+        var targetObj = math.clone({});
+        for(var k in srcObj) targetObj[k]=srcObj[k];
+        return targetObj;
+    }
+    
     // to support indexing starting from 0 in js, while starting from 1 in R
     function _index (i,j) {
         if (typeof(j)==="undefined") {
@@ -451,7 +459,7 @@
     function _in(x) {
         if (typeof(x)=="undefined") throw new Error("Cannot iterate on null object");
         if (Array.isArray(x)) { // I want _in to return x values (like keys if x was a map), not indices of the array...
-            var y ={};
+            var y = math.clone({});
             for (var i in x) y[x[i]] = 666; // ugly :)
             return y;
         } else 
@@ -475,22 +483,22 @@
     
     function asMatrix(x,index) {
         //x = math.squeeze(x);
+        var xCopy;
         if (Array.isArray(x)) {
-            x = math.matrix(x);
-            var d = math.size(x);
+            xCopy = math.matrix(x);
+            var d = math.size(xCopy);
             if (d.size()==1) {
-                var n = math.subset(math.size(x),math.index(0));
-                if (index==0) 
-                    x = x.resize([n,1]);
-                else
-                    x = x.resize([1,n]);
+                var n = math.subset(math.size(xCopy),math.index(0));
+                xCopy = math.resize(xCopy, [n,1]);
+                if (index==1) 
+                    xCopy = math.transpose(xCopy);
             } else if (d.size()==2) {
                 //nothing to do, already a 2D matrix
             } else throw new Error("Bad size for matrix: "+d);
         } else {
-            x = asMatrix([x]);
+            xCopy = asMatrix([x]);
         }
-        return x ;
+        return xCopy ;
     }
     
     function isMatrix(x) {
@@ -508,30 +516,64 @@
     }
     
     function rbind(a,b,c) {
-        if (!isMatrix(a)) a = asMatrix(a,1);
-        var x = math.matrix(a);
+        var aCopy;
+        var bCopy;
+        var cCopy;
+        if (!isMatrix(a)) { 
+            aCopy = asMatrix(a,1);
+        } else {
+            aCopy = math.clone(a);
+        }
+        var x = math.matrix(aCopy);
         if (typeof(b)!=="undefined") {
-            if (!isMatrix(b)) b = asMatrix(b,1);
-            x = math.concat(x,b,0); 
+            if (!isMatrix(b)) {
+                bCopy = asMatrix(b,1);
+            } else {
+                bCopy = math.clone(b);
+            }
+            x = math.concat(x,bCopy,0); 
             if (typeof(c)!=="undefined") {
-                if (!isMatrix(c)) c = asMatrix(c,1);
-                x = math.concat(x,c,0);
+                
+                if (!isMatrix(c)) {
+                    cCopy = asMatrix(c,1);
+                } else {
+                    cCopy = math.clone(c);
+                }
+                x = math.concat(x,cCopy,0);
             }
         }
         x = x.toArray(); // needed to return a castable to double[][]
-        if (isMatrix(a) && (a.names != null)) x.names = a.names;
+        x = math.reshape(x, math.size(x));
+        if (isMatrix(a) && (a.names != null)) {
+            x.names = a.names;
+        }
         return x;
     }
 
     function cbind(a,b,c) {
-        if (!isMatrix(a)) a = asMatrix(a,0);
-        var x = math.matrix(a);
+        var aCopy;
+        var bCopy;
+        var cCopy;
+        if (!isMatrix(a)) { 
+            aCopy = asMatrix(a,0);
+        } else {
+            aCopy = math.clone(a);
+        }
+        var x = math.matrix(aCopy);
         if (typeof(b)!=="undefined") {
-            if (!isMatrix(b)) b = asMatrix(b,0);
-            x = math.concat(x,b,1);
+            if (!isMatrix(b)) {
+                bCopy = asMatrix(b,0);
+            } else {
+                bCopy = math.clone(b);
+            }
+            x = math.concat(x,bCopy,1);
             if (typeof(c)!=="undefined") {
-                if (!isMatrix(c)) c = asMatrix(c,0);
-                x = math.concat(x,c,1);
+            if (!isMatrix(c)) {
+                cCopy = asMatrix(c,0);
+            } else {
+                cCopy = math.clone(c);
+            }
+                x = math.concat(x,cCopy,1);
             }
         }
         x = x.toArray(); // needed to return a castable to double[][]
@@ -678,6 +720,7 @@
     proto.stopIfNot = stopIfNot;
     proto.asNumeric = asNumeric;
     proto.asInteger = asInteger;
+    proto.asMatrix = asMatrix;
     proto._lt = _lt;
     proto._gt = _gt;
     proto._let = _let;
@@ -688,6 +731,7 @@
     proto._and = _and;
     proto._andand = _andand;
     proto._if = _if;
+    proto.createMathObject = createMathObject;
 
     return hooks;
 

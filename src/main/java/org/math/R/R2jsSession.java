@@ -106,6 +106,9 @@ public class R2jsSession extends Rsession implements RLog {
     // List of quotes expression
     private List<String> quotesList;
     
+    // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
+    private final static Map<String, Object> jsLibraries = new HashMap<>();
+    
     public static R2jsSession newInstance(final RLog console, Properties properties) {
         return new R2jsSession(console, properties);
     }
@@ -147,7 +150,8 @@ public class R2jsSession extends Rsession implements RLog {
                 addReturnNullFunction(f);
 
             // Instantiate the variables storage object which store all variables defined in the current session
-            js.eval("var " + envName + " = {};");
+            js.eval("var " + envName + " = math.clone({});");
+            //js.eval("var " + envName + " = {};");
             js.eval(THIS_ENVIRONMENT + " = " + envName);
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
@@ -202,31 +206,48 @@ public class R2jsSession extends Rsession implements RLog {
      * 
      * @throws ScriptException 
      */
-    private void loadJSLibraries() throws ScriptException {
+    private synchronized void loadJSLibraries() throws ScriptException {
         
         // Loading math.JS
-        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
-        js.eval(new InputStreamReader(mathInputStream));
+        if(!jsLibraries.containsKey("math")) {
+            InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+            js.eval(new InputStreamReader(mathInputStream));
+            jsLibraries.put("math", js.get("math"));
+        } else {
+            js.put("math", jsLibraries.get("math"));
+        }
+        
         js.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
         js.eval("math.config({matrix: 'Array'})");
-
         js.eval("var str = String.prototype;");
 
         // Loading rand.js
-        InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
-        js.eval(new InputStreamReader(randInputStream));
-        js.eval("rand = rand()");
-        
+        if(!jsLibraries.containsKey("rand")) {
+            InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
+            js.eval(new InputStreamReader(randInputStream));
+            js.eval("rand = rand()");
+            jsLibraries.put("rand", js.get("rand"));
+        } else {
+            js.put("rand", jsLibraries.get("rand"));
+        }
+
         // Loading plotly.js
 //        InputStream RInputStream = this.getClass().getResourceAsStream(PLOT_JS_FILE);
 //        js.eval(new InputStreamReader(RInputStream));
 //        js.eval("Plotly = Plotly()");
         
         // Loading R.js
-        InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
-        js.eval(new InputStreamReader(RInputStream));
-        js.eval("R = R()");
+
+        
+        if(!jsLibraries.containsKey("R")) {
+            InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
+            js.eval(new InputStreamReader(RInputStream));
+            js.eval("R = R()");
+            jsLibraries.put("R", js.get("R"));
+        } else {
+            js.put("R", jsLibraries.get("R"));
+        }
     }
 
     static final String POINT_CHAR_JS_KEY = "__";
@@ -1016,7 +1037,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("{");
+            dataFrameSb.append("R.createMathObject({");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1032,7 +1053,7 @@ public class R2jsSession extends Rsession implements RLog {
                 dataFrameSb.append(",");
             }
             
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
 
             
             // Replace the R matrix expression by the current matrix js
@@ -1074,7 +1095,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("{");
+            dataFrameSb.append("R.createMathObject({");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1090,7 +1111,7 @@ public class R2jsSession extends Rsession implements RLog {
                 dataFrameSb.append(",");
             }
             
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "}");
+            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
 
             
             // Replace the R matrix expression by the current matrix js
@@ -1389,9 +1410,9 @@ public class R2jsSession extends Rsession implements RLog {
             saveSb.append(", ");
             saveSb.append("R.createJsonString(");
             saveSb.append(listStringUnquotted);
-            saveSb.append(", '");
+            saveSb.append(", ");
             saveSb.append(THIS_ENVIRONMENT);
-            saveSb.append("'))");
+            saveSb.append("))");
             
             // Replace the R matrix expression by the current matrix js
             // expression
@@ -1441,9 +1462,9 @@ public class R2jsSession extends Rsession implements RLog {
             StringBuilder loadSb = new StringBuilder();
             loadSb.append("R.loadJson(");
             loadSb.append(fileString);
-            loadSb.append(", '");
+            loadSb.append(", ");
             loadSb.append(THIS_ENVIRONMENT);
-            loadSb.append("')");
+            loadSb.append(")");
             
             // TODO add loaded function as global variables: storeGlobalVariables(String expr)
             
@@ -2423,7 +2444,7 @@ public class R2jsSession extends Rsession implements RLog {
             synchronized (js) {
                 js.eval("delete " + envName + ";");
                 variablesSet.clear();
-                js.eval("var " + envName + " = {};");
+                js.eval("var " + envName + " = math.clone({});");
                 js.eval(THIS_ENVIRONMENT+" = "+envName);
             }
         } catch (Exception e) {
@@ -2622,7 +2643,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         try {
             if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
-                js.eval("var " + envName + " = {};");
+                js.eval("var " + envName + " = math.clone({});");
             }                
             js.eval(THIS_ENVIRONMENT+" = "+envName);
         } catch (ScriptException ex) {
@@ -2649,7 +2670,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         try {
             if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
-                js.eval("var " + envName + " = {};");
+                js.eval("var " + envName + " = math.clone({});");
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
