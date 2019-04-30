@@ -398,7 +398,10 @@ public class R2jsSession extends Rsession implements RLog {
                 "($1=$2; $1<=$3; $1++) ");
         
         // Add '{}' between the 'if' and the 'else'
-        e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else(.*)", "if$1{$2} else{$3}");
+        //e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else(.*)", "if$1{$2} else{$3}");
+        
+        e = e.replaceAll("\\bif \\(", "if(");
+        e = addIfElseBrackets(e);
         
         // Add "{" and "}" if the function doesn't have them
         e = e.replaceAll("function([.[^)]]*[)]) *([a-zA-Z0-9].*)$", "function$1 {$2}");
@@ -515,7 +518,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
         
         // force regular 'if' to throw error when arg is null
-        e = e.replaceAll("if \\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (R._if($1)) $2");
+        e = e.replaceAll("if *\\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (R._if($1)) $2");
         
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
@@ -968,6 +971,75 @@ public class R2jsSession extends Rsession implements RLog {
 
     }
 
+    /**
+     * This function add brackets in if/else expression.
+     * In nashorn (Java8_161 - ECMA5) the if without '{' work but not the if else without '{'
+     * 
+     * Example: Before: "if(a>1) 1 else 2"
+     *          After : "if(a>1) {1} else {2}"
+     * @param expr
+     * @return the transformed expression
+     */
+    private static String addIfElseBrackets(String expr) {
+        
+        final String ifReplacementString = "__IF__";
+        String result = expr;
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "if", true);
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            
+            // Data to write
+            String ifArg = argumentsMap.get("default");
+
+            // Build the mathjs expression to generate random uniform
+            // distribution
+            StringBuilder ifSb = new StringBuilder();
+            ifSb.append(ifReplacementString);
+            ifSb.append("(");
+            ifSb.append(ifArg);
+            ifSb.append(")");
+
+            if(!result.substring(endIndex+1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
+                
+                ifSb.append("{");
+                int elseIndex = expr.indexOf("else", endIndex);
+                
+                if(elseIndex >= 0) {
+                    ifSb.append(result.substring(endIndex+1, elseIndex));
+                    ifSb.append("} else {");
+                    ifSb.append(result.substring(elseIndex+5));
+                } else {
+                    ifSb.append(result.substring(endIndex+1, result.length()));
+                }
+                
+                StringBuilder sb = new StringBuilder();
+                sb.append(result.substring(0, startIndex));
+                sb.append(ifSb.toString());
+                sb.append("}");
+                result = sb.toString();
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(result.substring(0, startIndex));
+                sb.append(ifSb.toString());
+                sb.append(result.substring(endIndex + 1));
+                result = sb.toString();
+            }
+            
+            // Search the next "if"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "if", true);
+        }
+        
+        result = result.replaceAll(ifReplacementString, "if");
+        
+        return result;
+    }
+    
     /**
      * Convert the R expression or write csv: write.csv(data, file) to js
      * expression: r.write(file, data)
@@ -1715,6 +1787,9 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
     
+    private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
+        return getFunctionArguments(expr, fctName, false);
+    }
     
     /**
      * Get the beginning, the ending and arguments of a function. This function search for the first occurence
@@ -1723,9 +1798,10 @@ public class R2jsSession extends Rsession implements RLog {
      *
      * @param expr : the expression where we search the function
      * @param fctName : the name of the wanted function
+     * @param ignoreOperators: if true, ignore '==' and return only arguments separated by ','
      * @return a DTO containing: start index , end index and arguments of the function found
      */
-    private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
+    private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName, boolean ignoreOperators) {
         
         // Map containing possible arguments associated to each R functions
         Map<String, List<String>> argumentNamesByFunctions = new LinkedHashMap<>();
@@ -1745,7 +1821,8 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("file__exists", Arrays.asList("default"));
         argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));
         argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));   
-        argumentNamesByFunctions.put("function", Arrays.asList("default"));  
+        argumentNamesByFunctions.put("function", Arrays.asList("default"));
+        argumentNamesByFunctions.put("if", Arrays.asList("default")); 
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
@@ -1763,17 +1840,23 @@ public class R2jsSession extends Rsession implements RLog {
             int currentIndex = startIndex + fctName.length() + 1;
             
             while (expr.charAt(currentIndex - 1) != ')') {
-                int argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, ",=");
+                
+                String operators = ",=";
+                if(ignoreOperators) {
+                    operators = ",";
+                }
+                
+                int argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, operators);
                 // Ignore if it is a comparison operator ( '!=', '<=', '>=' or '==')
                 if (expr.charAt(argumentEndIndex + 1) == '=' && ("!=<>".contains(""+expr.charAt(argumentEndIndex)) || expr.charAt(argumentEndIndex + 2)=='=')) {
-                    argumentEndIndex = getNextExpressionLastIndex(expr, argumentEndIndex+1, ",=");
+                    argumentEndIndex = getNextExpressionLastIndex(expr, argumentEndIndex+1, operators);
                 }                
 		String argumentName = null;
                 String argument = null;
                 if (expr.charAt(argumentEndIndex + 1) == '=') {
                     argumentName = expr.substring(currentIndex, argumentEndIndex + 1).trim();
                     currentIndex = argumentEndIndex + 2;
-                    argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, ",=");
+                    argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, operators);
                 }
                 
                 if (argumentName == null) {
