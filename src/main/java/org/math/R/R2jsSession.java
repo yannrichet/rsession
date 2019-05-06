@@ -716,17 +716,17 @@ public class R2jsSession extends Rsession implements RLog {
         
         
         Pattern quotesPattern = Pattern.compile("(\"[^\"]*\")");
-        Matcher quotesMatcher = quotesPattern.matcher(expr);
+        Matcher quotesMatcher = quotesPattern.matcher(sb.toString());
         
-        sb = new StringBuffer();
+        StringBuffer sb2 = new StringBuffer();
         while (quotesMatcher.find()) {
             quotesList.add(quotesMatcher.group(1));
-            quotesMatcher.appendReplacement(sb, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
+            quotesMatcher.appendReplacement(sb2, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
             cmp++;
         }
-        quotesMatcher.appendTail(sb);
+        quotesMatcher.appendTail(sb2);
         
-        quotesList.set(0, sb.toString());
+        quotesList.set(0, sb2.toString());
         return quotesList;
     }
     
