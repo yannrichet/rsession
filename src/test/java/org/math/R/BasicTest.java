@@ -186,7 +186,32 @@ public class BasicTest {
         assert ((String) q.eval("'abcd'")).equals("abcd");
         assert ((String[]) q.eval("c('abcd','sdfds')")).length == 2;
     }
-
+    
+    @Test
+    public void testEval_R2Js() throws Exception {
+        System.err.println("====================================== R2Js");
+       q.debug_js=true;
+        assert q.eval("if (1<2) print('a') else print('b')").toString().equals("a"):q.eval("if (1<2) print('a') else print('b')");
+        assert q.eval("if (1<2) print(\"a\") else print(\"b\")").toString().equals("a"):q.eval("if (1<2) print(\"a\"else print(\"b\")");
+        assert q.eval("if (1>2) print(\"a\") else print(\"*\")").toString().equals("*"):q.eval("if (1<2) print(\"a\"else print(\"*\")");
+        //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
+    }
+        
+    @Test
+    public void testEval_Renjin() throws Exception {
+        System.err.println("====================================== R2Js");
+        assert r.eval("if (1<2) print('a') else print('b')").toString().equals("a"):r.eval("if (1<2) print('a') else print('b')");
+        //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
+    }
+        
+    @Test
+    public void testEval_Rserve() throws Exception {
+        System.err.println("====================================== R2Js");
+        assert s.eval("if (1<2) print('a') else print('b')").toString().equals("a"):s.eval("if (1<2) print('a') else print('b')");
+        //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
+    }
+    
+    
     @Test
     public void testSet_Rserve() throws Exception {
         System.err.println("====================================== Rserve");

@@ -939,4 +939,16 @@ public class R2jsSessionTest {
         engine.voidEval("setwd('"+ initialWD +"')");
     }
     
+    @Test
+    public void testIfFunction() throws Rsession.RException {
+        engine.debug_js = true;
+        engine.voidEval("f1 <- function() { return 4}");
+        assertEquals((Double) engine.eval("if(f1() == 2) f1() else f1()+1"), 5, epsilon);
+        assertEquals((Double) engine.eval("if(f1() >2) { 3 } else { 4 }"), 3, epsilon);
+        assertEquals((Double) engine.eval("if(f1()>2) 3 else 4"), 3, epsilon);
+        assertEquals((Double) engine.eval("if(f1()>2) f1() else f1()+1"), 4, epsilon);
+        assertEquals((Double) engine.eval("if(f1()==2) f1() else f1()+1"), 5, epsilon);
+        assertEquals((Double) engine.eval("if(f1()>2) f1()"), 4, epsilon);
+    }
+    
 }
