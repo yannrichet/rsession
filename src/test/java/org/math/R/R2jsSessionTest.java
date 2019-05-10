@@ -2,6 +2,7 @@ package org.math.R;
 
 import java.io.File;
 import java.util.Arrays;
+import javax.script.ScriptException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -940,7 +941,7 @@ public class R2jsSessionTest {
     }
     
     @Test
-    public void testIfFunction() throws Rsession.RException {
+    public void testIfFunction() throws Rsession.RException, ScriptException {
         engine.debug_js = true;
         engine.voidEval("f1 <- function() { return 4}");
         assertEquals((Double) engine.eval("if(f1() == 2) f1() else f1()+1"), 5, epsilon);
@@ -949,6 +950,24 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("if(f1()>2) f1() else f1()+1"), 4, epsilon);
         assertEquals((Double) engine.eval("if(f1()==2) f1() else f1()+1"), 5, epsilon);
         assertEquals((Double) engine.eval("if(f1()>2) f1()"), 4, epsilon);
+    }
+    
+    @Test
+    public void testReturnIfFunction() throws Rsession.RException, ScriptException {
+        engine.debug_js = true;
+        engine.voidEval("f1 <- function() { return if(1==2) {12.0} else {13.0}}");
+        assertEquals((Double) engine.eval("f1()"), 13.0, epsilon);
+        engine.voidEval("f2 <- function() { return if(1==1) {12.0}}");
+        assertEquals((Double) engine.eval("f2()"), 12.0, epsilon);
+        engine.voidEval("compare_function <- function(x,y) { return if(x==y) {'equals'} else {if(x>y) {'superior'} else {'inferior'}}}");
+        assertTrue(((String) engine.eval("compare_function(12,12)")).equals("equals"));
+        assertTrue(((String) engine.eval("compare_function(12,13)")).equals("inferior"));
+        assertTrue(((String) engine.eval("compare_function(13,12)")).equals("superior"));
+        
+        engine.voidEval("compare_function2 <- function(x,y) { return if(x>=y) {if(x==y) {'equals'} else {'superior'}} else {'inferior'}}");
+        assertTrue(((String) engine.eval("compare_function2(12,12)")).equals("equals"));
+        assertTrue(((String) engine.eval("compare_function2(12,13)")).equals("inferior"));
+        assertTrue(((String) engine.eval("compare_function2(13,12)")).equals("superior"));
     }
     
 }

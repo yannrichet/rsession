@@ -573,6 +573,8 @@ public class R2jsSession extends Rsession implements RLog {
 
         e = e.replaceAll("rand\\.rand\\.", "rand.");
         
+        // Replace function() {return if(condition){a} else {b}} by function() {if(condition{return a} else {return b}}
+        e = replaceReturnIf(e);
         
         try {
             e = convertFunction(e);
@@ -1006,12 +1008,9 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             
-            
             // Data to write
             String ifArg = argumentsMap.get("default");
 
-            // Build the mathjs expression to generate random uniform
-            // distribution
             StringBuilder ifSb = new StringBuilder();
             ifSb.append(ifReplacementString);
             ifSb.append("(");
@@ -1568,10 +1567,8 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
     
+    
     /**
-     * This function replaces the R function length by JS equivalent with "R.size()" 
-     * function from library mathjs.
-     * WARNING: "deparse.level", "make.row.names" and "stringsAsFactors" arguments are not supported yet
      *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
@@ -1606,6 +1603,64 @@ public class R2jsSession extends Rsession implements RLog {
             
             // Search the next "cbind" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "length");
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Replace 'function() {return if(condition){a} else {b}}' by:
+     *         'function() {if(condition{return a} else {return b}}'
+     *  
+     * @param expr - the expression containing the function to replace
+     * @return the expression with replaced function
+     */
+    private static String replaceReturnIf(String expr) {
+        
+        String result = expr;
+        result = result.replaceAll("\\breturn +if *\\(", "returnif(");
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(result, "returnif", true);
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            
+            String values = argumentsMap.get("default");
+            
+            // Build the mathjs expression
+            StringBuilder ifSb = new StringBuilder();
+            
+            ifSb.append("if(");
+            ifSb.append(values);
+            ifSb.append(") {return ");
+            
+            int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
+            int ifCloseBracketIndex =  getNextExpressionLastIndex(result, ifStartBracketIndex+1, "}")+1;
+            ifSb.append(result.substring(ifStartBracketIndex+1, ifCloseBracketIndex+1));
+            //ifSb.append("}");
+            if(result.substring(ifCloseBracketIndex+1).trim().startsWith("else")) {
+                int elseStartBracketIndex = result.substring(ifCloseBracketIndex+1).indexOf("{") + ifCloseBracketIndex+1;
+                int elseCloseBracketIndex = getNextExpressionLastIndex(result, elseStartBracketIndex + 1, "}")+1;
+                ifSb.append(" else {return ");
+                ifSb.append(result.substring(elseStartBracketIndex+1, elseCloseBracketIndex+1));
+                endIndex = elseCloseBracketIndex;
+            } else {
+                endIndex = ifCloseBracketIndex;
+            }
+            
+            
+            // Replace the R cbind expression by the current js expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(ifSb);
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "return if" in the expression
+            result = result.replaceAll("\\breturn +if *\\(", "returnif(");
+            rFunctionArgumentsDTO = getFunctionArguments(result, "returnif");
         }
         
         return result;
@@ -1836,6 +1891,7 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));   
         argumentNamesByFunctions.put("function", Arrays.asList("default"));
         argumentNamesByFunctions.put("if", Arrays.asList("default")); 
+        argumentNamesByFunctions.put("returnif", Arrays.asList("default")); 
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
         
