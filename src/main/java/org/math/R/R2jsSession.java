@@ -882,7 +882,7 @@ public class R2jsSession extends Rsession implements RLog {
     //f(X[i]
     //X[Y[i]]
     //X[[Y[i]]]
-   private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
+   private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
    // to get only one '[': "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]"
    
     /**

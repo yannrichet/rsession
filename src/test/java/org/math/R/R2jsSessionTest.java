@@ -21,6 +21,51 @@ public class R2jsSessionTest {
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
     
     @Test
+    public void test2Sessions() throws Rsession.RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
+        engine.debug_js = true;
+
+        R2jsSession engine2 = R2jsSession.newInstance(new RLogSlf4j(), null);
+        engine2.debug_js = true;
+
+        // ok for simple list
+        engine.voidEval("l <- list(a=1,b=2)");
+        assert engine.asDouble(engine.eval("l[['a']]")) == 1.0;
+        engine2.voidEval("l <- list(a=1,b=2)");
+        assert engine2.asDouble(engine2.eval("l[['a']]")) == 1.0;
+
+        // ok for simple function
+        engine.voidEval("f <- function(){return(1)}");
+        assert engine.asDouble(engine.eval("f()")) == 1.0;
+        engine2.voidEval("f <- function(){return(1)}");
+        assert engine2.asDouble(engine2.eval("f()")) == 1.0;
+
+        // ok when list returned from function, but used after affectation
+        engine.voidEval("f <- function(){return(list(a=1,b=2))}");
+        assert engine.asDouble(engine.eval("f()[['a']]")) == 1.0;
+        engine2.voidEval("f <- function(){return(list(a=1,b=2))}");
+        engine2.voidEval("ff = f()");
+        assert engine2.asDouble(engine2.eval("ff[['a']]")) == 1.0;
+        
+        // ok when list returned from function with non empty argument and called directly
+        engine.voidEval("f <- function(x){return(list(a=1,b=2))}");
+        assert engine.asDouble(engine.eval("f(0)[['a']]")) == 1.0;
+        engine2.voidEval("f <- function(x){return(list(a=1,b=2))}");
+        System.err.println(engine2.eval("f(0)"));
+        engine2.voidEval("ff = f(0)");
+        System.err.println(engine2.eval("ff[['a']]"));
+        assert engine2.asDouble(engine2.eval("f(0)[['a']]")) == 1.0;
+        
+        // fail when list returned from function without arg and called directly
+        engine.voidEval("f <- function(){return(list(a=1,b=2))}");
+        assert engine.asDouble(engine.eval("f()[['a']]")) == 1.0;
+        engine2.voidEval("f <- function(){return(list(a=1,b=2))}");
+        System.err.println(engine2.eval("f()"));
+        engine2.voidEval("ff = f()");
+        System.err.println(engine2.eval("ff[['a']]"));
+        assert engine2.asDouble(engine2.eval("f()[['a']]")) == 1.0;
+    }
+
+    @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         engine.debug_js = true;
         
