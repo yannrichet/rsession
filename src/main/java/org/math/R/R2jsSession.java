@@ -328,7 +328,7 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         //1E-8 -> 1*10^-8
-        e = e.replaceAll("([\\d|\\.]+)[eE]+[+-]*(\\d)", "$1*10^-$2");
+        e = e.replaceAll("([\\d|\\.]+)[eE]+([+-])*(\\d)", "$1*10^$2$3");
 
         // Get all expression in quote and replace them by variables to not
         // modify them in this function

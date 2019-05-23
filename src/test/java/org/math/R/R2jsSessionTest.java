@@ -84,6 +84,10 @@ public class R2jsSessionTest {
 
         assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4;
         assert Double.parseDouble(engine.eval("1.23e-4").toString()) == 1.23E-4;
+        assert Double.parseDouble(engine.eval("1.23E4").toString()) == 1.23E4;
+        assert Double.parseDouble(engine.eval("1.23e4").toString()) == 1.23E4;
+        assert Double.parseDouble(engine.eval("2E4").toString()) == 2E4;
+        assert Double.parseDouble(engine.eval("2e4").toString()) == 2E4;
         
         assert Double.parseDouble(engine.eval("2 ^ 3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2^3").toString()) == 8;
