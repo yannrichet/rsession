@@ -9,7 +9,7 @@
 
     <groupId>com.github.yannrichet</groupId>
     <artifactId>Rsession</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.2</version>
     <packaging>jar</packaging>
     <name>rsession</name>
 
@@ -75,10 +75,10 @@
             <version>0.9.2718</version>
         </dependency>        
         <dependency>
-	    <groupId>com.coveo</groupId>
-	    <artifactId>nashorn-commonjs-modules</artifactId>
-	    <version>1.0.9</version>
-	</dependency>
+	        <groupId>com.coveo</groupId>
+	        <artifactId>nashorn-commonjs-modules</artifactId>
+	        <version>1.0.9</version>
+	    </dependency>
     </dependencies>
 
     <repositories>
@@ -225,7 +225,7 @@
         <connection>scm:git:git@github.com:yannrichet/rsession.git</connection>
         <developerConnection>scm:git:git@github.com:yannrichet/rsession.git</developerConnection>
         <url>git@github.com:yannrichet/rsession.git</url>
-      <tag>Rsession-2.0.4</tag>
+        <tag>Rsession-3.0.2</tag>
   </scm>
 	
     <reporting>

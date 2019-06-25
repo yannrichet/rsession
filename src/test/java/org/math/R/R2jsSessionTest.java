@@ -63,6 +63,9 @@ public class R2jsSessionTest {
         engine2.voidEval("ff = f()");
         System.err.println(engine2.eval("ff[['a']]"));
         assert engine2.asDouble(engine2.eval("f()[['a']]")) == 1.0;
+        
+
+        
     }
 
     @Test
@@ -84,6 +87,18 @@ public class R2jsSessionTest {
 
         assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4;
         assert Double.parseDouble(engine.eval("1.23e-4").toString()) == 1.23E-4;
+        assert Double.parseDouble(engine.eval("1.23E4").toString()) == 1.23E4;
+        assert Double.parseDouble(engine.eval("1.23e4").toString()) == 1.23E4;
+        assert Double.parseDouble(engine.eval("2E4").toString()) == 2E4;
+        assert Double.parseDouble(engine.eval("2e4").toString()) == 2E4;
+        assert Double.parseDouble(engine.eval("2.0e4").toString()) == 2E4;
+        assert Double.parseDouble(engine.eval("2.0E4").toString()) == 2E4;
+        
+        // Test if power is relaced in variable name
+        engine.voidEval("e235 = function(){return 12}");
+        assert (Double) engine.eval("__this__.e235()") == 12;
+        
+        
         
         assert Double.parseDouble(engine.eval("2 ^ 3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2^3").toString()) == 8;
@@ -194,6 +209,10 @@ public class R2jsSessionTest {
         engine.voidEval("x = matrix(c(1,2,3,4,5,6),ncol=2)");
         assert engine.eval("paste(x[1,],collapse='v')").equals("1v4"): engine.eval("paste(x[1,],collapse='v')");
         assert engine.eval("paste0(x[1,],collapse='v')").equals("1v4"): engine.eval("paste0(x[1,],collapse='v')");
+        
+        engine.voidEval("x1 = matrix(c(1.23,2.23,3.23,4.23,5.23,6.23),ncol=2)");
+        assert engine.eval("paste(x1[1,],collapse='v')").equals("1.23v4.23"): engine.eval("paste(x1[1,],collapse='v')");
+        assert engine.eval("paste0(x1[1,],collapse='v')").equals("1.23v4.23"): engine.eval("paste0(x1[1,],collapse='v')");
   
         assert engine.eval("paste('a1','b2')").equals("a1 b2") : engine.eval("paste('a1','b2')");
         assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4"):  engine.eval("paste(c('a1','b2'),c('c3','d4'))");

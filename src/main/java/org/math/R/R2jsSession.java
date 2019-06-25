@@ -328,7 +328,7 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         //1E-8 -> 1*10^-8
-        e = e.replaceAll("([\\d|\\.]+)[eE]+[+-]*(\\d)", "$1*10^-$2");
+        e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
 
         // Get all expression in quote and replace them by variables to not
         // modify them in this function
@@ -2435,7 +2435,7 @@ public class R2jsSession extends Rsession implements RLog {
         }
         return result;
     }
-    
+
     @Override
     public boolean set(String varname, double[][] data, String... names) throws RException {
         
@@ -2841,4 +2841,50 @@ public class R2jsSession extends Rsession implements RLog {
             envVariables.get(envName).addAll(new TreeSet(variablesSet));
         }
     }
+    
+    private static String html_tmpl
+            = "<html>\n"
+            + "    <head>\n"
+            + "        <script src=\"https://github.com/yannrichet/rsession/blob/master/src/main/resources/org/math/R/math.js\" type=\"text/javascript\"></script>\n"
+            + "        <script src=\"https://github.com/yannrichet/rsession/blob/master/src/main/resources/org/math/R/rand.js\" type=\"text/javascript\"></script>\n"
+            + "        <script src=\"https://github.com/yannrichet/rsession/blob/master/src/main/resources/org/math/R/R.js\" type=\"text/javascript\"></script>\n"
+            + "    </head>"
+            + "    <body>\n"
+            + "        <code>\n"
+            + "___R___"
+            + "        </code>\n"
+            + "        <script type = \"text/javascript\">\n"
+            + "        ___JS___\n"
+            + "        </script>\n"
+            + "\n"
+            + "        <form>\n"
+            + "        ___INPUT___\n"
+            + "        <br/>\n"
+            + "        ___SUBMIT___\n"
+            + "        </form>\n"
+            + "    </body>\n"
+            + "</html>";
+    private static String input_tmpl = "        <input type=\"text\" name=\"inputform\" id=\"___ID___\" value=\"\">\n";
+    private static String submit_tmpl = "        <input type=\"submit\" value=\"___F___\" onclick=\"___ONCLICK___\">\n";
+
+    // maybe the worst idea I ever had...
+    public static String HTMLfun(String Rcode, String fun, String... args) {
+
+        R2jsSession R = new R2jsSession(System.out, null);
+        String html = html_tmpl.replace("___JS___", R.convertRtoJs(Rcode).replace(R.THIS_ENVIRONMENT + ".", ""));
+        html = html.replace("___R___", Rcode);
+        html = html.replace("___f___", fun);
+        String inputs = "";
+        for (int i = 0; i < args.length; i++) {
+            inputs = inputs + args[i] + ":" + input_tmpl.replace("___ID___", args[i]) + "<br/>";
+            args[i] = "document.getElementById('" + args[i] + "').value";
+        }
+        html = html.replace("___INPUT___", inputs);
+
+        html = html.replace("___SUBMIT___", submit_tmpl.replace("___ONCLICK___", "document.write(" + fun + "(" + cat(",", args) + "))"));
+
+        return(html);
+    }
+
+    
 }
