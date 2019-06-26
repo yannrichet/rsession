@@ -1000,7 +1000,7 @@ public class R2jsSessionTest {
         String initialWD = (String) engine.eval("getwd()");
         engine.voidEval("setwd('"+ initialWD +"/test')");
         String otherWD = (String) engine.eval("getwd()");
-        assertTrue(!initialWD.equals(otherWD));
+        assert !initialWD.equals(otherWD) : "initial wd="+initialWD+ " otherwd="+otherWD;
         engine.voidEval("setwd('"+ initialWD +"')");
     }
     
