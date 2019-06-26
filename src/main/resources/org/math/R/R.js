@@ -467,12 +467,13 @@
     }
 
     function getwd() {
-        var File = Java.type('java.io.File');
-        return new File(".").getAbsolutePath();
+        var System = Java.type('java.lang.System');
+        return System.getProperty("user.dir");
     }
     
     function setwd(dir) {
         var System = Java.type('java.lang.System');
+        print("dir:" + dir)
         System.setProperty("user.dir", dir);
     }
     
