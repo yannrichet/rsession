@@ -63,10 +63,11 @@ public class RserveFixesTest {
                 c.eval("Sys.setenv(https_proxy='" + http_proxy_env + "')");
             }
 
-            c.eval("download.file(quiet=T,'https://www.r-project.org/',paste0(getwd(),'/log.txt'))");
+            c.eval("download.file(quiet=T,'https://github.com/ynnrichet/Rsession',paste0(getwd(),'/log.txt'))");
             c.close();
         } catch (Exception x) {
             x.printStackTrace();
+            assert false: "Exception:"+x;
         }
 
         assert (new File(dir, "log.txt").exists()) : "file NOT exists";
