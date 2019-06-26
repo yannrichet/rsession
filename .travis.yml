@@ -1,8 +1,8 @@
 language: java
 jdk:
 #  - oraclejdk8
-  - openjdk8
   - openjdk11
+  - openjdk8
 matrix:
   include:
     - os: linux
