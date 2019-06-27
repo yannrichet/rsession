@@ -30,9 +30,8 @@ before_install:
   # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xvfb -y; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [[ -e /etc/init.d/xvfb ]]; then echo "xvfb already linked"; else sudo ln -s /usr/bin/xvfb-run /etc/init.d/xvfb; fi; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start; sleep 3 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [[ -e /etc/init.d/xvfb ]]; then sh -e /etc/init.d/xvfb start; sleep 3 ; else sudo /usr/bin/Xvfb :99 -screen 0 1024x768x24 -ac +extension GLX +render -noreset &; fi; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9; fi
   - if [[ "$TRAVIS_DIST_NAME" == "trusty" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty-cran35/" | sudo tee -a /etc/apt/sources.list; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
