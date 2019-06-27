@@ -4,17 +4,25 @@ cache:
     - $HOME/.m2
 matrix:
   include:
-    - os: linux
+    - name: "Linux JDK8"
+      os: linux
       dist: trusty
       jdk:
         - openjdk8
-    - os: linux
+      env:
+        - TRAVIS_DIST_NAME="trusty"
+    - name: "Linux JDK11"
+      os: linux
       dist: xenial
       jdk:
         - openjdk11
-    - os: osx
+      env:
+        - TRAVIS_DIST_NAME="xenial"
+    - name: "MacOS JDK8"
+      os: osx
       osx_image: xcode9.3
-    - os: osx
+    - name: "MacOS JDK11"
+      os: osx
       osx_image: xcode10.1
 before_install:
   #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
@@ -22,13 +30,13 @@ before_install:
   # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xvfb -y; fi
-  - if [[ -e /etc/init.d/xvfb ]]; then echo "xvfb already linked"; else ln -s /usr/bin/xvfb-run /etc/init.d/xvfb; fi
+  - if [[ -e /etc/init.d/xvfb ]]; then echo "xvfb already linked"; else sudo ln -s /usr/bin/xvfb-run /etc/init.d/xvfb; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start; sleep 3 ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty-cran35/" | sudo tee -a /etc/apt/sources.list; fi
+  - if [[ "$TRAVIS_DIST_NAME" == "trusty" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty-cran35/" | sudo tee -a /etc/apt/sources.list; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install r-recommended -y; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install r-recommended ant -y; fi
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script: mvn clean test cobertura:cobertura
 after_success:
