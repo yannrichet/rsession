@@ -34,6 +34,7 @@ before_script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 ; sleep 3; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9; fi
   - if [[ "$TRAVIS_DIST_NAME" == "trusty" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty-cran35/" | sudo tee -a /etc/apt/sources.list; fi
+  - if [[ "$TRAVIS_DIST_NAME" == "xenial" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu xenial/" | sudo tee -a /etc/apt/sources.list; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install r-recommended ant -y; fi
 install: mvn install -DskipTests=true -Dgpg.skip=true
