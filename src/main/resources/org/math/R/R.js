@@ -473,7 +473,6 @@
     
     function setwd(dir) {
         var System = Java.type('java.lang.System');
-        print("dir:" + dir)
         System.setProperty("user.dir", dir);
     }
     

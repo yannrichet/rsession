@@ -750,7 +750,9 @@ public class R2jsSession extends Rsession implements RLog {
             String quote = quotesList.get(i).trim();
             if(removeRoundingQuotes) {
                 quote = quote.substring(1, quote.length()-1);
-            }
+            }   
+            quote = quote.replace("\\", "\\\\\\\\"); // Add more backslash to pass java and js
+            
             expr = expr.replaceAll("QUOTE_EXPRESSION_" + i+"_", quote);
         }
         

@@ -665,6 +665,7 @@ public class R2jsSessionTest {
 
         engine.set("s", "abcdef");
         File f = new File("R2Js" + rand + ".save");
+        System.out.println("Absolute path: " + f.getAbsolutePath());
         engine.save(f, "s");
         engine.rm("s");
         engine.load(f);
@@ -996,12 +997,16 @@ public class R2jsSessionTest {
     
     @Test
     public void testSetWDFunctions() throws Rsession.RException {
+        
+        engine.debug_js = true;
         // Test when the function is used before its definition
         String initialWD = (String) engine.eval("getwd()");
         engine.voidEval("setwd('"+ initialWD +"/test')");
         String otherWD = (String) engine.eval("getwd()");
         assert !initialWD.equals(otherWD) : "initial wd="+initialWD+ " otherwd="+otherWD;
         engine.voidEval("setwd('"+ initialWD +"')");
+        String initialWD2 = (String) engine.eval("getwd()");
+        assert initialWD.equals(initialWD2) : "initial wd="+initialWD+ " otherwd="+initialWD2;
     }
     
     @Test
