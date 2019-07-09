@@ -12,7 +12,7 @@
     <version>3.0.3</version>
     <packaging>jar</packaging>
     <name>rsession</name>
-
+ 
     <url>https://github.com/yannrichet/rsession</url>
 
     <properties>
