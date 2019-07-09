@@ -59,8 +59,7 @@ public class Issues {
         System.out.println(txt);
 
         //...
-        System.out.println(s.installPackage("sensitivity", true)); //install and load R package
-        System.out.println(s.installPackage("wavelets", true));
+        System.out.println(s.installPackage("booty", true)); //install and load R package
 
         s.end();
     }
