@@ -87,7 +87,7 @@ public class RserveSessionTest {
 
     @Test
     public void testInstallPackages() {
-        String out = s.installPackage("sensitivity", true);
+        String out = s.installPackage("boot", true);
         assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: " + out;
         String out2 = s.installPackage("pso", true);
         assert out2.equals(Rsession.PACKAGELOADED) : "Failed to load package pso: " + out2;
