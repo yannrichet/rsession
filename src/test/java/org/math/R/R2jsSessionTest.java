@@ -1039,4 +1039,18 @@ public class R2jsSessionTest {
         assertTrue(((String) engine.eval("compare_function2(13,12)")).equals("superior"));
     }
     
+    @Test
+    public void testArgsFunction() throws Rsession.RException, ScriptException {
+        engine.debug_js = true;
+        engine.voidEval("var1 <- 2");
+        engine.voidEval("f1 <- function(var1) { var1 + 1}");
+        assertEquals((Double) engine.eval("f1(3)"), 5.0, epsilon);
+        
+        engine.voidEval("var2 <- 2");
+        engine.voidEval("f2 <- function(var2) { var2 <- var2+1; return (var2)}");
+        assertEquals((Double) engine.eval("var2"), 2.0, epsilon);
+        assertEquals((Double) engine.eval("f2(var2)"), 3.0, epsilon);
+        assertEquals((Double) engine.eval("f2(4)"), 5.0, epsilon);
+    }
+    
 }
