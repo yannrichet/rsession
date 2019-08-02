@@ -683,6 +683,7 @@ public class R2jsSession extends Rsession implements RLog {
                 sb.append("\n");
             }
         }
+        sb.setLength(sb.length() - 1);
         return sb.toString();
     }
     
