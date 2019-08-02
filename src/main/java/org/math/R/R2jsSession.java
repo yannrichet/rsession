@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -582,11 +584,13 @@ public class R2jsSession extends Rsession implements RLog {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         
+        e = replaceArgsNames(e, "__");
+        
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
         
         // Replace variables by variableStorageObject.variable
-        e = replaceVariables(e, variablesSet);
+        e = replaceVariables(e, variablesSet, THIS_ENVIRONMENT + ".");
 
         // Finally replace "quotes variables" by their expressions associated
         e = replaceNameByQuotes(quotesList, e, false);
@@ -661,6 +665,61 @@ public class R2jsSession extends Rsession implements RLog {
         }
         return s + sb.toString();
     }
+    
+    /**
+     * Add prefix before arguments names of the function to not replace 
+     * them after by "global variables"
+     * 
+     * Ex:
+     * In this example we add the prefix "__" before var1 to not mix up with the __this__.var1 variable
+     * var1 <- 1                        : __this__.var1 = 1
+     * f1 <- function(var1) { var1 + 1} : __this__.f1 = function(__var1) {return math.add(__var1 , 1)}
+     * 
+     * @param expr - the expression to replace
+     * @param prefix - the prefix to add before arguments of the function
+     * @return 
+     */
+    private String replaceArgsNames(String expr, String prefix) {
+        String result = expr;
+        
+        
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "function");
+        
+        while (rFunctionArgumentsDTO != null) {
+            
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+
+            Collection<String> arguments = Arrays.stream(argumentsMap.get("default").split(",")).map(String::trim).collect(Collectors.toList());
+            
+            int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
+            int fctCloseBracketIndex =  getNextExpressionLastIndex(result, ifStartBracketIndex+1, "}")+1;
+
+
+            String function = result.substring(startIndex, fctCloseBracketIndex+1);
+            
+            // Replace function's arguments by "__"
+            String replacedFunction = replaceVariables(function, arguments, prefix);
+            replacedFunction = replacedFunction.replaceAll("(\\b)function(\\b)", "$1_function$2");
+            
+            // Replace the R matrix expression by the current matrix js
+            // expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(replacedFunction);
+            sb.append(result.substring(fctCloseBracketIndex + 1));
+            result = sb.toString();
+            
+            // Search the next "function" in the expression
+            rFunctionArgumentsDTO = getFunctionArguments(result, "function");
+        }
+        result = result.replaceAll("(\\b)_function(\\b)", "$1function$2");
+        
+        return result;
+
+    }
+    
 
     /**
      * Replace all variables by JS_VARIABLE_STORAGE_OBJECT.variable to access
@@ -673,13 +732,13 @@ public class R2jsSession extends Rsession implements RLog {
      * @param variables - the variables to replace
      * @return the expression with replaced variables
      */
-    private String replaceVariables(String expr, Iterable<String> variables) {
+    private String replaceVariables(String expr, Iterable<String> variables, String prefix) {
         String result = expr;
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("(\\b)(" + variable + ")(\\b)", THIS_ENVIRONMENT + "." + variable);
-                result = result.replaceAll(THIS_ENVIRONMENT + "\\." + THIS_ENVIRONMENT, THIS_ENVIRONMENT);
+                result = result.replaceAll("(\\b)(" + variable + ")(\\b)",prefix + variable);
+                result = result.replaceAll(prefix + prefix, prefix);
             }
         }
         return result;

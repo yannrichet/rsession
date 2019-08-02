@@ -1044,13 +1044,23 @@ public class R2jsSessionTest {
         engine.debug_js = true;
         engine.voidEval("var1 <- 2");
         engine.voidEval("f1 <- function(var1) { var1 + 1}");
-        assertEquals((Double) engine.eval("f1(3)"), 5.0, epsilon);
+        assertEquals((Double) engine.eval("f1(3)"), 4.0, epsilon);
         
         engine.voidEval("var2 <- 2");
         engine.voidEval("f2 <- function(var2) { var2 <- var2+1; return (var2)}");
         assertEquals((Double) engine.eval("var2"), 2.0, epsilon);
         assertEquals((Double) engine.eval("f2(var2)"), 3.0, epsilon);
         assertEquals((Double) engine.eval("f2(4)"), 5.0, epsilon);
+        assertEquals((Double) engine.eval("var2"), 2.0, epsilon);
+        
+        engine.voidEval("var3 <- 2");
+        engine.voidEval("var4 <- 3");
+        engine.voidEval("var5 <- 4");
+        engine.voidEval("f3 <- function(var3, var4) { var5 * (var3 + var4)}");
+        assertEquals((Double) engine.eval("f3(1, 2)"), 12.0, epsilon);
+        assertEquals((Double) engine.eval("f3(var5, var3)"), 24.0, epsilon);
+        engine.voidEval("var5 <- 5");
+        assertEquals((Double) engine.eval("f3(1, 2)"), 15.0, epsilon);
     }
     
 }
