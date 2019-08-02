@@ -262,8 +262,6 @@ public class R2jsSession extends Rsession implements RLog {
      */
     public static String nameRtoJs(String e) {
         
-        System.err.println("");
-        
         // Replace "." char by a dedicated key
         if (e.contains(POINT_CHAR_JS_KEY)) {
             throw new IllegalArgumentException("Cannot use " + POINT_CHAR_JS_KEY + " in expression (reserved substring)");
