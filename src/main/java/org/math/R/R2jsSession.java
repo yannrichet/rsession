@@ -313,6 +313,8 @@ public class R2jsSession extends Rsession implements RLog {
         String R = null;
         if (debug_js) R  =e;
 
+        e = removeCommentedLines(e);
+        
         // remove ; at end of lines. We will re-add it later
         e = e.replaceAll(";+ *\\n", "\n");
         
@@ -667,6 +669,24 @@ public class R2jsSession extends Rsession implements RLog {
     }
     
     /**
+     * Remove commented lines
+     * 
+     * @param expr
+     * @return 
+     */
+    private String removeCommentedLines(String expr) {
+        StringBuilder sb = new StringBuilder();
+        String lines[] = expr.split("\\r?\\n");
+        for(String line : lines) {
+            if(!line.trim().startsWith("#")) {
+                sb.append(line);
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
+    }
+    
+    /**
      * Add prefix before arguments names of the function to not replace 
      * them after by "global variables"
      * 
@@ -737,7 +757,7 @@ public class R2jsSession extends Rsession implements RLog {
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("(\\b)(" + variable + ")(\\b)",prefix + variable);
+                result = result.replaceAll("\\b(?<![\\$\\.])" + variable + "\\b",prefix + variable);
                 result = result.replaceAll(prefix + prefix, prefix);
             }
         }
