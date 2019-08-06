@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,6 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -300,6 +303,8 @@ public class R2jsSession extends Rsession implements RLog {
 
     public boolean debug_js = false; 
     
+    DecimalFormat formatter = new DecimalFormat("#.#############",DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+    
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are not supported yet
      *
@@ -330,7 +335,11 @@ public class R2jsSession extends Rsession implements RLog {
         }
         
         //1E-8 -> 1*10^-8
-        e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
+        //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
+        Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
+        while (m.find()) {
+            e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+        }
 
         // Get all expression in quote and replace them by variables to not
         // modify them in this function
