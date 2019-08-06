@@ -85,7 +85,12 @@ public class R2jsSessionTest {
         engine.eval("b <- (1)");
         assert (Double) engine.eval("b") == 1;
 
-        assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4;
+        assert Double.parseDouble(engine.eval("1.23E-4").toString()) == 1.23E-4 : engine.eval("1.23E-4").toString();
+        assert Double.parseDouble(engine.eval("1.23E-10").toString()) == 1.23E-10;
+        assert Double.parseDouble(engine.eval("11.23E-4").toString()) == 11.23E-4;
+        assert Double.parseDouble(engine.eval("1+1.23E-4").toString()) == 1.000123 : engine.eval("1+1.23E-4").toString();
+        assert Double.parseDouble(engine.eval("2*1.23E-4").toString()) == 2 * 1.23E-4 : engine.eval("10*1.23E-4").toString();
+        assert Double.parseDouble(engine.eval("sin(1.23E-4)").toString()) == Math.sin(1.23E-4);
         assert Double.parseDouble(engine.eval("1.23e-4").toString()) == 1.23E-4;
         assert Double.parseDouble(engine.eval("1.23E4").toString()) == 1.23E4;
         assert Double.parseDouble(engine.eval("1.23e4").toString()) == 1.23E4;
