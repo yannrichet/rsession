@@ -954,6 +954,15 @@ public class R2jsSessionTest {
     }
     
     @Test
+    public void testNamedArgFunction() throws Rsession.RException {
+        engine.voidEval("f = function(x) {return(x+1)}");
+        engine.set("x", 1);
+        assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
+        assert (double) engine.eval("f(x=2)") == 3 : "Bad eval of f(x):" + engine.eval("f(x=2)");
+        assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
+    }
+
+    @Test
     public void testStopIfNot() throws Rsession.RException {
         engine.set("a", 1);
         engine.set("b", 2);
