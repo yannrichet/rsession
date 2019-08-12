@@ -947,6 +947,13 @@ public class R2jsSessionTest {
     }
     
     @Test
+    public void testWhichMin() throws Rsession.RException {
+        engine.set("x",new double[]{1,2,4,8,0,5,6,-1,10,9});
+        assert (double)engine.eval("min(x)")==-1 : "Failed to find min: "+engine.eval("min(x)");
+        assert Arrays.equals((double[])engine.eval("which.min(x)"),new double[]{8}) : "Failed to find which.min: "+engine.eval("which.min(x)");
+    }
+    
+    @Test
     public void testStopIfNot() throws Rsession.RException {
         engine.set("a", 1);
         engine.set("b", 2);
