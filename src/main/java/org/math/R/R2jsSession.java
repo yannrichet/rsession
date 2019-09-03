@@ -593,11 +593,11 @@ public class R2jsSession extends Rsession implements RLog {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         
-        e = replaceArgsNames(e, "__");
-        
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
         
+        e = replaceArgsNames(e, "__");
+      
         // Replace variables by variableStorageObject.variable
         e = replaceVariables(e, variablesSet, THIS_ENVIRONMENT + ".");
 
@@ -710,7 +710,6 @@ public class R2jsSession extends Rsession implements RLog {
     private String replaceArgsNames(String expr, String prefix) {
         String result = expr;
         
-        
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "function");
         
         while (rFunctionArgumentsDTO != null) {
@@ -727,11 +726,10 @@ public class R2jsSession extends Rsession implements RLog {
 
             String function = result.substring(startIndex, fctCloseBracketIndex+1);
             
-            // Replace function's arguments by "__"
+            // Prefix function's arguments by "__"
             String replacedFunction = replaceVariables(function, arguments, prefix);
             replacedFunction = replacedFunction.replaceAll("(\\b)function(\\b)", "$1_function$2");
             
-            // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
@@ -743,11 +741,40 @@ public class R2jsSession extends Rsession implements RLog {
             rFunctionArgumentsDTO = getFunctionArguments(result, "function");
         }
         result = result.replaceAll("(\\b)_function(\\b)", "$1function$2");
-        
-        return result;
 
+        // Now replace also in calls to functions: f(a=2) -> f(__a=2)
+        
+        for (String f : variablesSet) {
+            Pattern fPattern = Pattern.compile("\\b("+f+")\\(([^\\)]*)\\)");
+            Matcher fMatcher = fPattern.matcher(result);
+
+            if (fMatcher.find()) {
+                fMatcher.reset();
+                StringBuffer result_buf = new StringBuffer();
+                while (fMatcher.find()) {
+                    String args = " " + fMatcher.group(2) + " ";
+                    //System.err.println("args: "+args);
+                    String[] argsArray = splitString(args, ",");
+                    StringBuffer args_buf = new StringBuffer();
+                    for (int i = 0; i < argsArray.length; i++) {
+                        //System.err.println(" - "+argsArray[i]);
+                        if (argsArray[i].contains("=")) {
+                            String[] kv_arg = argsArray[i].split("=");
+                            argsArray[i] = "__" + kv_arg[0].trim() + " = " + kv_arg[1];
+                        }
+                        args_buf.append(argsArray[i] + (i==(argsArray.length-1)?"":","));
+                    }
+                    fMatcher.appendReplacement(result_buf, (f+"("+args_buf.toString()+")").replace("$", "\\$"));
+                }
+                
+                fMatcher.appendTail(result_buf);
+                
+                result = result_buf.toString();
+            }
+        }
+
+        return result;
     }
-    
 
     /**
      * Replace all variables by JS_VARIABLE_STORAGE_OBJECT.variable to access
@@ -765,7 +792,7 @@ public class R2jsSession extends Rsession implements RLog {
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("\\b(?<![\\$\\.])" + variable + "\\b",prefix + variable);
+                result = result.replaceAll("\\b(?<![\\$\\.[__]])" + variable + "\\b",prefix + variable);
                 result = result.replaceAll(prefix + prefix, prefix);
             }
         }
@@ -2251,9 +2278,8 @@ public class R2jsSession extends Rsession implements RLog {
         
         int equalIndex = getNextExpressionLastIndex(expr, -1, "=") + 1;
         int exprLength = expr.length();
+        
         while (equalIndex < exprLength) {
-            
-            
             if((equalIndex>0 && expr.charAt(equalIndex-1)=='=') || (equalIndex<exprLength-1 && expr.charAt(equalIndex+1)=='=')) {
                 // If it is a '==' we ignore it
                 equalIndex+=1;

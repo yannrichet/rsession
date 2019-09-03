@@ -955,12 +955,35 @@ public class R2jsSessionTest {
     
     @Test
     public void testNamedArgFunction() throws Rsession.RException {
+        engine.debug_js = true;
         engine.voidEval("f = function(x) {return(x+1)}");
         engine.set("x", 1);
         assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
-        assert (double) engine.eval("f(x=2)") == 3 : "Bad eval of f(x):" + engine.eval("f(x=2)");
+        assert (double) engine.eval("f(2)") == 3 : "Bad eval of f(2):" + engine.eval("f(2)");
+        assert (double) engine.eval("f(x)") == 2 : "Bad eval of f(x):" + engine.eval("f(x)");
+        assert (double) engine.eval("f(x=2)") == 3 : "Bad eval of f(x=2):" + engine.eval("f(x=2)");
         assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
-    }
+        assert (double) engine.eval("f(2)") == 3 : "Bad eval of f(2):" + engine.eval("f(2)");
+        assert (double) engine.eval("f(x)") == 2 : "Bad eval of f(x):" + engine.eval("f(x)");
+        assert (double) engine.eval("f(x=2)") == 3 : "Bad eval of f(x=2):" + engine.eval("f(x=2)");
+        
+        engine.voidEval("g = function(x,y) {return(x-y)}");
+        engine.set("x", 1);
+        assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
+        assert (double) engine.eval("g(2,1)") == 1 : "Bad eval of g(2,1):" + engine.eval("g(2,1)");
+        assert (double) engine.eval("g(x,1)") == 0 : "Bad eval of g(x,1):" + engine.eval("g(x,1)");
+        assert (double) engine.eval("g(x=2,1)") == 1 : "Bad eval of g(x=2,1):" + engine.eval("g(x=2,1)");
+        assert (double) engine.eval("x") == 1 : "Bad setting of x:" + engine.eval("x");
+     assert (double) engine.eval("g(2,1)") == 1 : "Bad eval of g(2,1):" + engine.eval("g(2,1)");
+        assert (double) engine.eval("g(x,1)") == 0 : "Bad eval of g(x,1):" + engine.eval("g(x,1)");
+        assert (double) engine.eval("g(x=2,1)") == 1 : "Bad eval of g(x=2,1):" + engine.eval("g(x=2,1)");
+// FIXME : unorder arguments in function are not properly re-sorted/named
+//        assert (double) engine.eval("g(y=1,x=2)") == 1 : "Bad eval of g(y=1,x=2):" + engine.eval("g(y=1,x=2)");
+//        assert (double) engine.eval("g(1,x=2)") == 1 : "Bad eval of g(1,x=2):" + engine.eval("g(1,x=2)");
+
+        assert (double) engine.eval("a=g(x=2,1); a") == 1 : "Bad eval of a=g(x=2,1); a:" + engine.eval("a=g(x=2,1); a");
+        assert (double) engine.eval("gh=g(x=2,1); gh") == 1 : "Bad eval of gg=g(x=2,1); gg:" + engine.eval("gg=g(x=2,1); gg");
+      }
 
     @Test
     public void testStopIfNot() throws Rsession.RException {

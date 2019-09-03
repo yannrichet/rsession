@@ -111,7 +111,7 @@ public class BrentTest {
             from01();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -126,7 +126,7 @@ public class BrentTest {
                 + "    print(x)\n"
                 + "    return(x)\n"
                 + "}\n";
-
+        
         assert R.voidEval(from01);
 
         assert R.voidEval("input <- list(x1=list(min=0,max=1),x2=list(min=5,max=10))");
@@ -141,9 +141,10 @@ public class BrentTest {
         assert Arrays.deepEquals((double[][]) R.eval("X"), X) : Arrays.deepToString((double[][]) R.eval("X"));
     }
 
-    @Test
+    //@Test
     public void testfrom01FunR2js() {
         R = new R2jsSession(l, prop);
+        ((R2jsSession)R).debug_js=true;
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -154,7 +155,7 @@ public class BrentTest {
             from01Fun();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -202,7 +203,7 @@ public class BrentTest {
             getInitialDesign();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -253,7 +254,7 @@ public class BrentTest {
             getInitialDesignFun();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -447,7 +448,7 @@ public class BrentTest {
 //        System.err.println(Arrays.deepToString((double[][]) R.eval("Xnext")));
 //    }
 //
-//    //@Test
+//    @Test
 //    public void testgetNextDesignFunR2js() {
 //        R = new R2JsSession(l, prop);
 //        try {
@@ -464,6 +465,7 @@ public class BrentTest {
 //        }
 //    }
     public void errorFun() throws Exception {
+        //((R2jsSession)R).debug_js=true;
         String getInitialDesign = "\n" + "getInitialDesign <- function(brent, inp, outp) {\n"
                 + " print(length(inp))\n"
                 + "    if (length(inp)!=1) stop(\"Cannot find root of >1D function\")\n"
@@ -501,7 +503,7 @@ public class BrentTest {
             errorFun();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -574,7 +576,7 @@ public class BrentTest {
             test();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -591,7 +593,7 @@ public class BrentTest {
             test();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
@@ -609,7 +611,7 @@ public class BrentTest {
             test();
         } catch (Exception ex) {
             ex.printStackTrace();
-            System.err.println(R.notebook());
+            assert false:R.notebook();
         }
     }
 
