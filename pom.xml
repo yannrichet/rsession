@@ -9,7 +9,7 @@
 
     <groupId>com.github.yannrichet</groupId>
     <artifactId>Rsession</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
     <packaging>jar</packaging>
     <name>rsession</name>
  
@@ -234,7 +234,7 @@
         <connection>scm:git:git@github.com:yannrichet/rsession.git</connection>
         <developerConnection>scm:git:git@github.com:yannrichet/rsession.git</developerConnection>
         <url>git@github.com:yannrichet/rsession.git</url>
-        <tag>Rsession-3.0.2</tag>
+        <tag>Rsession-3.0.4</tag>
   </scm>
 	
     <reporting>
