@@ -253,7 +253,7 @@ public class StartRserve {
      * @return success
      */
     public static boolean installRserve(String Rcmd) {
-        if (RserveDaemon.app_dir().isDirectory()) {
+        if (new File(RserveDaemon.app_dir(),"Rserve").isDirectory()) {
             Log.Out.println("Already installed Rserve. (in "+RserveDaemon.app_dir().getAbsolutePath()+")");
             return true;
         }
