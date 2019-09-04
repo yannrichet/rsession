@@ -253,7 +253,12 @@ public class StartRserve {
      * @return success
      */
     public static boolean installRserve(String Rcmd) {
-        Log.Out.println("Install Rserve from local filesystem...");
+        if (RserveDaemon.app_dir().isDirectory()) {
+            Log.Out.println("Already installed Rserve. (in "+RserveDaemon.app_dir().getAbsolutePath()+")");
+            return true;
+        }
+        
+        Log.Out.println("Install Rserve from local filesystem... (in "+RserveDaemon.app_dir().getAbsolutePath()+")");
 
         String pack_suffix = ".tar.gz";
         if (RserveDaemon.isWindows()) {
