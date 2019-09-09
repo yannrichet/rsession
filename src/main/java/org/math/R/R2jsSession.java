@@ -30,6 +30,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
+import static org.renjin.repackaged.guava.base.Strings.repeat;
 
 
 /**
@@ -231,10 +232,10 @@ public class R2jsSession extends Rsession implements RLog {
         if(!jsLibraries.containsKey("rand")) {
             InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
             js.eval(new InputStreamReader(randInputStream));
-            js.eval("rand = rand()");
-            jsLibraries.put("rand", js.get("rand"));
+            js.eval("__rand = rand()");
+            jsLibraries.put("__rand", js.get("rand"));
         } else {
-            js.put("rand", jsLibraries.get("rand"));
+            js.put("__rand", jsLibraries.get("rand"));
         }
 
         // Loading plotly.js
@@ -248,10 +249,10 @@ public class R2jsSession extends Rsession implements RLog {
         if(!jsLibraries.containsKey("R")) {
             InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
             js.eval(new InputStreamReader(RInputStream));
-            js.eval("R = R()");
-            jsLibraries.put("R", js.get("R"));
+            js.eval("__R = R()");
+            jsLibraries.put("__R", js.get("R"));
         } else {
-            js.put("R", jsLibraries.get("R"));
+            js.put("__R", jsLibraries.get("R"));
         }
     }
 
@@ -296,6 +297,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("dev.off()", "");
         R_TO_JS.put("return()", "return(NULL)");
         R_TO_JS.put("...", "varargs");
+        R_TO_JS.put("Inf", "Infinity");
     }
 
     final static String AW = "((\\A)|(\\W)|(\\())(";
@@ -372,7 +374,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(^|[^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
         
         // Replace dim(A) by r.dim(A)
-        e = e.replaceAll("(^|[^a-zA-Z\\d\\.:])dim\\(", "$1R.dim(");
+        e = e.replaceAll("(^|[^a-zA-Z\\d\\.:])dim\\(", "$1__R.dim(");
         
         // replace '->' by '='
         e = e.replaceAll("<<-", "=");
@@ -444,7 +446,7 @@ public class R2jsSession extends Rsession implements RLog {
         // We can't used the "for (x of array)" expression in javascript because
         // it's not supported by Java8 and his javascript evaluator
         e = e.replaceAll("for *[(]([\\w\\-]+) +in +([\\w\\-]+)[)] *[{]",
-                "var $2Length = R.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
+                "var $2Length = __R.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
         
         // Replace "TRUE" by "true" and "FALSE" by "false"
         // TODO: Check that 'TRUE' is not inside a variable ex: myTRUEvariable
@@ -463,8 +465,8 @@ public class R2jsSession extends Rsession implements RLog {
         // FIXME this doesn't support += ...
         // Replace operators (+, -, *, /, ...)
         e = e.replaceAll("\\=\\=","ê");
-        e = e.replaceAll("\\<\\=","î");
-        e = e.replaceAll("\\>\\=","ŝ");
+        e = e.replaceAll("\\<\\=","ŝ");
+        e = e.replaceAll("\\>\\=","ĝ");
         e = e.replaceAll("\\|\\|","ô");
         e = e.replaceAll("\\&\\&","â"); // to avoid replacing 'tolerance &' by two _and
         e = replaceOperators(e);
@@ -526,10 +528,10 @@ public class R2jsSession extends Rsession implements RLog {
         //e = createPredefinedFunction(e);
 
         // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
-        e = e.replaceAll(" in ([^\\{]+)\\{", " in R._in($1){");
+        e = e.replaceAll(" in ([^\\{]+)\\{", " in __R._in($1){");
         
         // force regular 'if' to throw error when arg is null
-        e = e.replaceAll("if *\\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (R._if($1)) $2");
+        e = e.replaceAll("if *\\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (__R._if($1)) $2");
         
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
@@ -550,39 +552,39 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
 
         
-        e = e.replaceAll("(\\W*)ncol\\(", "$1R.ncol(");
-        e = e.replaceAll("(\\W*)nrow\\(", "$1R.nrow(");
+        e = e.replaceAll("(\\W*)ncol\\(", "$1__R.ncol(");
+        e = e.replaceAll("(\\W*)nrow\\(", "$1__R.nrow(");
         e = e.replaceAll("(\\W*)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
-        e = e.replaceAll("(\\W*)names\\(", "$1R.names(");
-        e = e.replaceAll("(\\W*)length\\(", "$1R.length(");
-        e = e.replaceAll("(\\W*)dim\\(", "$1R.dim(");
-        e = e.replaceAll("(\\W*)rep\\(", "$1R.rep(");
-        e = e.replaceAll("(\\W*)which\\(", "$1R.which(");
-        e = e.replaceAll("(\\W*)whichMin\\(", "$1R.whichMin(");
-        e = e.replaceAll("(\\W*)whichMax\\(", "$1R.whichMax(");
-        e = e.replaceAll("(\\W*)_print\\(", "$1R._print(");
-        e = e.replaceAll("(\\W*)getwd\\(", "$1R.getwd(");
-        e = e.replaceAll("(\\W*)setwd\\(", "$1R.setwd(");
-        e = e.replaceAll("(\\W*)SysSleep\\(", "$1R.SysSleep(");
-        e = e.replaceAll("(\\W*)isFunction\\(", "$1R.isFunction(");
-        e = e.replaceAll("(\\W*)isNull\\(", "$1R.isNull(");
-        e = e.replaceAll("(\\W*)apply\\(", "$1R.apply(");
-        e = e.replaceAll("(\\W*)rbind\\(", "$1R.rbind(");
-        e = e.replaceAll("(\\W*)cbind\\(", "$1R.cbind(");
-        e = e.replaceAll("(\\W*)Rpaste\\(", "$1R.paste(");
-        e = e.replaceAll("(\\W*)Rpaste0\\(", "$1R.paste0(");
-        e = e.replaceAll("(\\W*)asNumeric\\(", "$1R.asNumeric(");
-        e = e.replaceAll("(\\W*)asInteger\\(", "$1R.asInteger(");
+        e = e.replaceAll("(\\W*)names\\(", "$1__R.names(");
+        e = e.replaceAll("(\\W*)length\\(", "$1__R.length(");
+        e = e.replaceAll("(\\W*)dim\\(", "$1__R.dim(");
+        e = e.replaceAll("(\\W*)rep\\(", "$1__R.rep(");
+        e = e.replaceAll("(\\W*)which\\(", "$1__R.which(");
+        e = e.replaceAll("(\\W*)whichMin\\(", "$1__R.whichMin(");
+        e = e.replaceAll("(\\W*)whichMax\\(", "$1__R.whichMax(");
+        e = e.replaceAll("(\\W*)_print\\(", "$1__R._print(");
+        e = e.replaceAll("(\\W*)getwd\\(", "$1__R.getwd(");
+        e = e.replaceAll("(\\W*)setwd\\(", "$1__R.setwd(");
+        e = e.replaceAll("(\\W*)SysSleep\\(", "$1__R.SysSleep(");
+        e = e.replaceAll("(\\W*)isFunction\\(", "$1__R.isFunction(");
+        e = e.replaceAll("(\\W*)isNull\\(", "$1__R.isNull(");
+        e = e.replaceAll("(\\W*)apply\\(", "$1__R.apply(");
+        e = e.replaceAll("(\\W*)rbind\\(", "$1__R.rbind(");
+        e = e.replaceAll("(\\W*)cbind\\(", "$1__R.cbind(");
+        e = e.replaceAll("(\\W*)Rpaste\\(", "$1__R.paste(");
+        e = e.replaceAll("(\\W*)Rpaste0\\(", "$1__R.paste0(");
+        e = e.replaceAll("(\\W*)asNumeric\\(", "$1__R.asNumeric(");
+        e = e.replaceAll("(\\W*)asInteger\\(", "$1__R.asInteger(");
 
-        e = e.replaceAll("R\\.R\\.", "R.");
+        e = e.replaceAll("__R\\.__R\\.", "__R.");
         
-        e = e.replaceAll("(\\W*)runif\\(", "$1rand.runif(");
-        e = e.replaceAll("(\\W*)rnorm\\(", "$1rand.rnorm(");
-        e = e.replaceAll("(\\W*)rpois\\(", "$1rand.rpois(");
-        e = e.replaceAll("(\\W*)rcauchy\\(", "$1rand.rcauchy(");
-        e = e.replaceAll("(\\W*)rchisq\\(", "$1rand.rchisq(");
+        e = e.replaceAll("(\\W*)runif\\(", "$1__rand.runif(");
+        e = e.replaceAll("(\\W*)rnorm\\(", "$1__rand.rnorm(");
+        e = e.replaceAll("(\\W*)rpois\\(", "$1__rand.rpois(");
+        e = e.replaceAll("(\\W*)rcauchy\\(", "$1__rand.rcauchy(");
+        e = e.replaceAll("(\\W*)rchisq\\(", "$1__rand.rchisq(");
 
-        e = e.replaceAll("rand\\.rand\\.", "rand.");
+        e = e.replaceAll("__rand\\.__rand\\.", "__rand.");
         
         // Replace function() {return if(condition){a} else {b}} by function() {if(condition{return a} else {return b}}
         e = replaceReturnIf(e);
@@ -900,7 +902,7 @@ public class R2jsSession extends Rsession implements RLog {
             
             // If there is a regex pattern argument
             if (pattern != null) {
-                unifRandomSb.append("R.removeMatching(Object.keys(");
+                unifRandomSb.append("__R.removeMatching(Object.keys(");
                 unifRandomSb.append(THIS_ENVIRONMENT);
                 unifRandomSb.append("), new RegExp(");
                 unifRandomSb.append(pattern);
@@ -967,7 +969,7 @@ public class R2jsSession extends Rsession implements RLog {
         return splitList.toArray(new String[0]);
     }
     
-        static String arrayIfNeeded(String[] l) {
+    static String arrayIfNeeded(String[] l) {
         if (l == null) {
             return null;
         }
@@ -1030,7 +1032,7 @@ public class R2jsSession extends Rsession implements RLog {
                 String[] indexesArray = splitString(indexes, ",");
 
                 for (int i = 0; i < indexesArray.length; i++) {
-                    if (indexesArray[i].trim().equals("")) { // If the index is empty, we create an range array to select all the line
+                    if (indexesArray[i].trim().equals("")) { // If the index is empty, we create a range array to select all the line
                         int dim = i;
                         indexesArray[i] = "math.range(1, 1+math.subset(dim(" + arrayName + "), math.index(" + dim + ")))"; //range starting from 1, because R.r_index will apply -1
                     }
@@ -1039,7 +1041,7 @@ public class R2jsSession extends Rsession implements RLog {
                 StringBuilder result = new StringBuilder();
                 result.append("math.squeeze(math.subset(");
                 result.append(arrayName);
-                result.append(", R._index(");
+                result.append(", __R._index(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")))");
                 
@@ -1087,7 +1089,7 @@ public class R2jsSession extends Rsession implements RLog {
                 StringBuilder result = new StringBuilder();
                 result.append(arrayName + " = math.subset(");
                 result.append(arrayName);
-                result.append(", R._index(");
+                result.append(", __R._index(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")," + toset + ")");
 
@@ -1197,7 +1199,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression to generate random uniform
             // distribution
             StringBuilder unifRandomSb = new StringBuilder();
-            unifRandomSb.append("R.write(");
+            unifRandomSb.append("__R.write(");
             unifRandomSb.append(file);
             unifRandomSb.append(", ");
             unifRandomSb.append(data.trim());
@@ -1237,7 +1239,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("R.createMathObject({");
+            dataFrameSb.append("__R.createMathObject({");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1295,7 +1297,7 @@ public class R2jsSession extends Rsession implements RLog {
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             
             StringBuilder dataFrameSb = new StringBuilder();
-            dataFrameSb.append("R.createMathObject({");
+            dataFrameSb.append("__R.createMathObject({");
             
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
@@ -1384,7 +1386,7 @@ public class R2jsSession extends Rsession implements RLog {
             String stringDimArray = stringDimArraybuilder.toString();
             
             if (byrow == null || byrow.equals("false")) {
-                arraySb.append("math.transpose(math.reshape(R.expendArray(");
+                arraySb.append("math.transpose(math.reshape(__R.expendArray(");
                 arraySb.append(data);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1392,7 +1394,7 @@ public class R2jsSession extends Rsession implements RLog {
                 arraySb.append(stringDimArray);
                 arraySb.append(".reverse()))");
             } else {
-                arraySb.append("math.reshape(R.expendArray(");
+                arraySb.append("math.reshape(__R.expendArray(");
                 arraySb.append(data);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1449,7 +1451,7 @@ public class R2jsSession extends Rsession implements RLog {
             
             // If the field 'dim' is not null
             if (stringDimArray != null) {
-                arraySb.append("math.transpose(math.reshape(R.expendArray(");
+                arraySb.append("math.transpose(math.reshape(__R.expendArray(");
                 arraySb.append(stringArray);
                 arraySb.append(", math.prod(");
                 arraySb.append(stringDimArray);
@@ -1605,10 +1607,10 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
             
-            saveSb.append("R.write(");
+            saveSb.append("__R.write(");
             saveSb.append(fileString);
             saveSb.append(", ");
-            saveSb.append("R.createJsonString(");
+            saveSb.append("__R.createJsonString(");
             saveSb.append(listStringUnquotted);
             saveSb.append(", ");
             saveSb.append(THIS_ENVIRONMENT);
@@ -1651,7 +1653,7 @@ public class R2jsSession extends Rsession implements RLog {
             
             // Add all loaded variables to the java list of variables
             try {
-                String readVariablesExpr = replaceNameByQuotes(quotesList,"R.readJsonVariables(" + fileString + ")", false);
+                String readVariablesExpr = replaceNameByQuotes(quotesList,"__R.readJsonVariables(" + fileString + ")", false);
                 String[] loadedVariables = (String[])cast(js.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
@@ -1660,7 +1662,7 @@ public class R2jsSession extends Rsession implements RLog {
             
             // Build the mathjs expression to create load data
             StringBuilder loadSb = new StringBuilder();
-            loadSb.append("R.loadJson(");
+            loadSb.append("__R.loadJson(");
             loadSb.append(fileString);
             loadSb.append(", ");
             loadSb.append(THIS_ENVIRONMENT);
@@ -1805,7 +1807,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
             
-            fileExistSb.append("R.fileExists(");
+            fileExistSb.append("__R.fileExists(");
             fileExistSb.append(values);
             fileExistSb.append(")");
             
@@ -1889,7 +1891,7 @@ public class R2jsSession extends Rsession implements RLog {
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
             
-            fileExistSb.append("R.stopIfNot(");
+            fileExistSb.append("__R.stopIfNot(");
             fileExistSb.append(values);
             fileExistSb.append(",'");
             fileExistSb.append(values);
@@ -2093,23 +2095,24 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced operators
      */
     private static String replaceOperators(String expr) {
-        
-        String previousStoppingCharacters = "=*/^;%+:,><&|ôâêîŝ \n";
-        String nextStoppingCharacters = "=*+/^%;:,><&|ôâêîŝ \n";
-        
-        expr = expr.replaceAll("(\\*|/) *-", "$1-");
-        expr = expr.replaceAll("-", " -");
-        
+        // We consider differently the '-' operator in '2-3' to the '-' negative: '-3'.
+        // So we replace -3 by î3 first, but 2-3 stays 2-3
+        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]) *-", "$1 î");   
+                             
+        String stoppingCharacters = "-=*/^;%+:,><&|ôâêŝĝ\n"; // all operators but 'î'
+        expr = expr.replaceAll("[)]/", ") /");
+        expr = expr.replaceAll("(.)-", "$1 -");
+
         Map<String, String> operatorsMap = new HashMap<>();
-        operatorsMap.put(">", "R._gt");
-        operatorsMap.put("<", "R._lt");
-        operatorsMap.put("ŝ", "R._get");
-        operatorsMap.put("î", "R._let");
-        operatorsMap.put("ê", "R._eq");
-        operatorsMap.put("|", "R._or");
-        operatorsMap.put("ô", "R._oror");
-        operatorsMap.put("&", "R._and");
-        operatorsMap.put("â", "R._andand");
+        operatorsMap.put(">", "__R._gt");
+        operatorsMap.put("<", "__R._lt");
+        operatorsMap.put("ĝ", "__R._get");
+        operatorsMap.put("ŝ", "__R._let");
+        operatorsMap.put("ê", "__R._eq");
+        operatorsMap.put("|", "__R._or");
+        operatorsMap.put("ô", "__R._oror");
+        operatorsMap.put("&", "__R._and");
+        operatorsMap.put("â", "__R._andand");
         operatorsMap.put("+", "math.add");
         operatorsMap.put("-", "math.subtract");
         operatorsMap.put("*", "math.dotMultiply");
@@ -2117,10 +2120,10 @@ public class R2jsSession extends Rsession implements RLog {
         operatorsMap.put("%*%", "math.multiply");
         operatorsMap.put("%/%", "math.floor(math.dotDivide");
         operatorsMap.put("%%", "math.mod");
-        operatorsMap.put(":", "R.range");
+        operatorsMap.put(":", "__R.range");
         operatorsMap.put("^", "math.dotPow");
         
-        String[] operators = new String[] {"^", "*/%:ê", "+-&|ôâîŝ><" };
+        String[] operators = new String[] {"^", "/%:ê", "*", "+-&|ôâŝĝ><" }; // '/' has to be treated before '*'
 
         // replace '^' first then replace '*','/','%' and ':' and finaly replace '+' and '-'
         int priority = 0;
@@ -2143,7 +2146,7 @@ public class R2jsSession extends Rsession implements RLog {
             
             // If the character is a supported operator
             if (operators[priority].indexOf(currentChar) >= 0) {
-                
+
                 // if the character is '%', it's a 3 character operator like
                 // "%*%" or "%/%", or the mod operator "%%"
                 if (currentChar == '%') {
@@ -2155,7 +2158,7 @@ public class R2jsSession extends Rsession implements RLog {
                     }
                     
                     // Find the beginning of the left term
-                    int startingIndex = getPreviousExpressionFirstIndex(expr, i, previousStoppingCharacters);
+                    int startingIndex = getPreviousExpressionFirstIndex(expr, i, stoppingCharacters);
                     String prevExp = expr.substring(startingIndex, i);
                     
                     // If the left expression is not only whitespace (for
@@ -2163,7 +2166,7 @@ public class R2jsSession extends Rsession implements RLog {
                     if (prevExp.trim().length() > 0) {
                         
                         // Find the end of the right term
-                        int endingIndex = getNextExpressionLastIndex(expr, i + nbChar - 1, nextStoppingCharacters);
+                        int endingIndex = getNextExpressionLastIndex(expr, i + nbChar - 1, stoppingCharacters);
                         
                         String operatorName = operatorsMap.get(expr.substring(i, i + nbChar));
                         StringBuilder resultExpr = new StringBuilder();
@@ -2172,7 +2175,7 @@ public class R2jsSession extends Rsession implements RLog {
                         resultExpr.append(prevExp);
                         resultExpr.append(",");
                         resultExpr.append(expr.substring(i + nbChar, endingIndex + 1));
-                        resultExpr.append(")");
+                        resultExpr.append(") ");
                         
                         // Add a parenthesis if the operator is "%/%" because we
                         // add floor(..)
@@ -2184,38 +2187,46 @@ public class R2jsSession extends Rsession implements RLog {
                                 + expr.substring(endingIndex + 1, expr.length());
                         
                         // Decrement i to be sure to not miss an operator
+                        //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
                         i = startingIndex - 1;
+                        //System.err.println("\n"+repeat(" ",i +1)+"]: "+expr.charAt(i));
                     }
                 }
                 // if the next character is not and operator or "=" (not supported yet)
-                else if (!("+*/=".indexOf(expr.charAt(i + 1)) >= 0)) { 
-                    
+                else if (!("-+*/=".indexOf(expr.charAt(i+1)) >= 0)) { // '-' is now a true operator ('î' replaces the sign)
+                    //System.err.print("\n  "+expr);
+                    //System.err.println("\n  "+repeat(" ",i)+"^"); 
+
                     // Find the beginning of the left term
-                    int startingIndex = getPreviousExpressionFirstIndex(expr, i, previousStoppingCharacters);
+                    int startingIndex = getPreviousExpressionFirstIndex(expr, i, stoppingCharacters);
                     String prevExp = expr.substring(startingIndex, i);
                     
-                    if(!prevExp.trim().equals("return")) {
+                    // let 'return' in previous expression
+                    if(prevExp.trim().startsWith("return")) {
+                        startingIndex = startingIndex + prevExp.indexOf("return")+"return".length();
+                        prevExp = prevExp.replaceFirst("return","");
+                    }
+                    
+                    //if(!prevExp.trim().equals("return")) {
                         
-                        // If the left expression is not only whitespace (for
-                        // example a = -4 or a = +4)
+                        // If the left expression is not only whitespace (for example a = -4 or a = +4)
                         if (prevExp.trim().length() > 0) {
 
                             // Find the end of the right term
-                            int endingIndex = getNextExpressionLastIndex(expr, i, nextStoppingCharacters);
+                            int endingIndex = getNextExpressionLastIndex(expr, i, stoppingCharacters);
 
                             String operatorName = operatorsMap.get(currentChar + "");
                             StringBuilder resultExpr = new StringBuilder();
                             // Add a "+" operator before:
-                            // Example: 1*2 -5*6 will be
-                            //          mult(1,2) + mult(-5,6) with a '+' between the two mult operators
+                            // Example: 1*2 -5*6 will be mult(1,2) + mult(-5,6) with a '+' between the two mult operators
                             resultExpr.append(" + "); 
                             resultExpr.append(operatorName);
                             resultExpr.append("(");
                             resultExpr.append(prevExp);
                             resultExpr.append(",");
                             resultExpr.append(expr.substring(i + 1, endingIndex + 1));
-                            resultExpr.append(")");
-
+                            resultExpr.append(") "); // add a space to not ignore ')-' later
+                            
                             expr = expr.substring(0, startingIndex) + resultExpr
                                     + expr.substring(endingIndex + 1, expr.length());
 
@@ -2226,13 +2237,16 @@ public class R2jsSession extends Rsession implements RLog {
                             expr = expr.replaceAll("\\* +\\+", "*");
                             expr = expr.replaceAll("\\/ +\\+", "/");
                             expr = expr.replaceAll("\\: +\\+", ":");
+                            expr = expr.replaceAll("\\; +\\+", ";");
                             expr = expr.replaceAll("\\^ +\\+", "^");
                             expr = expr.replaceAll("^ *\\+", "");
 
-                            // Decrement i to be sure to not miss an operator
-                            i = startingIndex - 1;
+                            // Decrement i to be sure to not miss an operator                                   
+                            //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
+                            i = startingIndex - 1;  
+                            //System.err.println("\n"+repeat(" ",i +1)+"]");
                         }
-                    }
+                    //}
                     
                 } else {
                     i = i + 1;
@@ -2242,10 +2256,10 @@ public class R2jsSession extends Rsession implements RLog {
             i = i + 1;
             
             if (i >= expr.length()) {
-                if (priority < 2) {
+                if (priority < operators.length-1) {
                     priority++;
-                    if(priority == 2)
-                        nextStoppingCharacters+="-";
+//                    if(priority == 2)
+//                        nextStoppingCharacters+="-"; // no longer needed, as î replaces '-' sign
                     i = 0;
                 } else {
                     continueReplacing = false;
@@ -2253,7 +2267,7 @@ public class R2jsSession extends Rsession implements RLog {
             }
         }
         
-        return expr;
+        return expr.replace('î', '-'); // back to '-' sign
     }
     
     private void addGlobalVariables(String[] variables) {
@@ -2311,7 +2325,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the starting index of the previous expression
      */
     private static int getPreviousExpressionFirstIndex(String expr, int startIndex, String stoppingCharacters) {
-        
+        //System.err.println("getPreviousExpressionFirstIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
         int firstIndex = 0;
         
         int parenthesis = 0; // '(' and ')'
@@ -2323,7 +2337,7 @@ public class R2jsSession extends Rsession implements RLog {
         while (startingIndex > 0 && expr.charAt(startingIndex) == ' ') {
             startingIndex--;
         }
-        
+
         // Stop at the first stopping character
         for (int i = startingIndex; i >= 0; i--) {
             char currentChar = expr.charAt(i);
@@ -2351,12 +2365,14 @@ public class R2jsSession extends Rsession implements RLog {
             } else if (parenthesis == 0 && brackets == 0 && brackets2 == 0
                     && stoppingCharacters.indexOf(currentChar) >= 0) {
                 // If it's a stopping character
+                //System.err.println("\n"+repeat(" ",i + 1 +2)+"|");
                 return i + 1;
-            }
+                }
         }
         
         // If there is no stopping character, the expression start at the
         // beginning of the sentence
+        //System.err.println("\n" + repeat(" ", firstIndex + 2) + "|");
         return firstIndex;
     }
     
@@ -2374,7 +2390,8 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the last index of the next expression
      */
     private static int getNextExpressionLastIndex(String expr, int startIndex, String stoppingCharacters) {
-        
+        //System.err.println("getNextExpressionLastIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
+
         int lastIndex = expr.length() - 1;
         
         int parenthesis = 0; // '(' and ')'
@@ -2414,12 +2431,14 @@ public class R2jsSession extends Rsession implements RLog {
             } else if (parenthesis == 0 && brackets == 0 && brackets2 == 0
                     && stoppingCharacters.indexOf(currentChar) >= 0) {
                 // If it's a stopping character
+                //System.err.println("\n" + repeat(" ", i - 1 + 2) + "|");
                 return i - 1;
             }
         }
-        
+
         // If there is no stopping character, the expression stop at the
         // end of the sentence
+        //System.err.println("\n"+repeat(" ",lastIndex +2)+"|");
         return lastIndex;
     }
     

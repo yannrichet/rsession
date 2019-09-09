@@ -63,14 +63,30 @@ public class R2jsSessionTest {
         engine2.voidEval("ff = f()");
         System.err.println(engine2.eval("ff[['a']]"));
         assert engine2.asDouble(engine2.eval("f()[['a']]")) == 1.0;
-        
+    }
 
+    @Test
+    public void testVarNames() throws Rsession.RException {
+        engine.debug_js = true;
+     
+        // check that R variable is usable
+        engine.voidEval("R = 1");
+        engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
+
+        // check that R variable is usable
+        engine.voidEval("rand = 1");
+        engine.voidEval("runif(1)");
         
+        // check that math variable is usable: NO, math.js has a strange behavior ...
+        //engine.voidEval("math = 1");
+        //engine.voidEval("1+pi");
     }
 
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
-        engine.debug_js = true;
+        // Check infinity is available
+        assert Double.isInfinite((Double)engine.eval("a <- Inf"));
+        assert Double.isInfinite((Double)engine.eval("a <- -Inf"));
         
         engine.voidEval("a <- NaN");
         assert Double.isNaN((Double)engine.eval("a")): engine.eval("a");
@@ -146,8 +162,17 @@ public class R2jsSessionTest {
         assert ((Double) engine.eval("a") == 4);
 
         // Operators
+        engine.voidEval("a = 2^2 - 2^2");
+        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a")+" != 2^2 - 2^2";
+
+        engine.voidEval("a = 2^2-2^2");
+        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a")+" != 2^2-2^2";
+        
         engine.voidEval("a = -4 * 10 -5* 100");
-        assert (Double) engine.eval("a") == -540;
+        assert (Double) engine.eval("a") == -540 : (Double) engine.eval("a")+" != -540" ;
+
+        engine.voidEval("a = -4 * -10 -5* -100");
+        assert (Double) engine.eval("a") == 540 : (Double) engine.eval("a")+" != 540" ;
 
         engine.voidEval("a = -4*10-5*100");
         assert (Double) engine.eval("a") == -540;
