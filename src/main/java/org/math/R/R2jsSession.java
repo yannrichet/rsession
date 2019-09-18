@@ -549,40 +549,40 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("; *;", ";");
 
         
-        e = e.replaceAll("(\\W*)is__array\\(", "$1Array.isArray(");
+        e = e.replaceAll("(\\b)is__array\\(", "$1Array.isArray(");
 
         
-        e = e.replaceAll("(\\W*)ncol\\(", "$1__R.ncol(");
-        e = e.replaceAll("(\\W*)nrow\\(", "$1__R.nrow(");
-        e = e.replaceAll("(\\W*)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
-        e = e.replaceAll("(\\W*)names\\(", "$1__R.names(");
-        e = e.replaceAll("(\\W*)length\\(", "$1__R.length(");
-        e = e.replaceAll("(\\W*)dim\\(", "$1__R.dim(");
-        e = e.replaceAll("(\\W*)rep\\(", "$1__R.rep(");
-        e = e.replaceAll("(\\W*)which\\(", "$1__R.which(");
-        e = e.replaceAll("(\\W*)whichMin\\(", "$1__R.whichMin(");
-        e = e.replaceAll("(\\W*)whichMax\\(", "$1__R.whichMax(");
-        e = e.replaceAll("(\\W*)_print\\(", "$1__R._print(");
-        e = e.replaceAll("(\\W*)getwd\\(", "$1__R.getwd(");
-        e = e.replaceAll("(\\W*)setwd\\(", "$1__R.setwd(");
-        e = e.replaceAll("(\\W*)SysSleep\\(", "$1__R.SysSleep(");
-        e = e.replaceAll("(\\W*)isFunction\\(", "$1__R.isFunction(");
-        e = e.replaceAll("(\\W*)isNull\\(", "$1__R.isNull(");
-        e = e.replaceAll("(\\W*)apply\\(", "$1__R.apply(");
-        e = e.replaceAll("(\\W*)rbind\\(", "$1__R.rbind(");
-        e = e.replaceAll("(\\W*)cbind\\(", "$1__R.cbind(");
-        e = e.replaceAll("(\\W*)Rpaste\\(", "$1__R.paste(");
-        e = e.replaceAll("(\\W*)Rpaste0\\(", "$1__R.paste0(");
-        e = e.replaceAll("(\\W*)asNumeric\\(", "$1__R.asNumeric(");
-        e = e.replaceAll("(\\W*)asInteger\\(", "$1__R.asInteger(");
+        e = e.replaceAll("(\\b)ncol\\(", "$1__R.ncol(");
+        e = e.replaceAll("(\\b)nrow\\(", "$1__R.nrow(");
+        e = e.replaceAll("(\\b)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
+        e = e.replaceAll("(\\b)names\\(", "$1__R.names(");
+        e = e.replaceAll("(\\b)length\\(", "$1__R.length(");
+        e = e.replaceAll("(\\b)dim\\(", "$1__R.dim(");
+        e = e.replaceAll("(\\b)rep\\(", "$1__R.rep(");
+        e = e.replaceAll("(\\b)which\\(", "$1__R.which(");
+        e = e.replaceAll("(\\b)whichMin\\(", "$1__R.whichMin(");
+        e = e.replaceAll("(\\b)whichMax\\(", "$1__R.whichMax(");
+        e = e.replaceAll("(\\b)_print\\(", "$1__R._print(");
+        e = e.replaceAll("(\\b)getwd\\(", "$1__R.getwd(");
+        e = e.replaceAll("(\\b)setwd\\(", "$1__R.setwd(");
+        e = e.replaceAll("(\\b)SysSleep\\(", "$1__R.SysSleep(");
+        e = e.replaceAll("(\\b)isFunction\\(", "$1__R.isFunction(");
+        e = e.replaceAll("(\\b)isNull\\(", "$1__R.isNull(");
+        e = e.replaceAll("(\\b)apply\\(", "$1__R.apply(");
+        e = e.replaceAll("(\\b)rbind\\(", "$1__R.rbind(");
+        e = e.replaceAll("(\\b)cbind\\(", "$1__R.cbind(");
+        e = e.replaceAll("(\\b)Rpaste\\(", "$1__R.paste(");
+        e = e.replaceAll("(\\b)Rpaste0\\(", "$1__R.paste0(");
+        e = e.replaceAll("(\\b)asNumeric\\(", "$1__R.asNumeric(");
+        e = e.replaceAll("(\\b)asInteger\\(", "$1__R.asInteger(");
 
         e = e.replaceAll("__R\\.__R\\.", "__R.");
         
-        e = e.replaceAll("(\\W*)runif\\(", "$1__rand.runif(");
-        e = e.replaceAll("(\\W*)rnorm\\(", "$1__rand.rnorm(");
-        e = e.replaceAll("(\\W*)rpois\\(", "$1__rand.rpois(");
-        e = e.replaceAll("(\\W*)rcauchy\\(", "$1__rand.rcauchy(");
-        e = e.replaceAll("(\\W*)rchisq\\(", "$1__rand.rchisq(");
+        e = e.replaceAll("(\\b)runif\\(", "$1__rand.runif(");
+        e = e.replaceAll("(\\b)rnorm\\(", "$1__rand.rnorm(");
+        e = e.replaceAll("(\\b)rpois\\(", "$1__rand.rpois(");
+        e = e.replaceAll("(\\b)rcauchy\\(", "$1__rand.rcauchy(");
+        e = e.replaceAll("(\\b)rchisq\\(", "$1__rand.rchisq(");
 
         e = e.replaceAll("__rand\\.__rand\\.", "__rand.");
         
