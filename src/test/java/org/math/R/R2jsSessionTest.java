@@ -162,6 +162,10 @@ public class R2jsSessionTest {
         assert ((Double) engine.eval("a") == 4);
 
         // Operators
+        engine.debug_js = true;
+        assert (Double) engine.eval("0-1-2")==-3;
+        assert (Double) engine.eval("-1-2")==-3;
+        
         engine.voidEval("a = 2^2 - 2^2");
         assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a")+" != 2^2 - 2^2";
 

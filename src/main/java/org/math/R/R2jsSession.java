@@ -382,6 +382,8 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace "+-" by "-"
         e = e.replaceAll("\\+ *-", "-");
+        // replace "-123" by "0-123" (at begining of expr)
+        e = e.replaceAll("^ *-", "0-");
         
         // replace 'f = function(x)' by 'function f(x)'
         //e = e.replaceAll("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)]", "function $1($2)");
