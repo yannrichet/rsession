@@ -1,7 +1,9 @@
 package org.math.R;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.script.ScriptException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -1134,6 +1136,19 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("f3(var5, var3)"), 24.0, epsilon);
         engine.voidEval("var5 <- 5");
         assertEquals((Double) engine.eval("f3(1, 2)"), 15.0, epsilon);
+    }
+
+    @Test
+    public void testFunctionNames() throws Rsession.RException, ScriptException {
+        engine.debug_js = true;
+
+        List<String> names = Arrays.asList("array", "paste0", "paste", "vector", "matrix", "c", "ls", "save", "load", "write__csv",
+                                            "data", "data__frame", "list", "length", "file__exists", "exists", "stopifnot", "returnif", "default");
+
+        for(String name: names) {
+            engine.voidEval("__this__." + name + " <- function() {12}");
+            assertEquals((Double) engine.eval("__this__." + name +"()"), 12, epsilon);
+        }
     }
     
 }

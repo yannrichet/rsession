@@ -353,15 +353,18 @@ public class R2jsSession extends Rsession implements RLog {
 
         //change variable names containing "." by "__", but avoid file names (ending with ')
         e = e.replaceAll("([a-zA-Z]+)\\.([a-zA-Z]+)", "$1__$2");
-        
+
+        // ceil() is an alias for ceiling() in R
+        e = e.replaceAll("(?<!\\.)(\\b)" + "ceiling" + "(?<!\\.)(\\b)", "ceil");
+
         // Replace Math functions
         for (String f : MATH_FUN_JS) {
-            e = e.replaceAll("(\\b)" + f + "\\(", "$1 math." + f + "(");
+            e = e.replaceAll("(?<!\\.)(\\b)" + f + "\\(", "$1 math." + f + "(");
         }
         
         // Replace Math constants
         for (String c : MATH_CONST_JS) {
-            e = e.replaceAll("(\\b)" + c + "(\\b)", "$1 math." + c.toUpperCase() + "$2");
+            e = e.replaceAll("(?<!\\.)(\\b)" + c + "(?<!\\.)(\\b)", "$1 math." + c.toUpperCase() + "$2");
         }
         
         // Replace t(x) by math.transpose(x)
@@ -415,7 +418,7 @@ public class R2jsSession extends Rsession implements RLog {
         // Add '{}' between the 'if' and the 'else'
         //e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else(.*)", "if$1{$2} else{$3}");
         
-        e = e.replaceAll("\\bif \\(", "if(");
+        e = e.replaceAll("(?<!\\.)(\\b)if \\(", "if(");
         e = addIfElseBrackets(e);
         
         // Add "{" and "}" if the function doesn't have them
@@ -440,8 +443,8 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace the array in R defined by c(1, 2, ...) by array in js [1, 2, ...]
         // FIXME: this will not work with c(a(2), b) because of parenthesis (maybe treat c like other functions?)
-        e = e.replaceAll("([^A-Za-z0-9]|^)c[(]([.[^):]]*)[)]", "$1[$2]");
-        e = e.replaceAll("([^A-Za-z0-9]|^)c[(]([.[^)]]*)[)]", "$1$2");
+        e = e.replaceAll("(?<!\\.)(\\b)c[(]([.[^):]]*)[)]", "$1[$2]");
+        e = e.replaceAll("(?<!\\.)(\\b)c[(]([.[^)]]*)[)]", "$1$2");
         
         // replace "for (x in array) {...}" by: "var arrayLength = array.length;
         // for(var i = 0; i < arrayLength; i++) { x = array[i]; ...}"
@@ -451,12 +454,10 @@ public class R2jsSession extends Rsession implements RLog {
                 "var $2Length = __R.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
         
         // Replace "TRUE" by "true" and "FALSE" by "false"
-        // TODO: Check that 'TRUE' is not inside a variable ex: myTRUEvariable
-        e = e.replaceAll("TRUE", "true");
-        e = e.replaceAll("FALSE", "false");
-        
-        // TODO: Check that 'NULL' is not inside a variable ex: myNULLvariable
-        e = e.replaceAll("NULL", "null");
+        e = e.replaceAll("(?<!\\.)(\\b)TRUE(\\b)", "true");
+        e = e.replaceAll("(?<!\\.)(\\b)FALSE(\\b)", "false");
+
+        e = e.replaceAll("(?<!\\.)(\\b)NULL(\\b)", "null");
         
         // Replace '++' operator by a=a+1
         e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1"); 
@@ -503,7 +504,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = createDataFrame(e);
         
         // replace list expression
-        e = e.replace("list()","{}");
+        e = e.replaceAll("(?<!\\.)(\\b)list\\(\\)","{}");
         e = createList(e);
 
         // format paste function (with sep & collapse args)
@@ -551,40 +552,40 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("; *;", ";");
 
         
-        e = e.replaceAll("(\\b)is__array\\(", "$1Array.isArray(");
+        e = e.replaceAll("(?<!\\.)(\\b)is__array\\(", "$1Array.isArray(");
 
-        
-        e = e.replaceAll("(\\b)ncol\\(", "$1__R.ncol(");
-        e = e.replaceAll("(\\b)nrow\\(", "$1__R.nrow(");
-        e = e.replaceAll("(\\b)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
-        e = e.replaceAll("(\\b)names\\(", "$1__R.names(");
-        e = e.replaceAll("(\\b)length\\(", "$1__R.length(");
-        e = e.replaceAll("(\\b)dim\\(", "$1__R.dim(");
-        e = e.replaceAll("(\\b)rep\\(", "$1__R.rep(");
-        e = e.replaceAll("(\\b)which\\(", "$1__R.which(");
-        e = e.replaceAll("(\\b)whichMin\\(", "$1__R.whichMin(");
-        e = e.replaceAll("(\\b)whichMax\\(", "$1__R.whichMax(");
-        e = e.replaceAll("(\\b)_print\\(", "$1__R._print(");
-        e = e.replaceAll("(\\b)getwd\\(", "$1__R.getwd(");
-        e = e.replaceAll("(\\b)setwd\\(", "$1__R.setwd(");
-        e = e.replaceAll("(\\b)SysSleep\\(", "$1__R.SysSleep(");
-        e = e.replaceAll("(\\b)isFunction\\(", "$1__R.isFunction(");
-        e = e.replaceAll("(\\b)isNull\\(", "$1__R.isNull(");
-        e = e.replaceAll("(\\b)apply\\(", "$1__R.apply(");
-        e = e.replaceAll("(\\b)rbind\\(", "$1__R.rbind(");
-        e = e.replaceAll("(\\b)cbind\\(", "$1__R.cbind(");
-        e = e.replaceAll("(\\b)Rpaste\\(", "$1__R.paste(");
-        e = e.replaceAll("(\\b)Rpaste0\\(", "$1__R.paste0(");
-        e = e.replaceAll("(\\b)asNumeric\\(", "$1__R.asNumeric(");
-        e = e.replaceAll("(\\b)asInteger\\(", "$1__R.asInteger(");
+
+        e = e.replaceAll("(?<!\\.)(\\b)ncol\\(", "$1__R.ncol(");
+        e = e.replaceAll("(?<!\\.)(\\b)nrow\\(", "$1__R.nrow(");
+        e = e.replaceAll("(?<!\\.)(\\b)names\\(((\\w|\\.)+)\\)\\s*=\\s*", "$1 $2.names = "); // names(X) = "abc"
+        e = e.replaceAll("(?<!\\.)(\\b)names\\(", "$1__R.names(");
+        e = e.replaceAll("(?<!\\.)(\\b)length\\(", "$1__R.length(");
+        e = e.replaceAll("(?<!\\.)(\\b)dim\\(", "$1__R.dim(");
+        e = e.replaceAll("(?<!\\.)(\\b)rep\\(", "$1__R.rep(");
+        e = e.replaceAll("(?<!\\.)(\\b)which\\(", "$1__R.which(");
+        e = e.replaceAll("(?<!\\.)(\\b)whichMin\\(", "$1__R.whichMin(");
+        e = e.replaceAll("(?<!\\.)(\\b)whichMax\\(", "$1__R.whichMax(");
+        e = e.replaceAll("(?<!\\.)(\\b)_print\\(", "$1__R._print(");
+        e = e.replaceAll("(?<!\\.)(\\b)getwd\\(", "$1__R.getwd(");
+        e = e.replaceAll("(?<!\\.)(\\b)setwd\\(", "$1__R.setwd(");
+        e = e.replaceAll("(?<!\\.)(\\b)SysSleep\\(", "$1__R.SysSleep(");
+        e = e.replaceAll("(?<!\\.)(\\b)isFunction\\(", "$1__R.isFunction(");
+        e = e.replaceAll("(?<!\\.)(\\b)isNull\\(", "$1__R.isNull(");
+        e = e.replaceAll("(?<!\\.)(\\b)apply\\(", "$1__R.apply(");
+        e = e.replaceAll("(?<!\\.)(\\b)rbind\\(", "$1__R.rbind(");
+        e = e.replaceAll("(?<!\\.)(\\b)cbind\\(", "$1__R.cbind(");
+        e = e.replaceAll("(?<!\\.)(\\b)Rpaste\\(", "$1__R.paste(");
+        e = e.replaceAll("(?<!\\.)(\\b)Rpaste0\\(", "$1__R.paste0(");
+        e = e.replaceAll("(?<!\\.)(\\b)asNumeric\\(", "$1__R.asNumeric(");
+        e = e.replaceAll("(?<!\\.)(\\b)asInteger\\(", "$1__R.asInteger(");
 
         e = e.replaceAll("__R\\.__R\\.", "__R.");
         
-        e = e.replaceAll("(\\b)runif\\(", "$1__rand.runif(");
-        e = e.replaceAll("(\\b)rnorm\\(", "$1__rand.rnorm(");
-        e = e.replaceAll("(\\b)rpois\\(", "$1__rand.rpois(");
-        e = e.replaceAll("(\\b)rcauchy\\(", "$1__rand.rcauchy(");
-        e = e.replaceAll("(\\b)rchisq\\(", "$1__rand.rchisq(");
+        e = e.replaceAll("(?<!\\.)(\\b)runif\\(", "$1__rand.runif(");
+        e = e.replaceAll("(?<!\\.)(\\b)rnorm\\(", "$1__rand.rnorm(");
+        e = e.replaceAll("(?<!\\.)(\\b)rpois\\(", "$1__rand.rpois(");
+        e = e.replaceAll("(?<!\\.)(\\b)rcauchy\\(", "$1__rand.rcauchy(");
+        e = e.replaceAll("(?<!\\.)(\\b)rchisq\\(", "$1__rand.rchisq(");
 
         e = e.replaceAll("__rand\\.__rand\\.", "__rand.");
         
@@ -2019,7 +2020,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         Map<String, String> argumentNamesAndValues = new LinkedHashMap<>(); //because we need to keep order of arguments, by default
         
-        Pattern pattern = Pattern.compile("(\\b)" + fctName + "\\(");
+        Pattern pattern = Pattern.compile("(?<!\\.)(\\b)" + fctName + "\\(");
         Matcher matcher = pattern.matcher(expr);
         
         // If an occurrence has been found
