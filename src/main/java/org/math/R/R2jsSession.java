@@ -354,6 +354,9 @@ public class R2jsSession extends Rsession implements RLog {
         //change variable names containing "." by "__", but avoid file names (ending with ')
         e = e.replaceAll("([a-zA-Z]+)\\.([a-zA-Z]+)", "$1__$2");
 
+        // Remove all leading zeros before a number to prevent conversion from octal numeral system
+        e = e.replaceAll("(?<!\\.)\\b0+([1-9\\.])","$1");
+
         // ceil() is an alias for ceiling() in R
         e = e.replaceAll("(?<!\\.)(\\b)" + "ceiling" + "(?<!\\.)(\\b)", "ceil");
 
@@ -381,7 +384,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         // replace '->' by '='
         e = e.replaceAll("<<-", "=");
-	e = e.replaceAll("<-", "=");
+	    e = e.replaceAll("<-", "=");
         
         // replace "+-" by "-"
         e = e.replaceAll("\\+ *-", "-");

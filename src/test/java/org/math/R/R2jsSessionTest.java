@@ -1150,5 +1150,17 @@ public class R2jsSessionTest {
             assertEquals((Double) engine.eval("__this__." + name +"()"), 12, epsilon);
         }
     }
-    
+
+    @Test
+    public void testNumeralSystem()  throws Rsession.RException, ScriptException {
+        // Test to prevent octal conversion
+        assertEquals((Double) engine.eval("051+1"), 52.0, epsilon);
+        assertEquals((Double) engine.eval("0051+1"), 52.0, epsilon);
+        assertEquals((Double) engine.eval("051-01"), 50.0, epsilon);
+        assertEquals((Double) engine.eval("051.1+1"), 52.1, epsilon);
+        assertEquals((Double) engine.eval("051.2*010"), 512.0, epsilon);
+        assertEquals((Double) engine.eval("051.2/010"), 5.12, epsilon);
+        assertEquals((Double) engine.eval("051.02/010"), 5.102, epsilon);
+        assertEquals((Double) engine.eval("051.02/0.10"), 510.2, epsilon);
+    }
 }
