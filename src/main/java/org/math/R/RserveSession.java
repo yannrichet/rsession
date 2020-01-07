@@ -1343,8 +1343,9 @@ public class RserveSession extends Rsession implements RLog {
      */
     public void getFile(File localfile, String remoteFile) {
         String wd = asString(silentlyRawEval("getwd()"));
+        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
         if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + File.separator + remoteFile;
+            remoteFile = wd + remoteFile_separator + remoteFile;
         }
         try {
             if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
@@ -1420,8 +1421,9 @@ public class RserveSession extends Rsession implements RLog {
      */
     public void putFile(File localfile, String remoteFile) {
         String wd = asString(silentlyRawEval("getwd()"));
+        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
         if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + File.separator + remoteFile;
+            remoteFile = wd + remoteFile_separator + remoteFile;
         }
         if (!localfile.exists()) {
             synchronized (R) {
