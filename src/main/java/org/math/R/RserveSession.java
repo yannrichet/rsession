@@ -78,8 +78,7 @@ public class RserveSession extends Rsession implements RLog {
      * Build a new local Rsession
      *
      * @param console PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R
-     * libpath)
+     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
      * @return RserveSession instanciated
      */
     public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
@@ -177,7 +176,7 @@ public class RserveSession extends Rsession implements RLog {
 
         setenv(RserveConf.properties);
 
-        install_packages_moreargs = ",lib='" + RserveDaemon.app_dir() + "'";
+        install_packages_moreargs = ",lib='" + (RserveConf.isLocal() ? RserveDaemon.app_dir() : getwd()) + "'";
     }
 
     /**

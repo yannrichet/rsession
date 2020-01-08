@@ -293,7 +293,7 @@ public abstract class Rsession implements RLog {
      * @return R path with suitable level delimiter "/"
      */
     public static String toRpath(File path) {
-        return toRpath(path.getAbsolutePath());
+        return toRpath(path.getPath());
     }
 
     /**
@@ -696,7 +696,7 @@ public abstract class Rsession implements RLog {
      */
     public String installPackage(File pack, boolean load) {
         try {
-            rawEval("install.packages('" + pack.getAbsolutePath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
+            rawEval("install.packages('" + pack.getPath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1111,12 +1111,12 @@ public abstract class Rsession implements RLog {
      */
     public void source(File f) {
         try {
-            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
-        try {
-            voidEval("source('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE);
+        try {        
+            voidEval("source('" + f.getPath().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1129,12 +1129,12 @@ public abstract class Rsession implements RLog {
      */
     public void load(File f) {
         try {
-            assert asLogical(rawEval("file.exists('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("load('" + f.getAbsolutePath().replace("\\", "/") + "')", TRY_MODE);
+            voidEval("load('" + f.getPath().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1242,9 +1242,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getPath().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
     }
 
@@ -1265,9 +1265,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);
