@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.script.ScriptException;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
@@ -1227,19 +1228,40 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
-    public File putFileInWorkspace(File file) {
-         File rp = new File(getwd(), file.getName());
-        if (!RserveConf.isLocal() || !rp.getAbsolutePath().equals(file.getAbsolutePath())) {
-            return putFile(file);
-        }
-        return rp;
+    File local2remotePath(File localpath) {
+        log(localpath.getPath()+" ~ "+new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_")).getPath(),Level.ERROR);
+        return new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_"));
+    }
+    
+    File remote2localPath(File remotepath) {
+        log(remotepath.getPath()+" ~ "+new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_", File.separator)).getPath(),Level.ERROR);
+        log("getwd: "+getwd(),Level.ERROR);
+        return new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_", File.separator));
     }
 
+    @Override
+    public File putFileInWorkspace(File file) {
+        return putFile(file,local2remotePath(file).getPath());
+    }
+
+    @Override
     public void getFileFromWorkspace(File file) {
-        File lf = new File(file.getName());
-        if (!RserveConf.isLocal() || !lf.getAbsolutePath().equals(file.getAbsolutePath())) {
-            getFile(lf,file.getPath().replace(File.pathSeparator,asString(silentlyRawEval(".Platform$file.sep")) ));
-        }
+        getFile(remote2localPath(file),file.getPath());
+    }
+    
+    @Override
+    public void save(File f, String... vars) throws RException {
+        super.save(local2remotePath(f), vars);
+    }
+
+    @Override
+    public void savels(File f, String... vars) throws RException {
+        super.savels(local2remotePath(f), vars);
+    }
+
+    @Override
+    public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
+        super.toGraphic(local2remotePath(f), width, height, fileformat, commands);
     }
 
     @Override
@@ -1247,7 +1269,6 @@ public class RserveSession extends Rsession implements RLog {
         String html = super.asR2HTML(command);
         deleteFile("htmlfile_" + command.hashCode());
         return html;
-
     }
 
     /**
@@ -1266,11 +1287,6 @@ public class RserveSession extends Rsession implements RLog {
      * @param remoteFile R environment file name
      */
     public void getFile(File localfile, String remoteFile) {
-//        String wd = asString(silentlyRawEval("getwd()"));
-//        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
-//        if (!remoteFile.startsWith(wd)) {
-//            remoteFile = wd + remoteFile_separator + remoteFile;
-//        }
         try {
             if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
@@ -1307,7 +1323,7 @@ public class RserveSession extends Rsession implements RLog {
         OutputStream os = null;
         synchronized (R) {
             try {
-                is = R.openFile(remoteFile);
+                is = R.openFile(remoteFile.replace("\\", "/"));
                 os = new BufferedOutputStream(new FileOutputStream(localfile));
                 IOUtils.copy(is, os);
                 log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
@@ -1330,7 +1346,7 @@ public class RserveSession extends Rsession implements RLog {
     private void deleteFile(String remoteFile) {
         try {
             synchronized (R) {
-                R.removeFile(remoteFile);
+                R.removeFile(remoteFile.replace("\\", "/"));
             }
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  removeFile(String remoteFile=" + remoteFile + ")", Level.ERROR);
@@ -1353,11 +1369,6 @@ public class RserveSession extends Rsession implements RLog {
      * @param remoteFile filename in R env.
      */
     public File putFile(File localfile, String remoteFile) {
-        String wd = getwd();
-        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
-        if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + remoteFile_separator + remoteFile;
-        }
         if (!localfile.exists()) {
             synchronized (R) {
                 log(HEAD_ERROR + IO_HEAD + R.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.", Level.ERROR);
@@ -1376,7 +1387,7 @@ public class RserveSession extends Rsession implements RLog {
         OutputStream os = null;
         synchronized (R) {
             try {
-                os = R.createFile(remoteFile);
+                os = R.createFile(remoteFile.replace("\\", "/"));
                 is = new BufferedInputStream(new FileInputStream(localfile));
                 IOUtils.copy(is, os);
                 log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
