@@ -695,6 +695,7 @@ public abstract class Rsession implements RLog {
      * @return installation status
      */
     public String installPackage(File pack, boolean load) {
+        pack = putFileInWorkspace(pack);
         try {
             rawEval("install.packages('" + pack.getPath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
         } catch (Exception ex) {
@@ -1103,6 +1104,12 @@ public abstract class Rsession implements RLog {
             return "ls(pattern='" + vars[0] + "')";
         }
     }
+    
+    public String getwd() {
+        return asString(silentlyRawEval("getwd()"));
+    }
+    
+    public abstract File putFileInWorkspace(File f);
 
     /**
      * loads R source file (eg ".R" file)
@@ -1110,8 +1117,9 @@ public abstract class Rsession implements RLog {
      * @param f ".R" file to source
      */
     public void source(File f) {
+        f = putFileInWorkspace(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find "+f.getAbsolutePath();
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
@@ -1128,6 +1136,7 @@ public abstract class Rsession implements RLog {
      * @param f ".Rdata" file to load
      */
     public void load(File f) {
+        f = putFileInWorkspace(f);
         try {
             assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE));
         } catch (Exception r) {
@@ -1225,6 +1234,8 @@ public abstract class Rsession implements RLog {
     }
     public boolean SAVE_ASCII = false;
 
+    public abstract void getFileFromWorkspace(File f);
+    
     /**
      * Save R variables in data file
      *
@@ -1246,6 +1257,7 @@ public abstract class Rsession implements RLog {
         } else {
             voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
+        getFileFromWorkspace(f);
     }
 
     /**
@@ -1273,6 +1285,7 @@ public abstract class Rsession implements RLog {
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
         }
+        getFileFromWorkspace(f);
     }
 
     final static String[] types = {"data.frame", "null", "function", "array", "integer", "character", "double"};
@@ -1460,6 +1473,7 @@ public abstract class Rsession implements RLog {
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
+        getFileFromWorkspace(f);
     }
     public final static String GRAPHIC_PNG = "png";
     public final static String GRAPHIC_JPEG = "jpeg";

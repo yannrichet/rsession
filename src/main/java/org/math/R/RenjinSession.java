@@ -795,6 +795,34 @@ public class RenjinSession extends Rsession implements RLog {
         return true;
     }
 
+    public File putFileInWorkspace(File file) {
+        File rf = new File(getwd(), file.getPath());
+        if (!rf.getAbsolutePath().equals(file.getAbsolutePath())) {
+            try {
+                FileUtils.copyFile(file, rf);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return rf;
+    }
+    
+    public void getFileFromWorkspace(File file) {
+        if (file.isAbsolute()) return;
+        File rf = new File(getwd(), file.getPath());
+        if (file.getParentFile()!=null)
+            if (!file.getParentFile().isDirectory())
+            if (!file.getParentFile().mkdirs()) {
+                throw new IllegalArgumentException("Cannot create parent dir: " + file);
+            }
+        if (!rf.getAbsolutePath().equals(file.getAbsolutePath()))
+            try {
+                FileUtils.copyFile(rf, new File(".", file.getPath()));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+    }
+    
     public static void main(String[] args) throws Exception {
         //args = new String[]{"install.packages('lhs',repos='\"http://cloud.r-project.org/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {

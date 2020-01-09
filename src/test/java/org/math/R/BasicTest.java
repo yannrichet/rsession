@@ -50,16 +50,21 @@ public class BasicTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
+        
+        if (!tmpdir.mkdirs()) throw new IllegalArgumentException("Failed to create temp dir");
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 
-        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
-        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
-            throw new IOException("Cannot access tmpdir=" + tmpdir);
-        }
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
+        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
+//        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+//        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+//            throw new IOException("Cannot access tmpdir=" + tmpdir);
+//        }
 
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
@@ -72,7 +77,12 @@ public class BasicTest {
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
 
-        q = R2jsSession.newInstance(l, null);
+        q = R2jsSession.newInstance(l, null); 
+        System.out.println("| R.version:\t" + q.eval("R.version.string"));
+
+        System.out.println("| getwd():\t" + q.eval("getwd()"));
+//        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) q.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) q.ls(true)));
     }
 
     @After
@@ -681,9 +691,9 @@ public class BasicTest {
         r.set("s", str);
         assert ((String) r.eval("s")).equals(str);
 
-        File f2 = new File("Rserve" + Math.random() + ".save");
+        File f2 = new File("Renjin" + Math.random() + ".save");
         r.save(f2, (String[]) null);
-        File f = new File("Rserve" + Math.random() + ".save");
+        File f = new File("Renjin" + Math.random() + ".save");
         r.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");

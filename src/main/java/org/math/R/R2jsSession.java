@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -30,6 +31,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
+import org.apache.commons.io.FileUtils;
 import static org.renjin.repackaged.guava.base.Strings.repeat;
 
 
@@ -2668,9 +2670,39 @@ public class R2jsSession extends Rsession implements RLog {
 
         return true;
     }
+    
+    public File putFileInWorkspace(File file) {
+        File rf = new File(getwd(), file.getName());
+        if (!rf.getAbsolutePath().equals(file.getAbsolutePath())) {
+            try {
+                FileUtils.copyFile(file, rf);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return rf;
+    }
+    
+    public void getFileFromWorkspace(File file) {
+        if (file.isAbsolute()) return;
+        File rf = new File(getwd(), file.getPath());
+        if (file.getParentFile()!=null)
+            if (!file.getParentFile().isDirectory())
+            if (!file.getParentFile().mkdirs()) {
+                throw new IllegalArgumentException("Cannot create parent dir: " + file);
+            }
+        if (!rf.getAbsolutePath().equals(file.getAbsolutePath()))
+            try {
+                FileUtils.copyFile(rf, new File(".", file.getPath()));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+    }
 
     @Override
     public void source(File file) {
+        file = putFileInWorkspace(file);
+        
         if (!file.isFile()) {
             throw new IllegalArgumentException("File " + file + " is not reachable.");
         }

@@ -1227,40 +1227,18 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
-    @Override
-    public String installPackage(File pack, boolean load) {
-        File rp = new File(getwd(), pack.getName());
-        if (!RserveConf.isLocal() || !rp.getAbsolutePath().equals(pack.getAbsolutePath())) {
-            putFile(pack);
+    public File putFileInWorkspace(File file) {
+         File rp = new File(getwd(), file.getName());
+        if (!RserveConf.isLocal() || !rp.getAbsolutePath().equals(file.getAbsolutePath())) {
+            return putFile(file);
         }
-        return super.installPackage(new File(getwd(), pack.getName()), load);
+        return rp;
     }
 
-    @Override
-    public void source(File f) {
-        File rf = new File(getwd(), f.getName());
-        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
-            putFile(f);
-        }
-        super.source(rf);
-    }
-
-    @Override
-    public void load(File f) {
-        File rf = new File(getwd(), f.getName());
-        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
-            putFile(f);
-        }
-        super.load(rf);
-    }
-
-    @Override
-    public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
-        File rf = new File(getwd(), f.getName());
-        super.toGraphic(rf, width, height, fileformat, commands);
-        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
-            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
-            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
+    public void getFileFromWorkspace(File file) {
+        File lf = new File(file.getName());
+        if (!RserveConf.isLocal() || !lf.getAbsolutePath().equals(file.getAbsolutePath())) {
+            getFile(lf,file.getPath().replace(File.pathSeparator,asString(silentlyRawEval(".Platform$file.sep")) ));
         }
     }
 
@@ -1270,50 +1248,6 @@ public class RserveSession extends Rsession implements RLog {
         deleteFile("htmlfile_" + command.hashCode());
         return html;
 
-    }
-
-    String getwd() {
-        return asString(silentlyRawEval("getwd()"));
-    }
-
-    /**
-     * Save R variables in data file
-     *
-     * @param f file to store data (eg ".Rdata")
-     * @param vars R variables to save
-     * @throws org.math.R.Rsession.RException Could not do save
-     */
-    @Override
-    public void save(File f, String... vars) throws RException {
-        File rf = new File(getwd(), f.getName());
-        super.save(rf, vars);
-        if (vars == null || vars.length < 1 || vars[0] == null) {
-            return;
-        }
-        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
-            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
-            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
-        }
-    }
-
-    /**
-     * Save R variables in data file
-     *
-     * @param f file to store data (eg ".Rdata")
-     * @param vars R variables names patterns to save
-     * @throws org.math.R.Rsession.RException Could not do save
-     */
-    @Override
-    public void savels(File f, String... vars) throws RException {
-        File rf = new File(getwd(), f.getName());
-        super.savels(rf, vars);
-        if (vars == null || vars.length < 1 || vars[0] == null) {
-            return;
-        }
-        if (!RserveConf.isLocal() || !rf.getAbsolutePath().equals(f.getAbsolutePath())) {
-            getFile(f, rf.getAbsolutePath().replace("\\", "/"));
-            deleteFile(rf.getAbsolutePath().replace("\\", "/"));
-        }
     }
 
     /**
@@ -1326,26 +1260,17 @@ public class RserveSession extends Rsession implements RLog {
     }
 
     /**
-     * Send user filesystem file in r environement (like data)
-     *
-     * @param localfile File to send
-     */
-    public void putFile(File localfile) {
-        putFile(localfile, localfile.getName());
-    }
-
-    /**
      * Get file from R environment to user filesystem
      *
      * @param localfile local filesystem file
      * @param remoteFile R environment file name
      */
     public void getFile(File localfile, String remoteFile) {
-        String wd = asString(silentlyRawEval("getwd()"));
-        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
-        if (!remoteFile.startsWith(wd)) {
-            remoteFile = wd + remoteFile_separator + remoteFile;
-        }
+//        String wd = asString(silentlyRawEval("getwd()"));
+//        String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
+//        if (!remoteFile.startsWith(wd)) {
+//            remoteFile = wd + remoteFile_separator + remoteFile;
+//        }
         try {
             if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
@@ -1416,10 +1341,19 @@ public class RserveSession extends Rsession implements RLog {
      * Send user filesystem file in r environement (like data)
      *
      * @param localfile File to send
+     */
+    public File putFile(File localfile) {
+        return putFile(localfile, localfile.getName());
+    }
+
+    /**
+     * Send user filesystem file in r environement (like data)
+     *
+     * @param localfile File to send
      * @param remoteFile filename in R env.
      */
-    public void putFile(File localfile, String remoteFile) {
-        String wd = asString(silentlyRawEval("getwd()"));
+    public File putFile(File localfile, String remoteFile) {
+        String wd = getwd();
         String remoteFile_separator = asString(silentlyRawEval(".Platform$file.sep"));
         if (!remoteFile.startsWith(wd)) {
             remoteFile = wd + remoteFile_separator + remoteFile;
@@ -1436,7 +1370,7 @@ public class RserveSession extends Rsession implements RLog {
             }
         } catch (REXPMismatchException ex) {
             log(HEAD_ERROR + ex.getMessage() + "\n  putFile(File localfile=" + localfile.getAbsolutePath() + ", String remoteFile=" + remoteFile + ")", Level.ERROR);
-            return;
+            return null;
         }
         InputStream is = null;
         OutputStream os = null;
@@ -1455,7 +1389,7 @@ public class RserveSession extends Rsession implements RLog {
                 IOUtils.closeQuietly(os);
             }
         }
-
+        return new File(remoteFile);
     }
 
     /**
