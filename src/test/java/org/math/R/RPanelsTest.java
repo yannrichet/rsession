@@ -55,16 +55,21 @@ public class RPanelsTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
+        
+        if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 
-        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
-        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
-            throw new IOException("Cannot access tmpdir=" + tmpdir);
-        }
+        System.out.println("| getwd():\t" + s.eval("getwd()"));
+        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
+//        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+//        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
+//            throw new IOException("Cannot access tmpdir=" + tmpdir);
+//        }
 
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
@@ -73,43 +78,16 @@ public class RPanelsTest {
         r = RenjinSession.newInstance(l, prop);
         System.out.println("| R.version:\t" + r.eval("R.version.string"));
 
-        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
-        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
-            throw new IOException("Cannot access tmpdir=" + tmpdir);
-        }
-
-        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
-        File wdir = new File(tmpdir, "" + rand);
-        if (!(wdir.isDirectory() || wdir.mkdir())) {
-            throw new IOException("Cannot access wdir=" + wdir);
-        }
         System.out.println("| getwd():\t" + r.eval("getwd()"));
-        r.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
-        System.out.println("| getwd():\t" + r.eval("getwd()"));
-
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
-        
-        
-        q = R2jsSession.newInstance(l, prop);
+
+        q = R2jsSession.newInstance(l, null); 
         System.out.println("| R.version:\t" + q.eval("R.version.string"));
 
-        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
-        if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
-            throw new IOException("Cannot access tmpdir=" + tmpdir);
-        }
-
-        // otherwise Rserve works in same dir that session, which conflicts when deleting files...
-//        File wdir = new File(tmpdir, "" + rand);
-//        if (!(wdir.isDirectory() || wdir.mkdir())) {
-//            throw new IOException("Cannot access wdir=" + wdir);
-//        }
         System.out.println("| getwd():\t" + q.eval("getwd()"));
-//        q.voidEval("setwd('" + wdir.getAbsolutePath().replace("\\", "/") + "')");
-//        System.out.println("| getwd():\t" + q.eval("getwd()"));
-
 //        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) q.eval("list.files(all.files=TRUE)")));
-//        System.out.println("| ls():\t" + Arrays.toString((String[]) q.ls(true)));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) q.ls(true)));
     }
 
     @After
@@ -122,8 +100,16 @@ public class RPanelsTest {
         s.closeLog();
         //A shutdown hook kills all Rserve at the end.
         r.closeLog();
+
         q.closeLog();
+
+        System.out.println("========================================================================");
+        System.out.println(s.notebook());
+        System.out.println(r.notebook());
+        System.out.println(q.notebook());
+        System.out.println("========================================================================");
     }
+
 
     void frame(JPanel p) {
         JFrame frame = new JFrame("User Details");

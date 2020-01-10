@@ -51,7 +51,7 @@ public class BasicTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
         
-        if (!tmpdir.mkdirs()) throw new IllegalArgumentException("Failed to create temp dir");
+        if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);

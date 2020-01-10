@@ -11,7 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 import javax.script.ScriptException;
 import org.apache.commons.io.FileUtils;
 import static org.math.R.Rsession.HEAD_EXCEPTION;
