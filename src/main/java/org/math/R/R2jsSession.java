@@ -2671,13 +2671,25 @@ public class R2jsSession extends Rsession implements RLog {
         return true;
     }
     
+    File local2remotePath(File localpath) {
+        log(localpath.getPath()+" ~ "+new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_-_").replace(":","_._")).getPath(),Level.ERROR);
+        return new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_-_").replace(":","_._"));
+    }
+    
+    File remote2localPath(File remotepath) {
+        log(remotepath.getPath()+" ~ "+new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":")).getPath(),Level.ERROR);
+        log("getwd: "+getwd(),Level.ERROR);
+        return new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
+    }
+
     public File putFileInWorkspace(File file) {
-        File rf = new File(getwd(), file.getName());
+        if (file.isAbsolute()) return file;
+        File rf = local2remotePath(file);
         if (!rf.getAbsolutePath().equals(file.getAbsolutePath())) {
             try {
                 FileUtils.copyFile(file, rf);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log(IO_HEAD + ex.getMessage(), Level.ERROR);
             }
         }
         return rf;
@@ -2685,7 +2697,7 @@ public class R2jsSession extends Rsession implements RLog {
     
     public void getFileFromWorkspace(File file) {
         if (file.isAbsolute()) return;
-        File rf = new File(getwd(), file.getPath());
+        File rf = remote2localPath(file);
         if (file.getParentFile()!=null)
             if (!file.getParentFile().isDirectory())
             if (!file.getParentFile().mkdirs()) {
@@ -2695,7 +2707,7 @@ public class R2jsSession extends Rsession implements RLog {
             try {
                 FileUtils.copyFile(rf, new File(".", file.getPath()));
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log(IO_HEAD + ex.getMessage(), Level.ERROR);
             }
     }
 
