@@ -41,7 +41,6 @@ public class RenjinSession extends Rsession implements RLog {
 
     protected RenjinScriptEngine R = null;
     File wdir;
-    Properties properties;
     
     private static final String ENVIRONMENT_DEFAULT = "..renjin..";
 
@@ -71,15 +70,16 @@ public class RenjinSession extends Rsession implements RLog {
         }
 
         try {
-            wdir = new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode());
+            int rand = Math.round((float) Math.random() * 10000);
+            wdir = new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + rand);
             if (!wdir.mkdirs()) {
-                wdir = new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode());
+                wdir = new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand);
                 if (!wdir.mkdirs()) {
                     throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
                 }
             }
             R.eval("setwd('" + fixPathSeparator(wdir.getAbsolutePath()) + "')");
-            wdir.deleteOnExit();
+            //wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
@@ -799,7 +799,8 @@ public class RenjinSession extends Rsession implements RLog {
     }
     
     File remote2localPath(File remotepath) {
-        return new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
+        System.err.println(remotepath.getAbsolutePath()+" ~ "+new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":")).getAbsolutePath());
+        return new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
     }
 
     public File putFileInWorkspace(File file) {
@@ -816,6 +817,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
     
     public void getFileFromWorkspace(File file) {
+        System.err.println("getFileFromWorkspace "+file);
         if (file.isAbsolute()) return;
         File rf = remote2localPath(file);
         if (file.getParentFile()!=null)
@@ -827,6 +829,7 @@ public class RenjinSession extends Rsession implements RLog {
             try {
                 FileUtils.copyFile(rf, new File(".", file.getPath()));
             } catch (IOException ex) {
+                ex.printStackTrace();
                 log(IO_HEAD + ex.getMessage(), Level.ERROR);
             }
     }

@@ -22,14 +22,20 @@
     function fileExists (path) {
         var Paths = Java.type('java.nio.file.Paths');
         var Files = Java.type('java.nio.file.Files');
-        return Files.exists(Paths.get(path))
+        var File = Java.type('java.io.File');
+        var ofile = new File(path);
+        if (!ofile.isAbsolute()) ofile=new File(getwd(),path);
+        return Files.exists(Paths.get(ofile.getAbsolutePath()))
     }
     
     // Write string to file at path
     function write (path, data) {
         var FileWriter=Java.type('java.io.FileWriter');
         var olinkfile = path;
-        var fw = new FileWriter(olinkfile);
+        var File = Java.type('java.io.File');
+        var ofile = new File(olinkfile);
+        if (!ofile.isAbsolute()) ofile=new File(getwd(),olinkfile);
+        var fw = new FileWriter(ofile);
         fw.write(data);
         fw.close();
     }
@@ -38,7 +44,10 @@
     function read (path) {
         var Paths = Java.type('java.nio.file.Paths');
         var Files = Java.type('java.nio.file.Files');
-        var lines = Files.readAllLines(Paths.get(path), Java.type('java.nio.charset.StandardCharsets').UTF_8);
+        var File = Java.type('java.io.File');
+        var ofile = new File(path);
+        if (!ofile.isAbsolute()) ofile=new File(getwd(),path);
+        var lines = Files.readAllLines(Paths.get(ofile.getAbsolutePath()), Java.type('java.nio.charset.StandardCharsets').UTF_8);
         var data = [];
         lines.forEach(function(line) { data.push(line); });
         return data.join('\\n');
@@ -48,7 +57,10 @@
     function readJsonVariables (path) {
         var Paths = Java.type('java.nio.file.Paths');
         var Files = Java.type('java.nio.file.Files');
-        var linesList = Files.readAllLines(Paths.get(path), Java.type('java.nio.charset.StandardCharsets').UTF_8);
+        var File = Java.type('java.io.File');
+        var ofile = new File(path);
+        if (!ofile.isAbsolute()) ofile=new File(getwd(),path);
+        var linesList = Files.readAllLines(Paths.get(ofile.getAbsolutePath()), Java.type('java.nio.charset.StandardCharsets').UTF_8);
         var lines = "";
         linesList.forEach(function(line) { 
             lines += line;
@@ -88,7 +100,10 @@
     function loadJson (path, jsVariableStorageObject) {
         var Paths = Java.type('java.nio.file.Paths');
         var Files = Java.type('java.nio.file.Files');
-        var linesList = Files.readAllLines(Paths.get(path), Java.type('java.nio.charset.StandardCharsets').UTF_8);
+        var File = Java.type('java.io.File');
+        var ofile = new File(path);
+        if (!ofile.isAbsolute()) ofile=new File(getwd(),path);
+        var linesList = Files.readAllLines(Paths.get(ofile.getAbsolutePath()), Java.type('java.nio.charset.StandardCharsets').UTF_8);
         var lines = "";
         linesList.forEach(function(line) { 
             lines += line;

@@ -107,7 +107,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
-        File totof = new File("..", "toto.csv");
+        File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
         }
@@ -118,7 +118,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
-        File totof = new File("..", "toto.csv");
+        File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
         }
@@ -129,7 +129,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_R2Js() throws Exception {
-        File totof = new File("..", "toto.csv");
+        File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
         }
@@ -697,7 +697,7 @@ public class BasicTest {
         r.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
-        assert f.exists() : "Failed to create save file !";
+        assert f.exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = r.asString(r.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -723,7 +723,8 @@ public class BasicTest {
         q.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         q.save(f, "s");
-        assert f.exists() : "Failed to create save file !";
+        //using f instead of  new File(f.getAbsolutePath()) fails ! fs Sync issue ?
+        assert new File(f.getAbsolutePath()).exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = q.asString(q.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -734,7 +735,7 @@ public class BasicTest {
         File fa = new File("R2Js" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         q.savels(fa, ".*");
-        assert fa.exists() : "Failed to create save file !";
+        assert new File(fa.getAbsolutePath()).exists() : "Failed to create save file !";
     }
 
     @Test
@@ -893,7 +894,7 @@ public class BasicTest {
             f.delete();
         }
         q.save(f, "c");
-        assert f.exists() : "Could not find file " + f.getAbsolutePath();
+        assert new File(tmpdir, "save" + rand + ".Rdata").exists() : "Could not find file " + f.getAbsolutePath();
 
         p.println("ls=\n" + q.toString(q.eval("ls()")));
         //load

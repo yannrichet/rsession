@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -90,6 +91,8 @@ import static org.renjin.repackaged.guava.base.Strings.repeat;
  */
 public class R2jsSession extends Rsession implements RLog {
         
+    File wdir;
+
     private static final String[] MATH_FUN_JS = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
         "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum","mean", "median", "std", "var" };
     private static final String[] MATH_CONST_JS = { "pi" };
@@ -164,8 +167,46 @@ public class R2jsSession extends Rsession implements RLog {
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        
+        try {
+            int rand = Math.round((float) Math.random() * 10000);
+            wdir = new File(new File(FileUtils.getTempDirectory(), ".R2js"), "" + rand);
+            if (!wdir.mkdirs()) {
+                wdir = new File(new File(FileUtils.getUserDirectory(), ".R2js"), "" + rand);
+                if (!wdir.mkdirs()) {
+                    throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
+                }
+            }
+            eval("setwd('" + fixPathSeparator(wdir.getAbsolutePath()) + "')");
+            //wdir.deleteOnExit();
+        } catch (Exception ex) {
+            log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
+        }
+        
+        setenv(properties);
     }
 
+    @Override
+     void setenv(Properties properties) {
+        if (properties != null) {
+            for (String p : properties.stringPropertyNames()) {
+                if (p != null) {
+                    try {
+                        log("Setting environment " + p + ": '" + properties.getProperty(p).replaceAll("\\:([^/])(.*)\\@", ":???@") + "'", Level.INFO);
+                        boolean done = set(p, properties.getProperty(p));
+                        if (!done) {
+                            log("Failed setting environment " + p, Level.WARNING);
+                        }
+                    } catch (Exception ex) {
+                        log(ex.getMessage(), Level.WARNING);
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+    
+    
     public R2jsSession(final PrintStream p, Properties properties) {
         this(p, properties, null);
     }
@@ -1609,9 +1650,9 @@ public class R2jsSession extends Rsession implements RLog {
             
             String listString = argumentsMap.get("list");
             String fileString = argumentsMap.get("file");
-            
+
             String listStringUnquotted = listString.replace("\'", "");
-            
+
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
             
@@ -2676,7 +2717,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
     
     File remote2localPath(File remotepath) {
-        return new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
+        return new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
     }
 
     public File putFileInWorkspace(File file) {
