@@ -69,10 +69,6 @@ public abstract class Rsession implements RLog {
     String lastOuput = "";
     String lastMessage = "";
 
-    public static String fixPathSeparator(String p) {
-        return p.replace(File.separatorChar, '/');
-    }
-
     void cleanupListeners() {
         if (loggers != null) {
             loggers.clear();
@@ -292,8 +288,11 @@ public abstract class Rsession implements RLog {
      * @param path java File object
      * @return R path with suitable level delimiter "/"
      */
-    public static String toRpath(File path) {
-        return toRpath(path.getPath());
+    public String toRpath(File path) {
+	if (isAvailable()) // otherwise, still not connected, so ignore wdir
+            if (!path.isAbsolute()) 
+                path = new File(getwd(),path.getPath());
+        return path.getPath().replace(File.pathSeparator, "/");
     }
 
     /**
@@ -302,8 +301,8 @@ public abstract class Rsession implements RLog {
      * @param path java string path
      * @return R path with suitable level delimiter "/"
      */
-    public static String toRpath(String path) {
-        return path.replaceAll("\\\\", "/");
+    public String toRpath(String path) {
+        return toRpath(new File(path));
     }
 
     /**
@@ -571,14 +570,14 @@ public abstract class Rsession implements RLog {
     /**
      * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
      */
-    public void setCRANRepository(String url) {
+    public void setRepository(String url) {
         repos = url;
     }
 
     /**
      * @return CRAN repository used for packages installation
      */
-    public String getCRANRepository() {
+    public String getRepository() {
         return repos;
     }
     private static String loadedpacks = "loadedpacks";
@@ -1108,7 +1107,11 @@ public abstract class Rsession implements RLog {
     public String getwd() {
         return asString(silentlyRawEval("getwd()"));
     }
-    
+   
+    public void setwd(File wdir) {
+        silentlyVoidEval("setwd('" + toRpath(wdir) + "')");
+    }
+
     public abstract File putFileInWorkspace(File f);
 
     /**

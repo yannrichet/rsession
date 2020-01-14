@@ -266,7 +266,7 @@ public class RserveSessionTest {
             int size = i * 80;
             File sfile = new File(size + ".jpg");
             s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
-            assert new File(size + ".jpg").exists() : "Size " + size + " failed";
+            assert new File(size + ".jpg").exists() : "Size " + size + " failed ("+new File(size + ".jpg").getAbsolutePath()+")";
             p.println(sfile.length());
         }
     }

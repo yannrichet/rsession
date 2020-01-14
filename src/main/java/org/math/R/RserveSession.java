@@ -367,11 +367,11 @@ public class RserveSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
+                    R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + ".m',open='wt')");
+                    R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -386,7 +386,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.parseAndEval("sink(type='output')");
-                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + "'))").asString();
+                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -394,7 +394,7 @@ public class RserveSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
+                            R.parseAndEval("unlink('" + (SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(ex.getMessage(), Level.ERROR);
                         }
@@ -403,7 +403,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.parseAndEval("sink(type='message')");
-                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))").asString();
+                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
                         log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
                         lastMessage = ex.getMessage();
@@ -411,7 +411,7 @@ public class RserveSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
+                            R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(ex.getMessage(), Level.ERROR);
                         }
@@ -461,11 +461,11 @@ public class RserveSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + fixPathSeparator(SINK_FILE) + "',open='wt')");
+                    R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + fixPathSeparator(SINK_FILE) + ".m',open='wt')");
+                    R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -480,7 +480,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.parseAndEval("sink(type='output')");
-                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + "'))").asString();
+                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -488,7 +488,7 @@ public class RserveSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + "')");
+                            R.parseAndEval("unlink('" + (SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -497,7 +497,7 @@ public class RserveSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.parseAndEval("sink(type='message')");
-                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + fixPathSeparator(SINK_FILE) + ".m'))").asString();
+                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
                         log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
                         lastMessage = ex.getMessage();
@@ -505,7 +505,7 @@ public class RserveSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + fixPathSeparator(SINK_FILE) + ".m')");
+                            R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -1231,7 +1231,7 @@ public class RserveSession extends Rsession implements RLog {
     }
     
     File remote2localPath(File remotepath) {
-        return new File(remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
+        return new File(remotepath.getPath().replace((getwd()+"/").replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
     }
 
     @Override
