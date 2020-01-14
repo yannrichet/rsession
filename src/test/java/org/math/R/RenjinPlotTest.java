@@ -53,6 +53,6 @@ public class RenjinPlotTest {
         } catch (ScriptException ex) {
             Logger.getLogger(RenjinPlotTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        assert new File("test.png").isFile(): "Png file not created by plot()";
+        assert new File(getwd(),"test.png").isFile(): "Png file not created by plot()";
     }
 }
