@@ -234,7 +234,7 @@ public class RenjinSessionTest {
             int size = (int) Math.pow(10.0, (double) (i + 1));
             System.err.println("Size " + size);
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
-            File sfile = new File("tmp", size + ".Rdata");
+            File sfile = new File( size + ".Rdata");
             s.save(sfile.getAbsoluteFile(), "raw" + i);
             assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
             assert sfile.length() > 0 : " empty file";
