@@ -252,9 +252,9 @@ public class RserveSessionTest {
             int size = (int) Math.pow(10.0, (double) (i + 1));
             System.err.println("Size " + size);
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
-            File sfile = new File("tmp", size + ".Rdata");
-            s.save(sfile.getAbsoluteFile(), "raw" + i);
-            assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
+            File sfile = new File(size + ".Rdata");
+            s.save(sfile, "raw" + i);
+            assert new File(size + ".Rdata").exists() : "Size " + size + " failed: " + new File(size + ".Rdata").getAbsolutePath() + " size " + (new File(size + ".Rdata").length());
             sfile.delete();
         }
     }
@@ -264,9 +264,9 @@ public class RserveSessionTest {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
-            File sfile = new File("tmp", size + ".jpg");
+            File sfile = new File(size + ".jpg");
             s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
-            assert sfile.exists() : "Size " + size + " failed";
+            assert new File(size + ".jpg").exists() : "Size " + size + " failed";
             p.println(sfile.length());
         }
     }
