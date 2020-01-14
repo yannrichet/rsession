@@ -247,13 +247,13 @@ public class RenjinSessionTest {
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
-            File sfile = new File("tmp", size + ".jpg");
+            File sfile = new File(size + ".jpg");
             if (sfile.isFile()) {
                 assert sfile.delete() : "Cannot delete " + sfile;
             }
             s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
-            assert sfile.exists() : "Size " + size + " failed";
-            assert sfile.length() > 0 : " empty file";
+            assert new File(size + ".jpg").exists() : "Size " + size + " failed";
+            assert new File(size + ".jpg").length() > 0 : " empty file";
             p.println(sfile.getAbsoluteFile());
             p.println(sfile.length());
         }
