@@ -774,10 +774,10 @@ public abstract class Rsession implements RLog {
             }
         }));
         if (pack_files == null || pack_files.length == 0) {
-            log("  impossible to find package " + pack + " in directory " + dir.getAbsolutePath() + " !", Level.WARNING);
-            return "Impossible to find package " + pack + " in directory " + dir.getAbsolutePath() + " !";
+            log("  impossible to find package " + pack + " in directory " + dir.getPath() + " !", Level.WARNING);
+            return "Impossible to find package " + pack + " in directory " + dir.getPath() + " !";
         } else {
-            log("  found package " + pack + " : " + pack_files[0].getAbsolutePath(), Level.INFO);
+            log("  found package " + pack + " : " + pack_files[0].getPath(), Level.INFO);
         }
 
         return installPackage(pack_files[0], load);
@@ -1119,7 +1119,7 @@ public abstract class Rsession implements RLog {
     public void source(File f) {
         f = putFileInWorkspace(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find "+f.getAbsolutePath();
+            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find "+f.getPath();
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
@@ -1458,7 +1458,7 @@ public abstract class Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         try {
-            set("plotfile_" + h, f.getAbsolutePath().replace("\\", "/"));
+            set("plotfile_" + h, f.getPath().replace("\\", "/"));
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
