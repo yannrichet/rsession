@@ -236,8 +236,8 @@ public class RenjinSessionTest {
             s.rawEval("raw" + i + "<-rnorm(" + (size / 8) + ")");
             File sfile = new File( size + ".Rdata");
             s.save(sfile.getAbsoluteFile(), "raw" + i);
-            assert sfile.exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
-            assert sfile.length() > 0 : " empty file";
+            assert new File( size + ".Rdata").exists() : "Size " + size + " failed: " + sfile.getAbsolutePath() + " size " + (sfile.length());
+            assert new File( size + ".Rdata").length() > 0 : " empty file";
             sfile.delete();
         }
     }
