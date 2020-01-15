@@ -45,6 +45,28 @@ public abstract class Rsession implements RLog {
         }
 
     }
+    
+    public class RFile extends java.io.File {
+
+        public RFile(String name) {
+            super(getwd(), name);
+        }
+        
+        public RFile(File f){
+        super(f.isAbsolute()?f.getAbsolutePath():getwd()+File.pathSeparator+f.getPath());
+        }
+
+        @Override
+        public String getPath() {
+            return super.getAbsolutePath().replace(File.pathSeparator, "/");
+        }
+
+        @Override
+        public String toString() {
+            return getPath();
+        }
+       
+    }
 
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
     List<RLog> loggers;
@@ -282,28 +304,28 @@ public abstract class Rsession implements RLog {
     }
     // </editor-fold>
 
-    /**
-     * Map java File object to R path (as string)
-     *
-     * @param path java File object
-     * @return R path with suitable level delimiter "/"
-     */
-    public String toRpath(File path) {
-	if (isAvailable()) // otherwise, still not connected, so ignore wdir
-            if (!path.isAbsolute()) 
-                path = new File(getwd(),path.getPath());
-        return path.getPath().replace(File.pathSeparator, "/");
-    }
-
-    /**
-     * Map java path to R path (as string)
-     *
-     * @param path java string path
-     * @return R path with suitable level delimiter "/"
-     */
-    public String toRpath(String path) {
-        return toRpath(new File(path));
-    }
+//    /**
+//     * Map java File object to R path (as string)
+//     *
+//     * @param path java File object
+//     * @return R path with suitable level delimiter "/"
+//     */
+//    public String toRpath(File path) {
+//	if (isAvailable()) // otherwise, still not connected, so ignore wdir
+//            if (!path.isAbsolute()) 
+//                path = new File(getwd(),path.getPath());
+//        return path.getPath().replace(File.pathSeparator, "/");
+//    }
+//
+//    /**
+//     * Map java path to R path (as string)
+//     *
+//     * @param path java string path
+//     * @return R path with suitable level delimiter "/"
+//     */
+//    public String toRpath(String path) {
+//        return toRpath(new File(path));
+//    }
 
     /**
      * create a new Rsession.
@@ -696,7 +718,7 @@ public abstract class Rsession implements RLog {
     public String installPackage(File pack, boolean load) {
         pack = putFileInWorkspace(pack);
         try {
-            rawEval("install.packages('" + pack.getPath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
+            rawEval("install.packages('" + new RFile(pack) + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1108,8 +1130,8 @@ public abstract class Rsession implements RLog {
         return asString(silentlyRawEval("getwd()"));
     }
    
-    public void setwd(File wdir) {
-        silentlyVoidEval("setwd('" + toRpath(wdir) + "')");
+    public void setwd(RFile wdir) {
+        silentlyVoidEval("setwd('" + wdir.getPath() + "')");
     }
 
     public abstract File putFileInWorkspace(File f);
@@ -1122,12 +1144,12 @@ public abstract class Rsession implements RLog {
     public void source(File f) {
         f = putFileInWorkspace(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find "+f.getPath();
+            assert asLogical(rawEval("file.exists('" + new RFile(f) + "')", TRY_MODE)) : "Cannot find "+f.getPath();
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {        
-            voidEval("source('" + f.getPath().replace("\\", "/") + "')", TRY_MODE);
+            voidEval("source('" + new RFile(f) + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1141,12 +1163,12 @@ public abstract class Rsession implements RLog {
     public void load(File f) {
         f = putFileInWorkspace(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE));
+            assert asLogical(rawEval("file.exists('" + new RFile(f) + "')", TRY_MODE));
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
         try {
-            voidEval("load('" + f.getPath().replace("\\", "/") + "')", TRY_MODE);
+            voidEval("load('" + new RFile(f) + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1256,9 +1278,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getPath().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + new RFile(f) + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + new RFile(f) + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         getFileFromWorkspace(f);
     }
@@ -1280,9 +1302,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + new RFile(f) + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getPath().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + new RFile(f) + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);
@@ -1461,7 +1483,7 @@ public abstract class Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         try {
-            set("plotfile_" + h, f.getPath().replace("\\", "/"));
+            set("plotfile_" + h, new RFile(f));
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }

@@ -177,7 +177,7 @@ public class R2jsSession extends Rsession implements RLog {
                     throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
                 }
             }
-            eval("setwd('" + toRpath(wdir.getAbsolutePath()) + "')");
+            eval("setwd('" + new RFile(wdir) + "')");
             //wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
