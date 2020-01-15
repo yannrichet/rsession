@@ -43,16 +43,18 @@ public class RenjinPlotTest {
             Logger.getLogger(RenjinPlotTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     @Test
     public void plotPngFile() throws IOException {
+        File test = null;
         try {
             R.eval("png('test.png')");
             R.eval("graphics::barplot(c(1,2,3), main='Distribution', xlab='Number')");
             R.eval("dev.off()");
+            test = new File(R.eval("getwd()").toString(), "test.png");
         } catch (ScriptException ex) {
             Logger.getLogger(RenjinPlotTest.class.getName()).log(Level.SEVERE, null, ex);
         }
-        assert new File(R.eval("getwd()"),"test.png").isFile(): "Png file not created by plot()";
+        assert test.isFile() : "Png file not created by plot()";
     }
 }
