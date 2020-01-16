@@ -702,6 +702,7 @@ public class R2jsSessionTest {
         engine.set("s", "abcdef");
         File f = new File("R2Js" + rand + ".save");
         System.out.println("Absolute path: " + f.getAbsolutePath());
+        System.out.println("getwd() "+engine.getwd());
         engine.save(f, "s");
         engine.rm("s");
         engine.load(f);

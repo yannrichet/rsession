@@ -35,6 +35,7 @@
         var File = Java.type('java.io.File');
         var ofile = new File(olinkfile);
         if (!ofile.isAbsolute()) ofile=new File(getwd(),olinkfile);
+print(ofile)
         var fw = new FileWriter(ofile);
         fw.write(data);
         fw.close();
@@ -611,6 +612,10 @@
 
     function asInteger(x) {
         return parseInt(x);
+    }
+
+    function asLogical(x) {
+        return (x.toLowerCase() === 'true')
     }
 
     function _lt(x, y) {
