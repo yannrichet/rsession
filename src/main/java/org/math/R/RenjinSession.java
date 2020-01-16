@@ -78,7 +78,7 @@ public class RenjinSession extends Rsession implements RLog {
                     throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
                 }
             }
-            setwd(new RFile(wdir));
+            setwd(wdir);
             wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
@@ -152,11 +152,11 @@ public class RenjinSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + new RFile(SINK_FILE) + "',open='wt')");
+                    R.eval(".f <- file('" + toRpath(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + new RFile(SINK_FILE) + ".m',open='wt')");
+                    R.eval(".fm <- file('" + toRpath(SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -170,7 +170,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.eval("sink(type='output')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + new RFile(SINK_FILE) + "'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + toRpath(SINK_FILE) + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -178,7 +178,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)");
-                            R.eval("unlink('" + new RFile(SINK_FILE) + "')");
+                            R.eval("unlink('" + toRpath(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -187,7 +187,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + new RFile(SINK_FILE) + ".m'))"));
+                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + toRpath(SINK_FILE) + ".m'))"));
                         log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
                         lastMessage = ex.getMessage();
@@ -195,7 +195,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)");
-                            R.eval("unlink('" + new RFile(SINK_FILE) + ".m')");
+                            R.eval("unlink('" + toRpath(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -237,11 +237,11 @@ public class RenjinSession extends Rsession implements RLog {
         synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + new RFile(SINK_FILE) + "',open='wt')");
+                    R.eval(".f <- file('" + toRpath(SINK_FILE) + "',open='wt')");
                     R.eval("sink(.f,type='output')");
                 }
                 if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + new RFile(SINK_FILE) + ".m',open='wt')");
+                    R.eval(".fm <- file('" + toRpath(SINK_FILE) + ".m',open='wt')");
                     R.eval("sink(.fm,type='message')");
                 }
                 if (tryEval) {
@@ -256,7 +256,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_OUTPUT) {
                     try {
                         R.eval("sink(type='output')");
-                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + new RFile(SINK_FILE) + "'))"));
+                        lastOuput = asString(R.eval("paste(collapse='\n',readLines('" + toRpath(SINK_FILE) + "'))"));
                         log(lastOuput, Level.OUTPUT);
                     } catch (Exception ex) {
                         lastOuput = ex.getMessage();
@@ -264,7 +264,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.eval("unlink('" + new RFile(SINK_FILE) + "')");
+                            R.eval("unlink('" + toRpath(SINK_FILE) + "')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }
@@ -273,7 +273,7 @@ public class RenjinSession extends Rsession implements RLog {
                 if (SINK_MESSAGE) {
                     try {
                         R.eval("sink(type='message')");
-                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + new RFile(SINK_FILE) + ".m'))"));
+                        lastMessage = asString(R.eval("paste(collapse='\n',readLines('" + toRpath(SINK_FILE) + ".m'))"));
                         log(lastMessage, Level.INFO);
                     } catch (Exception ex) {
                         lastMessage = ex.getMessage();
@@ -281,7 +281,7 @@ public class RenjinSession extends Rsession implements RLog {
                     } finally {
                         try {
                             R.eval("close(.fm)");
-                            R.eval("unlink('" + new RFile(SINK_FILE) + ".m')");
+                            R.eval("unlink('" + toRpath(SINK_FILE) + ".m')");
                         } catch (Exception ex) {
                             log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                         }

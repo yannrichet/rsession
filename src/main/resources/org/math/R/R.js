@@ -481,14 +481,13 @@
             return Object.keys(x);
     }
 
+    var wd = Java.type('java.lang.System').getProperty("user.dir");
     function getwd() {
-        var System = Java.type('java.lang.System');
-        return System.getProperty("user.dir");
+        return wd;
     }
     
     function setwd(dir) {
-        var System = Java.type('java.lang.System');
-        System.setProperty("user.dir", dir);
+        wd = dir;
     }
     
     function SysSleep(t) {
@@ -699,6 +698,7 @@
     }
 
     var proto = _R.prototype;
+    proto.wd = wd;
     proto.fileExists = fileExists;
     proto.write = write;
     proto.read = read;
@@ -735,6 +735,7 @@
     proto.stopIfNot = stopIfNot;
     proto.asNumeric = asNumeric;
     proto.asInteger = asInteger;
+    proto.asLogical = asLogical;
     proto.asMatrix = asMatrix;
     proto._lt = _lt;
     proto._gt = _gt;
