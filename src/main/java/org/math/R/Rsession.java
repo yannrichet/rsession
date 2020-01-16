@@ -292,7 +292,7 @@ public abstract class Rsession implements RLog {
 	if (isAvailable()) // otherwise, still not connected, so ignore wdir
             if (!path.isAbsolute()) 
                 path = new File(getwd(),path.getPath());
-        return path.getPath().replace(File.pathSeparator, "/");
+        return path.getPath().replace(File.separatorChar, '/');
     }
 
     /**
