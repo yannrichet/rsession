@@ -35,7 +35,6 @@
         var File = Java.type('java.io.File');
         var ofile = new File(olinkfile);
         if (!ofile.isAbsolute()) ofile=new File(getwd(),olinkfile);
-print(ofile)
         var fw = new FileWriter(ofile);
         fw.write(data);
         fw.close();
@@ -322,7 +321,7 @@ print(ofile)
     }
 
     function whichMin(x) {
-        var array = [];
+        var array = [1];
         var i=1;
         var m=x[0];
         while (i < length(x)) {
@@ -339,7 +338,7 @@ print(ofile)
     }
 
     function whichMax(x) {
-        var array = [];
+        var array = [1];
         var i=1;
         var m=x[0];
         while (i < length(x)) {
@@ -362,6 +361,12 @@ print(ofile)
         if (x === undefined)
             return true;
         if (x == 'undefined')
+            return true;
+        return false;
+    }
+
+    function isTRUE(x) {
+        if (x == true)
             return true;
         return false;
     }
@@ -736,6 +741,7 @@ print(ofile)
     proto.setwd = setwd;
     proto.SysSleep = SysSleep;
     proto.isNull = isNull;
+    proto.isTRUE = isTRUE;
     proto.isFunction = isFunction;
     proto.stopIfNot = stopIfNot;
     proto.asNumeric = asNumeric;

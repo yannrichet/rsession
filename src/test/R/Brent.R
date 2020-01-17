@@ -38,7 +38,7 @@ getInitialDesign <- function(brent, input, output) {
 getNextDesign <- function(brent, X, Y) {
     names(X) = names(brent$input)
     X = to01(X,brent$input)
-    Y = matrix(Y,ncol=1) - brent$ytarget
+    Y = as.matrix(Y,ncol=1) - brent$ytarget
 
     if (brent$i >= brent$max_iterations) {
         brent$exit <- 2
@@ -162,8 +162,12 @@ displayResults <- function(brent, X, Y) {
             '<img src="',  brent$files,  '" width="', width, '" height="', height, '"/>',
             '<br/>Exit due to ', exit.txt, '<br/></HTML>',collapse=';')
 
-    return(html)
+    arg <- paste0('<root>',X[3 * brent$i - 1, 1],'</root>')
+
+    return(paste0(html,arg))
 }
+
+displayResultsTmp <- displayResults
 
 from01 = function(X, inp) {
     for (i in 1:ncol(X)) {

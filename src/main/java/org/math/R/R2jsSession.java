@@ -334,6 +334,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("print(", "_print(");
         R_TO_JS.put("is.function(", "isFunction(");
         R_TO_JS.put("is.null(", "isNull(");
+        R_TO_JS.put("isTRUE(", "isTRUE(");
         R_TO_JS.put("Sys.sleep(", "SysSleep(");
         R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
@@ -618,6 +619,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)SysSleep\\(", "$1__R.SysSleep(");
         e = e.replaceAll("(?<!\\.)(\\b)isFunction\\(", "$1__R.isFunction(");
         e = e.replaceAll("(?<!\\.)(\\b)isNull\\(", "$1__R.isNull(");
+        e = e.replaceAll("(?<!\\.)(\\b)isTRUE\\(", "$1__R.isTRUE(");
         e = e.replaceAll("(?<!\\.)(\\b)apply\\(", "$1__R.apply(");
         e = e.replaceAll("(?<!\\.)(\\b)rbind\\(", "$1__R.rbind(");
         e = e.replaceAll("(?<!\\.)(\\b)cbind\\(", "$1__R.cbind(");
@@ -625,6 +627,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)Rpaste0\\(", "$1__R.paste0(");
         e = e.replaceAll("(?<!\\.)(\\b)asNumeric\\(", "$1__R.asNumeric(");
         e = e.replaceAll("(?<!\\.)(\\b)asInteger\\(", "$1__R.asInteger(");
+        e = e.replaceAll("(?<!\\.)(\\b)asLogical\\(", "$1__R.asLogical(");
 
         e = e.replaceAll("__R\\.__R\\.", "__R.");
         
@@ -2069,10 +2072,10 @@ public class R2jsSession extends Rsession implements RLog {
         
         Pattern pattern = Pattern.compile("(?<!\\.)(\\b)" + fctName + "\\(");
         Matcher matcher = pattern.matcher(expr);
-        
+
         // If an occurrence has been found
         if (matcher.find()) {
-            
+
             int startIndex = matcher.start();
             int currentIndex = startIndex + fctName.length() + 1;
             
