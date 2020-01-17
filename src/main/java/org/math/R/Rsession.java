@@ -573,6 +573,10 @@ public abstract class Rsession implements RLog {
     public void setRepository(String url) {
         repos = url;
     }
+    // backward compt.
+    public void setCRANRepository(String url) {
+        setRepository(url);
+    }
 
     /**
      * @return CRAN repository used for packages installation
