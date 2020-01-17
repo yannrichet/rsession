@@ -18,7 +18,7 @@ public class GradientDescent1DTest {
     /*
 # f <- function(X) matrix(Vectorize(function(x) {((x+5)/15)^3})(X),ncol=1)
 # 
-# options = list(nmax = 10, delta = 0.1, epsilon = 0.01, target=0)
+# options = list(iterations = 10, delta = 0.1, epsilon = 0.01, target=0, yminimization='true')
 # gd = GradientDescent(options)
 # 
 # X0 = getInitialDesign(gd, input=list(x=list(min=-5,max=10)), NULL)
