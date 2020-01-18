@@ -66,7 +66,7 @@ public class GradientDescent1DTest {
         try {
             R.source(new File("src/test/R/GradientDescent.R"));
 
-            R.voidEval("options = list(nmax = 10, delta = 0.1, epsilon = 0.01, target=0)");
+            R.voidEval("options = list(iterations = 10, delta = 0.1, epsilon = 0.01, target=0, yminimization='true')");
             R.voidEval("gd = GradientDescent(options)");
 
             double[][] X0 = R.asMatrix(R.eval("getInitialDesign(gd, list(x=list(min=-5,max=10)), NULL)"));
