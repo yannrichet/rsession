@@ -175,7 +175,8 @@ public class RserveSession extends Rsession implements RLog {
 
         setenv(RserveConf.properties);
 
-        install_packages_moreargs = ",lib='" + (RserveConf.isLocal() ? RserveDaemon.app_dir() : getwd()) + "'";
+        // We need to be sure that the lib dir is writable. Otherwise R will ask _interactively_ for a writable dir when using install.packages(...), which will block the session
+        install_packages_moreargs = ",lib='" + gethomedir() + "/" + ".Rserve" + "'";
     }
 
     /**
@@ -340,6 +341,10 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
+    public String gethomedir() {
+        return asString(silentlyRawEval("path.expand('~')"));
+    }  
+    
     /**
      * Silently (ie no log) launch R command without return value.
      *

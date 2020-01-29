@@ -1107,6 +1107,8 @@ public abstract class Rsession implements RLog {
             return "ls(pattern='" + vars[0] + "')";
         }
     }
+
+    public abstract String gethomedir();
     
     public String getwd() {
         return asString(silentlyRawEval("getwd()"));

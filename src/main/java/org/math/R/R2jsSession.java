@@ -2566,6 +2566,10 @@ public class R2jsSession extends Rsession implements RLog {
         return true;
     }
     
+    public String gethomedir() {
+        return System.getProperty("user.home");
+    }
+    
     @Override
     boolean isWindows() {
         return RserveDaemon.isWindows();

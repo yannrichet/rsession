@@ -118,6 +118,10 @@ public class RenjinSession extends Rsession implements RLog {
         }, properties);
     }
 
+    public String gethomedir() {
+        return System.getProperty("user.home");
+    }  
+    
     @Override
     boolean isWindows() {
         return RserveDaemon.isWindows();
