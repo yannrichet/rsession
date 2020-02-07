@@ -2347,14 +2347,19 @@ public class R2jsSession extends Rsession implements RLog {
         int exprLength = expr.length();
         
         while (equalIndex < exprLength) {
-            if((equalIndex>0 && expr.charAt(equalIndex-1)=='=') || (equalIndex<exprLength-1 && expr.charAt(equalIndex+1)=='=')) {
-                // If it is a '==' we ignore it
+            if(equalIndex>0 && expr.charAt(equalIndex)!='=') {
+                // If there is no '=' (malformed expression)
                 equalIndex+=1;
             } else {
-                int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
-                String variableName = expr.substring(startIndex, equalIndex).trim();
-                if (variableName.matches("\\w+")) {
-                    variablesSet.add(variableName);
+                if ((equalIndex > 0 && expr.charAt(equalIndex - 1) == '=') || (equalIndex < exprLength - 1 && expr.charAt(equalIndex + 1) == '=')) {
+                    // If it is a '==' we ignore it
+                    equalIndex += 1;
+                } else {
+                    int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
+                    String variableName = expr.substring(startIndex, equalIndex).trim();
+                    if (variableName.matches("\\w+")) {
+                        variablesSet.add(variableName);
+                    }
                 }
             }
 
