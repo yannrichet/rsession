@@ -661,7 +661,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$", ".");
+        e = e.replaceAll("\\$([a-zA-Z.])", ".$1"); //FIXME
         
         // R Comments
         e = e.replaceAll("#", "//");

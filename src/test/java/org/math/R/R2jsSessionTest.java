@@ -1179,6 +1179,11 @@ public class R2jsSessionTest {
         }
         assertEquals((Double) engine.eval("2"), 2., epsilon);
         assertEquals((Double) engine.eval("2+1"), 3., epsilon);
+        try{
+            engine.eval("$12");
+            assertTrue("Evaluation should return exception", false);
+        } catch (Rsession.RException e) {
+        }
 
     }
 }
