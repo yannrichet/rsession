@@ -647,6 +647,7 @@ public class RserveSession extends Rsession implements RLog {
             synchronized (R) {
                 R.assign(varname, REXP.createDataFrame(list));
             }
+            R.voidEval("colnames(" + varname + ") <- " + toRcode(names));
         } catch (REXPMismatchException re) {
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
             return false;
