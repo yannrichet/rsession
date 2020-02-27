@@ -290,10 +290,10 @@ public class BasicTest {
         assert r.asDouble(r.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + r.eval("print(lm)");
 
         assert r.set("la", r.asMatrix(r.eval("a")), "a1") : "Failed to create list";
-        assert r.print("la").contains("a1") && r.print("la").contains("2 1") : "Bad print: " + r.print("la");
+        assert r.print("la").contains("a1") && r.print("la$a1").contains("[1] 0 1") : "Bad print: " + r.print("la");
 
         assert r.set("ld", r.asMatrix(r.eval("d")), "d1") : "Failed to create list";
-        assert r.print("ld").contains("d1") && r.print("ld").contains("1 0") : "Bad print: " + r.print("ld");
+        assert r.print("ld").contains("d1") && r.print("ld$d1").contains("[1] 0") : "Bad print: " + r.print("ld");
     }
 
     @Test
@@ -324,10 +324,10 @@ public class BasicTest {
         assert s.asDouble(s.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + s.eval("print(lm)");
 
         assert s.set("la", s.asMatrix(s.eval("a")), "a1") : "Failed to create list";
-        assert s.print("la").contains("a1") && s.print("la").contains("2  1") : "Bad print: " + s.print("la");
+        assert s.print("la").contains("a1") && r.print("la$a1").contains("[1] 0 1") : "Bad print: " + s.print("la");
 
         assert s.set("ld", s.asMatrix(s.eval("d")), "d1") : "Failed to create list";
-        assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
+        assert s.print("ld").contains("d1") && s.print("ld$d1").contains("[1] 0") : "Bad print: " + s.print("ld");
     }
 
     @Test
