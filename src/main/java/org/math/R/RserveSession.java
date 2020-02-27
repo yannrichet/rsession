@@ -638,7 +638,7 @@ public class RserveSession extends Rsession implements RLog {
     @Override
     public boolean set(String varname, double[][] data, String... names) {
         note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
-        note_code("names(" + varname + ") <- " + toRcode(names));
+        note_code("colnames(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
 
         RList list = buildRList(data, names);
