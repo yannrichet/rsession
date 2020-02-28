@@ -324,7 +324,7 @@ public class BasicTest {
         assert s.asDouble(s.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + s.eval("print(lm)");
 
         assert s.set("la", s.asMatrix(s.eval("a")), "a1") : "Failed to create list";
-        assert s.print("la").contains("a1") && r.print("la$a1").contains("[1] 0 1") : "Bad print: la=" + s.print("la")+ "\nla$a1="+ r.print("la$a1");
+        assert s.print("la").contains("a1") && s.print("la$a1").contains("[1] 0 1") : "Bad print: la=" + s.print("la")+ "\nla$a1="+ s.print("la$a1");
 
         assert s.set("ld", s.asMatrix(s.eval("d")), "d1") : "Failed to create list";
         assert s.print("ld").contains("d1") && s.print("ld$d1").contains("[1] 0") : "Bad print: " + s.print("ld");
