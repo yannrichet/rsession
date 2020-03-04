@@ -1,15 +1,21 @@
 package org.math.R;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.script.ScriptException;
 
 import org.junit.Test;
 import org.math.R.Rsession.RException;
 
 import static org.junit.Assert.*;
+import static org.math.R.RserveSession.asRList;
+import static org.math.R.Rsession.toRcode;
 
 /**
  * Test the converter r->js of the class {@link R2jsSession}
@@ -86,14 +92,25 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testSys() throws Rsession.RException, UnknownHostException {
+        System.err.println("java.version: " + System.getProperty("java.version"));
+        engine.log("java.version: " + System.getProperty("java.version"), RLog.Level.INFO);
+        Map<String, String> infos = new HashMap<String, String>();
+        infos.put("nodename", "'" + InetAddress.getLocalHost().getHostName() + "'");
+        engine.voidEval("Sys__info = function() {return(" + toRcode(infos) + ")}");
+        String nodename = (String) engine.eval("Sys.info()[['nodename']]");
+        assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
+    }
+
+    @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         // Check infinity is available
-        assert Double.isInfinite((Double)engine.eval("a <- Inf"));
-        assert Double.isInfinite((Double)engine.eval("a <- -Inf"));
+        assert Double.isInfinite((Double) engine.eval("a <- Inf"));
+        assert Double.isInfinite((Double) engine.eval("a <- -Inf"));
 
         engine.voidEval("a <- NaN");
-        assert Double.isNaN((Double)engine.eval("a")): engine.eval("a");
-        assert Double.isNaN((Double)engine.eval("a+1")): engine.eval("a");
+        assert Double.isNaN((Double) engine.eval("a")) : engine.eval("a");
+        assert Double.isNaN((Double) engine.eval("a+1")): engine.eval("a");
 
         engine.voidEval("a = 1");
         assert (Double) engine.eval("a") == 1;
