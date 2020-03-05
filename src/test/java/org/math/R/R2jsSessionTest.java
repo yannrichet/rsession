@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -95,13 +96,48 @@ public class R2jsSessionTest {
     public void testSys() throws Rsession.RException, UnknownHostException {
         System.err.println("java.version: " + System.getProperty("java.version"));
         engine.log("java.version: " + System.getProperty("java.version"), RLog.Level.INFO);
-        Map<String, String> infos = new HashMap<String, String>();
-        infos.put("nodename", "'" + InetAddress.getLocalHost().getHostName() + "'");
-        engine.voidEval("Sys__info = function() {return(" + toRcode(infos) + ")}");
+//        Map<String, String> infos = new HashMap<String, String>();
+//        infos.put("nodename", "'" + InetAddress.getLocalHost().getHostName() + "'");
+//        engine.voidEval("Sys__info = function() {return(" + toRcode(infos) + ")}");
+//        String nodename = (String) engine.eval("Sys.info()[['nodename']]");
+//        assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
+        
+        engine.voidEval("Sys__info = function() {return("+asRList(newMap(
+                        "nodename",InetAddress.getLocalHost().getHostName(),
+                        "sysname",System.getProperty("os.name"),
+                        "release","?",
+                        "version",System.getProperty("os.version"),
+                        "user",System.getProperty("user.name")                        
+                        ))+")}");
+                 engine.voidEval("Sys__getenv = function(v) {env=list('R_HOME'='')\nreturn(env[v])}");//+toRcode(System.getenv())+")\nreturn(env[v])}");
+                 engine.voidEval("options = function() {return("+asRList(newMap(
+                        "OutDec",DecimalFormatSymbols.getInstance().getDecimalSeparator()
+                        ))+")}");
+            
         String nodename = (String) engine.eval("Sys.info()[['nodename']]");
         assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
     }
 
+    public static Map newMap(Object... o) {
+        Map m = new HashMap();
+        for (int i = 0; i < o.length / 2; i++) {
+            m.put(o[2 * i], o[2 * i + 1]);
+        }
+        return m;
+    }
+    
+            String asRList(Map m) {
+        if (m.isEmpty()) {
+            return "list()";
+        }
+        String l = "list(";
+        for (Object k : m.keySet()) {
+            l = l + "'" + k + "'='" + m.get(k) + "',\n";
+        }
+        return l.substring(0, l.length() - 2) + ")";
+    }
+
+    
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         // Check infinity is available
