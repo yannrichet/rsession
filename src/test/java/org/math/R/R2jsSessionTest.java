@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.math.R.Rsession.RException;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import static org.math.R.RserveSession.asRList;
 import static org.math.R.Rsession.toRcode;
 
@@ -30,6 +31,11 @@ public class R2jsSessionTest {
     final double epsilon = 1e-12;
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
 
+  @Before
+    public void setUp() throws Exception {
+    engine.debug_js = true;
+    }
+    
     @Test
     public void test2Sessions() throws Rsession.RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
         engine.debug_js = true;
@@ -94,6 +100,8 @@ public class R2jsSessionTest {
 
     @Test
     public void testSys() throws Rsession.RException, UnknownHostException {
+        System.err.println("================= testSys ===============");
+
         System.err.println("java.version: " + System.getProperty("java.version"));
         engine.log("java.version: " + System.getProperty("java.version"), RLog.Level.INFO);
 //        Map<String, String> infos = new HashMap<String, String>();
