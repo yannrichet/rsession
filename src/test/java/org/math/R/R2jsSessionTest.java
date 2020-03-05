@@ -124,6 +124,8 @@ public class R2jsSessionTest {
             
         String nodename = (String) engine.eval("Sys.info()[['nodename']]");
         assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
+
+        System.err.println("//////////////////// testSys //////////////////////");
     }
 
     public static Map newMap(Object... o) {
@@ -133,19 +135,18 @@ public class R2jsSessionTest {
         }
         return m;
     }
-    
-            String asRList(Map m) {
+
+    String asRList(Map m) {
         if (m.isEmpty()) {
             return "list()";
         }
         String l = "list(";
         for (Object k : m.keySet()) {
-            l = l + "'" + k + "'='" + m.get(k) + "',\n";
+            l = l + k + "='" + m.get(k) + "',";
         }
-        return l.substring(0, l.length() - 2) + ")";
+        return l.substring(0, l.length() - 1) + ")";
     }
 
-    
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         // Check infinity is available
