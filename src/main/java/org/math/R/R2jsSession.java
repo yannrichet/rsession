@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -258,7 +259,7 @@ public class R2jsSession extends Rsession implements RLog {
         // Loading math.JS
         if(!jsLibraries.containsKey("math")) {
             InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
-            js.eval(new InputStreamReader(mathInputStream));
+            js.eval(new InputStreamReader(mathInputStream,Charset.forName("UTF-8")));
             jsLibraries.put("math", js.get("math"));
         } else {
             js.put("math", jsLibraries.get("math"));
@@ -272,7 +273,7 @@ public class R2jsSession extends Rsession implements RLog {
         // Loading rand.js
         if(!jsLibraries.containsKey("rand")) {
             InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
-            js.eval(new InputStreamReader(randInputStream));
+            js.eval(new InputStreamReader(randInputStream,Charset.forName("UTF-8")));
             js.eval("__rand = rand()");
             jsLibraries.put("__rand", js.get("rand"));
         } else {
@@ -289,7 +290,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         if(!jsLibraries.containsKey("R")) {
             InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
-            js.eval(new InputStreamReader(RInputStream));
+            js.eval(new InputStreamReader(RInputStream,Charset.forName("UTF-8")));
             js.eval("__R = R()");
             jsLibraries.put("__R", js.get("R"));
         } else {
