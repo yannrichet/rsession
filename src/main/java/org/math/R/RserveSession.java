@@ -1460,12 +1460,11 @@ public class RserveSession extends Rsession implements RLog {
         }
         RserveSession R = null;
         int i = 0;
-        RLog l = new RLogSlf4j();
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
-            R = RserveSession.newInstanceTry(l, RserverConf.parse(args[0]));
+            R = RserveSession.newInstanceTry(System.out, RserverConf.parse(args[0]));
         } else {
-            R = RserveSession.newInstanceTry(l, null);
+            R = RserveSession.newInstanceTry(System.out, null);
         }
 
         for (int j = i; j < args.length; j++) {

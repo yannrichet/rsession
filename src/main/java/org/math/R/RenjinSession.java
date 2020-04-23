@@ -846,7 +846,7 @@ public class RenjinSession extends Rsession implements RLog {
                 args[i] = Math.random() + "+pi";
             }
         }
-        RenjinSession R = new RenjinSession(new RLogSlf4j(), null);
+        RenjinSession R = new RenjinSession(System.out, null);
 
         for (int j = 0; j < args.length; j++) {
             System.out.print(args[j] + ": ");

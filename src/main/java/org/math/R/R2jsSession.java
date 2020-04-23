@@ -3,7 +3,6 @@ package org.math.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +32,6 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import org.apache.commons.io.FileUtils;
-import static org.renjin.repackaged.guava.base.Strings.repeat;
 
 
 /**
@@ -3121,5 +3119,23 @@ public class R2jsSession extends Rsession implements RLog {
         return(html);
     }
 
-    
+        public static void main(String[] args) throws Exception {
+        //args = new String[]{"install.packages('lhs',repos='\"http://cloud.r-project.org/\"',lib='.')", "1+1"};
+        if (args == null || args.length == 0) {
+            args = new String[10];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = Math.random() + "+pi";
+            }
+        }
+        R2jsSession R = new R2jsSession(System.out, null);
+
+        for (int j = 0; j < args.length; j++) {
+            System.out.print(args[j] + ": ");
+            System.out.println(R.cast(R.rawEval(args[j])));
+        }
+
+        R.closeLog();
+
+        System.out.println(R.notebook());
+    }
 }
