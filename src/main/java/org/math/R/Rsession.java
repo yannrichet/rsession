@@ -289,9 +289,12 @@ public abstract class Rsession implements RLog {
      * @return R path with suitable level delimiter "/"
      */
     public String toRpath(File path) {
-	if (isAvailable()) // otherwise, still not connected, so ignore wdir
-            if (!path.isAbsolute()) 
-                path = new File(getwd(),path.getPath());
+        if (isAvailable()) // otherwise, still not connected, so ignore wdir
+        {
+            if (!path.isAbsolute()) {
+                path = new File(getwd(), path.getPath());
+            }
+        }
         return path.getPath().replace(File.separatorChar, '/');
     }
 
@@ -356,7 +359,7 @@ public abstract class Rsession implements RLog {
                             log("Failed setting environment " + p, Level.WARNING);
                         }
                     } catch (Exception ex) {
-                        log(ex.getMessage(), Level.WARNING);
+                        log("Failed setting environment " + p + ": " + ex.getMessage(), Level.WARNING);
                         ex.printStackTrace();
                     }
                 }
@@ -568,11 +571,13 @@ public abstract class Rsession implements RLog {
     public String repos = DEFAULT_REPOS;
 
     /**
-     * @param url CRAN repository to use for packages installation (eg http://cran.r-project.org)
+     * @param url CRAN repository to use for packages installation (eg
+     * http://cran.r-project.org)
      */
     public void setRepository(String url) {
         repos = url;
     }
+
     // backward compt.
     public void setCRANRepository(String url) {
         setRepository(url);
@@ -739,7 +744,8 @@ public abstract class Rsession implements RLog {
      * Start installation procedure of local R package
      *
      * @param pack package to install
-     * @param dir directory where package file (.zip, .tar.gz or .tgz) is located.
+     * @param dir directory where package file (.zip, .tar.gz or .tgz) is
+     * located.
      * @param load automatically load package after successfull installation
      * @return installation status
      */
@@ -877,7 +883,8 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Silently (ie no log) launch R command without return value. Encapsulate command in try() to cacth errors
+     * Silently (ie no log) launch R command without return value. Encapsulate
+     * command in try() to cacth errors
      *
      * @param expression R expresison to evaluate
      * @return well evaluated ?
@@ -896,7 +903,8 @@ public abstract class Rsession implements RLog {
     protected abstract boolean silentlyVoidEval(String expression, boolean tryEval);
 
     /**
-     * Silently (ie no log) launch R command and return value. Encapsulate command in try() to cacth errors.
+     * Silently (ie no log) launch R command and return value. Encapsulate
+     * command in try() to cacth errors.
      *
      * @param expression R expresison to evaluate
      * @return REXP R expression
@@ -939,7 +947,8 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Launch R command and return value. Encapsulate command in try() to cacth errors.
+     * Launch R command and return value. Encapsulate command in try() to cacth
+     * errors.
      *
      * @param expression R expresison to evaluate
      * @return REXP R expression
@@ -976,7 +985,8 @@ public abstract class Rsession implements RLog {
     }
 
     /**
-     * Launch R command without return value. Encapsulate command in try() to catch R errors.
+     * Launch R command without return value. Encapsulate command in try() to
+     * catch R errors.
      *
      * @param expression R expresison to evaluate
      * @return well evaluated ?
@@ -992,13 +1002,17 @@ public abstract class Rsession implements RLog {
 
     public Object eval(String expression, boolean tryEval) throws RException {
         Object o = rawEval(expression, tryEval);
-        if (o != null && o instanceof RException) throw (RException)o;
+        if (o != null && o instanceof RException) {
+            throw (RException) o;
+        }
         return cast(o);
     }
 
     public Object eval(String expression) throws RException {
         Object o = rawEval(expression);
-        if (o != null && o instanceof RException) throw (RException)o;
+        if (o != null && o instanceof RException) {
+            throw (RException) o;
+        }
         return cast(o);
     }
 
@@ -1109,11 +1123,11 @@ public abstract class Rsession implements RLog {
     }
 
     public abstract String gethomedir();
-    
+
     public String getwd() {
         return asString(silentlyRawEval("getwd()"));
     }
-   
+
     public void setwd(File wdir) {
         silentlyVoidEval("setwd('" + toRpath(wdir) + "')");
     }
@@ -1128,11 +1142,11 @@ public abstract class Rsession implements RLog {
     public void source(File f) {
         f = putFileInWorkspace(f);
         try {
-            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find "+f.getPath();
+            assert asLogical(rawEval("file.exists('" + f.getPath().replace("\\", "/") + "')", TRY_MODE)) : "Cannot find " + f.getPath();
         } catch (Exception r) {
             log(r.getMessage(), Level.ERROR);
         }
-        try {        
+        try {
             voidEval("source('" + f.getPath().replace("\\", "/") + "')", TRY_MODE);
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
@@ -1165,7 +1179,8 @@ public abstract class Rsession implements RLog {
     /**
      * list R variables in R env.
      *
-     * @param all - If TRUE, all object names are returned. If FALSE, names which begin with a . are omitted.
+     * @param all - If TRUE, all object names are returned. If FALSE, names
+     * which begin with a . are omitted.
      * @return list of R objects names
      */
     public String[] ls(boolean all) {
@@ -1244,7 +1259,7 @@ public abstract class Rsession implements RLog {
     public boolean SAVE_ASCII = false;
 
     public abstract void getFileFromWorkspace(File f);
-    
+
     /**
      * Save R variables in data file
      *
@@ -1607,11 +1622,14 @@ public abstract class Rsession implements RLog {
     Map<String, Object> noVarsEvals = new HashMap<String, Object>();
 
     /**
-     * Method to rawEval expression. Holds many optimizations (@see noVarsEvals) and turn around for reliable usage (like engine auto restart). 1D Numeric "vars" are replaced using
-     * Java replace engine instead of R one. Intended to not interfer with current R env vars. Yes, it's hard-code :)
+     * Method to rawEval expression. Holds many optimizations (@see noVarsEvals)
+     * and turn around for reliable usage (like engine auto restart). 1D Numeric
+     * "vars" are replaced using Java replace engine instead of R one. Intended
+     * to not interfer with current R env vars. Yes, it's hard-code :)
      *
      * @param expression String to evaluate
-     * @param vars HashMap&lt;String, Object&gt; vars inside expression. Passively overload current R env variables.
+     * @param vars HashMap&lt;String, Object&gt; vars inside expression.
+     * Passively overload current R env variables.
      * @return java castStrict Object Warning, UNSTABLE and high CPU cost.
      * @throws org.math.R.Rsession.RException Could not proxyEval
      */
@@ -1728,12 +1746,16 @@ public abstract class Rsession implements RLog {
     static boolean uses(String expression, Map<String, Object> vars) {
         return vars != null && !vars.isEmpty() && areUsed(expression, vars.keySet());
     }
-    
+
     public abstract void setGlobalEnv(String envName);
-    
+
     protected String envName = "UNDEFINED_ENV";
 
-    public String getGlobalEnv() {return envName.substring(2,envName.length()-2);};
+    public String getGlobalEnv() {
+        return envName.substring(2, envName.length() - 2);
+    }
+
+    ;
     
     public abstract void copyGlobalEnv(String newEnvName);
 
