@@ -575,6 +575,9 @@ public class RenjinSession extends Rsession implements RLog {
         if (o instanceof Boolean) {
             return (boolean) o;
         }
+        if (o instanceof RException) {
+            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException)o).getMessage());
+        }
         if (!(o instanceof SEXP)) {
             throw new IllegalArgumentException("[asLogical] Not an SEXP object: " + o);
         }

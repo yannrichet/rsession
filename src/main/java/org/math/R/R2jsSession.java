@@ -2934,6 +2934,9 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
         if (o instanceof Boolean) return (Boolean)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof RException) {
+            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException)o).getMessage());
+        }
         return (boolean) ScriptUtils.convert(o, boolean.class);
     }
 
