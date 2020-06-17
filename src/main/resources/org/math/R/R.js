@@ -299,7 +299,22 @@
     function rep(x,times) {
         var array = [];
         var i=0;
-        while (i < times) {
+        var l = 1;
+        if (Array.isArray(x)) l = length(x);
+        while (i < times*l) {
+            if (Array.isArray(x))
+                array.push(x[i % length(x)]);
+            else
+                array.push(x);
+            i++;
+        }
+        return array;
+    }
+
+    function repLen(x,length__out) {
+        var array = [];
+        var i=0;
+        while (i < length__out) {
             if (Array.isArray(x))
                 array.push(x[i % length(x)]);
             else
@@ -365,8 +380,18 @@
         return false;
     }
 
+    function isNA(x) {
+        return isNull(x); // No NA available in js for now...
+    }
+
     function isTRUE(x) {
         if (x == true)
+            return true;
+        return false;
+    }    
+
+    function isFALSE(x) {
+        if (x == false)
             return true;
         return false;
     }
@@ -726,6 +751,7 @@
     proto.dim = dim;
     proto.length = length;
     proto.rep = rep;
+    proto.repLen = repLen;
     proto.cbind = cbind;
     proto.rbind = rbind;
     proto.which = which;
@@ -741,7 +767,9 @@
     proto.setwd = setwd;
     proto.SysSleep = SysSleep;
     proto.isNull = isNull;
+    proto.isNA = isNA;
     proto.isTRUE = isTRUE;
+    proto.isFALSE = isFALSE;
     proto.isFunction = isFunction;
     proto.stopIfNot = stopIfNot;
     proto.asNumeric = asNumeric;

@@ -327,13 +327,17 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("as.integer(", "asInteger(");
         R_TO_JS.put("as.logical(", "asLogical(");
         R_TO_JS.put("as.matrix(", "matrix(");
+        R_TO_JS.put("rep_len(", "reLen(");
         R_TO_JS.put("as.array(", "array(");
         R_TO_JS.put("which.min(", "whichMin(");
         R_TO_JS.put("which.max(", "whichMax(");
         R_TO_JS.put("print(", "_print(");
         R_TO_JS.put("is.function(", "isFunction(");
         R_TO_JS.put("is.null(", "isNull(");
+        R_TO_JS.put("is.nan(", "isNaN(");
+        R_TO_JS.put("is.na(", "isNA(");
         R_TO_JS.put("isTRUE(", "isTRUE(");
+        R_TO_JS.put("isFALSE(", "isFALSE(");
         R_TO_JS.put("Sys.sleep(", "SysSleep(");
         R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
@@ -505,6 +509,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)FALSE(\\b)", "false");
 
         e = e.replaceAll("(?<!\\.)(\\b)NULL(\\b)", "null");
+        e = e.replaceAll("(?<!\\.)(\\b)NA(\\b)", "null");
         
         // Replace '++' operator by a=a+1
         e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1"); 
@@ -608,6 +613,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)names\\(", "$1__R.names(");
         e = e.replaceAll("(?<!\\.)(\\b)length\\(", "$1__R.length(");
         e = e.replaceAll("(?<!\\.)(\\b)dim\\(", "$1__R.dim(");
+        e = e.replaceAll("(?<!\\.)(\\b)reLen\\(", "$1__R.repLen(");
         e = e.replaceAll("(?<!\\.)(\\b)rep\\(", "$1__R.rep(");
         e = e.replaceAll("(?<!\\.)(\\b)which\\(", "$1__R.which(");
         e = e.replaceAll("(?<!\\.)(\\b)whichMin\\(", "$1__R.whichMin(");
@@ -618,7 +624,9 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)SysSleep\\(", "$1__R.SysSleep(");
         e = e.replaceAll("(?<!\\.)(\\b)isFunction\\(", "$1__R.isFunction(");
         e = e.replaceAll("(?<!\\.)(\\b)isNull\\(", "$1__R.isNull(");
+        e = e.replaceAll("(?<!\\.)(\\b)isNA\\(", "$1__R.isNA(");
         e = e.replaceAll("(?<!\\.)(\\b)isTRUE\\(", "$1__R.isTRUE(");
+        e = e.replaceAll("(?<!\\.)(\\b)isFALSE\\(", "$1__R.isFALSE(");
         e = e.replaceAll("(?<!\\.)(\\b)apply\\(", "$1__R.apply(");
         e = e.replaceAll("(?<!\\.)(\\b)rbind\\(", "$1__R.rbind(");
         e = e.replaceAll("(?<!\\.)(\\b)cbind\\(", "$1__R.cbind(");
@@ -660,7 +668,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$([a-zA-Z.])", ".$1"); //FIXME
+        e = e.replaceAll("\\$([a-zA-Z._])", ".$1"); //FIXME
         
         // R Comments
         e = e.replaceAll("#", "//");

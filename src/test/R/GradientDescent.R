@@ -1,6 +1,6 @@
 #help: First-order local optimization algorithm<br/>http://en.wikipedia.org/wiki/Gradient_descent
 #tags: optimization
-#options: yminimization='false'; iterations='100'; delta='1'; epsilon='0.01'; target='Inf'
+#options: yminimization='false'; iterations='100'; .delta='1'; .epsilon='0.01'; .target='Inf'; x0='0.5'
 #input: x=list(min=0,max=1)
 #output: y=0.99
 
@@ -10,9 +10,11 @@ GradientDescent <- function(opts) {
 
   gradientdescent$yminimization <- isTRUE(as.logical(opts$yminimization))
   gradientdescent$iterations <- as.integer(opts$iterations)
-  gradientdescent$delta <- as.numeric(opts$delta)
-  gradientdescent$epsilon <- as.numeric(opts$epsilon)
-  gradientdescent$target <- as.numeric(opts$target)
+
+  gradientdescent$delta <- as.numeric(opts$.delta)
+  gradientdescent$epsilon <- as.numeric(opts$.epsilon)
+  gradientdescent$target <- as.numeric(opts$.target)
+  gradientdescent$x0 <- as.numeric(opts$x0)
   if (!gradientdescent$yminimization){
     if (isTRUE(gradientdescent$target == -Inf)) {
       gradientdescent$target = Inf
@@ -35,7 +37,9 @@ getInitialDesign <- function(algorithm,input,output) {
   algorithm$i = 0
   algorithm$input <- input
   d = length(input)
-  x = askfinitedifferences(rep(0.5,d),algorithm$epsilon)
+  if (is.na(algorithm$x0) | is.nan(algorithm$x0)) algorithm$x0=runif(d)
+  x0d = rep_len(algorithm$x0,length.out = d)
+  x = askfinitedifferences( x0d,algorithm$epsilon)
   names(x) <- names(input)
   return(from01(x,algorithm$input))
 }
@@ -49,6 +53,7 @@ getNextDesign <- function(algorithm,X,Y) {
   if (algorithm$i == 1) {
     algorithm$delta = algorithm$delta / (max(Y[,1])-min(Y[,1]))
   }
+
   if (algorithm$i > algorithm$iterations) { return(); }
 
   if (algorithm$yminimization) {
@@ -59,11 +64,13 @@ getNextDesign <- function(algorithm,X,Y) {
 
   names(X) <- names(algorithm$input)
   X = to01(X,algorithm$input)
+
   d = ncol(X)
   n = nrow(X)
 
-  prevXn = X[(n-d):n,] 
+  prevXn = X[(n-d):n,]
   prevYn = Y[(n-d):n,1]
+
   if (algorithm$i > 1) {
     if (algorithm$yminimization) {
       if (Y[n-d,1] > Y[n-d-d,1]) {
@@ -120,9 +127,8 @@ displayResults <- function(algorithm,X,Y) {
   m = min(Y)
   m.ix = which.min(Y)
   m.ix = m.ix[1]
-  x = X[m.ix,] 
+  x = X[m.ix,]
 
-  resolution <- 600
   d = dim(X)[2]
 
   if (algorithm$yminimization) {
@@ -132,12 +138,12 @@ displayResults <- function(algorithm,X,Y) {
   }
   if(d>1) {
     algorithm$files <- paste0("pairs_",algorithm$i-1,".png",sep="")
-    png(file=algorithm$files,bg="transparent",height=resolution,width = resolution)
-    pairs(cbind(X,Y),col=rgb(r=red,g=0,b=1-red)) 
+    png(file=algorithm$files,bg="transparent",height=600,width = 600)
+    pairs(cbind(X,Y),col=rgb(r=red,g=0,b=1-red))
     dev.off()
   } else {
     algorithm$files <- paste0("plot_",algorithm$i-1,".png",sep="")
-    png(file=algorithm$files,bg="transparent",height=resolution,width = resolution)
+    png(file=algorithm$files,bg="transparent",height=600,width = 600)
     plot(x=X[,1],y=Y,xlab=names(X),ylab=names(Y),col=rgb(r=red,g=0,b=1-red))
     dev.off()
   }
@@ -148,8 +154,7 @@ displayResults <- function(algorithm,X,Y) {
                 paste0(paste(names(X),'=',x, collapse=';')),
                 "<br/><img src='",
                 algorithm$files,
-                "' width='",resolution,"' height='",resolution,
-                "'/></HTML>")
+                "' width='600' height='600'/></HTML>")
 
     m=paste("<min>",m,"</min>")
     argmin=paste("<argmin>[",paste(collapse=',',x),"]</argmin>")
@@ -161,8 +166,7 @@ displayResults <- function(algorithm,X,Y) {
                 paste0(paste(names(X),'=',x, collapse=';')),
                 "<br/><img src='",
                 algorithm$files,
-                "' width='",resolution,"' height='",resolution,
-                "'/></HTML>")
+                "' width='600' height='600'/></HTML>")
 
     m=paste("<max>",m,"</max>")
     argmax=paste("<argmax>[",paste(collapse=',',x),"]</argmax>")
@@ -223,7 +227,7 @@ askfinitedifferences <- function(x,epsilon) {
     }
     # xd <- rbind(xd,xdi,deparse.level = 0)
     xd <- rbind(xd,matrix(xdi,nrow=1))
-}
+  }
   return(xd)
 }
 
@@ -264,7 +268,7 @@ to01 = function(X, inp) {
 # f1 = function(x) f(cbind(.5,x))
 #
 # options = list(iterations = 10, delta = 0.1, epsilon = 0.01, target=0)
-# gd = algorithm(options)
+# gd = GradientDescent(options)
 #
 # # X0 = getInitialDesign(gd, input=list(x1=list(min=0,max=1),x2=list(min=0,max=1)), NULL)
 # # Y0 = f(X0)
