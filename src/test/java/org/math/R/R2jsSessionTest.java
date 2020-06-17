@@ -149,6 +149,7 @@ public class R2jsSessionTest {
 
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
+        engine.debug_js=true;
         // Check infinity is available
         assert Double.isInfinite((Double) engine.eval("a <- Inf"));
         assert Double.isInfinite((Double) engine.eval("a <- -Inf"));
@@ -182,7 +183,7 @@ public class R2jsSessionTest {
 
         // Test if power is relaced in variable name
         engine.voidEval("e235 = function(){return 12}");
-        assert (Double) engine.eval("__this__.e235()") == 12;
+        assert (Double) engine.eval("e235()") == 12;
 
 
 
