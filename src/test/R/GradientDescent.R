@@ -13,7 +13,7 @@ GradientDescent <- function(opts) {
   gradientdescent$delta <- as.numeric(opts$delta)
   gradientdescent$epsilon <- as.numeric(opts$epsilon)
   gradientdescent$target <- as.numeric(opts$target)
-  if (length(opts$x0)==0) {
+  if (opts$x0=='') {
     gradientdescent$x0 <- NULL
   } else {
     gradientdescent$x0 <- as.numeric(opts$x0)
@@ -41,13 +41,23 @@ getInitialDesign <- function(algorithm,input,output) {
   algorithm$input <- input
   d = length(input)
   if (!is.null(algorithm$x0)) {
-    algorithm$x0 = rep(algorithm$x0,d)
-    algorithm$x0 = algorithm$x0[1:d] # sort-of rep_len
-    algorithm$x0 = to01(algorithm$x0,algorithm$input)
+    x0 = rep(algorithm$x0,d)
+    if (length(x0)>d) {
+        x0 = x0[1:d] #to not let x0 become a scalar for R2js
+    }
+    x0 = matrix(x0,ncol=d) # sort-of rep_len
+    names(x0) <- names(input)
+    x0 = to01(x0,algorithm$input)
+    names(x0) <- names(input)
   } else {
-    algorithm$x0 = runif(d)
+    x0 = matrix(runif(d),ncol=d)
+    names(x0) <- names(input)
   }
-  x = askfinitedifferences(algorithm$x0,algorithm$epsilon)
+  if (ncol(x0)>1) { # for R2js
+    x0 = x0[1,]
+  }
+  algorithm$x0 = x0
+  x = askfinitedifferences(x0,algorithm$epsilon)
   names(x) <- names(input)
   return(from01(x,algorithm$input))
 }
@@ -231,7 +241,7 @@ displayResultsTmp <- function(algorithm,X,Y) {
 askfinitedifferences <- function(x,epsilon) {
   xd <- matrix(x,nrow=1);
   for (i in 1:length(x)) {
-    xdi <- as.array(x);
+    xdi <- as.array(x)
     if (xdi[i] + epsilon > 1.0) {
       xdi[i] <- xdi[i] - epsilon;
     } else {
