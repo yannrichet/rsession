@@ -489,7 +489,7 @@ public class StartRserve {
             FilenameFilter ff = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return name.startsWith("3.");
+                    return name.startsWith("3.") | name.startsWith("4.");
                 }
             };
             return ((launchRserve("R") != null)
