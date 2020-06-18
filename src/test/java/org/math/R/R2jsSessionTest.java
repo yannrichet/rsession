@@ -31,11 +31,11 @@ public class R2jsSessionTest {
     final double epsilon = 1e-12;
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
 
-  @Before
+    @Before
     public void setUp() throws Exception {
-    engine.debug_js = true;
+        engine.debug_js = true;
     }
-    
+
     @Test
     public void test2Sessions() throws Rsession.RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
         engine.debug_js = true;
@@ -109,19 +109,19 @@ public class R2jsSessionTest {
 //        engine.voidEval("Sys__info = function() {return(" + toRcode(infos) + ")}");
 //        String nodename = (String) engine.eval("Sys.info()[['nodename']]");
 //        assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
-        
-        engine.voidEval("Sys__info = function() {return("+asRList(newMap(
-                        "nodename",InetAddress.getLocalHost().getHostName(),
-                        "sysname",System.getProperty("os.name"),
-                        "release","?",
-                        "version",System.getProperty("os.version"),
-                        "user",System.getProperty("user.name")                        
-                        ))+")}");
-                 engine.voidEval("Sys__getenv = function(v) {env=list('R_HOME'='')\nreturn(env[v])}");//+toRcode(System.getenv())+")\nreturn(env[v])}");
-                 engine.voidEval("options = function() {return("+asRList(newMap(
-                        "OutDec",DecimalFormatSymbols.getInstance().getDecimalSeparator()
-                        ))+")}");
-            
+
+        engine.voidEval("Sys__info = function() {return(" + asRList(newMap(
+                "nodename", InetAddress.getLocalHost().getHostName(),
+                "sysname", System.getProperty("os.name"),
+                "release", "?",
+                "version", System.getProperty("os.version"),
+                "user", System.getProperty("user.name")
+        )) + ")}");
+        engine.voidEval("Sys__getenv = function(v) {env=list('R_HOME'='')\nreturn(env[v])}");//+toRcode(System.getenv())+")\nreturn(env[v])}");
+        engine.voidEval("options = function() {return(" + asRList(newMap(
+                "OutDec", DecimalFormatSymbols.getInstance().getDecimalSeparator()
+        )) + ")}");
+
         String nodename = (String) engine.eval("Sys.info()[['nodename']]");
         assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
 
@@ -149,14 +149,14 @@ public class R2jsSessionTest {
 
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
-        engine.debug_js=true;
+        engine.debug_js = true;
         // Check infinity is available
         assert Double.isInfinite((Double) engine.eval("a <- Inf"));
         assert Double.isInfinite((Double) engine.eval("a <- -Inf"));
 
         engine.voidEval("a <- NaN");
         assert Double.isNaN((Double) engine.eval("a")) : engine.eval("a");
-        assert Double.isNaN((Double) engine.eval("a+1")): engine.eval("a");
+        assert Double.isNaN((Double) engine.eval("a+1")) : engine.eval("a");
 
         engine.voidEval("a = 1");
         assert (Double) engine.eval("a") == 1;
@@ -185,8 +185,6 @@ public class R2jsSessionTest {
         engine.voidEval("e235 = function(){return 12}");
         assert (Double) engine.eval("e235()") == 12;
 
-
-
         assert Double.parseDouble(engine.eval("2 ^ 3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2^3").toString()) == 8;
         assert Double.parseDouble(engine.eval("2**3").toString()) == 8;
@@ -197,7 +195,7 @@ public class R2jsSessionTest {
             engine.voidEval("if (1<2) print('toto') else print('titi')");
             assert true;
         } catch (Exception e) {
-            assert false :"Throw error: " + e;
+            assert false : "Throw error: " + e;
         }
 
         assert !(engine.eval("1<NaN") instanceof Boolean) : "Sadly eval NaN test as boolean: " + engine.eval("1<NaN");
@@ -229,20 +227,20 @@ public class R2jsSessionTest {
 
         // Operators
         engine.debug_js = true;
-        assert (Double) engine.eval("0-1-2")==-3;
-        assert (Double) engine.eval("-1-2")==-3;
+        assert (Double) engine.eval("0-1-2") == -3;
+        assert (Double) engine.eval("-1-2") == -3;
 
         engine.voidEval("a = 2^2 - 2^2");
-        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a")+" != 2^2 - 2^2";
+        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a") + " != 2^2 - 2^2";
 
         engine.voidEval("a = 2^2-2^2");
-        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a")+" != 2^2-2^2";
+        assert (Double) engine.eval("a") == 0 : (Double) engine.eval("a") + " != 2^2-2^2";
 
         engine.voidEval("a = -4 * 10 -5* 100");
-        assert (Double) engine.eval("a") == -540 : (Double) engine.eval("a")+" != -540" ;
+        assert (Double) engine.eval("a") == -540 : (Double) engine.eval("a") + " != -540";
 
         engine.voidEval("a = -4 * -10 -5* -100");
-        assert (Double) engine.eval("a") == 540 : (Double) engine.eval("a")+" != 540" ;
+        assert (Double) engine.eval("a") == 540 : (Double) engine.eval("a") + " != 540";
 
         engine.voidEval("a = -4*10-5*100");
         assert (Double) engine.eval("a") == -540;
@@ -264,7 +262,6 @@ public class R2jsSessionTest {
         assert engine.asLogical(engine.eval("FALSE | TRUE")) == true;
         assert engine.asLogical(engine.eval("FALSE | FALSE")) == false;
         assert engine.eval("FALSE | NULL") == null;
-
 
         assert engine.asLogical(engine.eval("TRUE || TRUE")) == true : engine.eval("TRUE || TRUE");
         assert engine.asLogical(engine.eval("FALSE || TRUE")) == true;
@@ -302,34 +299,31 @@ public class R2jsSessionTest {
     public void testPaste() throws Rsession.RException {
         engine.debug_js = true;
 
-        assert engine.eval("paste('a','b','c',sep='v')").equals("avbvc"): engine.eval("paste('a','b','c',sep='v')");
-        assert engine.eval("paste0('a','b','c')").equals("abc"): engine.eval("paste0('a','b','c')");
-
+        assert engine.eval("paste('a','b','c',sep='v')").equals("avbvc") : engine.eval("paste('a','b','c',sep='v')");
+        assert engine.eval("paste0('a','b','c')").equals("abc") : engine.eval("paste0('a','b','c')");
 
         engine.voidEval("x = matrix(c(1,2,3,4,5,6),ncol=2)");
-        assert engine.eval("paste(x[1,],collapse='v')").equals("1v4"): engine.eval("paste(x[1,],collapse='v')");
-        assert engine.eval("paste0(x[1,],collapse='v')").equals("1v4"): engine.eval("paste0(x[1,],collapse='v')");
+        assert engine.eval("paste(x[1,],collapse='v')").equals("1v4") : engine.eval("paste(x[1,],collapse='v')");
+        assert engine.eval("paste0(x[1,],collapse='v')").equals("1v4") : engine.eval("paste0(x[1,],collapse='v')");
 
         engine.voidEval("x1 = matrix(c(1.23,2.23,3.23,4.23,5.23,6.23),ncol=2)");
-        assert engine.eval("paste(x1[1,],collapse='v')").equals("1.23v4.23"): engine.eval("paste(x1[1,],collapse='v')");
-        assert engine.eval("paste0(x1[1,],collapse='v')").equals("1.23v4.23"): engine.eval("paste0(x1[1,],collapse='v')");
+        assert engine.eval("paste(x1[1,],collapse='v')").equals("1.23v4.23") : engine.eval("paste(x1[1,],collapse='v')");
+        assert engine.eval("paste0(x1[1,],collapse='v')").equals("1.23v4.23") : engine.eval("paste0(x1[1,],collapse='v')");
 
         assert engine.eval("paste('a1','b2')").equals("a1 b2") : engine.eval("paste('a1','b2')");
-        assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4"):  engine.eval("paste(c('a1','b2'),c('c3','d4'))");
+        assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4") : engine.eval("paste(c('a1','b2'),c('c3','d4'))");
         assert engine.eval("paste(c('a1','b2'),'d4')").equals("a1 d4;b2 d4") : engine.eval("paste(c('a1','b2'),'d4')");
 
-
-        System.err.println(engine.eval("paste(sep='<br/>',\n" +
-                "        paste('<HTML name=\"minimum\">minimum is ',0.1),\n" +
-                "        paste(sep='',\n" +
-                "            'found at ',\n" +
-                "            paste(collapse='; ',paste(c('x1','x2'),'=',c(.5,.6))),\n" +
-                "            '<br/><img src=\"',\n" +
-                "            'files',\n" +
-                "            '\" width=\"',600,'\" height=\"',600,\n" +
-                "            '\"/></HTML>'))"));
+        System.err.println(engine.eval("paste(sep='<br/>',\n"
+                + "        paste('<HTML name=\"minimum\">minimum is ',0.1),\n"
+                + "        paste(sep='',\n"
+                + "            'found at ',\n"
+                + "            paste(collapse='; ',paste(c('x1','x2'),'=',c(.5,.6))),\n"
+                + "            '<br/><img src=\"',\n"
+                + "            'files',\n"
+                + "            '\" width=\"',600,'\" height=\"',600,\n"
+                + "            '\"/></HTML>'))"));
     }
-
 
     @Test
     public void testApply() throws Rsession.RException {
@@ -454,7 +448,6 @@ public class R2jsSessionTest {
         //assert Double.parseDouble( js.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(0)").toString()) == -273.15;
-
         engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
         assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
         assert (Double) engine.eval("f(3)") == 3403;
@@ -466,6 +459,10 @@ public class R2jsSessionTest {
 
     @Test
     public void testArrays() throws Rsession.RException {
+        engine.voidEval("r = rep(3.14,1)");
+        engine.voidEval("print(r)");
+        assert engine.eval("r") instanceof double[];
+        assert Arrays.equals((double[]) engine.eval("r"), new double[]{3.14});
 
         engine.voidEval("a1 = c(1,2,3,12);\n b_2 = 2;");
         assert (Double) engine.eval("a1[1]") == 1;
@@ -524,13 +521,13 @@ public class R2jsSessionTest {
 
         // Matrix transpose
         engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");
-        assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2, 4},{3, 1}, {5, 7}});
+        assert Arrays.deepEquals((double[][]) engine.eval("A"), new double[][]{{2, 4}, {3, 1}, {5, 7}});
 
         engine.voidEval("AA = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=FALSE)");
-        assert Arrays.deepEquals((double[][]) engine.eval("AA"), new double[][]{{2, 1},{4,5}, {3, 7}});
+        assert Arrays.deepEquals((double[][]) engine.eval("AA"), new double[][]{{2, 1}, {4, 5}, {3, 7}});
 
         engine.voidEval("AAA = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2)");
-        assert Arrays.deepEquals((double[][]) engine.eval("AAA"), new double[][]{{2, 1},{4,5}, {3, 7}});
+        assert Arrays.deepEquals((double[][]) engine.eval("AAA"), new double[][]{{2, 1}, {4, 5}, {3, 7}});
 
         engine.voidEval("B = t(A)");
         assert Arrays.deepEquals((double[][]) engine.eval("B"), new double[][]{{2, 3, 5}, {4, 1, 7}});
@@ -647,13 +644,13 @@ public class R2jsSessionTest {
         }
         try {
             String repl = R2jsSession.replaceIndexes("abc[i]");
-            assert true ;
+            assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
         try {
             String repl = R2jsSession.replaceIndexes("abc[i][j]");
-            assert true ;
+            assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
@@ -695,13 +692,13 @@ public class R2jsSessionTest {
         engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
         engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
         engine.voidEval("C = rbind(A,B)");
-        assert  engine.eval("C") instanceof double[][] : "Not double[][] : "+ engine.eval("C").getClass();
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
         assert Arrays.deepEquals((double[][]) engine.eval("C"), new double[][]{{1, 2}, {5, 6}, {3, 4}, {7, 8}});
 
         engine.voidEval("A <- runif(10)");
         engine.voidEval("B <- runif(10)");
         engine.voidEval("C = rbind(A,B)");
-        assert  engine.eval("C") instanceof double[][] : "Not double[][] : "+ engine.eval("C").getClass();
+        assert engine.eval("C") instanceof double[][] : "Not double[][] : " + engine.eval("C").getClass();
         double[][] C = (double[][]) engine.eval("C");
         assert C.length == 2 : "Bad nrow";
         assert C[0].length == 10 : "Bad ncol";
@@ -766,7 +763,7 @@ public class R2jsSessionTest {
         engine.set("s", "abcdef");
         File f = new File("R2Js" + rand + ".save");
         System.out.println("Absolute path: " + f.getAbsolutePath());
-        System.out.println("getwd() "+engine.getwd());
+        System.out.println("getwd() " + engine.getwd());
         engine.save(f, "s");
         engine.rm("s");
         engine.load(f);
@@ -808,7 +805,7 @@ public class R2jsSessionTest {
         engine.eval("fun = function(x) {return(x)}");
         engine.set("a", "123");
         engine.set("b", "456");
-        System.err.println( Arrays.toString(engine.ls()));
+        System.err.println(Arrays.toString(engine.ls()));
         assert Arrays.equals(engine.ls(), new String[]{"a", "b", "fun"}) : Arrays.toString(engine.ls());
         engine.savels(f, "");
         engine.rm("fun");
@@ -817,7 +814,7 @@ public class R2jsSessionTest {
         assert Arrays.equals(engine.ls(), new String[]{}) : Arrays.toString(engine.ls());
         engine.load(f);
         assert Arrays.equals(engine.ls(), new String[]{"a", "b", "fun"}) : Arrays.toString(engine.ls());
-        assert (double)engine.eval("fun(0.123)")==0.123:engine.eval("fun(0.123)");
+        assert (double) engine.eval("fun(0.123)") == 0.123 : engine.eval("fun(0.123)");
     }
 
     @Test
@@ -854,7 +851,6 @@ public class R2jsSessionTest {
         }
 
     }
-
 
     @Test
     public void testRmFunction() throws Rsession.RException {
@@ -915,7 +911,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("c$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("c[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("c$first[1]")).equals("aa");
-        assert ((Double) engine.eval("c$second[2]")).equals(22.0):engine.eval("c$second[2]");
+        assert ((Double) engine.eval("c$second[2]")).equals(22.0) : engine.eval("c$second[2]");
 
         engine.voidEval("a2 = c('aa','bb','cc')");
         engine.voidEval("b2 = c(11,22,33)");
@@ -966,7 +962,7 @@ public class R2jsSessionTest {
         assertTrue(Arrays.equals((double[]) engine.eval("C$second"), new double[]{11, 22, 33}));
         assertTrue(Arrays.equals((double[]) engine.eval("C[['second']]"), new double[]{11, 22, 33}));
         assert ((String) engine.eval("C$first[1]")).equals("aa") : ((String) engine.eval("C$first[1]"));
-        assert ((Double) engine.eval("C$second[2]")).equals(22.0): engine.eval("C$second[2]");
+        assert ((Double) engine.eval("C$second[2]")).equals(22.0) : engine.eval("C$second[2]");
 
         engine.voidEval("a2 = c('aa','bb','cc')");
         engine.voidEval("b2 = c(11,22,33)");
@@ -997,9 +993,9 @@ public class R2jsSessionTest {
         assert ((String) engine.eval("c$first[1]")).equals("aa");
         assert ((Double) engine.eval("c$second[2]")).equals(22.0);
 
-        assert Arrays.equals((String[]) engine.eval("c[['first']]"),new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[])engine.eval("c[['first']]"));
+        assert Arrays.equals((String[]) engine.eval("c[['first']]"), new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[]) engine.eval("c[['first']]"));
         engine.voidEval("f = 'first'");
-        assert Arrays.equals((String[]) engine.eval("c[[f]]"),new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[])engine.eval("c[['first']]"));
+        assert Arrays.equals((String[]) engine.eval("c[[f]]"), new String[]{"aa", "bb", "cc"}) : Arrays.toString((String[]) engine.eval("c[['first']]"));
     }
 
     @Test
@@ -1044,9 +1040,9 @@ public class R2jsSessionTest {
 
     @Test
     public void testWhichMin() throws Rsession.RException {
-        engine.set("x",new double[]{1,2,4,8,0,5,6,-1,10,9});
-        assert (double)engine.eval("min(x)")==-1 : "Failed to find min: "+engine.eval("min(x)");
-        assert Arrays.equals((double[])engine.eval("which.min(x)"),new double[]{8}) : "Failed to find which.min: "+engine.eval("which.min(x)");
+        engine.set("x", new double[]{1, 2, 4, 8, 0, 5, 6, -1, 10, 9});
+        assert (double) engine.eval("min(x)") == -1 : "Failed to find min: " + engine.eval("min(x)");
+        assert Arrays.equals((double[]) engine.eval("which.min(x)"), new double[]{8}) : "Failed to find which.min: " + engine.eval("which.min(x)");
     }
 
     @Test
@@ -1141,12 +1137,12 @@ public class R2jsSessionTest {
         engine.debug_js = true;
         // Test when the function is used before its definition
         String initialWD = (String) engine.eval("getwd()");
-        engine.voidEval("setwd('"+ initialWD +"/test')");
+        engine.voidEval("setwd('" + initialWD + "/test')");
         String otherWD = (String) engine.eval("getwd()");
-        assert !initialWD.equals(otherWD) : "initial wd="+initialWD+ " otherwd="+otherWD;
-        engine.voidEval("setwd('"+ initialWD +"')");
+        assert !initialWD.equals(otherWD) : "initial wd=" + initialWD + " otherwd=" + otherWD;
+        engine.voidEval("setwd('" + initialWD + "')");
         String initialWD2 = (String) engine.eval("getwd()");
-        assert initialWD.equals(initialWD2) : "initial wd="+initialWD+ " otherwd="+initialWD2;
+        assert initialWD.equals(initialWD2) : "initial wd=" + initialWD + " otherwd=" + initialWD2;
     }
 
     @Test
@@ -1210,14 +1206,14 @@ public class R2jsSessionTest {
         List<String> names = Arrays.asList("array", "paste0", "paste", "vector", "matrix", "c", "ls", "save", "load", "write__csv",
                 "data", "data__frame", "list", "length", "file__exists", "exists", "stopifnot", "returnif", "default");
 
-        for(String name: names) {
+        for (String name : names) {
             engine.voidEval("__this__." + name + " <- function() {12}");
-            assertEquals((Double) engine.eval("__this__." + name +"()"), 12, epsilon);
+            assertEquals((Double) engine.eval("__this__." + name + "()"), 12, epsilon);
         }
     }
 
     @Test
-    public void testNumeralSystem()  throws Rsession.RException, ScriptException {
+    public void testNumeralSystem() throws Rsession.RException, ScriptException {
         // Test to prevent octal conversion
         assertEquals((Double) engine.eval("051+1"), 52.0, epsilon);
         assertEquals((Double) engine.eval("051+1"), 52.0, epsilon);
@@ -1231,18 +1227,18 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testWrongExpression()  throws Rsession.RException, ScriptException {
+    public void testWrongExpression() throws Rsession.RException, ScriptException {
         engine.debug_js = true;
         engine.eval("x <- 12");
         assertEquals((Double) engine.eval("2"), 2., epsilon);
-        try{
+        try {
             engine.eval("1+ x)*2");
             assertTrue("Evaluation should return exception", false);
         } catch (Rsession.RException e) {
         }
         assertEquals((Double) engine.eval("2"), 2., epsilon);
         assertEquals((Double) engine.eval("2+1"), 3., epsilon);
-        try{
+        try {
             engine.eval("$12");
             assertTrue("Evaluation should return exception", false);
         } catch (Rsession.RException e) {
