@@ -1,6 +1,6 @@
 #help: First-order local optimization algorithm<br/>http://en.wikipedia.org/wiki/Gradient_descent
 #tags: optimization
-#options: yminimization='false'; iterations='100'; .delta='1'; .epsilon='0.01'; .target='Inf'; x0='0.5'
+#options: yminimization='false'; iterations=100; delta=1; epsilon=0.01; target=Inf; x0=''
 #input: x=list(min=0,max=1)
 #output: y=0.99
 
@@ -10,11 +10,14 @@ GradientDescent <- function(opts) {
 
   gradientdescent$yminimization <- isTRUE(as.logical(opts$yminimization))
   gradientdescent$iterations <- as.integer(opts$iterations)
-
-  gradientdescent$delta <- as.numeric(opts$.delta)
-  gradientdescent$epsilon <- as.numeric(opts$.epsilon)
-  gradientdescent$target <- as.numeric(opts$.target)
-  gradientdescent$x0 <- as.numeric(opts$x0)
+  gradientdescent$delta <- as.numeric(opts$delta)
+  gradientdescent$epsilon <- as.numeric(opts$epsilon)
+  gradientdescent$target <- as.numeric(opts$target)
+  if (length(opts$x0)==0) {
+    gradientdescent$x0 <- NULL
+  } else {
+    gradientdescent$x0 <- as.numeric(opts$x0)
+  }
   if (!gradientdescent$yminimization){
     if (isTRUE(gradientdescent$target == -Inf)) {
       gradientdescent$target = Inf
@@ -37,9 +40,14 @@ getInitialDesign <- function(algorithm,input,output) {
   algorithm$i = 0
   algorithm$input <- input
   d = length(input)
-  if (is.na(algorithm$x0) | is.nan(algorithm$x0)) algorithm$x0=runif(d)
-  x0d = rep_len(algorithm$x0,length.out = d)
-  x = askfinitedifferences( x0d,algorithm$epsilon)
+  if (!is.null(algorithm$x0)) {
+    algorithm$x0 = rep(algorithm$x0,d)
+    algorithm$x0 = algorithm$x0[1:d] # sort-of rep_len
+    algorithm$x0 = to01(algorithm$x0,algorithm$input)
+  } else {
+    algorithm$x0 = runif(d)
+  }
+  x = askfinitedifferences(algorithm$x0,algorithm$epsilon)
   names(x) <- names(input)
   return(from01(x,algorithm$input))
 }
@@ -49,11 +57,6 @@ getInitialDesign <- function(algorithm,input,output) {
 #' @param Y data frame of current results
 #' @return data frame or matrix of next doe step
 getNextDesign <- function(algorithm,X,Y) {
-  #normalize delta factor of gradient by fun range
-  if (algorithm$i == 1) {
-    algorithm$delta = algorithm$delta / (max(Y[,1])-min(Y[,1]))
-  }
-
   if (algorithm$i > algorithm$iterations) { return(); }
 
   if (algorithm$yminimization) {
@@ -71,38 +74,42 @@ getNextDesign <- function(algorithm,X,Y) {
   prevXn = X[(n-d):n,]
   prevYn = Y[(n-d):n,1]
 
-  if (algorithm$i > 1) {
+  if (algorithm$i > 0) {
     if (algorithm$yminimization) {
-      if (Y[n-d,1] > Y[n-d-d,1]) {
+      if (Y[n-d,1] >= Y[n-d-1-d,1]) {
         algorithm$delta <- algorithm$delta / 2
         prevXn = X[(n-d-d-1):(n-d-1),] #as.matrix(X[(n-d-d-1):(n-d-1),])
         prevYn = Y[(n-d-d-1):(n-d-1),1] #as.array(Y[(n-d-d-1):(n-d-1),1])
       }
     }
     if (!algorithm$yminimization) {
-      if (Y[n-d,1] < Y[n-d-d,1]) {
+      if (Y[n-d,1] <= Y[n-d-1-d,1]) {
         algorithm$delta <- algorithm$delta / 2
         prevXn = X[(n-d-d-1):(n-d-1),] #as.matrix(X[(n-d-d-1):(n-d-1),])
         prevYn = Y[(n-d-d-1):(n-d-1),1] #as.array(Y[(n-d-d-1):(n-d-1),1])
       }
     }
   }
-  if (d==1) { prevXn = matrix(prevXn,ncol=d) }
+  if (d==1) { prevXn = matrix(prevXn,ncol=1) }
 
-  grad = gradient(prevXn,prevYn)
+  grad_norm = gradient(prevXn,prevYn) / (max(Y[,1])-min(Y[,1]))
   # grad = grad / sqrt(sum(grad * grad))
 
+  if (max(abs(grad_norm)) * algorithm$delta > 1) {
+    algorithm$delta <- algorithm$delta / max(abs(grad_norm))
+  }
+
   if (algorithm$yminimization) {
-    xnext = prevXn[1,] - grad * algorithm$delta
+    xnext = prevXn[1,] - grad_norm * algorithm$delta
   } else {
-    xnext = prevXn[1,] + grad * algorithm$delta
+    xnext = prevXn[1,] + grad_norm * algorithm$delta
   }
   xnext=t(xnext)
 
   for (t in 1:d) {
-    while(xnext[t] > 1.0 | xnext[t] < 0){
+    while((xnext[t] > 1.0) | (xnext[t] < 0)){
       if (xnext[t] > 1.0) {
-        xnext[t] = 1.0 - xnext[t];
+        xnext[t] = 2.0 - xnext[t];
       }
       if (xnext[t] < 0.0) {
         xnext[t] = 0.0 - xnext[t];
@@ -124,8 +131,13 @@ getNextDesign <- function(algorithm,X,Y) {
 #' @return HTML string of analysis
 displayResults <- function(algorithm,X,Y) {
   Y = Y[,1]
-  m = min(Y)
-  m.ix = which.min(Y)
+  if (isTRUE(algorithm$yminimization)) {
+    m = min(Y)
+    m.ix = which.min(Y)
+  } else {
+    m = max(Y)
+    m.ix = which.max(Y)
+  }
   m.ix = m.ix[1]
   x = X[m.ix,]
 
@@ -148,7 +160,7 @@ displayResults <- function(algorithm,X,Y) {
     dev.off()
   }
 
-  if (algorithm$yminimization) {
+  if (isTRUE(algorithm$yminimization)) {
     html=paste0("<HTML name='minimum'>minimum is ",m,
                 " found at ",
                 paste0(paste(names(X),'=',x, collapse=';')),
