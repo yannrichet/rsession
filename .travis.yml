@@ -25,13 +25,13 @@ matrix:
         - openjdk13
       env:
         - TRAVIS_DIST_NAME="xenial"
-    - name: "MacOS JDK8"
-      os: osx
-      osx_image: xcode9.3
-      jdk:
-        - openjdk8
-      env:
-        - TRAVIS_DIST_NAME="osx9"
+#    - name: "MacOS JDK8"
+#      os: osx
+#      osx_image: xcode9.3
+#      jdk:
+#        - openjdk8
+#      env:
+#        - TRAVIS_DIST_NAME="osx9"
     - name: "MacOS JDK11"
       os: osx
       osx_image: xcode10.1
