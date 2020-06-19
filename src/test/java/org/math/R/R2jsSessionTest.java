@@ -110,13 +110,15 @@ public class R2jsSessionTest {
 //        String nodename = (String) engine.eval("Sys.info()[['nodename']]");
 //        assert nodename != null && nodename.length() > 0 : "Cannot get nodename";
 
-        engine.voidEval("Sys__info = function() {return(" + asRList(newMap(
+        String sysinfo = "Sys__info = function() {return(" + asRList(newMap(
                 "nodename", InetAddress.getLocalHost().getHostName(),
                 "sysname", System.getProperty("os.name"),
                 "release", "?",
                 "version", System.getProperty("os.version"),
                 "user", System.getProperty("user.name")
-        )) + ")}");
+        )) + ")}";
+        System.err.println("will eval Sys.info: " + sysinfo);
+        engine.voidEval(sysinfo);
         engine.voidEval("Sys__getenv = function(v) {env=list('R_HOME'='')\nreturn(env[v])}");//+toRcode(System.getenv())+")\nreturn(env[v])}");
         engine.voidEval("options = function() {return(" + asRList(newMap(
                 "OutDec", DecimalFormatSymbols.getInstance().getDecimalSeparator()
