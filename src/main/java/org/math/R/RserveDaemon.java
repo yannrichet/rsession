@@ -106,57 +106,65 @@ public class RserveDaemon {
             if (R_HOME == null || !(new File(R_HOME).isDirectory())) {
                 R_HOME = null;
                 if (isWindows()) {
-                    for (int major = 20; major >= 0; major--) {
-                        //int major = 10;//known to work with R 2.9 only.
-                        for (int minor = 10; minor >= 0; minor--) {
-                            //int minor = 0;
-                            r_HOME = "C:\\Program Files\\R\\R-3." + major + "." + minor + "\\";
-                            if (new File(r_HOME).isDirectory()) {
-                                R_HOME = r_HOME;
-                                break;
+                    try {
+                        Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
+                        RegistryHog regHog = new RegistryHog(rp.getInputStream(), true);
+                        rp.waitFor();
+                        regHog.join();
+                        R_HOME = regHog.getInstallPath();
+                    } catch (Exception rge) {
+                        for (int version = 4; version >= 0; version--) {
+                            for (int major = 20; major >= 0; major--) {
+                                //int major = 10;//known to work with R 2.9 only.
+                                for (int minor = 10; minor >= 0; minor--) {
+                                    //int minor = 0;
+                                    r_HOME = "C:\\Program Files\\R\\R-" + version + "." + major + "." + minor + "\\";
+                                    if (new File(r_HOME).isDirectory()) {
+                                        R_HOME = r_HOME;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
                 } else if (isMacOSX()) {
-                    R_HOME = "/Library/Frameworks/R.framework/Resources"; // standard R install
-                    if (new File(R_HOME).isDirectory()) {
-                        return true;
+                    String[] paths = {"/Library/Frameworks/R.framework/Resources/", "/usr/lib/R", "/usr/local/lib/R"};
+                    for (String r_home : paths) {
+                        R_HOME = r_home; // standard R install
+                        if (new File(R_HOME).isDirectory()) {
+                            return true;
+                        }
                     }
 
-                    for (int major = 20; major >= 0; major--) { // for homebrew install
-                        //int major = 10;//known to work with R 2.9 only.
-                        for (int minor = 10; minor >= 0; minor--) {
-                            //int minor = 0;
-                            r_HOME = "/usr/local/Cellar/r/3." + major + "." + minor;
-                            if (new File(r_HOME+"_3").isDirectory()) {
-                                R_HOME = r_HOME+"_3";
-                                break;
-                            } else if (new File(r_HOME+"_2").isDirectory()) {
-                                R_HOME = r_HOME+"_2";
-                                break;
-                            } else if (new File(r_HOME+"_1").isDirectory()) {
-                                R_HOME = r_HOME+"_1";
-                                break;
-                            } else if (new File(r_HOME).isDirectory()) {
-                                R_HOME = r_HOME;
-                                break;
+                    for (int version = 4; version >= 0; version--) {
+                        for (int major = 20; major >= 0; major--) { // for homebrew install
+                            //int major = 10;//known to work with R 2.9 only.
+                            for (int minor = 10; minor >= 0; minor--) {
+                                //int minor = 0;
+                                r_HOME = "/usr/local/Cellar/r/" + version + "." + major + "." + minor;
+                                if (new File(r_HOME + "_3").isDirectory()) {
+                                    R_HOME = r_HOME + "_3";
+                                    break;
+                                } else if (new File(r_HOME + "_2").isDirectory()) {
+                                    R_HOME = r_HOME + "_2";
+                                    break;
+                                } else if (new File(r_HOME + "_1").isDirectory()) {
+                                    R_HOME = r_HOME + "_1";
+                                    break;
+                                } else if (new File(r_HOME).isDirectory()) {
+                                    R_HOME = r_HOME;
+                                    break;
+                                }
                             }
                         }
                     }
                 } else {
-                    R_HOME = "/usr/lib/R/";
-                    if (new File(R_HOME).isDirectory()) {
-                        return true;
-                    }
-
-                    R_HOME = "/usr/local/lib/R/";
-                    if (new File(R_HOME).isDirectory()) {
-                        return true;
-                    }
-                    
-                    R_HOME = "/usr/lib64/R";
-                    if (new File(R_HOME).isDirectory()) {
-                        return true;
+                    String[] paths = {"/usr/lib/R", "/usr/local/lib/R/", "/usr/lib64/R"};
+                    for (String r_home : paths) {
+                        R_HOME = r_home; // standard R install
+                        if (new File(R_HOME).isDirectory()) {
+                            return true;
+                        }
                     }
                 }
             }

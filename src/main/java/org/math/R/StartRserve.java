@@ -467,44 +467,12 @@ public class StartRserve {
         if (isRserveRunning()) {
             return true;
         }
+        if (!RserveDaemon.findR_HOME(RserveDaemon.R_HOME)) return false; // this will aslo initialize R_HOME if passes
+        
         if (RserveDaemon.isWindows()) {
-            Log.Out.println("Windows: query registry to find where R is installed ...");
-            String installPath = null;
-            try {
-                Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
-                RegistryHog regHog = new RegistryHog(rp.getInputStream(), true);
-                rp.waitFor();
-                regHog.join();
-                installPath = regHog.getInstallPath();
-            } catch (Exception rge) {
-                Log.Err.println("ERROR: unable to run REG to find the location of R: " + rge);
-                return false;
-            }
-            if (installPath == null) {
-                Log.Err.println("ERROR: cannot find path to R. Make sure reg is available and R was installed with registry settings.");
-                return false;
-            }
-            return launchRserve(installPath + "\\bin\\R.exe") != null;
-        } else if (RserveDaemon.isMacOSX()) {
-            FilenameFilter ff = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.startsWith("3.") | name.startsWith("4.");
-                }
-            };
-            return ((launchRserve("R") != null)
-                    || (new File("/usr/local/Cellar/r/").exists() && new File("/usr/local/Cellar/r/").list(ff).length > 0 && launchRserve(new File("/usr/local/Cellar/r/").list(ff)[0]) != null)
-                    || (new File("/Library/Frameworks/R.framework/Resources/bin/R").exists() && launchRserve("/Library/Frameworks/R.framework/Resources/bin/R") != null)
-                    || (new File("/usr/lib/R/bin/R").exists() && launchRserve("/usr/lib/R/bin/R") != null)
-                    || (new File("/usr/local/lib/R/bin/R").exists() && launchRserve("/usr/local/lib/R/bin/R") != null));
+            return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe") != null;
         } else {
-            return ((launchRserve("R") != null)
-                    || (new File("/usr/local/lib/R/bin/R").exists() && launchRserve("/usr/local/lib/R/bin/R") != null)
-                    || (new File("/usr/lib/R/bin/R").exists() && launchRserve("/usr/lib/R/bin/R") != null)
-                    || (new File("/usr/local/bin/R").exists() && launchRserve("/usr/local/bin/R") != null)
-                    || (new File("/sw/bin/R").exists() && launchRserve("/sw/bin/R") != null)
-                    || (new File("/usr/common/bin/R").exists() && launchRserve("/usr/common/bin/R") != null)
-                    || (new File("/opt/bin/R").exists() && launchRserve("/opt/bin/R") != null));
+            return launchRserve(RserveDaemon.R_HOME + "/bin/R") != null;
         }
     }
 
