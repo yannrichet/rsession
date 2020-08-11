@@ -9,7 +9,7 @@
 
     <groupId>com.github.yannrichet</groupId>
     <artifactId>Rsession</artifactId>
-    <version>3.0.5</version>
+    <version>3.0.6</version>
     <packaging>jar</packaging>
     <name>rsession</name>
  
@@ -61,18 +61,18 @@
         <dependency>
             <groupId>org.renjin</groupId>
             <artifactId>renjin-aether-package-loader</artifactId>
-            <version>0.9.2718</version>
+            <version>3.5-beta76</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.renjin</groupId>
             <artifactId>renjin-script-engine</artifactId>
-            <version>0.9.2718</version>
+            <version>3.5-beta76</version>
         </dependency>
         <dependency>
             <groupId>org.renjin</groupId>
             <artifactId>grDevices</artifactId>
-            <version>0.9.2718</version>
+            <version>3.5-beta76</version>
         </dependency>        
         <dependency>
 	        <groupId>com.coveo</groupId>
