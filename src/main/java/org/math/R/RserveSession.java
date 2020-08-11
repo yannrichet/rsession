@@ -179,7 +179,7 @@ public class RserveSession extends Rsession implements RLog {
         //install_packages_moreargs = ",lib='" + gethomedir() + "/" + ".Rserve" + "'"; No longer used because of side-effects using libPaths later
         try {
             if (!asLogical(eval("any(file.access(.libPaths(),2)>=0)"))) {
-                voidEval(".libPaths(new=tempdir(check=T))"); // ensure a writable directory for libPath
+                voidEval(".libPaths(new=tempdir())"); // ensure a writable directory for libPath
             }
         } catch (RException ex) {
             console.log(ex.getMessage(), Level.ERROR);
