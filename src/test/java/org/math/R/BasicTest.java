@@ -286,14 +286,14 @@ public class BasicTest {
         assert r.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
 
         assert r.set("lm", r.asMatrix(r.eval("m")), "m1", "m2") : "Failed to create list";
-        assert r.print("lm").contains("m1 m2") && r.print("lm").contains("2  3") : "Bad print: " + r.print("lm");
+        assert r.print("lm").contains("m1 m2") && r.print("lm").contains("2  3") : "Bad print lm: " + r.print("lm");
         assert r.asDouble(r.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + r.eval("print(lm)");
 
         assert r.set("la", r.asMatrix(r.eval("a")), "a1") : "Failed to create list";
-        assert r.print("la").contains("a1") && r.print("la").contains("2 1") : "Bad print: " + r.print("la");
+        assert r.print("la").contains("a1") && r.print("la").contains("2") && r.print("la").contains("1") : "Bad print la: " + r.print("la");
 
         assert r.set("ld", r.asMatrix(r.eval("d")), "d1") : "Failed to create list";
-        assert r.print("ld").contains("d1") && r.print("ld").contains("1 0") : "Bad print: " + r.print("ld");
+        assert r.print("ld").contains("d1") && r.print("ld").contains("1") && r.print("ld").contains("0") : "Bad print ld: " + r.print("ld");
     }
 
     @Test
