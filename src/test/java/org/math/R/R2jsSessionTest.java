@@ -3,12 +3,16 @@ package org.math.R;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.script.ScriptException;
 
 import org.junit.Test;
@@ -97,11 +101,35 @@ public class R2jsSessionTest {
         //engine.voidEval("math = 1");
         //engine.voidEval("1+pi");
     }
+    
+    @Test
+    public void testConvert() throws Rsession.RException, UnknownHostException {
+        System.err.println("================= testConvert ===============");
+
+        String[] es = new String[]{"abc", "123", "1e5", "1ee1"};
+        for (String e : es) {
+
+            System.err.println("e=" + e);
+            DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+            Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
+            while (m.find()) {
+                try {
+                    e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+                } catch (Exception ex) {
+                }
+            }
+            System.err.println("=> " + e);
+        }
+
+        engine.debug_js = true;
+        engine.voidEval("a='1ee1'");
+        engine.voidEval("Sys__info = function() {return(list('a'='1ee1'))}");
+
+    }
 
     @Test
     public void testSys() throws Rsession.RException, UnknownHostException {
         System.err.println("================= testSys ===============");
-
         System.err.println("java.version: " + System.getProperty("java.version"));
         engine.log("java.version: " + System.getProperty("java.version"), RLog.Level.INFO);
 //        Map<String, String> infos = new HashMap<String, String>();

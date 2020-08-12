@@ -388,7 +388,10 @@ public class R2jsSession extends Rsession implements RLog {
         //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
         while (m.find()) {
+            try{
             e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+            }catch(Exception ex){//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
+            }
         }
 
         // Get all expression in quote and replace them by variables to not
