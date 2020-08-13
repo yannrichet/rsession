@@ -103,6 +103,14 @@ public class R2jsSessionTest {
     }
     
     @Test
+    public void testConvertWithEnv() throws Rsession.RException, UnknownHostException {
+        System.err.println("================= testConvertWithEnv ===============");
+        engine.debug_js = true;
+        engine.voidEval("__this__a = 123.5");
+        assert engine.asDouble(engine.eval("__this__a+1")) == 124.5;
+    }
+
+    @Test
     public void testConvert() throws Rsession.RException, UnknownHostException {
         System.err.println("================= testConvert ===============");
 

@@ -362,6 +362,9 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the js script expression
      */
     private String convertRtoJs(String e) {
+        
+        // If e contains already "__this__" ... (should not happen, but...)
+        if (e.contains(THIS_ENVIRONMENT)) return convertRtoJs(e.replace(THIS_ENVIRONMENT, "THEENVIRONMENT")).replace("THEENVIRONMENT", THIS_ENVIRONMENT);
        
         String R = null;
         if (debug_js) R  =e;
@@ -660,7 +663,7 @@ public class R2jsSession extends Rsession implements RLog {
         
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
-        
+
         e = replaceArgsNames(e, "__");
       
         // Replace variables by variableStorageObject.variable
