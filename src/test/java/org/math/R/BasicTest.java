@@ -671,7 +671,7 @@ public class BasicTest {
         s.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
-        assert f.exists() : "Failed to create save file !";
+        assert s.local2remotePath(f).exists() : "Failed to create save file !";
 
         String ss = s.asString(s.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -682,7 +682,7 @@ public class BasicTest {
         File fa = new File("Rserve" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         s.savels(fa, "*");
-        assert fa.exists() : "Failed to create save file !";
+        assert s.local2remotePath(fa).exists() : "Failed to create save file !";
     }
 
     @Test
@@ -697,7 +697,7 @@ public class BasicTest {
         r.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
-        assert f.exists() : "Failed to create save file !: "+f.getAbsolutePath();
+        assert r.local2remotePath(f).exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = r.asString(r.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -708,7 +708,7 @@ public class BasicTest {
         File fa = new File("Renjin" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         r.savels(fa, "*");
-        assert fa.exists() : "Failed to create save file !";
+        assert r.local2remotePath(fa).exists() : "Failed to create save file !";
     }
 
     @Test
@@ -724,7 +724,7 @@ public class BasicTest {
         assert !f.exists() : "Created empty save file !";
         q.save(f, "s");
         //using f instead of  new File(f.getAbsolutePath()) fails ! fs Sync issue ?
-        assert new File(f.getAbsolutePath()).exists() : "Failed to create save file !: "+f.getAbsolutePath();
+        assert q.local2remotePath(f).exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = q.asString(q.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -735,7 +735,7 @@ public class BasicTest {
         File fa = new File("R2Js" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         q.savels(fa, ".*");
-        assert new File(fa.getAbsolutePath()).exists() : "Failed to create save file !";
+        assert q.local2remotePath(fa).exists() : "Failed to create save file !";
     }
 
     @Test
@@ -921,5 +921,85 @@ public class BasicTest {
 //        String html = q.asHTML("summary(rnorm(100))");
 //        System.out.println(html);
 //        assert html.length() > 0;
+    }
+    
+    // localOS  remoteOS  remoteWD  localpath       remotepath                  
+    // Win      Win       C:\toto   C:\titi\tata.R  C:\toto\C_.__-_titi_-_tata.R
+    // Win      Lin       /toto     C:\titi\tata.R  /toto/C_.__-_titi_-_tata.R  
+    // Lin      Lin       /toto     /titi/tata.R    /toto/_-_titi_-_tata.R  
+    // Lin      Win       C:\toto   /titi/tata.R    C:/toto/_-_titi_-_tata.R
+    @Test
+    public void testRemoteLocalFiles_R2Js() throws Exception {
+        System.err.println("====================================== R2Js");
+        
+        File rel_l = new File("titi/tata.R");
+        System.err.println(rel_l.getAbsolutePath());
+        System.err.println("WD: "+q.getwd());
+        File rel_re = q.local2remotePath(rel_l);
+        System.err.println(rel_re.getAbsolutePath());
+        File rel_l2 = q.remote2localPath(rel_re);
+        System.err.println(rel_l2.getAbsolutePath());
+        
+        assert rel_l.getAbsolutePath().equals(rel_l2.getAbsolutePath()) : rel_l.getAbsolutePath() +" != "+rel_l2.getAbsolutePath();
+    
+        File l = new File("/titi/tata.R");
+        System.err.println(l.getAbsolutePath());
+        System.err.println("WD: "+q.getwd());
+        File re = q.local2remotePath(l);
+        System.err.println(re.getAbsolutePath());
+        File l2 = q.remote2localPath(re);
+        System.err.println(l2.getAbsolutePath());
+        
+        assert l.getAbsolutePath().equals(l2.getAbsolutePath()) : l.getAbsolutePath() +" != "+l2.getAbsolutePath();
+    }
+    
+    @Test
+    public void testRemoteLocalFiles_Renjin() throws Exception {
+        System.err.println("====================================== Renjin");
+        
+        File rel_l = new File("titi/tata.R");
+        System.err.println(rel_l.getAbsolutePath());
+        System.err.println("WD: "+r.getwd());
+        File rel_re = r.local2remotePath(rel_l);
+        System.err.println(rel_re.getAbsolutePath());
+        File rel_l2 = r.remote2localPath(rel_re);
+        System.err.println(rel_l2.getAbsolutePath());
+        
+        assert rel_l.getAbsolutePath().equals(rel_l2.getAbsolutePath()) : rel_l.getAbsolutePath() +" != "+rel_l2.getAbsolutePath();
+
+        File l = new File("/titi/tata.R");
+        System.err.println(l.getAbsolutePath());
+        System.err.println("WD: "+r.getwd());
+        File re = r.local2remotePath(l);
+        System.err.println(re.getAbsolutePath());
+        File l2 = r.remote2localPath(re);
+        System.err.println(l2.getAbsolutePath());
+        
+        assert l.getAbsolutePath().equals(l2.getAbsolutePath()) : l.getAbsolutePath() +" != "+l2.getAbsolutePath();
+    }
+        
+    @Test
+    public void testRemoteLocalFiles_Rserve() throws Exception {
+        System.err.println("====================================== Rserve");
+        
+        File rel_l = new File("titi/tata.R");
+        System.err.println(rel_l.getAbsolutePath());
+        System.err.println("WD: "+s.getwd());
+        File rel_re = s.local2remotePath(rel_l);
+        System.err.println(rel_re.getAbsolutePath());
+        File rel_l2 = s.remote2localPath(rel_re);
+        System.err.println(rel_l2.getAbsolutePath());
+        
+        assert rel_l.getAbsolutePath().equals(rel_l2.getAbsolutePath()) : rel_l.getAbsolutePath() +" != "+rel_l2.getAbsolutePath();
+
+        File l = new File("/titi/tata.R");
+        System.err.println(l.getAbsolutePath());
+        System.err.println("WD: "+s.getwd());
+        File re = s.local2remotePath(l);
+        System.err.println(re.getAbsolutePath());
+        File l2 = s.remote2localPath(re);
+        System.err.println(l2.getAbsolutePath());
+        
+        assert l.getAbsolutePath().equals(l2.getAbsolutePath()) : l.getAbsolutePath() +" != "+l2.getAbsolutePath();
     }
 }

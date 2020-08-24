@@ -1134,6 +1134,28 @@ public abstract class Rsession implements RLog {
 
     public abstract File putFileInWorkspace(File f);
 
+    // localOS  remoteOS  remoteWD  localpath       remotepath                  
+    // Win      Win       C:\toto   C:\titi\tata.R  C:\toto\C_.__-_titi_-_tata.R
+    // Win      Lin       /toto     C:\titi\tata.R  /toto/C_.__-_titi_-_tata.R  
+    // Lin      Lin       /toto     /titi/tata.R    /toto/_-_titi_-_tata.R  
+    // Lin      Win       C:\toto   /titi/tata.R    C:/toto/_-_titi_-_tata.R  
+    public File local2remotePath(File localpath) {
+        return new File(
+                getwd().replace(File.separator, "/"),
+                localpath.getPath()
+                        .replace(File.separator, "_-_")
+                        .replace(":", "_._"));
+    }
+ 
+    public File remote2localPath(File remotepath) {
+        return new File(
+                //getwd().replace(File.separator,"/"),
+                remotepath.getPath()
+                        .replace((getwd()+"/").replace("/",File.separator), "") // delete getwd
+                        .replace("_-_", File.separator) // '_-_' -> '/'
+                        .replace("_._", ":"));// '_._' -> ':'
+    }
+    
     /**
      * loads R source file (eg ".R" file)
      *

@@ -800,15 +800,6 @@ public class RenjinSession extends Rsession implements RLog {
     public boolean isAvailable() {
         return true;
     }
-    
-    File local2remotePath(File localpath) {
-        return new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_-_").replace(":","_._"));
-    }
-    
-    File remote2localPath(File remotepath) {
-        System.err.println(remotepath.getAbsolutePath()+" ~ "+new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":")).getAbsolutePath());
-        return new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
-    }
 
     public File putFileInWorkspace(File file) {
         if (file.isAbsolute()) return file;
@@ -824,7 +815,6 @@ public class RenjinSession extends Rsession implements RLog {
     }
     
     public void getFileFromWorkspace(File file) {
-        System.err.println("getFileFromWorkspace "+file);
         if (file.isAbsolute()) return;
         File rf = remote2localPath(file);
         if (file.getParentFile()!=null)

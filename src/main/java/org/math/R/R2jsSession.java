@@ -2737,14 +2737,6 @@ public class R2jsSession extends Rsession implements RLog {
 
         return true;
     }
-    
-    File local2remotePath(File localpath) {
-        return new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_-_").replace(":","_._"));
-    }
-    
-    File remote2localPath(File remotepath) {
-        return new File(getwd().replace(File.separator,"/"),remotepath.getPath().replace(getwd().replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
-    }
 
     public File putFileInWorkspace(File file) {
         if (file.isAbsolute()) return file;

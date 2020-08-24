@@ -1241,14 +1241,6 @@ public class RserveSession extends Rsession implements RLog {
         }
     }
 
-    File local2remotePath(File localpath) {
-        return new File(getwd().replace(File.separator,"/"), localpath.getPath().replace(File.separator, "_-_").replace(":","_._"));
-    }
-    
-    File remote2localPath(File remotepath) {
-        return new File(remotepath.getPath().replace((getwd()+"/").replace("/",File.separator), "").replace("_-_", File.separator).replace("_._", ":"));
-    }
-
     @Override
     public File putFileInWorkspace(File file) {
         return putFile(file,local2remotePath(file).getPath());
