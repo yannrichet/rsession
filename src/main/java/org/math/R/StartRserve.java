@@ -415,7 +415,15 @@ public class StartRserve {
     public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
         Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
-        Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "');library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); print(getwd()); Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+        File wd = new File(RserveDaemon.app_dir(),new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
+                Log.Out.println("  In working directory: " + wd.getAbsolutePath());
+                if (!wd.mkdirs()) Log.Err.println("  !!! not available !!!");
+                wd.deleteOnExit();
+        Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
+                + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
+                + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
+                + "print(getwd()); "
+                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
             Log.Out.println("Rserve startup done, let us try to connect ...");
         } else {
