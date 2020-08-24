@@ -232,8 +232,17 @@ public class RserverConf {
 
     @Override
     public String toString() {
-        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") /*+ " http_proxy=" + http_proxy + " RLibPath=" + RLibPath*/;
+        String props = null;
+        if (properties != null && properties.size() > 0) {
+            props = "?";
+            for (Object p : properties.keySet()) {
+                props = props + p.toString() + "=" + properties.getProperty(p.toString(), "") + "&";
+            }
+            props = props.substring(0, props.length() - 1); // remove trailing '&'
+        }
+        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") + (props != null ? "?" + props : "");
     }
+    
     public final static String RURL_START = "R://";
 
     public static RserverConf parse(String RURL) {
@@ -241,31 +250,74 @@ public class RserverConf {
         String passwd = null;
         String host = null;
         int port = -1;
+        Properties props = null;
         try {
+            String loginhostport = null;
+            if (RURL.contains("?")) {
+                loginhostport = beforeFirst(RURL, "?").substring((RURL_START).length());
+                String[] allprops = afterFirst(RURL, "?").split("&");
+                props = new Properties(allprops.length);
+                for (String prop : allprops) {
+                    if (prop.contains("=")) {
+                        props.put(beforeFirst(prop, "="), afterFirst(prop, "="));
+                    } // else ignore
+                }
+            } else {
+                loginhostport = RURL.substring((RURL_START).length());
+            }
+
             String hostport = null;
-            if (RURL.contains("@")) {
-                String loginpasswd = RURL.split("@")[0].substring((RURL_START).length());
-                login = loginpasswd.split(":")[0];
+            if (loginhostport.contains("@")) {
+                hostport = afterFirst(loginhostport, "@");
+                String loginpasswd = beforeFirst(loginhostport, "@");
+                login = beforeFirst(loginpasswd, ":");
                 if (login.equals("user.name")) {
                     login = System.getProperty("user.name");
                 }
-                passwd = loginpasswd.split(":")[1];
-                hostport = RURL.split("@")[1];
+                passwd = afterFirst(loginpasswd, ":");
             } else {
-                hostport = RURL.substring((RURL_START).length());
+                hostport = loginhostport;
             }
 
             if (hostport.contains(":")) {
-                host = hostport.split(":")[0];
-                port = Integer.parseInt(hostport.split(":")[1]);
+                host = beforeFirst(hostport, ":");
+                port = Integer.parseInt(afterFirst(hostport, ":"));
             } else {
                 host = hostport;
             }
 
-            return new RserverConf(host, port, login, passwd, null);
+            return new RserverConf(host, port, login, passwd, props);
         } catch (Exception e) {
             throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd);
         }
+    }
 
+    static String beforeFirst(String txt, String sep) {
+        if (txt == null) {
+            return null;
+        }
+        if (txt.contains(sep)) {
+            int i = txt.indexOf(sep);
+            return txt.substring(0, i);
+        } else {
+            return txt;
+        }
+    }
+
+    static String afterFirst(String txt, String sep) {
+        if (txt == null) {
+            return null;
+        }
+        if (txt.contains(sep)) {
+            int i = txt.indexOf(sep);
+            if (i >= txt.length()) {
+                return "";
+            } else {
+                return txt.substring(i + 1);
+            }
+        } else {
+            return "";
+        }
     }
 }
+
