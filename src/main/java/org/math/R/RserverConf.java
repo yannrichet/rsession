@@ -234,11 +234,12 @@ public class RserverConf {
     public String toString() {
         String props = null;
         if (properties != null && properties.size() > 0) {
-            props = "?";
-            for (Object p : properties.keySet()) {
-                props = props + p.toString() + "=" + properties.getProperty(p.toString(), "") + "&";
+            props = "";
+            for (String p : properties.stringPropertyNames()) {
+                props = props + p + "=" + properties.getProperty(p, "") + "&";
             }
-            props = props.substring(0, props.length() - 1); // remove trailing '&'
+            if (props.endsWith("&"))
+                props = props.substring(0, props.length() - 1); // remove trailing '&'
         }
         return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") + (props != null ? "?" + props : "");
     }
