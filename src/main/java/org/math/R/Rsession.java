@@ -1151,7 +1151,7 @@ public abstract class Rsession implements RLog {
         return new File(
                 //getwd().replace(File.separator,"/"),
                 remotepath.getPath()
-                        .replace((getwd()+"/").replace("/",File.separator), "") // delete getwd
+                        .replace((getwd()+"/").replace('/',File.separatorChar), "") // delete getwd
                         .replace("_-_", File.separator) // '_-_' -> '/'
                         .replace("_._", ":"));// '_._' -> ':'
     }

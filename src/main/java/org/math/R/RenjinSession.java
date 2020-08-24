@@ -801,6 +801,15 @@ public class RenjinSession extends Rsession implements RLog {
         return true;
     }
 
+    @Override
+    public String getwd() {
+        String wd = super.getwd(); 
+        if (isWindows() && wd.startsWith("/"))
+            return wd.substring(1);
+        return wd;
+    }
+    
+    
     public File putFileInWorkspace(File file) {
         if (file.isAbsolute()) return file;
         File rf = local2remotePath(file);
