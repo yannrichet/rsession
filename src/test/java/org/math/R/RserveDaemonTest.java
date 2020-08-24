@@ -169,6 +169,16 @@ public class RserveDaemonTest {
         System.err.println("Rcmd: " + Rcmd);
     }
 
+    @Test
+    public void testParsePrintConf() {
+        Properties p = new Properties();
+        p.put("a", "b");
+        System.err.println("p " + p);
+        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever", p);
+        System.err.println(c.toString());
+        System.err.println(RserverConf.parse(c.toString()));
+    }
+
     @Before
     public void setUp() {
         http_proxy_env = System.getenv("http_proxy");

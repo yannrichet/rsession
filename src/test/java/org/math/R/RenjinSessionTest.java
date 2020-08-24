@@ -252,8 +252,8 @@ public class RenjinSessionTest {
                 assert sfile.delete() : "Cannot delete " + sfile;
             }
             s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
-            assert new File(size + ".jpg").exists() : "Size " + size + " failed";
-            assert new File(size + ".jpg").length() > 0 : " empty file";
+            assert sfile.exists() : "Size " + size + " failed";
+            assert sfile.length() > 0 : " empty file";
             p.println(sfile.getAbsoluteFile());
             p.println(sfile.length());
         }
