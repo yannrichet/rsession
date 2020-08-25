@@ -257,7 +257,7 @@ public class RserverConf {
             if (RURL.contains("?")) {
                 loginhostport = beforeFirst(RURL, "?").substring((RURL_START).length());
                 String[] allprops = afterFirst(RURL, "?").split("&");
-                props = new Properties(allprops.length);
+                props = new Properties();
                 for (String prop : allprops) {
                     if (prop.contains("=")) {
                         props.put(beforeFirst(prop, "="), afterFirst(prop, "="));
