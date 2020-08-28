@@ -1504,7 +1504,7 @@ public abstract class Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         try {
-            set("plotfile_" + h, f.getPath().replace("\\", "/"));
+            set("plotfile_" + h, f.getAbsolutePath().replace("\\", "/"));
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }

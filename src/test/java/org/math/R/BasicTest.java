@@ -847,9 +847,6 @@ public class BasicTest {
 
         //toJPEG
         File jpg = new File(tmpdir, "titi" + rand + ".png");
-         r.toPNG(jpg, 400, 400, "plot(rnorm(10))");
-         assert jpg.exists();
-         
         r.toPNG(jpg, 400, 400, "plot(rnorm(10))");
         assert jpg.exists();
 
@@ -912,6 +909,7 @@ public class BasicTest {
 //        /*File jpg = new File(tmpdir, "titi" + rand + ".png");
 //         q.toPNG(jpg, 400, 400, "plot(rnorm(10))");
 //         assert jpg.exists();*/
+//
 //        //toTXT
 //        String txt = q.print("summary(rnorm(100))");
 //        System.out.println(txt);
