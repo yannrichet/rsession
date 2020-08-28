@@ -671,7 +671,7 @@ public class BasicTest {
         s.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         s.save(f, "s");
-        assert s.local2remotePath(f).exists() : "Failed to create save file !";
+        assert f.exists() : "Failed to create save file !";
 
         String ss = s.asString(s.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -682,7 +682,7 @@ public class BasicTest {
         File fa = new File("Rserve" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         s.savels(fa, "*");
-        assert s.local2remotePath(fa).exists() : "Failed to create save file !";
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
@@ -697,7 +697,7 @@ public class BasicTest {
         r.save(f, (String) null);
         assert !f.exists() : "Created empty save file !";
         r.save(f, "s");
-        assert r.local2remotePath(f).exists() : "Failed to create save file !: "+f.getAbsolutePath();
+        assert f.exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = r.asString(r.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -708,7 +708,7 @@ public class BasicTest {
         File fa = new File("Renjin" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         r.savels(fa, "*");
-        assert r.local2remotePath(fa).exists() : "Failed to create save file !";
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
@@ -724,7 +724,7 @@ public class BasicTest {
         assert !f.exists() : "Created empty save file !";
         q.save(f, "s");
         //using f instead of  new File(f.getAbsolutePath()) fails ! fs Sync issue ?
-        assert q.local2remotePath(f).exists() : "Failed to create save file !: "+f.getAbsolutePath();
+        assert f.exists() : "Failed to create save file !: "+f.getAbsolutePath();
 
         String ss = q.asString(q.eval("s"));
         assert ss.equals("abcd") : "bad eval of s";
@@ -735,7 +735,7 @@ public class BasicTest {
         File fa = new File("R2Js" + Math.random() + ".all.save");
         assert !fa.exists() : "Already created save file !";
         q.savels(fa, ".*");
-        assert q.local2remotePath(fa).exists() : "Failed to create save file !";
+        assert fa.exists() : "Failed to create save file !";
     }
 
     @Test
