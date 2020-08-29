@@ -12,7 +12,7 @@ matrix:
       #jdk:
       #  - openjdk8
       env:
-        - JDK="openjdk-ri@1.8"
+        - JDK="adopt@1.8"
         - TRAVIS_DIST_NAME="trusty"
     - name: "Linux JDK11"
       os: linux
@@ -36,7 +36,7 @@ matrix:
       #jdk:
       #  - openjdk8
       env:
-        - JDK="openjdk-ri@1.8"
+        - JDK="adopt@1.8"
         - TRAVIS_DIST_NAME="osx9"
     - name: "MacOS JDK11"
       os: osx
@@ -57,7 +57,7 @@ matrix:
     - name: "Windows JDK8"
       os: windows
       env:
-        - JDK="openjdk-ri@1.8
+        - JDK="adopt@1.8
         - TRAVIS_DIST_NAME="win"
     - name: "Windows JDK11"
       os: windows
