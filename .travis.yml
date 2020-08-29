@@ -1,55 +1,69 @@
-language: java
+#language: java
+language: minimal
 cache:
   directories:
     - $HOME/.m2
+    - $HOME/.jabba/
 matrix:
   include:
     - name: "Linux JDK8"
       os: linux
       dist: trusty
-      jdk:
-        - openjdk8
+      #jdk:
+      #  - openjdk8
       env:
+        - JDK="openjdk@1.8"
         - TRAVIS_DIST_NAME="trusty"
     - name: "Linux JDK11"
       os: linux
       dist: xenial
-      jdk:
-        - openjdk11
+      #jdk:
+      #  - openjdk11
       env:
+        - JDK="openjdk@1.11"
         - TRAVIS_DIST_NAME="xenial"
     - name: "Linux JDK13"
       os: linux
       dist: xenial
-      jdk:
-        - openjdk13
+      #jdk:
+      #  - openjdk13
       env:
+        - JDK="openjdk@1.13"
         - TRAVIS_DIST_NAME="xenial"
-#    - name: "MacOS JDK8"
-#      os: osx
-#      osx_image: xcode9.3
-#      jdk:
-#        - openjdk8
-#      env:
-#        - TRAVIS_DIST_NAME="osx9"
+    - name: "MacOS JDK8"
+      os: osx
+      osx_image: xcode9.3
+      #jdk:
+      #  - openjdk8
+      env:
+        - JDK="openjdk@1.11"
+        - TRAVIS_DIST_NAME="osx9"
     - name: "MacOS JDK11"
       os: osx
       osx_image: xcode10.1
-      jdk:
-        - openjdk11
+      #jdk:
+      #  - openjdk11
       env:
+        - JDK="openjdk@1.11"
         - TRAVIS_DIST_NAME="osx10"
     - name: "MacOS JDK13"
       os: osx
       osx_image: xcode10.1
-      jdk:
-        - openjdk13
+      #jdk:
+      #  - openjdk13
       env:
+        - JDK="openjdk@1.13"
         - TRAVIS_DIST_NAME="osx10"
+env:
+  global:
+    # Convenience variables for shortening commands
+    - GRAVIS_REPO="https://github.com/DanySK/Gravis-CI.git"
+    - GRAVIS="$HOME/gravis"
 before_install:
-  #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
-  # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
+  # Check out the script set
+  - travis_retry git clone --depth 1 $GRAVIS_REPO $GRAVIS
+  - source $GRAVIS/install-jdk
+  - source $GRAVIS/install-maven
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xvfb -y; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0; fi
@@ -59,7 +73,10 @@ before_script:
   - if [[ "$TRAVIS_DIST_NAME" == "xenial" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu xenial/" | sudo tee -a /etc/apt/sources.list; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install r-recommended ant --allow-unauthenticated -y; fi
-  - if [[ "$TRAVIS_DIST_NAME" == "osx10" ]]; then brew cask install homebrew/cask-versions/java11; export JAVA_HOME=$(/usr/libexec/java_home -v 11); fi
+  #- if [[ "$TRAVIS_DIST_NAME" == "osx10" ]]; then brew cask install homebrew/cask-versions/java11; export JAVA_HOME=$(/usr/libexec/java_home -v 11); fi
+  #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm -f '/usr/local/include/c++'; brew install r; fi
+  # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script: mvn clean test
 after_success:
