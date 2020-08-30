@@ -57,7 +57,7 @@ matrix:
     - name: "Windows JDK8"
       os: windows
       env:
-        - JDK="adopt@1.8
+        - JDK="1.8
         - TRAVIS_DIST_NAME="win"
     - name: "Windows JDK11"
       os: windows
@@ -94,7 +94,10 @@ before_script:
   # to support exotic naming in osx like /usr/local/Cellar/r/3.5.2_2, no longer needed: - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for l in `ls *_*`; do echo $l; l=`echo $l | cut -d: -f1`; ll=`echo $l | cut -d_ -f1`;ln -s $l $ll; done; fi;
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install -y r; fi
 install: mvn install -DskipTests=true -Dgpg.skip=true
-script: mvn clean test
+script:
+  # preliminary test Rserve, as it should fail quickly
+  - mvn -Dtest=org.math.R.RserveDaemonTest test
+  - mvn clean test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 after_failure:
