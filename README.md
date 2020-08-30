@@ -1,16 +1,21 @@
-Linux & MacOS: [![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
+Linux, MacOS, Windows: [![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
 Windows: [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/yannrichet/rsession?branch=master&svg=true)](https://ci.appveyor.com/project/yannrichet/rsession)
 
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 
-# Rsession: R sessions wrapping for Java #
+# Rsession: R (3.5) sessions wrapping for Java (8+) #
 
-Rsession provides an easy to use java class giving access to remote or local R session. The back-end engine is Rserve (locally spawned automatically if necessary, fully compatible with legacy R), Renjin (lower compatibility, but still very good with graphics), and R2js (on-the-fly translation to math.js, lowest compatibility and hack-style coding, full BSD licence).
-Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. Therefore, it is easier to use in some point of view, as it provides a multi session R engine (including for Windows, thanks to an ugly turn-around).
+Rsession provides an easy to use java class giving access to remote or local R sessions.
+The back-end engine should be:
 
-Other alternatives:
-  * JRI, but it does not provide multi-sessions feature. If you just need one R session in your java code (or work with R environments), JRI is a good solution.
+ * "true" R (3.5 & 3.6), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
+ * Renjin 3.5 (lower compatibility, but still very good),
+ * and R2js, which is an on-the-fly translation to math.js, with lowest compatibility and hack-style coding, but full BSD licence.
+
+Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. It is also easier to use as it provides a multi session R engine for all these wrappers.
+
+JRI is another alternative, but it does not provide multi-sessions feature.
 
 ## Example Java code ##
 ```java
@@ -53,73 +58,70 @@ import static org.math.R.*;
 
 ### Using R2js backend: ###
 
-No dependency required. Only based on Nashorn engine provided in Java >8, so just include https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version) in your classpath.
+No dependency required. Only based on Nashorn engine bundled in Java >8, so just add `rsession.jar` in your classpath:
+
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+
+Then instanciate R session using:
+```java
+        Rsession r = new R2jsSession(System.out,null);
+```
+
 
 ### Using Renjin backend: ###
 
-Add `lib/rsession.jar:lib/renjin*.jar` in your project classpath: 
-  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version)
-  * copy Renjin https://nexus.bedatadriven.com/service/local/artifact/maven/redirect?r=renjin-release&g=org.renjin&a=renjin-script-engine&c=jar-with-dependencies&v=RELEASE&e=jar
+Add `rsession.jar:renjin-jar-with-dependencies.jar` in your classpath: 
+
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/renjin-jar-with-dependencies.jar
+
+
+Then instanciate R session using:
+```java
+      Rsession r = new RenjinSession(System.out,null);
+      ...
+```
+
 
 ### Using Rserve backend: ###
 
-Install R from http://cran.r-project.org.
+Install R 3.5 or 3.6 from http://cran.r-project.org, then add `rsession.jar:Rserve*.jar:REngine*.jar` in your project classpath:
 
-Add `lib/rsession.jar:lib/Rserve*.jar:lib/REngine*.jar` in your project classpath: 
-  * copy https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar (latest commit version)
-  * copy Rserve https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/Rserve/1.8.1/Rserve-1.8.1.jar
-  * copy REngine https://search.maven.org/remotecontent?filepath=org/rosuda/REngine/REngine/2.1.0/REngine-2.1.0.jar
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/REngine-2.1.0.jar
+  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/Rserve-1.8.1.jar
+  
+
+Then:
+  * start Rserve on localhost `/usr/bin/R CMD /usr/lib/R/library/Rserve/libs/Rserve --vanilla --RS-enable-control --RS-port 6311`, and instanciate R session using:
+      ```java
+      Rsession r = RserveSession.newLocalInstance(System.out,null); 
+      ```
+  * or use the auto-spawned Rserve (may fail for exotic configuration):
+      ```java
+      Rsession r = RserveSession.newInstanceTry(System.out,null);
+      ```
+  * connect to remote Rserve (eg. previously started on 192.168.1.1 with `/usr/bin/R CMD /usr/lib/R/library/Rserve/libs/Rserve --vanilla --RS-enable-control --RS-port 6311`:
+      ```java
+      Rsession r = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
+      ```
+
 
 ### Through maven dependency: ###
+
+
+Alternatively to setup classpath manually, just use maven:
+
 ```xml
 <dependencies>
 ...
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.0.5</version>
+      <version>3.0.8</version>
     </dependency>
 ...
 </dependencies>
 ```
-
-
-Then, use it in your code (for Windows XP, Mac OS X, Linux 32 & 64):
-  * create new Rsession:
-    * Renjin (pure Java, no R install necessary):
-      ```java
-      Rsession r = new RenjinSession(System.out,null);
-      ```
-    * Rserve (R install required on server side):
-      * connect to local Rserve (previously started on localhost with `/usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf`):
-        ```java
-        Rsession r = RserveSession.newLocalInstance(System.out,null); 
-        ```
-      * OR connect to local auto-spawned Rserve:
-        ```java
-        Rsession r = RserveSession.newInstanceTry(System.out,null);
-        ```
-      * OR connect to remote Rserve (previously started on 192.168.1.1 with `/usr/bin/R CMD Rserve --vanilla --RS-conf Rserve.conf`):
-        ```java
-        Rsession r = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
-        ```
-    * R2js:
-        ```java
-        Rsession r = new R2jsSession(System.out,null);
-        ```
-  * do your work in R and get Java objects
-    * create Java objects from R command using
-    ```java
-    HashMap<String,Object> vars = ...
-    vars.put("a",42);
-    Object o = r.eval("pi+a",vars);
-    ```
-    (Object o is automatically cast to double, double[], double[][],String, String[], ...)
-    * OR
-      * create your R objects using `r.set("a",42)`
-      * call any R command using `r.eval("pi+a")`
-      * if needed use R packages install & load: `r.installPackage("MASS", true);`
-      * you can access R command answers as string using: `r.asString("...")` , `r.toPNG(File f,"plot(rnorm(10))")` 
-  * finally close your Rsession instance: `r.end(); `
 
 ![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)
