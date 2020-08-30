@@ -102,5 +102,5 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 after_failure:
-  - cat `ls -r *.Rout | head -1`
   - cat `ls -r $HOME/.Rserve/*.Rout`
+  - cat `ls -r *.Rout | head -1`
