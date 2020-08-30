@@ -8,12 +8,12 @@ matrix:
   include:
     - name: "Linux JDK8"
       os: linux
-      dist: trusty
+      dist: xenial
       #jdk:
       #  - openjdk8
       env:
         - JDK="adopt@1.8"
-        - TRAVIS_DIST_NAME="trusty"
+        - TRAVIS_DIST_NAME="xenial"
     - name: "Linux JDK11"
       os: linux
       dist: xenial
@@ -32,7 +32,7 @@ matrix:
         - TRAVIS_DIST_NAME="xenial"
     - name: "MacOS JDK8"
       os: osx
-      osx_image: xcode9.3
+      osx_image: xcode10.1
       #jdk:
       #  - openjdk8
       env:
