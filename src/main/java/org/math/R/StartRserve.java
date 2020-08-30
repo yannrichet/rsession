@@ -420,7 +420,7 @@ public class StartRserve {
         if (!wd.mkdirs()) {
             Log.Err.println("  !!! not available !!!");
         }
-        wd.deleteOnExit();
+        //wd.deleteOnExit();
         Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
