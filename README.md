@@ -60,7 +60,7 @@ import static org.math.R.*;
 
 No dependency required. Only based on Nashorn engine bundled in Java >8, so just add `rsession.jar` in your classpath:
 
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
+  * https://github.com/yannrichet/rsession/blob/master/dist/rsession.jar
 
 Then instanciate R session using:
 ```java
@@ -72,8 +72,8 @@ Then instanciate R session using:
 
 Add `rsession.jar:renjin-jar-with-dependencies.jar` in your classpath: 
 
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/renjin-jar-with-dependencies.jar
+  * https://github.com/yannrichet/rsession/blob/master/dist/rsession.jar
+  * https://github.com/yannrichet/rsession/blob/master/lib/renjin-jar-with-dependencies.jar
 
 
 Then instanciate R session using:
@@ -87,9 +87,9 @@ Then instanciate R session using:
 
 Install R 3.5 or 3.6 from http://cran.r-project.org, then add `rsession.jar:Rserve*.jar:REngine*.jar` in your project classpath:
 
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/dist/rsession.jar
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/REngine-2.1.0.jar
-  * https://github.com/yannrichet/rsession/blob/master/Rsession/lib/Rserve-1.8.1.jar
+  * https://github.com/yannrichet/rsession/blob/master/dist/rsession.jar
+  * https://github.com/yannrichet/rsession/blob/master/lib/REngine-2.1.0.jar
+  * https://github.com/yannrichet/rsession/blob/master/lib/Rserve-1.8.1.jar
   
 
 Then:
