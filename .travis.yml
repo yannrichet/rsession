@@ -92,9 +92,9 @@ before_script:
 install: mvn install -DskipTests=true -Dgpg.skip=true
 script:
   # preliminary test Rserve, that should fail quickly if R is not well installed
-  #- mvn -Dtest=org.math.R.RserveDaemonTest test
-  #- mvn -Dtest=org.math.R.RserveSessionTest test
-  - mvn clean test
+  - mvn -Dtest=org.math.R.RserveDaemonTest test
+  - mvn -Dtest=org.math.R.RserveSessionTest test
+  #- mvn clean test
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 after_failure:

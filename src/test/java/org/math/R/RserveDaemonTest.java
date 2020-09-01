@@ -1,9 +1,11 @@
 package org.math.R;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
@@ -177,6 +179,173 @@ public class RserveDaemonTest {
         RserverConf c = new RserverConf("localhost", 3600, "me", "whatever", p);
         System.err.println(c.toString());
         System.err.println(RserverConf.parse(c.toString()));
+    }
+
+    @Test
+    public void testStartStopRserve() throws Exception {
+        RserverConf rs = RserverConf.newLocalInstance(null);
+        RserveDaemon d = new RserveDaemon(rs, new RLog() {
+            @Override
+            public void closeLog() {
+            }
+
+            @Override
+            public void log(String message, RLog.Level l) {
+                System.err.println(l + " " + message);
+            }
+        });
+
+        System.err.println("--- Get PREVIOUS Rserve PID");
+        int[] pids = StartRserve.getRservePIDs();
+        int last_pid = pids[pids.length-1];
+        System.err.println("---  " + last_pid);
+
+        System.err.println("--- Start Rserve daemon");
+        d.start(null);
+        Thread.sleep(1000);
+
+        System.err.println("--- Get THIS Rserve PID");
+        pids = StartRserve.getRservePIDs();
+        int pid = pids[pids.length-1];
+        System.err.println("---  " + pid);
+
+        assert pid != last_pid : "Did not start Rserve (no new PID)";
+
+        System.err.println("--- Create Rsession");
+        RserveSession s = new RserveSession(rs, false);
+        assert s.asDouble(s.eval("1+1")) == 2 : "Failed basic computation in Rserve";
+        System.err.println("--- Destroy Rsession");
+        s.end();
+
+        System.err.println("--- Stop Rserve");
+        d.stop();
+        Thread.sleep(1000);
+
+        assert !haveRservePID(d.rserve.pid) : "Still alive !";
+
+        //System.err.println("--- Get REMAINING Rserve PID");
+        //int other_pid = StartRserve.getLastRservePID();
+        //System.err.println("---  " + other_pid);
+        //assert other_pid != pid : "Did not kill Rserve (still live PID)";
+    }
+
+    @Test
+    public void testStartStop10Rserves() throws Exception {
+
+        final Thread[] tests = new Thread[10];
+        final RserveDaemon[] daemons = new RserveDaemon[tests.length];
+        final RserverConf[] confs = new RserverConf[tests.length];
+
+        for (int ii = 0; ii < tests.length; ii++) {
+            final int i = ii;
+            tests[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    confs[i] = RserverConf.newLocalInstance(null);
+                    daemons[i] = null;
+                    try {
+                        daemons[i] = new RserveDaemon(confs[i], new RLog() {
+                            @Override
+                            public void closeLog() {
+                            }
+
+                            @Override
+                            public void log(String message, RLog.Level l) {
+                                System.err.println(l + " " + message);
+                            }
+                        });
+
+                        //System.err.println("--- Get PREVIOUS Rserve PID");
+                        //int last_pid = StartRserve.getLastRservePID();
+                        //System.err.println("---  " + last_pid);
+                        System.err.println("--- Start Rserve daemon " + i);
+                        daemons[i].start(null);
+                        //Thread.sleep(5000);
+
+                    } catch (Exception e) {
+                        assert false : e.getMessage();
+                    }
+                }
+            });
+            tests[i].start();
+            Thread.sleep(1000);
+        }
+
+        for (int i = 0; i < tests.length; i++) {
+            tests[i].join();
+        }
+        
+        for (int i = 0; i < tests.length; i++) {
+            //System.err.println("--- Get THIS Rserve PID");
+            //int pid = StartRserve.getLastRservePID();
+            //System.err.println("---  " + pid);
+            //assert pid != last_pid : "Did not start Rserve (no new PID)";
+            System.err.println("--- Create Rsession");
+            RserveSession s = new RserveSession(confs[i], false);
+            assert s.asDouble(s.eval("1+" + i)) == 1 + i : "Failed basic computation in Rserve";
+            System.err.println("--- Destroy Rsession");
+            s.end();
+
+            System.err.println("--- Stop Rserve");
+            daemons[i].stop();
+            //Thread.sleep(5000);
+
+            assert !haveRservePID(daemons[i].rserve.pid) : "Still alive !";
+
+            //System.err.println("--- Get REMAINING Rserve PID");
+            //int other_pid = StartRserve.getLastRservePID();
+            //System.err.println("---  " + other_pid);
+            //assert other_pid != pid : "Did not kill Rserve (still live PID)";      
+        }
+
+    }
+
+    public static boolean haveRservePID(int Rp) {
+        if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) { // Windows, so we expect tasklist is available in PATH
+            int pid = -1;
+            try {
+                Process p = Runtime.getRuntime().exec("tasklist");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
+                        //Log.Out.print("\n> " + line);
+                        String[] info = line.split("\\s+");
+                        pid = Integer.parseInt(info[1]);
+                        if (pid == Rp) {
+                            return true;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            //Log.Out.println(">> " + pid);
+            return false;
+        } else {
+            int pid = -1;
+            try {
+                Process p = Runtime.getRuntime().exec("ps -aux");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
+                        //Log.Out.print("\n> " + line);
+                        String[] info = line.split("\\s+");
+                        pid = Integer.parseInt(info[1]);
+                        if (pid == Rp) {
+                            return true;
+                        }
+
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            //Log.Out.println(">> " + pid);
+            return false;
+        }
     }
 
     @Before

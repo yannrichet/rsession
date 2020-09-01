@@ -179,57 +179,6 @@ public class RserveDaemon {
         return new File(R_HOME).isDirectory();
     }
 
-    /*public static boolean findRserve_HOME(String path) {
-    Map<String, String> env = System.getenv();
-    Properties prop = System.getProperties();
-    
-    Rserve_HOME = path;
-    if (Rserve_HOME == null || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
-    if (env.containsKey(Rserve_HOME_KEY)) {
-    Rserve_HOME = env.get(Rserve_HOME_KEY);
-    }
-    
-    if (Rserve_HOME == null || prop.containsKey(Rserve_HOME_KEY) || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
-    Rserve_HOME = prop.getProperty(Rserve_HOME_KEY);
-    }
-    
-    if (Rserve_HOME == null || !(new File(Rserve_HOME).exists()) || !new File(Rserve_HOME).getName().equals("Rserve")) {
-    Rserve_HOME = null;
-    String OS_NAME = prop.getProperty("os.name");
-    String OS_ARCH = prop.getProperty("os.arch");
-    if (OS_ARCH.equals("amd64")) {
-    OS_ARCH = "x86_64";
-    }
-    if (OS_ARCH.endsWith("86")) {
-    OS_ARCH = "x86";
-    }
-    
-    if (OS_NAME.contains("Windows")) {
-    Rserve_HOME = "lib\\Windows\\" + OS_ARCH + "\\Rserve\\";
-    } else if (OS_NAME.equals("Mac OS X")) {
-    Rserve_HOME = "lib/MacOSX/" + OS_ARCH + "/Rserve";
-    } else if (OS_NAME.equals("Linux")) {
-    Rserve_HOME = "lib/Linux/" + OS_ARCH + "/Rserve";
-    } else {
-    RLog.err.println("OS " + OS_NAME + "/" + OS_ARCH + " not supported for automated RServe finding.");
-    }
-    
-    if (!new File(Rserve_HOME).exists()) {
-    RLog.err.println("Unable to find Rserve in " + Rserve_HOME);
-    Rserve_HOME = null;
-    } else {
-    Rserve_HOME = new File(Rserve_HOME).getPath().replace("\\", "\\\\");
-    }
-    }
-    }
-    
-    if (Rserve_HOME != null && new File(Rserve_HOME).exists()) {
-    setRecursiveExecutable(new File(Rserve_HOME));
-    return true;
-    } else {
-    return false;
-    }
-    }*/
     static void setRecursiveExecutable(File path) {
         for (File f : path.listFiles()) {
             if (f.isDirectory()) {
@@ -251,19 +200,23 @@ public class RserveDaemon {
         try {
             RConnection s = conf.connection;//connect();
             if (s == null || !s.isConnected()) {
-                log.log("R daemon already stoped.", Level.INFO);
-                return;
+                log.log("R daemon connection already closed.", Level.INFO);
+                s = conf.connect();
             }
-            try {
-                s.serverShutdown();
-            } catch (RserveException ex) {
-                log.log("Could not shutdown server", Level.WARNING);
-            }
-            s.shutdown();
-            if (rserve.process != null && rserve.process.isAlive()) {
-                rserve.process.destroyForcibly();
-                rserve.process.getInputStream().close();
-                rserve.process.getErrorStream().close();
+            if (s != null && s.isConnected()) {
+                try {
+                    s.serverShutdown();
+                } catch (RserveException ex) {
+                    log.log("Could not shutdown server", Level.WARNING);
+                }
+                s.shutdown();
+                if (rserve.process != null && rserve.process.isAlive()) {
+                    rserve.process.destroyForcibly();
+                    rserve.process.getInputStream().close();
+                    rserve.process.getErrorStream().close();
+                }
+            } else {
+                log.log("Could not connect Rserve to shutdown", Level.WARNING);
             }
         } catch (Exception ex) {
             log.log(ex.getMessage(), Level.ERROR);
@@ -271,26 +224,35 @@ public class RserveDaemon {
 
         try {
             if (rserve.pid > 0) {// avoid if pid was not well detected (so is <0)
-                log.log("Will kill with PID: " + rserve.pid, Level.INFO);
-                if (isWindows()) {
-                    Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
-                    log.log("Killed server: " + k.exitValue(), Level.INFO);
-
-                } else {
-                    Process k = Runtime.getRuntime().exec("kill -9 " + rserve.pid);
-                    log.log("Killed server: " + k.exitValue(), Level.INFO);
+                int[] pids = StartRserve.getRservePIDs();
+                boolean in = false;
+                for (int i = 0; i < pids.length; i++) {
+                    if (pids[i] == rserve.pid) {
+                        in = true;
+                        break;
+                    }
                 }
+                if (in) {
+                    log.log("Will kill with PID: " + rserve.pid, Level.INFO);
+                    if (isWindows()) {
+                        Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
+                        log.log("Killed server: " + k.waitFor(), Level.INFO);
+                    } else {
+                        Process k = Runtime.getRuntime().exec("kill -9 " + rserve.pid);
+                        log.log("Killed server: " + k.waitFor(), Level.INFO);
+                    }
+                } else log.log("Rserve PID not alive.", Level.WARNING); 
             } else {
                 log.log("No Rserve PID to kill.", Level.WARNING);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             log.log("Could not kill Rserve process: " + ex.getMessage(), Level.WARNING);
         }
 
-        log.log("R daemon stoped.", Level.INFO);
+        log.log("R daemon stopped.", Level.INFO);
     }
 
-    StartRserve.ProcessToKill rserve;
+    public StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = false;
 
     public void start(String http_proxy) {
@@ -334,12 +296,14 @@ public class RserveDaemon {
             RserveArgs.append(" --RS-port " + conf.port);
         }
 
-        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), /*Rserve_HOME + "\\\\..", */ "--vanilla", RserveArgs.toString(), false);
+        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
+                "--vanilla",
+                RserveArgs.toString(), false);
 
         if (rserve != null) {
-            log.log("                 ...ok", Level.INFO);
+            log.log("  R daemon started.", Level.INFO);
         } else {
-            log.log("                 ...failed", Level.ERROR);
+            log.log("  R daemon startup failed!", Level.ERROR);
         }
     }
 

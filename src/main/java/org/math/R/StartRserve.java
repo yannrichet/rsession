@@ -11,6 +11,11 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.codehaus.plexus.util.FileUtils;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /**
@@ -402,8 +407,10 @@ public class StartRserve {
     static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
 
     public static class ProcessToKill {
+
         public Process process;
         public int pid;
+
         public ProcessToKill(Process p, int pid) {
             process = p;
             this.pid = pid;
@@ -426,12 +433,18 @@ public class StartRserve {
         Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
         Log.Out.println("  In working directory: " + wd.getAbsolutePath());
-        if (!wd.mkdirs()) {
-            Log.Err.println("  !!! not available !!!");
+        try {
+            FileUtils.forceMkdir(wd);
+        } catch (IOException ex) {
+            Log.Err.println(ex.getMessage());
+        }
+        if (!wd.isDirectory()) {
+            Log.Err.println("  ! not available !");
         }
         wd.deleteOnExit();
         
-        int last_pid = getLastRservePID(); // should be -1 in most cases
+        int[] pids = getRservePIDs();
+        int last_pid = pids[pids.length-1]; // should be -1 in most cases
 
         Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
@@ -444,12 +457,13 @@ public class StartRserve {
             Log.Err.println("! Failed to start Rserve process.");
             return null;
         }
-        
+
         int attempts = 50;
         int pid = last_pid;
         while (pid == last_pid && attempts > 0) {
             try {
-                pid = getLastRservePID();
+                pids = getRservePIDs();
+                pid = pids[pids.length-1];
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException ix) {
@@ -458,8 +472,7 @@ public class StartRserve {
                 Log.Out.print(".");
             }
             attempts--;
-        } 
-        Log.Out.print(" PID: "+pid+" ");
+        }
 
         attempts = 30;
         while (attempts > 0) {
@@ -478,9 +491,9 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                Log.Out.println("\n Rserve is running (PID "+pid+")");
+                Log.Out.println("\n Rserve is running (PID " + pid + ")");
                 c.close();
-                return new ProcessToKill(p,pid);
+                return new ProcessToKill(p, pid);
             } catch (Exception e2) {
                 Log.Out.print(".");
             }
@@ -489,23 +502,26 @@ public class StartRserve {
         return null;
     }
 
-    public static int getLastRservePID() {
+    public static int[] getRservePIDs() {
+        List<Integer> pids = new LinkedList<>();
         if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) { // Windows, so we expect tasklist is available in PATH
             int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("tasklist");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(                        p.getInputStream()));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.contains("Rserve")) {
+                    if (line.startsWith("Rserve.exe") ||line.startsWith("Rserve_d.exe")) {
+                        //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         pid = Integer.parseInt(info[1]);
+                        pids.add(pid);
                     }
                 }
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
-            }
-            return pid;
+            } 
+            //Log.Out.println(">> "+pid);
         } else {
             int pid = -1;
             try {
@@ -513,16 +529,22 @@ public class StartRserve {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.contains("Rserve")) {
+                    if ((line.contains("Rserve --vanilla")||line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
+                        //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         pid = Integer.parseInt(info[1]);
-                    }
+                   pids.add(pid); }
                 }
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-            return pid;
+            //Log.Out.println(">> "+pid);
         }
+        int[] ps = new int[pids.size()];
+        for (int i = 0; i < pids.size(); i++) {
+            ps[i] = pids.get(i);
+        }
+        return ps;
     }
 
     /**
