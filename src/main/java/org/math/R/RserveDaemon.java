@@ -271,10 +271,14 @@ public class RserveDaemon {
 
         try {
             if (rserve.pid > 0) {// avoid if pid was not well detected (so is <0)
+                log.log("Will kill with PID: " + rserve.pid, Level.INFO);
                 if (isWindows()) {
-                    Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
+                    Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
+                    log.log("Killed server: " + k.exitValue(), Level.INFO);
+
                 } else {
-                    Runtime.getRuntime().exec("kill -9 " + rserve.pid);
+                    Process k = Runtime.getRuntime().exec("kill -9 " + rserve.pid);
+                    log.log("Killed server: " + k.exitValue(), Level.INFO);
                 }
             } else {
                 log.log("No Rserve PID to kill.", Level.WARNING);

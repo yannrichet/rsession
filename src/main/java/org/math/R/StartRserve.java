@@ -439,9 +439,9 @@ public class StartRserve {
                 + "print(getwd()); "
                 + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
         if (p != null) {
-            Log.Out.println("Rserve startup done, let us try to connect ...");
+            Log.Out.print(" Rserve startup done, let us try to connect");
         } else {
-            Log.Err.println("Failed to start Rserve process.");
+            Log.Err.println("! Failed to start Rserve process.");
             return null;
         }
         
@@ -455,10 +455,11 @@ public class StartRserve {
                 } catch (InterruptedException ix) {
                 }
             } catch (Exception e2) {
-                Log.Err.println("Try failed with: " + e2.getMessage());
+                Log.Out.print(".");
             }
             attempts--;
-        }
+        } 
+        Log.Out.print(" PID: "+pid+" ");
 
         attempts = 30;
         while (attempts > 0) {
@@ -477,11 +478,11 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                Log.Out.println("Rserve is running.");
+                Log.Out.println("\n Rserve is running (PID "+pid+")");
                 c.close();
                 return new ProcessToKill(p,pid);
             } catch (Exception e2) {
-                Log.Err.println("Try failed with: " + e2.getMessage());
+                Log.Out.print(".");
             }
             attempts--;
         }
