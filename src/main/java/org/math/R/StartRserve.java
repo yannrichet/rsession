@@ -253,12 +253,12 @@ public class StartRserve {
      * @return success
      */
     public static boolean installRserve(String Rcmd) {
-        if (new File(RserveDaemon.app_dir(),"Rserve").isDirectory()) {
-            Log.Out.println("Already installed Rserve. (in "+RserveDaemon.app_dir().getAbsolutePath()+")");
+        if (new File(RserveDaemon.app_dir(), "Rserve").isDirectory()) {
+            Log.Out.println("Already installed Rserve. (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
             return true;
         }
-        
-        Log.Out.println("Install Rserve from local filesystem... (in "+RserveDaemon.app_dir().getAbsolutePath()+")");
+
+        Log.Out.println("Install Rserve from local filesystem... (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
 
         String pack_suffix = ".tar.gz";
         if (RserveDaemon.isWindows()) {
@@ -375,7 +375,7 @@ public class StartRserve {
         Process p = null;
         try {
             String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + new File(RserveDaemon.app_dir(),Rout).getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "") : "");
+            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + new File(RserveDaemon.app_dir(), Rout).getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "") : "");
             Log.Out.println("Doing (in R): " + command);
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
@@ -395,11 +395,20 @@ public class StartRserve {
      * @param cmd Rserve command
      * @return launcher Process
      */
-    public static Process launchRserve(String cmd) {
+    public static ProcessToKill launchRserve(String cmd) {
         return launchRserve(cmd, "--vanilla", "--vanilla --RS-enable-control", false);
     }
 
     static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
+
+    public static class ProcessToKill {
+        public Process process;
+        public int pid;
+        public ProcessToKill(Process p, int pid) {
+            process = p;
+            this.pid = pid;
+        }
+    }
 
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
@@ -412,7 +421,7 @@ public class StartRserve {
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static Process launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
+    public static ProcessToKill launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
         Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
@@ -420,7 +429,10 @@ public class StartRserve {
         if (!wd.mkdirs()) {
             Log.Err.println("  !!! not available !!!");
         }
-        //wd.deleteOnExit();
+        wd.deleteOnExit();
+        
+        int last_pid = getLastRservePID(); // should be -1 in most cases
+
         Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
@@ -432,12 +444,30 @@ public class StartRserve {
             Log.Err.println("Failed to start Rserve process.");
             return null;
         }
+        
+        int attempts = 50;
+        int pid = last_pid;
+        while (pid == last_pid && attempts > 0) {
+            try {
+                pid = getLastRservePID();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ix) {
+                }
+            } catch (Exception e2) {
+                Log.Err.println("Try failed with: " + e2.getMessage());
+            }
+            attempts--;
+        }
 
-        int attempts = 30;
-        /* try up to 15 times before giving up. We can be conservative here, because at this point the process execution itself was successful and the start up is usually asynchronous */
-
+        attempts = 30;
         while (attempts > 0) {
             try {
+                /* a safety sleep just in case the start up is delayed or asynchronous */
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ix) {
+                }
                 RConnection c = null;
                 int port = -1;
                 if (rsrvargs.contains("--RS-port")) {
@@ -449,19 +479,49 @@ public class StartRserve {
                 }
                 Log.Out.println("Rserve is running.");
                 c.close();
-                return p;
+                return new ProcessToKill(p,pid);
             } catch (Exception e2) {
                 Log.Err.println("Try failed with: " + e2.getMessage());
             }
-            /* a safety sleep just in case the start up is delayed or asynchronous */
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ix) {
-            }
-
             attempts--;
         }
         return null;
+    }
+
+    public static int getLastRservePID() {
+        if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) { // Windows, so we expect tasklist is available in PATH
+            int pid = -1;
+            try {
+                Process p = Runtime.getRuntime().exec("tasklist");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(                        p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("Rserve")) {
+                        String[] info = line.split("\\s+");
+                        pid = Integer.parseInt(info[1]);
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            return pid;
+        } else {
+            int pid = -1;
+            try {
+                Process p = Runtime.getRuntime().exec("ps -aux");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("Rserve")) {
+                        String[] info = line.split("\\s+");
+                        pid = Integer.parseInt(info[1]);
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            return pid;
+        }
     }
 
     /**
@@ -477,8 +537,9 @@ public class StartRserve {
         if (isRserveRunning()) {
             return true;
         }
-        if (!RserveDaemon.findR_HOME(RserveDaemon.R_HOME)) return false; // this will aslo initialize R_HOME if passes
-        
+        if (!RserveDaemon.findR_HOME(RserveDaemon.R_HOME)) {
+            return false; // this will aslo initialize R_HOME if passes
+        }
         if (RserveDaemon.isWindows()) {
             return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe") != null;
         } else {

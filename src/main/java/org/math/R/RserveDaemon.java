@@ -1,10 +1,12 @@
 package org.math.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 import org.math.R.RLog.Level;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -258,19 +260,33 @@ public class RserveDaemon {
                 log.log("Could not shutdown server", Level.WARNING);
             }
             s.shutdown();
-            if (rserve != null && rserve.isAlive()) {
-                rserve.destroyForcibly();
-                rserve.getInputStream().close();
-                rserve.getErrorStream().close();
+            if (rserve.process != null && rserve.process.isAlive()) {
+                rserve.process.destroyForcibly();
+                rserve.process.getInputStream().close();
+                rserve.process.getErrorStream().close();
             }
         } catch (Exception ex) {
             log.log(ex.getMessage(), Level.ERROR);
         }
 
+        try {
+            if (rserve.pid > 0) {// avoid if pid was not well detected (so is <0)
+                if (isWindows()) {
+                    Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
+                } else {
+                    Runtime.getRuntime().exec("kill -9 " + rserve.pid);
+                }
+            } else {
+                log.log("No Rserve PID to kill.", Level.WARNING);
+            }
+        } catch (IOException ex) {
+            log.log("Could not kill Rserve process: " + ex.getMessage(), Level.WARNING);
+        }
+
         log.log("R daemon stoped.", Level.INFO);
     }
 
-    Process rserve;
+    StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = false;
 
     public void start(String http_proxy) {
