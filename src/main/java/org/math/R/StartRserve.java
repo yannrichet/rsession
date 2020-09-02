@@ -417,6 +417,8 @@ public class StartRserve {
         }
     }
 
+    static Object lockRserveLauncher = new Object();
+
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
      * using any quotes in arguments
@@ -442,39 +444,43 @@ public class StartRserve {
             Log.Err.println("  ! not available !");
         }
         wd.deleteOnExit();
-        
+
         int[] pids = getRservePIDs();
-        int last_pid = pids[pids.length-1]; // should be -1 in most cases
+        int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1; // should be -1 in most cases
 
-        Process p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
-                + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
-                + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
-                + "print(getwd()); "
-                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
-        if (p != null) {
-            Log.Out.print(" Rserve startup done, let us try to connect");
-        } else {
-            Log.Err.println("! Failed to start Rserve process.");
-            return null;
-        }
-
-        int attempts = 50;
-        int pid = last_pid;
-        while (pid == last_pid && attempts > 0) {
-            try {
-                pids = getRservePIDs();
-                pid = pids[pids.length-1];
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ix) {
-                }
-            } catch (Exception e2) {
-                Log.Out.print(".");
+        Process p = null;
+        int pid = -1;
+        synchronized (lockRserveLauncher) {
+            p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
+                    + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
+                    + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
+                    + "print(getwd()); "
+                    + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+            if (p != null) {
+                Log.Out.print(" Rserve startup done, let us try to connect");
+            } else {
+                Log.Err.println("! Failed to start Rserve process.");
+                return null;
             }
-            attempts--;
+
+            int attempts = 50;
+            pid = last_pid;
+            while (pid == last_pid && attempts > 0) {
+                try {
+                    pids = getRservePIDs();
+                    pid = pids.length > 0 ? pids[pids.length - 1] : -1;
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ix) {
+                    }
+                } catch (Exception e2) {
+                    Log.Out.print(".");
+                }
+                attempts--;
+            }
         }
 
-        attempts = 30;
+        int attempts = 30;
         while (attempts > 0) {
             try {
                 /* a safety sleep just in case the start up is delayed or asynchronous */
@@ -511,7 +517,7 @@ public class StartRserve {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("Rserve.exe") ||line.startsWith("Rserve_d.exe")) {
+                    if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         pid = Integer.parseInt(info[1]);
@@ -520,25 +526,42 @@ public class StartRserve {
                 }
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
-            } 
+            }
             //Log.Out.println(">> "+pid);
-        } else {
+        } else if (System.getProperty("os.name").toLowerCase().indexOf("inux") >= 0) {
             int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("ps -aux");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if ((line.contains("Rserve --vanilla")||line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
+                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         pid = Integer.parseInt(info[1]);
-                   pids.add(pid); }
+                        pids.add(pid);
+                    }
                 }
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-            //Log.Out.println(">> "+pid);
+        } else { // MacOS
+            int pid = -1;
+            try {
+                Process p = Runtime.getRuntime().exec("ps aux");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
+                        //Log.Out.print("\n> " + line);
+                        String[] info = line.split("\\s+");
+                        pid = Integer.parseInt(info[1]);
+                        pids.add(pid);
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
         }
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {

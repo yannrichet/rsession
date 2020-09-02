@@ -10,6 +10,7 @@ import org.rosuda.REngine.Rserve.RserveException;
 public class RserverConf {
 
     public static String DEFAULT_RSERVE_HOST = "localhost";
+    public static Object lockPort = new Object();
     RConnection connection;
     public String host;
     public int port;
@@ -157,7 +158,7 @@ public class RserverConf {
                     }
                     return 0;
                 } catch (RserveException ex) {
-                    Log.Err.println("Failed to connect: " + ex.getMessage());
+                    //Log.Err.println("Failed to connect: " + ex.getMessage());
                     return -1;
                 }
             }

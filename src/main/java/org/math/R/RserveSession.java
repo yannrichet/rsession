@@ -35,7 +35,7 @@ import org.rosuda.REngine.Rserve.RserveException;
 public class RserveSession extends Rsession implements RLog {
 
     RConnection R;
-    boolean tryLocalRServe;
+    boolean spawnLocalRserve;
     public final static int MinRserveVersion = 103;
     public boolean connected = false;
     RserveDaemon localRserve;
@@ -77,7 +77,8 @@ public class RserveSession extends Rsession implements RLog {
      * Build a new local Rsession
      *
      * @param console PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R libpath)
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
      * @return RserveSession instanciated
      */
     public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
@@ -155,15 +156,15 @@ public class RserveSession extends Rsession implements RLog {
      * @param serverconf RserverConf server configuration object, giving IP,
      * port, login, password, properties to pass to R (eg http_proxy or R
      * libpath)
-     * @param tryLocalRServe local spawned Rsession if given remote one failed
+     * @param spawnLocalRserve local spawned Rsession if given remote one failed
      * to initialized
      */
-    public RserveSession(final RLog console, RserverConf serverconf, boolean tryLocalRServe) {
+    public RserveSession(final RLog console, RserverConf serverconf, boolean spawnLocalRserve) {
         super(console);
         envName = ENVIRONMENT_DEFAULT;
 
         RserveConf = serverconf;
-        this.tryLocalRServe = tryLocalRServe;
+        this.spawnLocalRserve = spawnLocalRserve;
 
         // Make sink file specific to current Rserve instance
         SINK_FILE = "./rout.txt";//+SINK_FILE_BASE + "-" + (serverconf == null ? 0 : serverconf.port);
@@ -177,12 +178,8 @@ public class RserveSession extends Rsession implements RLog {
 
         // We need to be sure that the lib dir is writable. Otherwise R will ask _interactively_ for a writable dir when using install.packages(...), which will block the session
         //install_packages_moreargs = ",lib='" + gethomedir() + "/" + ".Rserve" + "'"; No longer used because of side-effects using libPaths later
-        try {
-            if (!asLogical(eval("any(file.access(.libPaths(),2)>=0)"))) {
-                voidEval(".libPaths(new=tempdir())"); // ensure a writable directory for libPath
-            }
-        } catch (RException ex) {
-            console.log(ex.getMessage(), Level.ERROR);
+        if (!asLogical(silentlyRawEval("any(file.access(.libPaths(),2)>=0)"))) {
+            silentlyVoidEval(".libPaths(new=tempdir())"); // ensure a writable directory for libPath
         }
     }
 
@@ -191,9 +188,9 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param p PrintStream
      * @param serverconf RserverConf
-     * @param tryLocalRServe local spawned Rsession if given remote one failed
+     * @param spawnLocalRserve local spawned Rsession if given remote one failed
      */
-    public RserveSession(final PrintStream p, RserverConf serverconf, boolean tryLocalRServe) {
+    public RserveSession(final PrintStream p, RserverConf serverconf, boolean spawnLocalRserve) {
         this(new RLog() {
 
             public void log(String string, Level level) {
@@ -208,32 +205,17 @@ public class RserveSession extends Rsession implements RLog {
             public void closeLog() {
                 p.close();
             }
-        }, serverconf, tryLocalRServe);
+        }, serverconf, spawnLocalRserve);
     }
 
     /**
      * create rsession using System as a logger
      *
      * @param serverconf RserverConf
-     * @param tryLocalRServe local spawned Rsession if given remote one failed
+     * @param spawnLocalRserve local spawned Rsession if given remote one failed
      */
-    public RserveSession(RserverConf serverconf, boolean tryLocalRServe) {
-        this(new RLogSlf4j(), serverconf, tryLocalRServe);
-    }
-
-    void startup() throws Exception {
-        if (RserveConf == null) {
-            if (tryLocalRServe) {
-                RserveConf = RserverConf.newLocalInstance(null);
-                log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
-                begin(true);
-            } else {
-                log("No Rserve conf given. Failed to start session.", Level.ERROR);
-                status = STATUS_ERROR;
-            }
-        } else {
-            begin(tryLocalRServe);
-        }
+    public RserveSession(RserverConf serverconf, boolean spawnLocalRserve) {
+        this(new RLogSlf4j(), serverconf, spawnLocalRserve);
     }
 
     /**
@@ -243,73 +225,71 @@ public class RserveSession extends Rsession implements RLog {
         return status;
     }
 
-    void begin(boolean tryLocal) throws Exception {
+    void startup() throws Exception {
         status = STATUS_NOT_CONNECTED;
 
-        /*if (RserveConf == null) {
-         RserveConf = RserverConf.newLocalInstance(null);
-         println("No Rserve conf given. Trying to use " + RserveConf.toString());
-         }*/
+        if (spawnLocalRserve) {
+            if (RserveConf == null) {// no RserveConf given, so create one, and need to be started
+                synchronized (RserverConf.lockPort) { // need to sync to avoid multiple concurrent startups which will try to use the same port...
+                    RserveConf = RserverConf.newLocalInstance(null);
+                    log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
+                    try {
+                        localRserve = new RserveDaemon(RserveConf, this);
+                    } catch (Exception ex) {
+                        log(ex.getMessage(), Level.ERROR);
+                        throw ex;
+                    }
+
+                    String http_proxy = null;
+                    if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
+                        http_proxy = RserveConf.properties.getProperty("http_proxy");
+                    }
+                    localRserve.start(http_proxy);
+                }
+            } else {// RserveConf given and need to be started
+                try {
+                    localRserve = new RserveDaemon(RserveConf, this);
+                } catch (Exception ex) {
+                    log(ex.getMessage(), Level.ERROR);
+                    throw ex;
+                }
+
+                String http_proxy = null;
+                if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
+                    http_proxy = RserveConf.properties.getProperty("http_proxy");
+                }
+                localRserve.start(http_proxy);
+            }
+        } else {
+            if (RserveConf == null) {// no RserveConf given and nothing to start, so no Rserve available !
+                log("No Rserve conf given. Failed to start session.", Level.ERROR);
+                status = STATUS_ERROR;
+                return;
+            } else {// RserveConf given and already started
+            }
+        }
+
         status = STATUS_CONNECTING;
 
-        R = RserveConf.connect();
-        connected = (R != null);
+        //int attempts = 10;
+        //while (!connected && attempts > 0) {
+            R = RserveConf.connect(); // use timeout wrapper to ensure connexion (if possible)
+            connected = (R != null);
+        //    try {
+        //        Thread.sleep(100);
+        //    } catch (InterruptedException ie) {
+        //    }
+        //}
 
         if (!connected) {
+            log("Rserve " + RserveConf + " is not accessible.", Level.ERROR);
             status = STATUS_ERROR;
-            String message = "Rserve " + RserveConf + " is not accessible.";
-            log(message, Level.ERROR);
         } else if (R.getServerVersion() < MinRserveVersion) {
+            log("Rserve " + RserveConf + " version is too old.", Level.ERROR);
             status = STATUS_ERROR;
-            String message = "Rserve " + RserveConf + " version is too old.";
-            log(message, Level.ERROR);
         } else {
             status = STATUS_READY;
-            return;
         }
-
-        if (tryLocal) {//try a local start of Rserve
-
-            status = STATUS_CONNECTING;
-
-            RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
-            log("Trying to spawn " + RserveConf.toString(), Level.INFO);
-
-            try {
-                localRserve = new RserveDaemon(RserveConf, this);
-            } catch (Exception ex) {
-                log(ex.getMessage(), Level.ERROR);
-                Log.Err.println(ex.getMessage());
-                throw ex;
-            }
-
-            String http_proxy = null;
-            if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
-                http_proxy = RserveConf.properties.getProperty("http_proxy");
-            }
-            localRserve.start(http_proxy);
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ie) {
-                ie.printStackTrace();
-            }
-
-            R = RserveConf.connect();
-            connected = (R != null);
-
-            if (!connected) {//failed !
-                String message2 = "Failed to launch local Rserve. Unable to initialize Rsession.";
-                log(message2, Level.ERROR);
-                Log.Err.println(message2);
-                throw new Exception(message2);
-            } else {
-                log("Local Rserve started. (Version " + R.getServerVersion() + ")", Level.INFO);
-            }
-        }
-        //if (r.getServerVersion() < MinRserveVersion) {
-        //    throw new IllegalArgumentException("RServe version too low: " + r.getServerVersion() + "\n  Rserve >= 0.6 needed.");
-        //}
     }
 
     /**
@@ -350,8 +330,8 @@ public class RserveSession extends Rsession implements RLog {
 
     public String gethomedir() {
         return asString(silentlyRawEval("path.expand('~')"));
-    }  
-    
+    }
+
     /**
      * Silently (ie no log) launch R command without return value.
      *
@@ -487,7 +467,7 @@ public class RserveSession extends Rsession implements RLog {
                 }
             } catch (Exception ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-            return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
+                return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
             } finally {
                 if (SINK_OUTPUT) {
                     try {
@@ -528,9 +508,9 @@ public class RserveSession extends Rsession implements RLog {
 
         if (tryEval && e != null) {
             try {
-                if (((REXP)e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
-                    log(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression, Level.WARNING);
-                    e = new RException(HEAD_EXCEPTION + ((REXP)e).asString() + "\n  " + expression);
+                if (((REXP) e).inherits("try-error")/*e.isString() && e.asStrings().length > 0 && e.asString().toLowerCase().startsWith("error")*/) {
+                    log(HEAD_EXCEPTION + ((REXP) e).asString() + "\n  " + expression, Level.WARNING);
+                    e = new RException(HEAD_EXCEPTION + ((REXP) e).asString() + "\n  " + expression);
                 }
             } catch (REXPMismatchException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  " + expression, Level.ERROR);
@@ -909,7 +889,7 @@ public class RserveSession extends Rsession implements RLog {
                 }
                 return vals;
             } catch (Exception ex) {
-                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: "+ex.getMessage());
+                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: " + ex.getMessage());
             }
         }
         if (o instanceof double[]) {
@@ -1027,7 +1007,7 @@ public class RserveSession extends Rsession implements RLog {
             return (boolean) o;
         }
         if (o instanceof RException) {
-            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException)o).getMessage());
+            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException) o).getMessage());
         }
         if (!(o instanceof REXP)) {
             throw new IllegalArgumentException("[asLogical] Not an REXP object: " + o);
@@ -1243,14 +1223,14 @@ public class RserveSession extends Rsession implements RLog {
 
     @Override
     public File putFileInWorkspace(File file) {
-        return putFile(file,local2remotePath(file).getPath());
+        return putFile(file, local2remotePath(file).getPath());
     }
 
     @Override
     public void getFileFromWorkspace(File file) {
-        getFile(remote2localPath(file),file.getPath());
+        getFile(remote2localPath(file), file.getPath());
     }
-    
+
     @Override
     public void save(File f, String... vars) throws RException {
         super.save(local2remotePath(f), vars);
@@ -1290,7 +1270,7 @@ public class RserveSession extends Rsession implements RLog {
      */
     public void getFile(File localfile, String remoteFile) {
         try {
-            if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
+            if (((REXP) silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
             }
         } catch (Exception ex) {
@@ -1377,7 +1357,7 @@ public class RserveSession extends Rsession implements RLog {
             }
         }
         try {
-            if (((REXP)silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() == 1) {
+            if (((REXP) silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() == 1) {
                 silentlyVoidEval("file.remove('" + remoteFile.replace("\\", "/") + "')", TRY_MODE);
                 log(IO_HEAD + "Remote file " + remoteFile + " deleted.", Level.INFO);
             }
@@ -1478,7 +1458,7 @@ public class RserveSession extends Rsession implements RLog {
 
         System.out.println(R.notebook());
     }
-    
+
     @Override
     public void setGlobalEnv(String envName) {
         if (envName == null) {
@@ -1492,11 +1472,12 @@ public class RserveSession extends Rsession implements RLog {
                 R.eval(this.envName + " = new.env()");
             }
             R.eval("for (.n in ls()) {\n " + this.envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
-            
+
             rmAll();
-            if (!asLogical(R.eval("exists('" + envName + "')")))
+            if (!asLogical(R.eval("exists('" + envName + "')"))) {
                 R.eval(envName + " = new.env()");
-            R.eval("for (.n in ls("+envName+")) {\n .GlobalEnv[[.n]] = " + envName + "[[.n]]\n}");
+            }
+            R.eval("for (.n in ls(" + envName + ")) {\n .GlobalEnv[[.n]] = " + envName + "[[.n]]\n}");
 
         } catch (RserveException ex) {
             Log.Err.println(ex.getMessage());
@@ -1512,10 +1493,10 @@ public class RserveSession extends Rsession implements RLog {
             envName = ".." + envName + "..";
         }
         try {
-             if (!asLogical(R.eval("exists('" + envName + "')"))) {
+            if (!asLogical(R.eval("exists('" + envName + "')"))) {
                 R.eval(envName + " = new.env()");
             }
-            
+
             R.eval("for (.n in ls()) {\n " + envName + "[[.n]] = .GlobalEnv[[.n]]\n}");
         } catch (RserveException ex) {
             Log.Err.println(ex.getMessage());

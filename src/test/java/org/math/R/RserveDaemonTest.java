@@ -197,7 +197,7 @@ public class RserveDaemonTest {
 
         System.err.println("--- Get PREVIOUS Rserve PID");
         int[] pids = StartRserve.getRservePIDs();
-        int last_pid = pids[pids.length-1];
+        int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1;
         System.err.println("---  " + last_pid);
 
         System.err.println("--- Start Rserve daemon");
@@ -206,7 +206,7 @@ public class RserveDaemonTest {
 
         System.err.println("--- Get THIS Rserve PID");
         pids = StartRserve.getRservePIDs();
-        int pid = pids[pids.length-1];
+        int pid = pids.length > 0 ? pids[pids.length - 1] : -666;
         System.err.println("---  " + pid);
 
         assert pid != last_pid : "Did not start Rserve (no new PID)";
@@ -241,41 +241,42 @@ public class RserveDaemonTest {
             tests[i] = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    synchronized (RserverConf.lockPort) { // this is the sync policy used in RserveSession.startup
+                        confs[i] = RserverConf.newLocalInstance(null);
+                        daemons[i] = null;
+                        try {
+                            daemons[i] = new RserveDaemon(confs[i], new RLog() {
+                                @Override
+                                public void closeLog() {
+                                }
 
-                    confs[i] = RserverConf.newLocalInstance(null);
-                    daemons[i] = null;
-                    try {
-                        daemons[i] = new RserveDaemon(confs[i], new RLog() {
-                            @Override
-                            public void closeLog() {
-                            }
+                                @Override
+                                public void log(String message, RLog.Level l) {
+                                    System.err.println(l + " " + message);
+                                }
+                            });
 
-                            @Override
-                            public void log(String message, RLog.Level l) {
-                                System.err.println(l + " " + message);
-                            }
-                        });
+                            //System.err.println("--- Get PREVIOUS Rserve PID");
+                            //int last_pid = StartRserve.getLastRservePID();
+                            //System.err.println("---  " + last_pid);
+                            System.err.println("--- Start Rserve daemon " + i);
+                            daemons[i].start(null);
+                            //Thread.sleep(5000);
 
-                        //System.err.println("--- Get PREVIOUS Rserve PID");
-                        //int last_pid = StartRserve.getLastRservePID();
-                        //System.err.println("---  " + last_pid);
-                        System.err.println("--- Start Rserve daemon " + i);
-                        daemons[i].start(null);
-                        //Thread.sleep(5000);
-
-                    } catch (Exception e) {
-                        assert false : e.getMessage();
+                        } catch (Exception e) {
+                            assert false : e.getMessage();
+                        }
                     }
                 }
             });
             tests[i].start();
-            Thread.sleep(1000);
+            Thread.sleep(100);
         }
 
         for (int i = 0; i < tests.length; i++) {
             tests[i].join();
         }
-        
+
         for (int i = 0; i < tests.length; i++) {
             //System.err.println("--- Get THIS Rserve PID");
             //int pid = StartRserve.getLastRservePID();
@@ -302,50 +303,13 @@ public class RserveDaemonTest {
     }
 
     public static boolean haveRservePID(int Rp) {
-        if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) { // Windows, so we expect tasklist is available in PATH
-            int pid = -1;
-            try {
-                Process p = Runtime.getRuntime().exec("tasklist");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
-                        //Log.Out.print("\n> " + line);
-                        String[] info = line.split("\\s+");
-                        pid = Integer.parseInt(info[1]);
-                        if (pid == Rp) {
-                            return true;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Log.Err.println(e.getMessage());
+        int[] pids = StartRserve.getRservePIDs();
+        for (int i = 0; i < pids.length; i++) {
+            if (pids[i] == Rp) {
+                return true;
             }
-            //Log.Out.println(">> " + pid);
-            return false;
-        } else {
-            int pid = -1;
-            try {
-                Process p = Runtime.getRuntime().exec("ps -aux");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
-                        //Log.Out.print("\n> " + line);
-                        String[] info = line.split("\\s+");
-                        pid = Integer.parseInt(info[1]);
-                        if (pid == Rp) {
-                            return true;
-                        }
-
-                    }
-                }
-            } catch (Exception e) {
-                Log.Err.println(e.getMessage());
-            }
-            //Log.Out.println(">> " + pid);
-            return false;
         }
+        return false;
     }
 
     @Before

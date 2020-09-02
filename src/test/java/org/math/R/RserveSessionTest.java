@@ -266,7 +266,7 @@ public class RserveSessionTest {
             int size = i * 80;
             File sfile = new File(size + ".jpg");
             s.toPNG(sfile, 600, 600, "plot(rnorm(" + (size / 8) + "))");
-            assert new File(size + ".jpg").exists() : "Size " + size + " failed ("+new File(size + ".jpg").getAbsolutePath()+")";
+            assert new File(size + ".jpg").exists() : "Size " + size + " failed (" + new File(size + ".jpg").getAbsolutePath() + ")";
             p.println(sfile.length());
         }
     }
@@ -624,44 +624,48 @@ public class RserveSessionTest {
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final RserveSession[] R = new RserveSession[A.length];
-        for (int i = 0; i < R.length; i++) {
-            R[i] = RserveSession.newInstanceTry(new RLog() {
+        final Thread[] T = new Thread[A.length];
+        
+        for (int ii = 0; ii < R.length; ii++) {
+            final int i = ii;
+            T[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
 
-                public void log(String string, Level level) {
-                    if (level == Level.INFO) {
-                        System.out.println(string);
-                    } else {
-                        System.err.println(string);
+                    R[i] = RserveSession.newInstanceTry(new RLog() {
+
+                        public void log(String string, Level level) {
+                            if (level == Level.INFO) {
+                                System.out.println(string);
+                            } else {
+                                System.err.println(string);
+                            }
+                        }
+
+                        public void closeLog() {
+                        }
+                    }, null);
+
+                    final int ai = A[i];
+                    try {
+                        R[i].rawEval("a<-" + ai);
+
+                        double ria = R[i].asDouble(R[i].rawEval("a"));
+                        assert ria == ai : "a should be == " + ai + " !";
+                        System.out.println(ai + ": OK");
+
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
                     }
+
                 }
-
-                public void closeLog() {
-                }
-            }, null);
-        }
-
-        for (int i = 0; i < A.length; i++) {
-            final int ai = A[i];
-            final RserveSession ri = R[i];
-            //new Thread(new Runnable() {
-            //
-            //   public void run() {
-            try {
-                ri.rawEval("a<-" + ai);
-
-                double ria = ri.asDouble(ri.rawEval("a"));
-                assert ria == ai : "a should be == " + ai + " !";
-                System.out.println(ai + ": OK");
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            //}
-            //}).start();
+            });
+            T[i].start();
         }
 
         //checking of each RserveSession to verify values are ok.
         for (int i = 0; i < A.length; i++) {
+            T[i].join();   
             for (int j = 0; j < i; j++) {
                 while (R[j].rawEval("a") == null) {
                     Thread.sleep(1000);
@@ -698,6 +702,7 @@ public class RserveSessionTest {
 
         RserverConf conf = new RserverConf(null, -1, null, null, prop);
         s = RserveSession.newInstanceTry(l, conf);
+        //s = RserveSession.newLocalInstance(l, prop);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 

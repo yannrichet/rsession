@@ -71,6 +71,7 @@ public class RserveDaemon {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
+                log.log("Shutdown hook: stop Rserve daemon", Level.INFO);
                 _stop();
             }
         });
@@ -191,7 +192,13 @@ public class RserveDaemon {
 
     }
 
+    boolean stopped = false;
+
     public void stop() {
+        if (stopped) {
+            log.log("R daemon " + conf + " already stopped.", Level.INFO);
+            return;
+        }
         log.log("stopping R daemon... " + conf, Level.INFO);
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Not authorized to stop a remote R daemon: " + conf.toString());
@@ -219,7 +226,7 @@ public class RserveDaemon {
                 log.log("Could not connect Rserve to shutdown", Level.WARNING);
             }
         } catch (Exception ex) {
-            log.log(ex.getMessage(), Level.ERROR);
+            log.log("Failed to connect Rserve to shutdown", Level.ERROR);
         }
 
         try {
@@ -233,7 +240,7 @@ public class RserveDaemon {
                     }
                 }
                 if (in) {
-                    log.log("Will kill with PID: " + rserve.pid, Level.INFO);
+                    log.log("Will kill PID: " + rserve.pid, Level.INFO);
                     if (isWindows()) {
                         Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
                         log.log("Killed server: " + k.waitFor(), Level.INFO);
@@ -241,7 +248,9 @@ public class RserveDaemon {
                         Process k = Runtime.getRuntime().exec("kill -9 " + rserve.pid);
                         log.log("Killed server: " + k.waitFor(), Level.INFO);
                     }
-                } else log.log("Rserve PID not alive.", Level.WARNING); 
+                } else {
+                    log.log("Rserve PID not alive.", Level.WARNING);
+                }
             } else {
                 log.log("No Rserve PID to kill.", Level.WARNING);
             }
@@ -249,6 +258,7 @@ public class RserveDaemon {
             log.log("Could not kill Rserve process: " + ex.getMessage(), Level.WARNING);
         }
 
+        stopped = true;
         log.log("R daemon stopped.", Level.INFO);
     }
 
@@ -317,10 +327,24 @@ public class RserveDaemon {
     }
 
     public static void main(String[] args) throws Exception {
-        RserveDaemon d = new RserveDaemon(new RserverConf(null, -1, null, null, null), new RLogSlf4j());
+        RserveDaemon d = new RserveDaemon(RserverConf.newLocalInstance(null), new RLog() {
+            @Override
+            public void closeLog() {
+            }
+
+            @Override
+            public void log(String message, Level l) {
+                System.out.println(l + ": " + message);
+            }
+        });
         d.start(null);
-        Thread.sleep(2000);
-        d.stop();
-        Thread.sleep(2000);
+
+        // Already in RserveDaemon constructor:
+        /*Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                d.stop();
+            }
+        }));*/
     }
 }
