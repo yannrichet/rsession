@@ -394,16 +394,6 @@ public class StartRserve {
         return p;
     }
 
-    /**
-     * shortcut to <code>launchRserve(cmd, "--vanilla", "", false)</code>
-     *
-     * @param cmd Rserve command
-     * @return launcher Process
-     */
-    public static ProcessToKill launchRserve(String cmd) {
-        return launchRserve(cmd, "--vanilla", "--vanilla --RS-enable-control", false);
-    }
-
     static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
 
     public static class ProcessToKill {
@@ -579,17 +569,17 @@ public class StartRserve {
      *
      * @return is ok ?
      */
-    public static boolean checkLocalRserve() {
-        if (isRserveRunning()) {
+    public static boolean checkLocalRserve(int port) {
+        if (isRserveRunning(port)) {
             return true;
         }
         if (!RserveDaemon.findR_HOME(RserveDaemon.R_HOME)) {
             return false; // this will aslo initialize R_HOME if passes
         }
         if (RserveDaemon.isWindows()) {
-            return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe") != null;
+            return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe","--vanilla", "--vanilla --RS-enable-control --RS-port "+port, false) != null;
         } else {
-            return launchRserve(RserveDaemon.R_HOME + "/bin/R") != null;
+            return launchRserve(RserveDaemon.R_HOME + "/bin/R","--vanilla", "--vanilla --RS-enable-control --RS-port "+port, false) != null;
         }
     }
 
@@ -600,9 +590,9 @@ public class StartRserve {
      * @return <code>true</code> if local Rserve instance is running,
      * <code>false</code> otherwise
      */
-    public static boolean isRserveRunning() {
+    public static boolean isRserveRunning(int port) {
         try {
-            RConnection c = new RConnection();
+            RConnection c = new RConnection("localhost",port);
             Log.Out.println("Rserve is running.");
             c.close();
             return true;
@@ -620,9 +610,9 @@ public class StartRserve {
     public static void main(String[] args) {
         File dir = null;
 
-        System.out.println("checkLocalRserve: " + checkLocalRserve());
+        System.out.println("checkLocalRserve: " + checkLocalRserve(6311));
         try {
-            RConnection c = new RConnection();
+            RConnection c = new RConnection("localhost",6311);
             //c.eval("cat('123')");
             dir = new File(c.eval("getwd()").asString());
             System.err.println("wd: " + dir);
