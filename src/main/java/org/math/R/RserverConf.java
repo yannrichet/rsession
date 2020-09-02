@@ -1,9 +1,14 @@
 package org.math.R;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
@@ -58,7 +63,7 @@ public class RserverConf {
                 }
             }
         }
-        private boolean timedOut = false;        
+        private boolean timedOut = false;
         private Object result = null;
 
         protected TimeOut() {
@@ -178,7 +183,6 @@ public class RserverConf {
         
         } catch (InterruptedException ie) {
         }*/
-
         if (connection != null && connection.isConnected()) {
             if (properties != null) {
                 for (String p : properties.stringPropertyNames()) {
@@ -201,19 +205,44 @@ public class RserverConf {
     private static int RserverPort = RserverDefaultPort; //used for windows multi-session emulation. Incremented at each new Rscript instance.
 
     public static boolean isPortAvailable(int p) {
+        boolean[] free = new boolean[1];
+        free[0]=false;
+
         try {
-            ServerSocket test = new ServerSocket(p);
-            test.close();
+            final ServerSocket ss = new ServerSocket(p);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Socket s = ss.accept();
+                        DataInputStream dis = new DataInputStream(s.getInputStream());
+                        String str = (String) dis.readUTF();
+                        if (str.equals("" + p)) {
+                            free[0] = true;
+                        }
+                    } catch (IOException ex) {
+                        Log.Out.println("> port "+p+" not free.");
+                    }
+                }
+            }).start();
+
+            Socket cs = new Socket("localhost", p);
+            DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
+            dout.writeUTF("" + p);
+            dout.flush();
+            dout.close();
+            cs.close();
+            ss.close();
         } catch (BindException e) {
             return false;
         } catch (IOException e) {
             return false;
         }
-        return true;
+        return free[0];
     }
 
     public static final boolean UNIX_OPTIMIZE = false; // if we want to re-use older sessions. May wrongly fil if older session is already stucked...
-    
+
     public static RserverConf newLocalInstance(Properties p) {
         RserverConf server = null;
         if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
@@ -239,12 +268,13 @@ public class RserverConf {
             for (String p : properties.stringPropertyNames()) {
                 props = props + p + "=" + properties.getProperty(p, "") + "&";
             }
-            if (props.endsWith("&"))
+            if (props.endsWith("&")) {
                 props = props.substring(0, props.length() - 1); // remove trailing '&'
+            }
         }
         return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") + (props != null ? "?" + props : "");
     }
-    
+
     public final static String RURL_START = "R://";
 
     public static RserverConf parse(String RURL) {
@@ -322,4 +352,3 @@ public class RserverConf {
         }
     }
 }
-
