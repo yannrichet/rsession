@@ -220,6 +220,7 @@ public class RserverConf {
                         if (str.equals("" + p)) {
                             free[0] = true;
                         }
+                        ss.close();
                     } catch (IOException ex) {
                         Log.Out.println("> port "+p+" not free.");
                     }
@@ -232,7 +233,6 @@ public class RserverConf {
             dout.flush();
             dout.close();
             cs.close();
-            ss.close();
         } catch (BindException e) {
             return false;
         } catch (IOException e) {
