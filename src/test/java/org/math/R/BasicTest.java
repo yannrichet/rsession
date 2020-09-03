@@ -1,7 +1,6 @@
 package org.math.R;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;

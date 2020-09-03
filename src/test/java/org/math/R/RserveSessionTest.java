@@ -663,9 +663,12 @@ public class RserveSessionTest {
             T[i].start();
         }
 
+        for (int i = 0; i < A.length; i++) {
+            T[i].join();
+        }
+        
         //checking of each RserveSession to verify values are ok.
         for (int i = 0; i < A.length; i++) {
-            T[i].join();   
             for (int j = 0; j < i; j++) {
                 while (R[j].rawEval("a") == null) {
                     Thread.sleep(1000);

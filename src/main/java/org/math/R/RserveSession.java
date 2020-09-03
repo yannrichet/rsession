@@ -174,7 +174,8 @@ public class RserveSession extends Rsession implements RLog {
             console.log(ex.getMessage(), Level.ERROR);
         }
 
-        setenv(RserveConf.properties);
+        if (RserveConf!=null)
+            setenv(RserveConf.properties);
 
         // We need to be sure that the lib dir is writable. Otherwise R will ask _interactively_ for a writable dir when using install.packages(...), which will block the session
         //install_packages_moreargs = ",lib='" + gethomedir() + "/" + ".Rserve" + "'"; No longer used because of side-effects using libPaths later
