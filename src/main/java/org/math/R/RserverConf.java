@@ -175,15 +175,7 @@ public class RserverConf {
             Log.Err.println("  failed: " + e.getMessage());
         }
 
-
-        /*new Thread(new ConnectionThread()).start();
-        
-        try {
-        this.wait(CONNECT_TIMEOUT);
-        
-        } catch (InterruptedException ie) {
-        }*/
-        if (connection != null && connection.isConnected()) {
+        if (((Integer) t.getResult()) == 0 && connection != null && connection.isConnected()) {
             if (properties != null) {
                 for (String p : properties.stringPropertyNames()) {
                     try {
@@ -206,7 +198,7 @@ public class RserverConf {
 
     public static boolean isPortAvailable(int p) {
         boolean[] free = new boolean[1];
-        free[0]=false;
+        free[0] = false;
 
         try {
             final ServerSocket ss = new ServerSocket(p);
@@ -222,7 +214,7 @@ public class RserverConf {
                         }
                         ss.close();
                     } catch (IOException ex) {
-                        Log.Out.println("> port "+p+" not free.");
+                        Log.Out.println("> port " + p + " not free.");
                     }
                 }
             }).start();
