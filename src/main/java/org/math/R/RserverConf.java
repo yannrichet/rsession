@@ -202,7 +202,7 @@ public class RserverConf {
 
         try {
             final ServerSocket ss = new ServerSocket(p);
-            new Thread(new Runnable() {
+            Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -217,7 +217,8 @@ public class RserverConf {
                         Log.Out.println("> port " + p + " not free.");
                     }
                 }
-            }).start();
+            });
+            t.start();
 
             Socket cs = new Socket("localhost", p);
             DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
@@ -225,16 +226,19 @@ public class RserverConf {
             dout.flush();
             dout.close();
             cs.close();
+            t.join();
         } catch (BindException e) {
             return false;
         } catch (IOException e) {
+            return false;
+        } catch (InterruptedException ex) {
             return false;
         }
         return free[0];
     }
 
-    public static final boolean UNIX_OPTIMIZE = false; // if we want to re-use older sessions. May wrongly fil if older session is already stucked...
-
+    // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
+    public static final boolean UNIX_OPTIMIZE = false; 
     public static RserverConf newLocalInstance(Properties p) {
         RserverConf server = null;
         if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {

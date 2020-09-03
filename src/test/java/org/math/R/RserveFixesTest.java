@@ -22,7 +22,7 @@ public class RserveFixesTest {
 
     @Before
     public void setUp() throws Exception {
-        d = new RserveDaemon(new RserverConf(null, -1, null, null, null), new RLogSlf4j());
+        d = new RserveDaemon(new RserverConf("localhost", 6666, null, null, null), new RLogSlf4j());
         String http_proxy_env = System.getenv("http_proxy");
         if (http_proxy_env != null) {
             d.start(http_proxy_env);
@@ -33,10 +33,10 @@ public class RserveFixesTest {
 
     @Test
     public void testCat_E127() {
-        assert checkLocalRserve() : "Rserve not available";
+        assert checkLocalRserve(6666) : "Rserve not available";
 
         try {
-            RConnection c = new RConnection();
+            RConnection c = new RConnection("localhost", 6666);
             c.eval("cat('123')");
             c.close();
             return;
@@ -48,11 +48,11 @@ public class RserveFixesTest {
 
     @Test
     public void testFlushConsole_NoE127() {
-        assert checkLocalRserve() : "Rserve not available";
+        assert checkLocalRserve(6666) : "Rserve not available";
 
         File dir = null;
         try {
-            RConnection c = new RConnection();
+            RConnection c = new RConnection("localhost", 6666);
             //c.eval("cat('123')");
             dir = new File(c.eval("getwd()").asString());
             System.err.println("wd: " + dir);
@@ -77,8 +77,8 @@ public class RserveFixesTest {
 
     @After
     public void tearDown() throws RserveException {
-        RConnection c = new RConnection();
-        c.shutdown();
+        RConnection c = new RConnection("localhost", 6666);
+        c.serverShutdown();
         d.stop();
     }
 
