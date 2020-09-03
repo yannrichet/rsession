@@ -229,10 +229,15 @@ public class RserveSession extends Rsession implements RLog {
         status = STATUS_NOT_CONNECTED;
 
         if (spawnLocalRserve) {
-            if (RserveConf == null) {// no RserveConf given, so create one, and need to be started
+            if (RserveConf == null | (RserveConf.host == null && RserveConf.port < 0)) {// no RserveConf given, so create one, and need to be started
                 synchronized (RserverConf.lockPort) { // need to sync to avoid multiple concurrent startups which will try to use the same port...
-                    RserveConf = RserverConf.newLocalInstance(null);
-                    log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
+                    if (RserveConf == null) {
+                        RserveConf = RserverConf.newLocalInstance(null);
+                        log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
+                    } else {
+                        RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
+                        log("Partial Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
+                    }
                     try {
                         localRserve = new RserveDaemon(RserveConf, this);
                     } catch (Exception ex) {
@@ -273,8 +278,8 @@ public class RserveSession extends Rsession implements RLog {
 
         //int attempts = 10;
         //while (!connected && attempts > 0) {
-            R = RserveConf.connect(); // use timeout wrapper to ensure connexion (if possible)
-            connected = (R != null);
+        R = RserveConf.connect(); // use timeout wrapper to ensure connexion (if possible)
+        connected = (R != null);
         //    try {
         //        Thread.sleep(100);
         //    } catch (InterruptedException ie) {
