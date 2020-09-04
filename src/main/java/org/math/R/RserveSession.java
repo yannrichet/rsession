@@ -104,8 +104,8 @@ public class RserveSession extends Rsession implements RLog {
      * create rsession using System as a logger
      *
      * @param p PrintStream
+     * @param properties R session properties to setup (like hhtp_proxy)
      * @param serverconf RserverConf
-     * @param spawnLocalRserve local spawned Rsession if given remote one failed
      */
     public RserveSession(final PrintStream p, Properties properties, RserverConf serverconf) {
         this(new RLogPrintStream(p), properties, serverconf);
@@ -1210,6 +1210,7 @@ public class RserveSession extends Rsession implements RLog {
      * Send user filesystem file in r environement (like data)
      *
      * @param localfile File to send
+     * @return remote File object
      */
     public File putFile(File localfile) {
         return putFile(localfile, localfile.getName());
@@ -1220,6 +1221,7 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param localfile File to send
      * @param remoteFile filename in R env.
+     * @return remot File object
      */
     public File putFile(File localfile, String remoteFile) {
         if (!localfile.exists()) {

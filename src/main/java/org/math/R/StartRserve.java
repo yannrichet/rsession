@@ -415,13 +415,14 @@ public class StartRserve {
     final static Object lockRserveLauncher = new Object();
 
     /**
-     * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
-     * using any quotes in arguments
+     * attempt to start Rserve.Note: parameters are <b>not</b> quoted, so avoid
+ using any quotes in arguments
      *
      * @param cmd command necessary to start R
      * @param rargs arguments are are to be passed to R
      * @param rsrvargs arguments to be passed to Rserve
      * @param debug Rserve debug mode ?
+     * @param lock ServerSocket locker. Should be closed before using Rserve
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
@@ -633,11 +634,12 @@ public class StartRserve {
 
     /**
      * checks whether Rserve is running and if that's not the case it attempts
-     * to start it using the defaults for the platform where it is run on. This
-     * method is meant to be set-and-forget and cover most default setups. For
-     * special setups you may get more control over R with
-     * <code>launchRserve</code> instead.
+     * to start it using the defaults for the platform where it is run on.This
+ method is meant to be set-and-forget and cover most default setups. For
+ special setups you may get more control over R with
+ <code>launchRserve</code> instead.
      *
+     * @param port Rserve port to check
      * @return is ok ?
      */
     public static boolean checkLocalRserve(int port) {
@@ -658,6 +660,7 @@ public class StartRserve {
      * check whether Rserve is currently running (on local machine and default
      * port).
      *
+     * @param port Rserve port to check
      * @return <code>true</code> if local Rserve instance is running,
      * <code>false</code> otherwise
      */
