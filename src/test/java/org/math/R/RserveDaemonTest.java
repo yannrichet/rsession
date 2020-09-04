@@ -1,11 +1,10 @@
 package org.math.R;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.net.ServerSocket;
 import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
@@ -173,35 +172,22 @@ public class RserveDaemonTest {
 
     @Test
     public void testParsePrintConf() {
-        Properties p = new Properties();
-        p.put("a", "b");
-        System.err.println("p " + p);
-        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever", p);
+        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
         System.err.println(c.toString());
         System.err.println(RserverConf.parse(c.toString()));
     }
 
     @Test
     public void testStartStopRserve() throws Exception {
-        RserverConf rs = RserverConf.newLocalInstance(null);
-        RserveDaemon d = new RserveDaemon(rs, new RLog() {
-            @Override
-            public void closeLog() {
-            }
-
-            @Override
-            public void log(String message, RLog.Level l) {
-                System.err.println(l + " " + message);
-            }
-        });
-
         System.err.println("--- Get PREVIOUS Rserve PID");
         int[] pids = StartRserve.getRservePIDs();
         int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1;
         System.err.println("---  " + last_pid);
 
         System.err.println("--- Start Rserve daemon");
-        d.start(null);
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null);
+        RserveDaemon d = new RserveDaemon(conf, new RLogPrintStream(System.out));
+        d.start();
         Thread.sleep(1000);
 
         System.err.println("--- Get THIS Rserve PID");
@@ -212,7 +198,7 @@ public class RserveDaemonTest {
         assert pid != last_pid : "Did not start Rserve (no new PID)";
 
         System.err.println("--- Create Rsession");
-        RserveSession s = new RserveSession(rs, false);
+        RserveSession s = new RserveSession(System.out, null, conf);
         assert s.asDouble(s.eval("1+1")) == 2 : "Failed basic computation in Rserve";
         System.err.println("--- Destroy Rsession");
         s.end();
@@ -241,31 +227,14 @@ public class RserveDaemonTest {
             tests[i] = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    synchronized (RserverConf.lockPort) { // this is the sync policy used in RserveSession.startup
-                        confs[i] = RserverConf.newLocalInstance(null);
-                        daemons[i] = null;
-                        try {
-                            daemons[i] = new RserveDaemon(confs[i], new RLog() {
-                                @Override
-                                public void closeLog() {
-                                }
-
-                                @Override
-                                public void log(String message, RLog.Level l) {
-                                    System.err.println(l + " " + message);
-                                }
-                            });
-
-                            //System.err.println("--- Get PREVIOUS Rserve PID");
-                            //int last_pid = StartRserve.getLastRservePID();
-                            //System.err.println("---  " + last_pid);
-                            System.err.println("--- Start Rserve daemon " + i);
-                            daemons[i].start(null);
-                            //Thread.sleep(5000);
-
-                        } catch (Exception e) {
-                            assert false : e.getMessage();
-                        }
+                    try {
+                        System.err.println("--- Start Rserve daemon " + i);
+                        confs[i] = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null);// -1 will let Rdaemon find a free port to host Rserve
+                        daemons[i] = new RserveDaemon(confs[i], new RLogPrintStream(System.out));
+                        daemons[i].start();
+                        confs[i] = daemons[i].conf;
+                    } catch (Exception e) {
+                        assert false : e.getMessage();
                     }
                 }
             });
@@ -282,8 +251,8 @@ public class RserveDaemonTest {
             //int pid = StartRserve.getLastRservePID();
             //System.err.println("---  " + pid);
             //assert pid != last_pid : "Did not start Rserve (no new PID)";
-            System.err.println("--- Create Rsession");
-            RserveSession s = new RserveSession(confs[i], false);
+            System.err.println("--- Create Rsession (" + confs[i] + ")");
+            RserveSession s = new RserveSession(System.out, null, confs[i]);
             assert s.asDouble(s.eval("1+" + i)) == 1 + i : "Failed basic computation in Rserve";
             System.err.println("--- Destroy Rsession");
             s.end();
@@ -300,6 +269,46 @@ public class RserveDaemonTest {
             //assert other_pid != pid : "Did not kill Rserve (still live PID)";      
         }
 
+    }
+
+    @Test
+    public void testLockPort() throws InterruptedException {
+        final int port = 6666;
+        final Thread[] tests = new Thread[10];
+        final ServerSocket[] locks = new ServerSocket[tests.length];
+
+        for (int ii = 0; ii < tests.length; ii++) {
+            final int i = ii;
+            tests[i] = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        System.err.println("--- Lock port #" + i);
+                        locks[i] = StartRserve.getPort(port);
+                    } catch (Exception e) {
+                        assert false : e.getMessage();
+                    }
+                }
+            });
+            tests[i].start();
+//            Thread.sleep(100);
+        }
+
+        for (int i = 0; i < tests.length; i++) {
+            tests[i].join();
+        }
+
+        boolean locked = false;
+        for (int i = 0; i < tests.length; i++) {
+            if (locks[i] != null) {
+                if (locked) {
+                    assert false : "Already locked !";
+                } else {
+                    locked = true;
+                }
+            }
+        }
+        assert locked : "Did not lock any port!";
     }
 
     public static boolean haveRservePID(int Rp) {
@@ -320,8 +329,7 @@ public class RserveDaemonTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
 
-        File[] rout = new File(".").listFiles(
-                new FilenameFilter() {
+        File[] rout = new File(".").listFiles(new FilenameFilter() {
 
             @Override
             public boolean accept(File dir, String name) {

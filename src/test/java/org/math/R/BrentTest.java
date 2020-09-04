@@ -559,8 +559,7 @@ public class BrentTest {
 
     @Test
     public void testRserve() {
-        RserverConf conf = new RserverConf(null, -1, null, null, prop);
-        R = RserveSession.newInstanceTry(l, conf);
+        R = new RserveSession(l, prop,null);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {

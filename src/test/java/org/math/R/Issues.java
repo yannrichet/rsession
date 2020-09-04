@@ -12,7 +12,7 @@ public class Issues {
 
     @Test
     public void Error_when_running_Rsession_eval_on_multiple_lines_string() throws Exception {
-        Rsession s = RserveSession.newInstanceTry(System.out, null);
+        Rsession s = new RserveSession(System.out, null,null);
         //    RConnection s = new RConnection();
 
         String string;
@@ -34,7 +34,7 @@ public class Issues {
 
     @Test
     public void code_snippet_does_not_compile() throws Exception {
-        Rsession s = RserveSession.newInstanceTry(System.out, null);
+        Rsession s = new RserveSession(System.out, null,null);
 
         double[] rand = (double[]) s.eval("rnorm(10)"); //create java variable from R command
 
@@ -67,9 +67,7 @@ public class Issues {
     @Test
     public void sink_stack_is_full_exception_when_run_RSession() throws Rsession.RException {
         for (int i = 0; i < 25; i++) {
-            RserverConf rconf = new RserverConf("127.0.0.1", 6311, "", "", new Properties());
-            Rsession s = null;
-            s = RserveSession.newInstanceTry(System.out, rconf);
+            Rsession s = new RserveSession(System.out, null,null);
             s.voidEval("warning2error <- function(code=\"\") { tryCatch(code, warning = function(e) stop(e)) }");
             try {
                 s.eval("warning2error(warning(\'hahaha\'))", true);
@@ -83,7 +81,7 @@ public class Issues {
 
     @Test
     public void Found_a_bug_in_isPackageInstalled() throws Rsession.RException {
-        Rsession s = RserveSession.newInstanceTry(System.out, null);
+        Rsession s = new RserveSession(System.out, null,null);
         s.installPackage("atsd", false);
 
         if ((Boolean) s.eval("is.element(set=row.names(packs), el='zoo')")) {

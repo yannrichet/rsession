@@ -52,8 +52,7 @@ public class BasicTest {
         
         if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
-        RserverConf conf = new RserverConf(null, -1, null, null, prop);
-        s = RserveSession.newInstanceTry(l, conf);
+        s = new RserveSession(l, null,null);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 

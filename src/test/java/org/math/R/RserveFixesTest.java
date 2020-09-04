@@ -22,13 +22,9 @@ public class RserveFixesTest {
 
     @Before
     public void setUp() throws Exception {
-        d = new RserveDaemon(new RserverConf("localhost", 6666, null, null, null), new RLogSlf4j());
         String http_proxy_env = System.getenv("http_proxy");
-        if (http_proxy_env != null) {
-            d.start(http_proxy_env);
-        } else {
-            d.start(null);
-        }
+        d = new RserveDaemon(new RserverConf("localhost", 6666, null, null), new RLogSlf4j());
+        d.start();
     }
 
     @Test

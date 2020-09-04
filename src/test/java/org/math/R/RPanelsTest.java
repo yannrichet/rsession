@@ -2,7 +2,6 @@ package org.math.R;
 
 import java.awt.GraphicsEnvironment;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Properties;
@@ -58,8 +57,7 @@ public class RPanelsTest {
         
         if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
-        RserverConf conf = new RserverConf(null, -1, null, null, prop);
-        s = RserveSession.newInstanceTry(l, conf);
+                s = new RserveSession(l, prop,null);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 

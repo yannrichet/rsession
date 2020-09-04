@@ -35,7 +35,6 @@ import org.rosuda.REngine.Rserve.RserveException;
 public class RserveSession extends Rsession implements RLog {
 
     RConnection R;
-    boolean spawnLocalRserve;
     public final static int MinRserveVersion = 103;
     public boolean connected = false;
     RserveDaemon localRserve;
@@ -74,97 +73,19 @@ public class RserveSession extends Rsession implements RLog {
     // </editor-fold>
 
     /**
-     * Build a new local Rsession
-     *
-     * @param console PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
-        return new RserveSession(console, RserverConf.newLocalInstance(localRProperties), false);
-    }
-
-    /**
-     * Build a new remote Rsession
-     *
-     * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newRemoteInstance(final RLog console, RserverConf serverconf) {
-        return new RserveSession(console, serverconf, false);
-    }
-
-    /**
-     * Build a new Rsession. Fork to local spawned Rsession if given remote one
-     * failed to initialized.
-     *
-     * @param console PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newInstanceTry(final RLog console, RserverConf serverconf) {
-        return new RserveSession(console, serverconf, true);
-    }
-
-    /**
-     * Build a new local Rsession
-     *
-     * @param pconsole PrintStream for R output
-     * @param localRProperties properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
-        return new RserveSession(pconsole, RserverConf.newLocalInstance(localRProperties), false);
-    }
-
-    /**
-     * Build a new remote Rsession
-     *
-     * @param pconsole PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
-        return new RserveSession(pconsole, serverconf, false);
-    }
-
-    /**
-     * Build a new Rsession. Fork to local spawned Rsession if given remote one
-     * failed to initialized.
-     *
-     * @param pconsole PrintStream for R output
-     * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy)
-     * @return RserveSession instanciated
-     */
-    public static RserveSession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
-        return new RserveSession(pconsole, serverconf, true);
-    }
-
-    /**
      * create a new Rsession.
      *
      * @param console PrintStream for R output
+     * @param properties env variables to setup at R session startup (like
+     * http_proxy)
      * @param serverconf RserverConf server configuration object, giving IP,
-     * port, login, password, properties to pass to R (eg http_proxy or R
-     * libpath)
-     * @param spawnLocalRserve local spawned Rsession if given remote one failed
-     * to initialized
+     * port, login, password
      */
-    public RserveSession(final RLog console, RserverConf serverconf, boolean spawnLocalRserve) {
+    public RserveSession(final RLog console, Properties properties, RserverConf serverconf) {
         super(console);
         envName = ENVIRONMENT_DEFAULT;
 
         RserveConf = serverconf;
-        this.spawnLocalRserve = spawnLocalRserve;
 
         // Make sink file specific to current Rserve instance
         SINK_FILE = "./rout.txt";//+SINK_FILE_BASE + "-" + (serverconf == null ? 0 : serverconf.port);
@@ -174,14 +95,14 @@ public class RserveSession extends Rsession implements RLog {
             console.log(ex.getMessage(), Level.ERROR);
         }
 
-        if (RserveConf!=null)
-            setenv(RserveConf.properties);
-
         // We need to be sure that the lib dir is writable. Otherwise R will ask _interactively_ for a writable dir when using install.packages(...), which will block the session
         //install_packages_moreargs = ",lib='" + gethomedir() + "/" + ".Rserve" + "'"; No longer used because of side-effects using libPaths later
         if (!asLogical(silentlyRawEval("any(file.access(.libPaths(),2)>=0)"))) {
             silentlyVoidEval(".libPaths(new=tempdir())"); // ensure a writable directory for libPath
         }
+        //silentlyVoidEval("if (!any(file.access(.libPaths(),2)>=0)) .libPaths(new=tempdir())"); // ensure a writable directory for libPath
+
+        setenv(properties);
     }
 
     /**
@@ -191,32 +112,8 @@ public class RserveSession extends Rsession implements RLog {
      * @param serverconf RserverConf
      * @param spawnLocalRserve local spawned Rsession if given remote one failed
      */
-    public RserveSession(final PrintStream p, RserverConf serverconf, boolean spawnLocalRserve) {
-        this(new RLog() {
-
-            public void log(String string, Level level) {
-                if (level == Level.WARNING) {
-                    p.print("(!) ");
-                } else if (level == Level.ERROR) {
-                    p.print("(!!) ");
-                }
-                p.println(string);
-            }
-
-            public void closeLog() {
-                p.close();
-            }
-        }, serverconf, spawnLocalRserve);
-    }
-
-    /**
-     * create rsession using System as a logger
-     *
-     * @param serverconf RserverConf
-     * @param spawnLocalRserve local spawned Rsession if given remote one failed
-     */
-    public RserveSession(RserverConf serverconf, boolean spawnLocalRserve) {
-        this(new RLogSlf4j(), serverconf, spawnLocalRserve);
+    public RserveSession(final PrintStream p, Properties properties, RserverConf serverconf) {
+        this(new RLogPrintStream(p), properties, serverconf);
     }
 
     /**
@@ -227,52 +124,25 @@ public class RserveSession extends Rsession implements RLog {
     }
 
     void startup() throws Exception {
+        log(RserveConf == null
+                ? "Will start Rserve session without conf."
+                : "Will start Rserve session using: " + RserveConf.toString(), Level.INFO);
+
         status = STATUS_NOT_CONNECTED;
 
-        if (spawnLocalRserve) {
-            if (RserveConf == null | (RserveConf.host == null && RserveConf.port < 0)) {// no RserveConf given, so create one, and need to be started
-                synchronized (RserverConf.lockPort) { // need to sync to avoid multiple concurrent startups which will try to use the same port...
-                    if (RserveConf == null) {
-                        RserveConf = RserverConf.newLocalInstance(null);
-                        log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
-                    } else {
-                        RserveConf = RserverConf.newLocalInstance(RserveConf.properties);
-                        log("Partial Rserve conf given. Trying to use " + RserveConf.toString(), Level.WARNING);
-                    }
-                    try {
-                        localRserve = new RserveDaemon(RserveConf, this);
-                    } catch (Exception ex) {
-                        log(ex.getMessage(), Level.ERROR);
-                        throw ex;
-                    }
+        if (RserveConf == null) {// no RserveConf given, so create one, and need to be started
+            RserveConf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null);
+            log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.INFO);
 
-                    String http_proxy = null;
-                    if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
-                        http_proxy = RserveConf.properties.getProperty("http_proxy");
-                    }
-                    localRserve.start(http_proxy);
-                }
-            } else {// RserveConf given and need to be started
-                try {
-                    localRserve = new RserveDaemon(RserveConf, this);
-                } catch (Exception ex) {
-                    log(ex.getMessage(), Level.ERROR);
-                    throw ex;
-                }
+            try {
+                localRserve = new RserveDaemon(RserveConf, this);
+            } catch (Exception ex) {
+                log(ex.getMessage(), Level.ERROR);
+                throw ex;
+            }
 
-                String http_proxy = null;
-                if (RserveConf != null && RserveConf.properties != null && RserveConf.properties.containsKey("http_proxy")) {
-                    http_proxy = RserveConf.properties.getProperty("http_proxy");
-                }
-                localRserve.start(http_proxy);
-            }
-        } else {
-            if (RserveConf == null) {// no RserveConf given and nothing to start, so no Rserve available !
-                log("No Rserve conf given. Failed to start session.", Level.ERROR);
-                status = STATUS_ERROR;
-                return;
-            } else {// RserveConf given and already started
-            }
+            localRserve.start();
+            RserveConf = localRserve.conf; //update, as start() may have selected a new free port
         }
 
         status = STATUS_CONNECTING;
@@ -309,7 +179,7 @@ public class RserveSession extends Rsession implements RLog {
             cleanupListeners();
             return;
         }
-        if (localRserve != null) {//if ((!UNIX_OPTIMIZE || isWindows()) && localRserve != null) {
+        if ((!RserveDaemon.UNIX_OPTIMIZE || isWindows()) && localRserve != null) {
             log("Ending local service...", Level.INFO);
             localRserve.stop();
         }
@@ -1450,9 +1320,9 @@ public class RserveSession extends Rsession implements RLog {
         int i = 0;
         if (args[0].startsWith(RserverConf.RURL_START)) {
             i++;
-            R = RserveSession.newInstanceTry(System.out, RserverConf.parse(args[0]));
+            R = new RserveSession(System.out, null, RserverConf.parse(args[0]));
         } else {
-            R = RserveSession.newInstanceTry(System.out, null);
+            R = new RserveSession(System.out, null, null);
         }
 
         for (int j = i; j < args.length; j++) {

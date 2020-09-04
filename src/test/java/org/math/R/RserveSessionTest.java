@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -149,7 +150,7 @@ public class RserveSessionTest {
             new Thread(new Runnable() {
 
                 public void run() {
-                    RserveSession s1 = RserveSession.newLocalInstance(new RLogPanel(), null);
+                    RserveSession s1 = new RserveSession(new RLogPanel(), null,null);
                     try {
                         System.err.println(s1.eval("runif(1)"));
                     } catch (Exception ex) {
@@ -553,32 +554,8 @@ public class RserveSessionTest {
 
     @Test
     public void testConcurrency() throws InterruptedException {
-        final RserveSession r1 = RserveSession.newInstanceTry(new RLog() {
-
-            public void log(String string, Level level) {
-                if (level == Level.INFO) {
-                    System.out.println("1 " + string);
-                } else {
-                    System.err.println("1 " + string);
-                }
-            }
-
-            public void closeLog() {
-            }
-        }, null);
-        final RserveSession r2 = RserveSession.newInstanceTry(new RLog() {
-
-            public void log(String string, Level level) {
-                if (level == Level.INFO) {
-                    System.out.println("2 " + string);
-                } else {
-                    System.err.println("2 " + string);
-                }
-            }
-
-            public void closeLog() {
-            }
-        }, null);
+        final RserveSession r1 = new RserveSession(System.out,null, null);
+        final RserveSession r2 = new RserveSession(System.out,null, null);
 
         new Thread(new Runnable() {
 
@@ -632,52 +609,27 @@ public class RserveSessionTest {
                 @Override
                 public void run() {
 
-                    R[i] = RserveSession.newInstanceTry(new RLog() {
-
-                        public void log(String string, Level level) {
-                            if (level == Level.INFO) {
-                                System.out.println(string);
-                            } else {
-                                System.err.println(string);
-                            }
-                        }
-
-                        public void closeLog() {
-                        }
-                    }, null);
-
-                    final int ai = A[i];
+                    R[i] = new RserveSession(System.out,null,null);
+                    
+                    assert R[i].isAvailable() : "Rserve not available (thread "+i+")";
+                    
                     try {
-                        R[i].rawEval("a<-" + ai);
-
-                        double ria = R[i].asDouble(R[i].rawEval("a"));
-                        assert ria == ai : "a should be == " + ai + " !";
-                        System.out.println(ai + ": OK");
-
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
+                        R[i].set("Ai",A[i]);
+                    } catch (Rsession.RException ex) {
+                        assert false : ex.getMessage();
                     }
-
                 }
             });
             T[i].start();
         }
 
-        for (int i = 0; i < A.length; i++) {
+        for (int i = 0; i < T.length; i++) {
             T[i].join();
         }
-        
+
         //checking of each RserveSession to verify values are ok.
-        for (int i = 0; i < A.length; i++) {
-            for (int j = 0; j < i; j++) {
-                while (R[j].rawEval("a") == null) {
-                    Thread.sleep(1000);
-                }
-                //System.out.println("Checking " + (j + 1) + " : " + R[j]);
-                double rja = R[j].asDouble(R[j].rawEval("a"));
-                assert rja == A[j] : "a should be == " + A[j] + " !";
-                System.out.println(A[i] + " " + A[j] + ": OK");
-            }
+        for (int i = 0; i < R.length; i++) {
+            assert R[i].asInteger(R[i].rawEval("Ai")) == A[i] : "Bad value of A[i]";
         }
 
         for (int i = 0; i < R.length; i++) {
@@ -703,8 +655,7 @@ public class RserveSessionTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
 
-        RserverConf conf = new RserverConf(null, -1, null, null, prop);
-        s = RserveSession.newInstanceTry(l, conf);
+        s = new RserveSession(l, prop,null);
         //s = RserveSession.newLocalInstance(l, prop);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));

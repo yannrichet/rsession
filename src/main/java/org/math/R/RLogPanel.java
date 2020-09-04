@@ -31,7 +31,7 @@ public class RLogPanel extends JPanel implements RLog {
         f.setContentPane(log);
         f.setVisible(true);
         f.pack();
-        Rsession R = RserveSession.newInstanceTry(log, null);
+        Rsession R = new RserveSession(log, System.getProperties(), null);
         R.rawEval("ls()");
     }
 

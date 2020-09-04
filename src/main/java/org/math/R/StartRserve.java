@@ -1,6 +1,8 @@
 package org.math.R;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -8,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.BindException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -407,7 +412,7 @@ public class StartRserve {
         }
     }
 
-    static Object lockRserveLauncher = new Object();
+    final static Object lockRserveLauncher = new Object();
 
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
@@ -420,7 +425,7 @@ public class StartRserve {
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static ProcessToKill launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug) {
+    public static ProcessToKill launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) {
         Log.Out.println("Waiting for Rserve to start ... (" + cmd + " " + rargs + ")");
         Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
@@ -435,47 +440,49 @@ public class StartRserve {
         }
         wd.deleteOnExit();
 
-        int[] pids = getRservePIDs();
-        int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1; // should be -1 in most cases
-
         Process p = null;
-        int pid = -1;
+        int pid = -1; // means "none"
         synchronized (lockRserveLauncher) {
+            int[] last_pids = getRservePIDs();
+
+            if (lock != null) {
+                //Log.Err.println("Release lock "+lock);
+                try {
+                    lock.close(); // release lock on this port, at last
+                } catch (IOException ex) {
+                    Log.Err.println(ex.getMessage());
+                    return null;
+                }
+            }
             p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                     + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                     + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                     + "print(getwd()); "
                     + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
             if (p != null) {
-                Log.Out.print(" Rserve startup done, let us try to connect");
+                Log.Out.print(" Rserve startup done.");
             } else {
-                Log.Err.println("! Failed to start Rserve process.");
+                Log.Err.println(" Failed to start Rserve process.");
                 return null;
             }
 
-            int attempts = 50;
-            pid = last_pid;
-            while (pid == last_pid && attempts > 0) {
+            int pid_attempts = 100;
+            while (pid < 0 && pid_attempts > 0) {
+                pid = diff(getRservePIDs(), last_pids);
                 try {
-                    pids = getRservePIDs();
-                    pid = pids.length > 0 ? pids[pids.length - 1] : -1;
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ix) {
-                    }
-                } catch (Exception e2) {
-                    Log.Out.print(".");
+                    Thread.sleep(100);
+                } catch (InterruptedException ix) {
                 }
-                attempts--;
+                Log.Out.print(".");
+                pid_attempts--;
             }
         }
 
-        int attempts = 30;
-        while (attempts > 0) {
+        int connect_attempts = 30;
+        while (connect_attempts > 0) {
             try {
-                /* a safety sleep just in case the start up is delayed or asynchronous */
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
                 } catch (InterruptedException ix) {
                 }
                 RConnection c = null;
@@ -487,20 +494,37 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                Log.Out.println("\n Rserve is running (PID " + pid + ")");
+                Log.Out.println("\n Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
             } catch (Exception e2) {
-                Log.Out.print(".");
             }
-            attempts--;
+            Log.Out.print(".");
+            connect_attempts--;
         }
         return null;
     }
 
+    // find new elements in news, regarding previous
+    static int diff(int[] news, int[] previous) {
+        for (int i = 0; i < news.length; i++) {
+            boolean in = false;
+            for (int j = 0; j < previous.length; j++) {
+                if (news[i] == previous[j]) {
+                    in = true;
+                    break;
+                }
+            }
+            if (!in) {
+                return news[i];
+            }
+        }
+        return -1;
+    }
+
     public static int[] getRservePIDs() {
         List<Integer> pids = new LinkedList<>();
-        if (System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) { // Windows, so we expect tasklist is available in PATH
+        if (RserveDaemon.isWindows()) { // Windows, so we expect tasklist is available in PATH
             int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("tasklist");
@@ -518,7 +542,7 @@ public class StartRserve {
                 Log.Err.println(e.getMessage());
             }
             //Log.Out.println(">> "+pid);
-        } else if (System.getProperty("os.name").toLowerCase().indexOf("inux") >= 0) {
+        } else if (RserveDaemon.isLinux()) {
             int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("ps -aux");
@@ -560,6 +584,53 @@ public class StartRserve {
         return ps;
     }
 
+    final static Object lockPort = new Object();
+
+    // Returns an open socket to lock the port on system
+    public static ServerSocket getPort(int p) {
+       // synchronized (lockPort) {
+            //System.err.print("? " + p);
+            ServerSocket ss = null;
+            final String id = "" + Math.random();
+            try {
+                final ServerSocket sss = new ServerSocket(p);
+                ss = sss;
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Socket s = sss.accept();
+                            DataInputStream dis = new DataInputStream(s.getInputStream());
+                            String str = (String) dis.readUTF();
+                            if (!str.equals(id)) { // ensure there is no mess there...
+                                sss.close();
+                                throw new IOException();
+                            }
+                        } catch (IOException ex) {
+                        }
+                    }
+                });
+                t.start();
+
+                Socket cs = new Socket("localhost", p);
+                DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
+                dout.writeUTF(id);
+                dout.flush();
+                dout.close();
+                cs.close();
+                t.join();
+            } catch (BindException e) {
+                return null;
+            } catch (IOException e) {
+                return null;
+            } catch (InterruptedException ex) {
+                return null;
+            }
+            //System.err.println(" OK");
+            return ss.isClosed() ? null : ss;
+        //}
+    }
+
     /**
      * checks whether Rserve is running and if that's not the case it attempts
      * to start it using the defaults for the platform where it is run on. This
@@ -577,9 +648,9 @@ public class StartRserve {
             return false; // this will aslo initialize R_HOME if passes
         }
         if (RserveDaemon.isWindows()) {
-            return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe","--vanilla", "--vanilla --RS-enable-control --RS-port "+port, false) != null;
+            return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null) != null;
         } else {
-            return launchRserve(RserveDaemon.R_HOME + "/bin/R","--vanilla", "--vanilla --RS-enable-control --RS-port "+port, false) != null;
+            return launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null) != null;
         }
     }
 
@@ -592,8 +663,8 @@ public class StartRserve {
      */
     public static boolean isRserveRunning(int port) {
         try {
-            RConnection c = new RConnection("localhost",port);
-            Log.Out.println("Rserve is running.");
+            RConnection c = new RConnection("localhost", port);
+            Log.Out.println("Rserve is running on port " + port);
             c.close();
             return true;
         } catch (Exception e) {
@@ -612,7 +683,7 @@ public class StartRserve {
 
         System.out.println("checkLocalRserve: " + checkLocalRserve(6311));
         try {
-            RConnection c = new RConnection("localhost",6311);
+            RConnection c = new RConnection(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT);
             //c.eval("cat('123')");
             dir = new File(c.eval("getwd()").asString());
             System.err.println("wd: " + dir);

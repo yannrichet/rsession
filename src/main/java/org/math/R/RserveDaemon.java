@@ -1,9 +1,7 @@
 package org.math.R;
 
 import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.net.ServerSocket;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -68,6 +66,7 @@ public class RserveDaemon {
             throw new Exception("Failed to find " + R_HOME_KEY + " (with default " + R_HOME + ") as " + RserveDaemon.R_HOME);
         }
         this.log.log(R_HOME_KEY + "=" + RserveDaemon.R_HOME /*+ "\n  " + Rserve_HOME_KEY + "=" + RserveDaemon.Rserve_HOME*/, Level.INFO);
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -265,7 +264,7 @@ public class RserveDaemon {
     public StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = false;
 
-    public void start(String http_proxy) {
+    public void start() {
         if (R_HOME == null || !(new File(R_HOME).exists())) {
             throw new IllegalArgumentException("R_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + R_HOME_KEY + "=[Path to R] ...' startup command.");
         }
@@ -282,7 +281,7 @@ public class RserveDaemon {
         if (!RserveInstalled) {
             log.log("                           ...no", Level.INFO);
             if (USE_RSERVE_FROM_CRAN) {
-                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), http_proxy, null);
+                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), System.getenv("http_proxy"), null);
             } else {
                 RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
             }
@@ -299,17 +298,28 @@ public class RserveDaemon {
             log.log("                           ...yes", Level.INFO);
         }
 
-        log.log("Starting R daemon... " + conf, Level.INFO);
-
         StringBuffer RserveArgs = new StringBuffer("--vanilla --RS-enable-control");
-        if (conf.port > 0) {
+        ServerSocket lock = null;
+        synchronized (StartRserve.lockPort) {
+            if (conf.port < 0) {
+                int rserverPort = RserverConf.DEFAULT_RSERVE_PORT - 1;
+                if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
+                    while (lock == null) {
+                        rserverPort++;
+                        lock = StartRserve.getPort(rserverPort);
+                    }
+                }
+                conf.port = rserverPort;
+            }
             RserveArgs.append(" --RS-port " + conf.port);
+
+            log.log("Starting R daemon... " + conf, Level.INFO);
+
+            rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
+                    "--vanilla",
+                    RserveArgs.toString(), false, lock);
         }
-
-        rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
-                "--vanilla",
-                RserveArgs.toString(), false);
-
+        
         if (rserve != null) {
             log.log("  R daemon started.", Level.INFO);
         } else {
@@ -317,34 +327,6 @@ public class RserveDaemon {
         }
     }
 
-    public static String timeDigest() {
-        long time = System.currentTimeMillis();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        StringBuffer sb = new StringBuffer();
-        sb
-                = sdf.format(new Date(time), sb, new java.text.FieldPosition(0));
-        return sb.toString();
-    }
-
-    public static void main(String[] args) throws Exception {
-        RserveDaemon d = new RserveDaemon(RserverConf.newLocalInstance(null), new RLog() {
-            @Override
-            public void closeLog() {
-            }
-
-            @Override
-            public void log(String message, Level l) {
-                System.out.println(l + ": " + message);
-            }
-        });
-        d.start(null);
-
-        // Already in RserveDaemon constructor:
-        /*Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                d.stop();
-            }
-        }));*/
-    }
+    // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
+    public static final boolean UNIX_OPTIMIZE = false;
 }
