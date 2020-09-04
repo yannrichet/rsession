@@ -92,30 +92,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     public RenjinSession(final PrintStream p, Properties properties) {
-        this(new RLog() {
-
-            public void log(String string, Level level) {
-                PrintStream pp = null;
-                if (p != null) {
-                    pp = p;
-                } else {
-                    pp = System.err;
-                }
-
-                if (level == Level.WARNING) {
-                    pp.print("(!) ");
-                } else if (level == Level.ERROR) {
-                    pp.print("(!!) ");
-                }
-                pp.println(string);
-            }
-
-            public void closeLog() {
-                if (p != null) {
-                    p.close();
-                }
-            }
-        }, properties);
+        this(new RLogPrintStream(p), properties);
     }
 
     public String gethomedir() {

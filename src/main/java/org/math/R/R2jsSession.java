@@ -211,30 +211,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
     
     public R2jsSession(final PrintStream p, Properties properties, String environmentName) {
-        this(new RLog() {
-
-            public void log(String string, Level level) {
-                PrintStream pp = null;
-                if (p != null) {
-                    pp = p;
-                } else {
-                    pp = System.err;
-                }
-
-                if (level == Level.WARNING) {
-                    pp.print("(!) ");
-                } else if (level == Level.ERROR) {
-                    pp.print("(!!) ");
-                }
-                pp.println(string);
-            }
-
-            public void closeLog() {
-                if (p != null) {
-                    p.close();
-                }
-            }
-        }, properties, environmentName);
+        this(new RLogPrintStream(p), properties, environmentName);
     }
 
     public void addReturnNullFunction(String name) throws ScriptException {
