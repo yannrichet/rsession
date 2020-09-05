@@ -300,17 +300,33 @@ public class RserveDaemonTest {
             tests[i].join();
         }
 
-        boolean locked = false;
+        ServerSocket locked = null;
         for (int i = 0; i < tests.length; i++) {
             if (locks[i] != null) {
-                if (locked) {
+                if (locked != null) {
+                    try {
+                        locked.close();
+                    } catch (IOException ex) {
+                        assert false : "Failed to close!";
+                    }
+                    try {
+                        locks[i].close();
+                    } catch (IOException ex) {
+                        assert false : "Failed to close!";
+                    }
                     assert false : "Already locked !";
                 } else {
-                    locked = true;
+                    locked = locks[i];
                 }
             }
         }
-        assert locked : "Did not lock any port!";
+        assert locked != null : "Did not lock any port!";
+
+        try {
+            locked.close();
+        } catch (IOException ex) {
+            assert false : "Already locked !";
+        }
     }
 
     @Test
