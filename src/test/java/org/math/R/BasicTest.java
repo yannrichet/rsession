@@ -91,9 +91,7 @@ public class BasicTest {
             ex.printStackTrace();
         }
         s.closeLog();
-        //A shutdown hook kills all Rserve at the end.
         r.closeLog();
-
         q.closeLog();
 
         System.out.println("========================================================================");
@@ -101,6 +99,10 @@ public class BasicTest {
         System.out.println(r.notebook());
         System.out.println(q.notebook());
         System.out.println("========================================================================");
+        
+        s.end();
+        r.end();
+        q.end();
     }
 
     @Test
