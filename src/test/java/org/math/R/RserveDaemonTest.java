@@ -315,10 +315,12 @@ public class RserveDaemonTest {
 
     @Test
     public void testLockPortAgainstRserve() throws InterruptedException {
-        final int port = 6666;
+        final int port = 7777;
 
         System.err.println("--- Lock port " + port);
         ServerSocket lock = StartRserve.getPort(port);
+
+        assert lock != null : "Could not lock port " + port;
 
         System.err.println("--- Check port is locked");
         assert StartRserve.getPort(port) == null : "Port was not locked";
