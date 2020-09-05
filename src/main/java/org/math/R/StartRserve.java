@@ -464,7 +464,7 @@ public class StartRserve {
             throw new IOException("Failed to start Rserve process.");
         }
 
-        int pid_attempts = 10;
+        int pid_attempts = 30;
         while (pid < 0 && pid_attempts > 0) {
             pid = diff(getRservePIDs(), last_pids);
             try {
