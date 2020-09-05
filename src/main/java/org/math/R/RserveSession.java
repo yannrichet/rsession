@@ -126,7 +126,7 @@ public class RserveSession extends Rsession implements RLog {
         status = STATUS_NOT_CONNECTED;
 
         if (RserveConf == null) {// no RserveConf given, so create one, and need to be started
-            RserveConf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null);
+            RserveConf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null);
             log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.INFO);
 
             try {

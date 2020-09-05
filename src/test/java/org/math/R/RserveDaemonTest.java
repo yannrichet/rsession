@@ -6,6 +6,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -309,6 +311,49 @@ public class RserveDaemonTest {
             }
         }
         assert locked : "Did not lock any port!";
+    }
+
+    @Test
+    public void testLockPortAgainstRserve() throws InterruptedException {
+        final int port = 6666;
+
+        System.err.println("--- Lock port " + port);
+        ServerSocket lock = StartRserve.getPort(port);
+
+        System.err.println("--- Check port is locked");
+        assert StartRserve.getPort(port) == null : "Port was not locked";
+
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null);
+        RserveDaemon d = null;
+        try {
+            d = new RserveDaemon(conf, new RLogPrintStream(System.out));
+        } catch (Exception ex) {
+            assert false : ex.getMessage();
+        }
+        assert d != null : "No daemon";
+        try {
+            System.err.println("--- Try start Rserve (should fail)");
+
+            d.start();
+        } catch (Exception e) {
+            assert true : "Did not reject Rserrve on already locked port";
+        }
+
+        try {
+            System.err.println("--- Unlock port " + port);
+            lock.close();
+        } catch (IOException ex) {
+            assert false : "Could not close lock:" + ex.getMessage();
+        }
+
+        try {
+            System.err.println("--- Try start Rserve (should work now)");
+            d.start();
+        } catch (Exception e) {
+            assert false : "Did not accept Rserve on unlocked port";
+        }
+
+        d.stop();
     }
 
     public static boolean haveRservePID(int Rp) {
