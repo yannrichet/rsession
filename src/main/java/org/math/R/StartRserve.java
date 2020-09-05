@@ -578,6 +578,7 @@ public class StartRserve {
                 Log.Err.println(e.getMessage());
             }
         }
+        Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);
