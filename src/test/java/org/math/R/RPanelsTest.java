@@ -24,7 +24,7 @@ public class RPanelsTest {
     RenjinSession r;
     R2jsSession q;
     int rand = Math.round((float) Math.random() * 10000);
-    File tmpdir = new File(System.getProperty("java.io.tmpdir"),""+rand);
+    File tmpdir = new File(System.getProperty("java.io.tmpdir"), "" + rand);
 
     public static void main(String args[]) {
         if (GraphicsEnvironment.isHeadless()) {
@@ -54,10 +54,12 @@ public class RPanelsTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
-        
-        if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
-                s = new RserveSession(l, prop,null);
+        if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) {
+            throw new IllegalArgumentException("Failed to create temp dir");
+        }
+
+        s = new RserveSession(l, prop, null);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 
@@ -80,7 +82,7 @@ public class RPanelsTest {
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
 
-        q = R2jsSession.newInstance(l, null); 
+        q = R2jsSession.newInstance(l, null);
         System.out.println("| R.version:\t" + q.eval("R.version.string"));
 
         System.out.println("| getwd():\t" + q.eval("getwd()"));
@@ -108,7 +110,6 @@ public class RPanelsTest {
         System.out.println("========================================================================");
     }
 
-
     void frame(JPanel p) {
         JFrame frame = new JFrame("User Details");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -122,6 +123,9 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_Rserve() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_Rserve");
         RLogPanel p = new RLogPanel();
         s.addLogger(p);
@@ -141,6 +145,9 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_Renjin() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_Renjin");
         RLogPanel p = new RLogPanel();
         r.addLogger(p);
@@ -157,9 +164,17 @@ public class RPanelsTest {
         p.flush();
         Thread.sleep(1000);
     }
-    
+    private static String OS = System.getProperty("os.name").toLowerCase();
+
+    boolean hasDisplay() {
+        return OS.indexOf("inux") >= 0;
+    }
+
     @Test
     public void testRLogPanel_R2js() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_R2js");
         RLogPanel p = new RLogPanel();
         q.addLogger(p);
@@ -179,6 +194,9 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_RserveError() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_RserveError");
         RLogPanel p = new RLogPanel();
         s.addLogger(p);
@@ -197,6 +215,9 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_RenjinError() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_RserveError");
         RLogPanel p = new RLogPanel();
         r.addLogger(p);
@@ -212,10 +233,12 @@ public class RPanelsTest {
         p.flush();
         Thread.sleep(1000);
     }
-    
-    
- @Test
+
+    @Test
     public void testRLogPanel_R2jsError() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRLogPanel_R2jsError");
         RLogPanel p = new RLogPanel();
         q.addLogger(p);
@@ -234,6 +257,9 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_Renjin() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRObjPanel_Renjin");
         RObjectsPanel p = new RObjectsPanel(r);
         frame(p);
@@ -248,6 +274,9 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_Rsession() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRObjPanel_Rsession");
         RObjectsPanel p = new RObjectsPanel(s);
         frame(p);
@@ -258,10 +287,13 @@ public class RPanelsTest {
         p.update();
         Thread.sleep(1000);
 
-    }  
-    
+    }
+
     @Test
     public void testRObjPanel_R2js() throws Exception {
+        if (!hasDisplay()) {
+            return;
+        }
         System.err.println("====================================== testRObjPanel_R2js");
         RObjectsPanel p = new RObjectsPanel(q);
         frame(p);
