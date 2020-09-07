@@ -398,7 +398,7 @@ public class RserveDaemonTest {
 
         System.err.println("--- Check port is not already locked");
         ServerSocket lock = StartRserve.getPort(port);
-        assert lock != null : "Port was not locked";
+        assert lock != null : "Port was already locked";
         try {
             lock.close();
         } catch (IOException ex) {
@@ -429,10 +429,11 @@ public class RserveDaemonTest {
         }
         assert d_fail != null : "No daemon";
         try {
-            System.err.println("--- Try start Rserve (should work)");
+            System.err.println("--- Try start Rserve (should NOT work)");
             d_fail.start();
         } catch (Exception e) {
             failed = true;
+            e.printStackTrace();
         }
         if (!failed) {
             assert false : "Did not reject Rserve on already locked port";

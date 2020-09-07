@@ -23,7 +23,9 @@ import java.util.logging.Logger;
 import javax.imageio.IIOException;
 import org.codehaus.plexus.util.FileUtils;
 import static org.math.R.RserveDaemon.isWindows;
+import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RserveException;
 
 /**
  * helper class that consumes output of a process. In addition, it filter output
@@ -475,18 +477,20 @@ public class StartRserve {
                     int previous_pid = c.eval("RSERVE_PID").asInteger();
                     if (isWindows()) {
                         Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
+                        k.waitFor();
                     } else {
                         Process k = Runtime.getRuntime().exec("kill -9 " + pid);
                     }
-                    throw new IOException("Rserve was already running on port " + p + " with PID " + previous_pid);
+                    throw new IOException("Rserve was already running on port " + port + " with PID " + previous_pid);
                 }
-                c.serverEval("RSERVE_PID <- " + pid);
+                c.voidEval("RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
-            } catch (Exception e2) {
+            } catch (InterruptedException | NumberFormatException | REXPMismatchException | RserveException e2) {
+                Log.Out.print("o");
+                e2.printStackTrace();
             }
-            Log.Out.print("o");
             connect_attempts--;
         }
         throw new IOException("Failed to launch Rserve:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
