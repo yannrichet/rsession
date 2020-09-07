@@ -17,12 +17,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.math.R.RLog.Level;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -45,6 +43,8 @@ public class RserveSessionTest {
 
     @Test
     public void testExceed128Connections() throws Exception {
+        System.err.println("====================================== testExceed128Connections");
+
         for (int i = 0; i < 129; i++) {
             assert (boolean) s.eval("is.function(png)") : "Failed to call is.function";
         }
@@ -52,6 +52,8 @@ public class RserveSessionTest {
 
     @Test
     public void testError() throws Exception {
+        System.err.println("====================================== testError");
+
         boolean error = false;
         try {
             s.eval("stop('!!!')");
@@ -64,12 +66,16 @@ public class RserveSessionTest {
 
     @Test
     public void testPrintIn() throws Exception {
+        System.err.println("====================================== testPrintIn");
+
         String str = s.eval("print('*')").toString();
         assert str.equals("*") : "Bad print: " + str;
     }
 
     @Test
     public void testInstallPackage() throws Exception {
+        System.err.println("====================================== testInstallPackage");
+
         File dir = new File(tmpdir, "pso");
         if (dir.exists()) {
             FileUtils.deleteDirectory(dir);
@@ -88,6 +94,8 @@ public class RserveSessionTest {
 
     @Test
     public void testInstallPackages() {
+        System.err.println("====================================== testInstallPackages");
+
         String out = s.installPackage("boot", true);
         assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package sensitivity: " + out;
         String out2 = s.installPackage("pso", true);
@@ -96,6 +104,8 @@ public class RserveSessionTest {
 
     @Test
     public void testObject() throws Exception {
+        System.err.println("====================================== testObject");
+
         Object l = s.eval("list(x=3)");
         System.err.println("l: " + l);
         System.err.println("R: " + s.getLastOutput());
@@ -109,6 +119,8 @@ public class RserveSessionTest {
 
     // @Test
     public void testObjectFun() throws Exception {
+        System.err.println("====================================== testObjectFun");
+
         s.voidEval("f <- function(x) x");
         System.err.println("R: " + s.getLastOutput());
         System.err.println("R! " + s.getLastError());
@@ -120,6 +132,8 @@ public class RserveSessionTest {
 
     // @Test
     public void testFun() throws Exception {
+        System.err.println("====================================== testFun");
+
         Object fun = s.eval("function(x) {return(x)}");
         System.err.println("fun: " + fun);
         System.err.println("R: " + s.getLastOutput());
@@ -134,6 +148,8 @@ public class RserveSessionTest {
 
     // @Test
     public void testEnvir() throws Exception {
+        System.err.println("====================================== testEnvir");
+
         Object e = s.eval("new.env()");
         System.err.println("e: " + e);
         System.err.println("R: " + s.getLastOutput());
@@ -146,11 +162,13 @@ public class RserveSessionTest {
 
     @Test
     public void testEnd() {
+        System.err.println("====================================== testEnd");
+
         for (int i = 0; i < 10; i++) {
             new Thread(new Runnable() {
 
                 public void run() {
-                    RserveSession s1 = new RserveSession(new RLogPanel(), null,null);
+                    RserveSession s1 = new RserveSession(new RLogPanel(), null, null);
                     try {
                         System.err.println(s1.eval("runif(1)"));
                     } catch (Exception ex) {
@@ -174,6 +192,8 @@ public class RserveSessionTest {
 
     @Test
     public void testNodename() throws REXPMismatchException {
+        System.err.println("====================================== testNodename");
+
         REXP rexp = (REXP) s.rawEval("Sys.info()[['nodename']]");
 
         assert rexp != null : "Cannot get nodename";
@@ -185,6 +205,8 @@ public class RserveSessionTest {
 
     @Test
     public void testErrorNOSink() throws Exception {
+        System.err.println("====================================== testErrorNOSink");
+
         s.voidEval(f);
 
         s.SINK_OUTPUT = false;
@@ -200,6 +222,8 @@ public class RserveSessionTest {
 
     // @Test
     public void testExplicitSink() throws Exception {
+        System.err.println("====================================== testExplicitSink");
+
         s.SINK_OUTPUT = false;
         s.SINK_MESSAGE = false;
 
@@ -232,6 +256,8 @@ public class RserveSessionTest {
 
     @Test
     public void testDefaultSink() throws Exception {
+        System.err.println("====================================== testDefaultSink");
+
         s.voidEval(f);
 
         // without sink: SIGPIPE error
@@ -249,6 +275,8 @@ public class RserveSessionTest {
 
     @Test
     public void testFileSize() throws Exception {
+        System.err.println("====================================== testFileSize");
+
         for (int i = 1; i < 5; i++) {
             int size = (int) Math.pow(10.0, (double) (i + 1));
             System.err.println("Size " + size);
@@ -262,6 +290,8 @@ public class RserveSessionTest {
 
     @Test
     public void testImageSize() throws Exception {
+        System.err.println("====================================== testImageSize");
+
         s.rawEval("library(MASS)");
         for (int i = 1; i < 20; i++) {
             int size = i * 80;
@@ -274,6 +304,8 @@ public class RserveSessionTest {
 
     @Test
     public void testPrint() throws Exception {
+        System.err.println("====================================== testPrint");
+
         //cast
         String[] exp = {"TRUE", "0.123", "pi", /*"0.123+a",*/ "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
         for (String string : exp) {
@@ -283,6 +315,7 @@ public class RserveSessionTest {
 
     @Test
     public void testEval() throws Exception {
+        System.err.println("====================================== testEval");
 
         double a = -0.123;
         s.set("a", a);
@@ -305,6 +338,7 @@ public class RserveSessionTest {
 
     @Test
     public void testNullEval() throws Exception {
+        System.err.println("====================================== testNullEval");
 
         double a = -0.123;
         s.set("a", a);
@@ -324,6 +358,8 @@ public class RserveSessionTest {
 
     @Test
     public void testEvalError() throws Exception {
+        System.err.println("====================================== testEvalError");
+
         String[] exprs = {"a <- 1.0.0", "f <- function(x){((}"};
         for (String expr : exprs) {
             System.err.println("trying expression " + expr);
@@ -351,6 +387,8 @@ public class RserveSessionTest {
 
     @Test
     public void testLibrary() {
+        System.err.println("====================================== testLibrary");
+
         s.rawEval("library(lhs)");
         // this next call was failing with rserve 0.6-0
         s.rawEval("library(rgenoud)");
@@ -358,6 +396,8 @@ public class RserveSessionTest {
 
     @Test
     public void testRFileIO() throws Exception {
+        System.err.println("====================================== testRFileIO");
+
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
         File localfile1 = new File(tmpdir.getParent(), remoteFile1);
@@ -497,6 +537,8 @@ public class RserveSessionTest {
      }*/
     @Test
     public void testConcurrentEval() throws Exception {
+        System.err.println("====================================== testConcurrentEval");
+
         s.voidEval("id <- function(x){return(x)}");
         assert (double) s.eval("id(1.0)") == 1.0 : "Failed to eval id";
         int n = 10;
@@ -554,8 +596,10 @@ public class RserveSessionTest {
 
     @Test
     public void testConcurrency() throws InterruptedException {
-        final RserveSession r1 = new RserveSession(System.out,null, null);
-        final RserveSession r2 = new RserveSession(System.out,null, null);
+        System.err.println("====================================== testConcurrency");
+
+        final RserveSession r1 = new RserveSession(System.out, null, null);
+        final RserveSession r2 = new RserveSession(System.out, null, null);
 
         new Thread(new Runnable() {
 
@@ -599,22 +643,24 @@ public class RserveSessionTest {
 
     @Test
     public void testHardConcurrency() throws REXPMismatchException, InterruptedException {
+        System.err.println("====================================== testHardConcurrency");
+
         final int[] A = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         final RserveSession[] R = new RserveSession[A.length];
         final Thread[] T = new Thread[A.length];
-        
+
         for (int ii = 0; ii < R.length; ii++) {
             final int i = ii;
             T[i] = new Thread(new Runnable() {
                 @Override
                 public void run() {
 
-                    R[i] = new RserveSession(System.out,null,null);
-                    
-                    assert R[i].isAvailable() : "Rserve not available (thread "+i+")";
-                    
+                    R[i] = new RserveSession(System.out, null, null);
+
+                    assert R[i].isAvailable() : "Rserve not available (thread " + i + ")";
+
                     try {
-                        R[i].set("Ai",A[i]);
+                        R[i].set("Ai", A[i]);
                     } catch (Rsession.RException ex) {
                         assert false : ex.getMessage();
                     }
@@ -655,7 +701,7 @@ public class RserveSessionTest {
             prop.setProperty("http_proxy", http_proxy_env);
         }
 
-        s = new RserveSession(l, prop,null);
+        s = new RserveSession(l, prop, null);
         //s = RserveSession.newLocalInstance(l, prop);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));

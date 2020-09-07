@@ -26,6 +26,8 @@ public class RserveDaemonTest {
 
     @Test
     public void testDoInR() throws Exception {
+                        System.err.println("====================================== testDoInR");
+
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
         }
@@ -98,7 +100,9 @@ public class RserveDaemonTest {
 
     @Test
     public void testInstallCustomRserve() throws Exception {
-        if (RserveDaemon.R_HOME == null || Rcmd == null) {
+                                System.err.println("====================================== testInstallCustomRserve");
+
+                                if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
         }
 
@@ -148,7 +152,9 @@ public class RserveDaemonTest {
 
     @Test
     public void testFindR_HOME() {
-        assert RserveDaemon.findR_HOME(null) : "Could not find R directory";
+                                        System.err.println("====================================== testFindR_HOME");
+                                        
+                                        assert RserveDaemon.findR_HOME(null) : "Could not find R directory";
         assert RserveDaemon.R_HOME != null : "Error finding R dir";
         assert new File(RserveDaemon.R_HOME).isDirectory() : "Error finding R dir";
         assert new File(RserveDaemon.R_HOME).listFiles(new FileFilter() {
@@ -164,14 +170,18 @@ public class RserveDaemonTest {
 
     @Test
     public void testParsePrintConf() {
-        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
+                                              System.err.println("====================================== testParsePrintConf");
+
+                                              RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
         System.err.println(c.toString());
         System.err.println(RserverConf.parse(c.toString()));
     }
 
     @Test
     public void testStartStopRserve() throws Exception {
-        System.err.println("--- Get PREVIOUS Rserve PID");
+                                                      System.err.println("====================================== testStartStopRserve");
+
+                                                      System.err.println("--- Get PREVIOUS Rserve PID");
         int[] pids = StartRserve.getRservePIDs();
         int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1;
         System.err.println("---  " + last_pid);
@@ -209,6 +219,7 @@ public class RserveDaemonTest {
 
     @Test
     public void testStartStop10Rserves() throws Exception {
+                                                      System.err.println("====================================== testStartStop10Rserves");
 
         final Thread[] tests = new Thread[10];
         final RserveDaemon[] daemons = new RserveDaemon[tests.length];
@@ -265,6 +276,8 @@ public class RserveDaemonTest {
 
     @Test
     public void testLockPort() throws InterruptedException {
+                        System.err.println("====================================== testLockPort");
+
         final int port = 6666;
         final Thread[] tests = new Thread[10];
         final ServerSocket[] locks = new ServerSocket[tests.length];
@@ -321,6 +334,8 @@ public class RserveDaemonTest {
 
     @Test
     public void testLockPortAgainstRserve() throws InterruptedException {
+        System.err.println("====================================== testLockPortAgainstRserve");
+
         final int port = 7777;
 
         System.err.println("--- Lock port " + port);
