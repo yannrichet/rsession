@@ -22,7 +22,7 @@ public class RserverConf {
     }
     public static long CONNECT_TIMEOUT = 2000;
 
-    public abstract class TimeOut {
+    public static abstract class TimeOut {
 
         /**
          * @return the result
@@ -31,7 +31,7 @@ public class RserverConf {
             return result;
         }
 
-        public class TimeOutException extends Exception {
+        public static class TimeOutException extends Exception {
 
             public TimeOutException(String why) {
                 super(why);

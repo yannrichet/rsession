@@ -553,25 +553,20 @@ public class StartRserve {
                 }
                 RConnection c = null;
                 int port = -1;
-                 RserverConf testconf;
-                Log.Err.print("rsrvargs="+rsrvargs);
+                RserverConf testconf;
                 if (rsrvargs.contains("--RS-port")) {
                     String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
                     port = Integer.parseInt(rsport);
-                    Log.Err.print("port="+port);
-                    
                      testconf = new RserverConf("localhost", port,null,null);
-                    //c = new RConnection("localhost", port);
                 } else {
                      testconf = new RserverConf("localhost", -1,null,null);
-                    //c = new RConnection("localhost");
                 }
                 c = testconf.connect();
                 if (c == null) {
-                    throw new IOException("Failed start connection to " + testconf);
+                    throw new RserverConf.TimeOut.TimeOutException("Failed start connection to " + testconf);
                 }
                 if (!c.isConnected()) {
-                    throw new IOException("Failed to connect to " + testconf);
+                    throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
@@ -583,7 +578,7 @@ public class StartRserve {
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
-            } catch (NumberFormatException | REXPMismatchException | RserveException e2) {
+            } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
                 Log.Out.print("o");
                 //e2.printStackTrace();
             }
