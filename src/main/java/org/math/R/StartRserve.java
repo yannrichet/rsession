@@ -473,8 +473,8 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                if (c.eval("exists('RSERVE_PID')").asInteger() != 0) {
-                    int previous_pid = c.eval("RSERVE_PID").asInteger();
+                if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
+                    int previous_pid = c.eval(".RSERVE_PID").asInteger();
                     if (isWindows()) {
                         Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
                         k.waitFor();
@@ -483,7 +483,7 @@ public class StartRserve {
                     }
                     throw new IOException("Rserve was already running on port " + port + " with PID " + previous_pid);
                 }
-                c.voidEval("RSERVE_PID <- " + pid);
+                c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
@@ -516,7 +516,6 @@ public class StartRserve {
     public static int[] getRservePIDs() {
         List<Integer> pids = new LinkedList<>();
         if (RserveDaemon.isWindows()) { // Windows, so we expect tasklist is available in PATH
-            int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("tasklist");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -525,7 +524,7 @@ public class StartRserve {
                     if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
-                        pid = Integer.parseInt(info[1]);
+                        int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
                     }
                 }
@@ -534,7 +533,6 @@ public class StartRserve {
             }
             //Log.Out.println(">> "+pid);
         } else if (RserveDaemon.isLinux()) {
-            int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("ps -aux");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -543,7 +541,7 @@ public class StartRserve {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
-                        pid = Integer.parseInt(info[1]);
+                        int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
                     }
                 }
@@ -551,7 +549,6 @@ public class StartRserve {
                 Log.Err.println(e.getMessage());
             }
         } else { // MacOS
-            int pid = -1;
             try {
                 Process p = Runtime.getRuntime().exec("ps aux");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -560,7 +557,7 @@ public class StartRserve {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
-                        pid = Integer.parseInt(info[1]);
+                        int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
                     }
                 }
@@ -568,7 +565,7 @@ public class StartRserve {
                 Log.Err.println(e.getMessage());
             }
         }
-        Log.Out.println("Rserve PIDS: " + pids);
+        //Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);
