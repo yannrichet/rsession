@@ -150,18 +150,20 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) throws IOException, InterruptedException {
-        if (!new File(RserveDaemon.app_dir(), "Rserve").exists()) {
+        return new File(RserveDaemon.app_dir(), "Rserve").isDirectory(); // shortcut & avaid firlesystem sync issues
+        
+        /*if (!new File(RserveDaemon.app_dir(), "Rserve").isDirectory()) {
             return false;
         }
 
-        Log.Out.print("Check Rserve is installed in " + RserveDaemon.app_dir() + " ");
+        Log.Out.println("Check Rserve is installed in " + RserveDaemon.app_dir() + " ");
         File out = File.createTempFile("isRserveInstalled", "Rout");
         Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", out);
         if (p == null) {
             throw new IOException("Failed to ask if Rserve is installed");
         }
 
-        if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+        if (!RserveDaemon.isWindows()) {// on Windows the process will never return, so we cannot wait
             p.waitFor();
         }
 
@@ -183,7 +185,7 @@ public class StartRserve {
             }
             attempts--;
         }
-        throw new IOException("Cannot check if Rserve is installed: " + result.replaceAll("^", "  | "));
+        throw new IOException("Cannot check if Rserve is installed: " + result.replaceAll("^", "  | "));*/
     }
 
     /**
@@ -195,6 +197,7 @@ public class StartRserve {
      * @param repository from which R repo ?
      * @return success
      */
+    // If posisble, do not use this legacy Rserve (use patched version github.com/yannrichet/Rserve-1.7)
     public static boolean installRserve(String Rcmd, String http_proxy, String repository) throws IOException, InterruptedException {
         if (repository == null || repository.length() == 0) {
             repository = Rsession.DEFAULT_REPOS;
@@ -202,14 +205,14 @@ public class StartRserve {
         if (http_proxy == null) {
             http_proxy = "";
         }
-        Log.Out.print("Install Rserve from " + repository + " (http_proxy='" + http_proxy + "') ");
+        Log.Out.println("Install Rserve from " + repository + " (http_proxy='" + http_proxy + "') ");
         File out = File.createTempFile("installRserve", "Rout");
         Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
         if (p == null) {
             throw new IOException("Failed to install Rserve");
         }
 
-        if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+        if (!RserveDaemon.isWindows()) {//on Windows the process will never return, so we cannot wait
             p.waitFor();
         }
 
@@ -225,7 +228,7 @@ public class StartRserve {
 
             if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
                 Log.Out.print(" true ");
-                break; //return true;
+                break;
             } else if (result.contains("FAILED") || result.contains("Error")) {
                 Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("^", "  | "));
                 return false;
@@ -266,7 +269,7 @@ public class StartRserve {
             return true;
         }
 
-        Log.Out.print("Install Rserve from local filesystem... (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
+        Log.Out.println("Install Rserve from local filesystem... (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
 
         String pack_suffix = ".tar.gz";
         if (RserveDaemon.isWindows()) {
