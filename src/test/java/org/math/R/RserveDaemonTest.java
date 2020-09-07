@@ -354,7 +354,7 @@ public class RserveDaemonTest {
 
             d.start();
         } catch (Exception e) {
-            assert true : "Did not reject Rserrve on already locked port";
+            assert true : "Did not reject Rserve on already locked port";
         }
 
         try {
@@ -368,7 +368,7 @@ public class RserveDaemonTest {
             System.err.println("--- Try start Rserve (should work now)");
             d.start();
         } catch (Exception e) {
-            assert false : "Did not accept Rserve on unlocked port";
+            assert false : "Did not accept Rserve on unlocked port: "+e.getMessage();
         }
 
         d.stop();
