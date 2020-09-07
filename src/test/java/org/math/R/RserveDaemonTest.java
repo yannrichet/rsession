@@ -6,6 +6,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import org.codehaus.plexus.util.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class RserveDaemonTest {
 
     @Test
     public void testDoInR() throws Exception {
-                        System.err.println("====================================== testDoInR");
+        System.err.println("====================================== testDoInR");
 
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
@@ -67,7 +68,7 @@ public class RserveDaemonTest {
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
             Process p = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
-            if (!RserveDaemon.isWindows())  {// on Windows the process will never return, so we cannot wait
+            if (!RserveDaemon.isWindows()) {// on Windows the process will never return, so we cannot wait
                 p.waitFor();
             }
             assert p.exitValue() == 0 : "Could not remove package Rserve...";
@@ -100,19 +101,20 @@ public class RserveDaemonTest {
 
     @Test
     public void testInstallCustomRserve() throws Exception {
-                                System.err.println("====================================== testInstallCustomRserve");
+        System.err.println("====================================== testInstallCustomRserve");
 
-                                if (RserveDaemon.R_HOME == null || Rcmd == null) {
+        if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
         }
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", null);
-            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
-                p.waitFor();
-                assert p.exitValue() == 0 : "Could not remove package Rserve...";
-            }
+            FileUtils.forceDelete(new File(RserveDaemon.app_dir(), "Rserve"));
+//            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", null);
+//            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+//                p.waitFor();
+//                assert p.exitValue() == 0 : "Could not remove package Rserve...";
+//            }
 
             int n = 10;
             while (StartRserve.isRserveInstalled(Rcmd) && (n--) > 0) {
@@ -152,9 +154,9 @@ public class RserveDaemonTest {
 
     @Test
     public void testFindR_HOME() {
-                                        System.err.println("====================================== testFindR_HOME");
-                                        
-                                        assert RserveDaemon.findR_HOME(null) : "Could not find R directory";
+        System.err.println("====================================== testFindR_HOME");
+
+        assert RserveDaemon.findR_HOME(null) : "Could not find R directory";
         assert RserveDaemon.R_HOME != null : "Error finding R dir";
         assert new File(RserveDaemon.R_HOME).isDirectory() : "Error finding R dir";
         assert new File(RserveDaemon.R_HOME).listFiles(new FileFilter() {
@@ -170,18 +172,18 @@ public class RserveDaemonTest {
 
     @Test
     public void testParsePrintConf() {
-                                              System.err.println("====================================== testParsePrintConf");
+        System.err.println("====================================== testParsePrintConf");
 
-                                              RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
+        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
         System.err.println(c.toString());
         System.err.println(RserverConf.parse(c.toString()));
     }
 
     @Test
     public void testStartStopRserve() throws Exception {
-                                                      System.err.println("====================================== testStartStopRserve");
+        System.err.println("====================================== testStartStopRserve");
 
-                                                      System.err.println("--- Get PREVIOUS Rserve PID");
+        System.err.println("--- Get PREVIOUS Rserve PID");
         int[] pids = StartRserve.getRservePIDs();
         int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1;
         System.err.println("---  " + last_pid);
@@ -219,7 +221,7 @@ public class RserveDaemonTest {
 
     @Test
     public void testStartStop10Rserves() throws Exception {
-                                                      System.err.println("====================================== testStartStop10Rserves");
+        System.err.println("====================================== testStartStop10Rserves");
 
         final Thread[] tests = new Thread[10];
         final RserveDaemon[] daemons = new RserveDaemon[tests.length];
@@ -276,7 +278,7 @@ public class RserveDaemonTest {
 
     @Test
     public void testLockPort() throws InterruptedException {
-                        System.err.println("====================================== testLockPort");
+        System.err.println("====================================== testLockPort");
 
         final int port = 6666;
         final Thread[] tests = new Thread[10];
@@ -370,12 +372,12 @@ public class RserveDaemonTest {
         }
 
         Thread.sleep(3000); // let time to effectively close port by system...
-        
+
         try {
             System.err.println("--- Try start Rserve (should work now)");
             d.start();
         } catch (Exception e) {
-            assert false : "Did not accept Rserve on unlocked port: "+e.getMessage();
+            assert false : "Did not accept Rserve on unlocked port: " + e.getMessage();
         }
 
         d.stop();

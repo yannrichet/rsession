@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.IIOException;
 import org.codehaus.plexus.util.FileUtils;
 import org.rosuda.REngine.Rserve.RConnection;
 
@@ -150,7 +151,32 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) throws IOException, InterruptedException {
-        return new File(RserveDaemon.app_dir(), "Rserve").isDirectory(); // shortcut & avaid firlesystem sync issues
+        // shortcut & try avoid filesystem sync issues on windows
+        File dir = new File(RserveDaemon.app_dir(), "Rserve");
+        if (dir.isDirectory()) {
+            File desc = new File(dir, "DESCRIPTION");
+            if (desc.isFile()) {
+                return true;
+            } else {
+                Log.Err.println("Seems Rserve is not well installed. Force remove!");
+                if (RserveDaemon.isWindows()) {
+                    Log.Err.println("  OS:Windows, so try kill Rserve.exe:");
+                    Process k = Runtime.getRuntime().exec("taskkill /F /IM Rserve.exe");
+                    k.waitFor();
+                    Log.Err.println("     taskkill /F /IM Rserve.exe   "+(k.exitValue()==0?"succeded":"failed"));
+                    Process k2 = Runtime.getRuntime().exec("taskkill /F /IM Rserve_d.exe");
+                    k2.waitFor();
+                    Log.Err.println("     taskkill /F /IM Rserve_d.exe "+(k2.exitValue()==0?"succeded":"failed"));
+                }
+                FileUtils.forceDelete(dir);
+                if (dir.isDirectory()) {
+                    throw new IOException("Could not cleanup " + dir.getAbsolutePath() + " directory");
+                }
+                return false;
+            }
+        } else {
+            return false;
+        }
 
         /*if (!new File(RserveDaemon.app_dir(), "Rserve").isDirectory()) {
             return false;

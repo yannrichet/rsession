@@ -247,7 +247,7 @@ public class RserveDaemon {
                         log.log("Killed server: " + k.waitFor(), Level.INFO);
                     }
                 } else {
-                    log.log("Rserve PID not alive.", Level.WARNING);
+                    log.log("Rserve PID not alive.", Level.INFO);
                 }
             } else {
                 log.log("No Rserve PID to kill.", Level.WARNING);
