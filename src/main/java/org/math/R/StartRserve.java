@@ -235,9 +235,10 @@ public class StartRserve {
             }
             attempts--;
         }
-        if (attempts <= 0) {
-            throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("^", "  | "));
-        }
+        // If non english setup, it should be ignored... So just use isRserveInstalled instead
+        //if (attempts <= 0) {
+        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("^", "  | "));
+        //}
 
         int n = 10;
         while (n > 0) {
