@@ -56,7 +56,7 @@ public class RserveDaemonTest {
         }
     }
 
-    // Replaced by local install instead... @Test
+    // Replaced by custom install instead... @Test
     public void testInstallRserve() throws Exception {
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
@@ -97,7 +97,7 @@ public class RserveDaemonTest {
     }
 
     @Test
-    public void testInstallRserveLocal() throws Exception {
+    public void testInstallCustomRserve() throws Exception {
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
         }
@@ -123,7 +123,7 @@ public class RserveDaemonTest {
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
         assert classloader.getResource("org/math/R/Rserve_1.7-5.zip") != null : "cannot access resources...";
 
-        boolean install = StartRserve.installRserve(Rcmd);
+        boolean install = StartRserve.installCustomRserve(Rcmd);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -146,14 +146,6 @@ public class RserveDaemonTest {
         assert StartRserve.isRserveInstalled(Rcmd) : "Could not find package Rserve";
     }
 
-    /*boolean isRserveInstalled() {
-        Process p = doInR("for (i in 1:length(.libPaths())) print(any(list.files(.libPaths()[i])=='Rserve'))", Rcmd, "--vanilla -q", false);
-        boolean isWindows = System.getProperty("os.name") != null && System.getProperty("os.name").length() >= 7 && System.getProperty("os.name").substring(0, 7).equals("Windows");
-        if (!isWindows) {
-            p.waitFor();
-        }
-        assert p.exitValue() == 0 : "Could not find package Rserve...";
-    }*/
     @Test
     public void testFindR_HOME() {
         assert RserveDaemon.findR_HOME(null) : "Could not find R directory";

@@ -4,7 +4,6 @@ import java.io.File;
 import java.net.ServerSocket;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
 import org.math.R.RLog.Level;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -283,7 +282,7 @@ public class RserveDaemon {
             if (USE_RSERVE_FROM_CRAN) {
                 RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), System.getenv("http_proxy"), null);
             } else {
-                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+                RserveInstalled = StartRserve.installCustomRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
             }
             if (RserveInstalled) {
                 //log.log("                           ...yes", Level.INFO);
