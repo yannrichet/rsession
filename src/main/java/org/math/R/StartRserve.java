@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.IIOException;
 import org.codehaus.plexus.util.FileUtils;
+import static org.math.R.RserveDaemon.isWindows;
 import org.rosuda.REngine.Rserve.RConnection;
 
 /**
@@ -110,10 +111,10 @@ public class StartRserve {
                     Log.Err.println("  OS:Windows, so try kill Rserve.exe:");
                     Process k = Runtime.getRuntime().exec("taskkill /F /IM Rserve.exe");
                     k.waitFor();
-                    Log.Err.println("     taskkill /F /IM Rserve.exe   "+(k.exitValue()==0?"succeded":"failed"));
+                    Log.Err.println("     taskkill /F /IM Rserve.exe   " + (k.exitValue() == 0 ? "succeded" : "failed"));
                     Process k2 = Runtime.getRuntime().exec("taskkill /F /IM Rserve_d.exe");
                     k2.waitFor();
-                    Log.Err.println("     taskkill /F /IM Rserve_d.exe "+(k2.exitValue()==0?"succeded":"failed"));
+                    Log.Err.println("     taskkill /F /IM Rserve_d.exe " + (k2.exitValue() == 0 ? "succeded" : "failed"));
                 }
                 FileUtils.forceDelete(dir);
                 if (dir.isDirectory()) {
@@ -470,6 +471,16 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
+                if (c.eval("exists('RSERVE_PID')").asInteger() != 0) {
+                    int previous_pid = c.eval("RSERVE_PID").asInteger();
+                    if (isWindows()) {
+                        Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
+                    } else {
+                        Process k = Runtime.getRuntime().exec("kill -9 " + pid);
+                    }
+                    throw new IOException("Rserve was already running on port " + p + " with PID " + previous_pid);
+                }
+                c.serverEval("RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
