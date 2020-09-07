@@ -287,7 +287,7 @@ public class RserveDaemonTest {
     public void testLockPort() throws InterruptedException {
         System.err.println("====================================== testLockPort");
 
-        final int port = 6666;
+        final int port = 5555;
         final Thread[] tests = new Thread[10];
         final ServerSocket[] locks = new ServerSocket[tests.length];
 
