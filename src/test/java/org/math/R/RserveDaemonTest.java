@@ -6,8 +6,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +31,7 @@ public class RserveDaemonTest {
         }
 
         String expr = ".libPaths(); 1+1==2";
-        Process p = doInR(expr, Rcmd, "--vanilla -q", false);
+        Process p = doInR(expr, Rcmd, "--vanilla -q", null);
         assert p != null : "Cannot ceate R process";
 
         try {
@@ -66,7 +64,7 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", false);
+            Process p = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
             if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
             }
@@ -106,7 +104,7 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", false);
+            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", null);
             if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
                 p.waitFor();
                 assert p.exitValue() == 0 : "Could not remove package Rserve...";
