@@ -238,14 +238,7 @@ public class RserveDaemon {
                     }
                 }
                 if (in) {
-                    log.log("Will kill PID: " + rserve.pid, Level.INFO);
-                    if (isWindows()) {
-                        Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + rserve.pid);
-                        log.log("Killed server: " + k.waitFor(), Level.INFO);
-                    } else {
-                        Process k = Runtime.getRuntime().exec("kill -9 " + rserve.pid);
-                        log.log("Killed server: " + k.waitFor(), Level.INFO);
-                    }
+                    rserve.kill();
                 } else {
                     log.log("Rserve PID not alive.", Level.INFO);
                 }
@@ -299,11 +292,11 @@ public class RserveDaemon {
         ServerSocket lock = null;
         synchronized (StartRserve.lockPort) {
             if (conf.port < 0) {
-                int rserverPort = RserverConf.DEFAULT_RSERVE_PORT - 1;
+                int rserverPort = RserverConf.DEFAULT_RSERVE_PORT;
                 if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
                     while (lock == null) {
                         rserverPort++;
-                        lock = StartRserve.getPort(rserverPort);
+                        lock = StartRserve.lockPort(rserverPort);
                     }
                 }
                 conf.port = rserverPort;
