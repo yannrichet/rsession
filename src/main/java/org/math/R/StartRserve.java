@@ -150,7 +150,7 @@ public class StartRserve {
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) {
-        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", null);
         if (p == null) {
             Log.Err.println("Failed to ask if Rserve is installed");
             return false;
@@ -204,7 +204,7 @@ public class StartRserve {
             http_proxy = "";
         }
         Log.Out.println("Install Rserve from " + repository + " ... (http_proxy='" + http_proxy + "') ");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
         if (p == null) {
             Log.Err.println("Rserve install failed.");
             return false;
@@ -319,7 +319,7 @@ public class StartRserve {
             return false;
         }
 
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", false);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
         if (p == null) {
             Log.Err.println("Failed to launch Rserve install");
             return false;
@@ -381,11 +381,10 @@ public class StartRserve {
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static Process doInR(String todo, String Rcmd, String rargs/*, StringBuffer out, StringBuffer err*/, boolean redirect) {
+    public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
         Process p = null;
         try {
-            String Rout = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout";
-            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect ? " > " + new File(RserveDaemon.app_dir(), Rout).getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "") : "");
+            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect==null ?"": " > " + redirect.getAbsolutePath()+ (!RserveDaemon.isWindows() ? " 2>&1" : ""));
             Log.Out.println("R> " + command);
             if (RserveDaemon.isWindows()) {
                 p = Runtime.getRuntime().exec(command);
@@ -453,15 +452,17 @@ public class StartRserve {
                 throw new IOException("Could not close Rserve locker");
             }
         }
+                    
+        File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
         p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                 + "print(getwd()); "
-                + "\n   Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, true);
+                + "\n   Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
         if (p != null) {
             Log.Out.print("  Rserve startup done.");
         } else {
-            throw new IOException("Failed to start Rserve process.");
+            throw new IOException("Failed to start Rserve process:\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
 
         int pid_attempts = 30;
@@ -475,7 +476,7 @@ public class StartRserve {
             pid_attempts--;
         }
         if (pid == -1) {
-            throw new IOException("Failed to get Rserve PID.");
+            throw new IOException("Failed to get Rserve PID:\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
 
         //}
@@ -503,7 +504,7 @@ public class StartRserve {
             Log.Out.print("o");
             connect_attempts--;
         }
-        throw new IOException("Failed to launch Rserve");
+        throw new IOException("Failed to launch Rserve:\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
     }
 
     // find new elements in news, regarding previous
