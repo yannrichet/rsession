@@ -79,59 +79,6 @@ class RegistryHog extends Thread {
     }
 }
 
-class StreamHog extends Thread {
-
-    InputStream is;
-    boolean capture;
-    StringBuffer out = new StringBuffer();
-
-    StreamHog(InputStream is, boolean capture) {
-        this.is = is;
-        this.capture = capture;
-        start();
-    }
-
-    public String getOutput() {
-        return out.toString();
-    }
-
-    @Override
-    public void run() {
-        //Logger.err.println("start streamhog");
-        BufferedReader br = null;
-        InputStreamReader isr = null;
-        try {
-            isr = new InputStreamReader(is);
-            br = new BufferedReader(isr);
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                if (capture) {
-                    out.append("\n").append(line);
-                } else {
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            if (isr != null) {
-                try {
-                    isr.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        //Logger.err.println("finished streamhog");
-    }
-}
-
 /**
  * simple class that start Rserve locally if it's not running already - see
  * mainly <code>checkLocalRserve</code> method. It spits out quite some
@@ -425,7 +372,7 @@ public class StartRserve {
         return p;
     }
 
-    static String UGLY_FIXES = "flush.console <- function(...) {return;}; options(error=function() NULL)";
+    static String UGLY_FIXES = "";//flush.console <- function(...) {return;}; options(error=function() NULL)";
 
     public static class ProcessToKill {
 

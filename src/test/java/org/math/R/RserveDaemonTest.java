@@ -6,6 +6,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.codehaus.plexus.util.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -33,30 +35,35 @@ public class RserveDaemonTest {
             testFindR_HOME();
         }
 
+        File out = File.createTempFile("doInR", "Rout");
         String expr = ".libPaths(); 1+1==2";
-        Process p = doInR(expr, Rcmd, "--vanilla -q", null);
+        Process p = doInR(expr, Rcmd, "--vanilla -q", out);
         assert p != null : "Cannot ceate R process";
 
-        try {
-            StringBuffer result = new StringBuffer();
-            // we need to fetch the output - some platforms will die if you don't ...
-            StreamHog error = new StreamHog(p.getErrorStream(), true);
-            StreamHog output = new StreamHog(p.getInputStream(), true);
-            error.join();
-            output.join();
-
-            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
-                p.waitFor();
-            }
-            result.append(output.getOutput());
-            result.append(error.getOutput());
-
-            System.err.println("results \n" + result);
-
-            assert result.toString().contains("TRUE") : "Failed to eval " + expr + ": " + result;
-        } catch (InterruptedException e) {
-            assert false : e;
+        if (!RserveDaemon.isWindows()) {//on Windows the process will never return, so we cannot wait
+            p.waitFor();
         }
+
+        int attempts = 10;
+        String result = "";
+        while (attempts > 0) {
+            try {
+                Thread.sleep(1000);
+                Log.Out.print(".");
+            } catch (InterruptedException ex) {
+            }
+
+            result = org.apache.commons.io.FileUtils.readFileToString(out);
+
+            if (result.contains(expr)) {
+                Thread.sleep(1000);
+                break;
+            }
+
+            attempts--;
+        }
+
+        assert result.contains("TRUE") : "Failed to eval " + expr + ": " + result;
     }
 
     // Replaced by custom install instead... @Test
@@ -381,6 +388,58 @@ public class RserveDaemonTest {
         }
 
         d.stop();
+    }
+
+    @Test
+    public void testfailRserveSamePort() throws InterruptedException {
+        System.err.println("====================================== testfailRserveSamePort");
+
+        final int port = 8888;
+
+        System.err.println("--- Check port is not already locked");
+        ServerSocket lock = StartRserve.getPort(port);
+        assert lock != null : "Port was not locked";
+        try {
+            lock.close();
+        } catch (IOException ex) {
+            assert false : "Cannot close port";
+        }
+
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null);
+        RserveDaemon d_ok = null;
+        try {
+            d_ok = new RserveDaemon(conf, new RLogPrintStream(System.out));
+        } catch (Exception ex) {
+            assert false : ex.getMessage();
+        }
+        assert d_ok != null : "No daemon";
+        try {
+            System.err.println("--- Try start Rserve (should work)");
+            d_ok.start();
+        } catch (Exception e) {
+            assert false : "Did not accept Rserve on unlocked port: " + e.getMessage();
+        }
+
+        boolean failed = false;
+        RserveDaemon d_fail = null;
+        try {
+            d_fail = new RserveDaemon(conf, new RLogPrintStream(System.out));
+        } catch (Exception ex) {
+            assert false : ex.getMessage();
+        }
+        assert d_fail != null : "No daemon";
+        try {
+            System.err.println("--- Try start Rserve (should work)");
+            d_fail.start();
+        } catch (Exception e) {
+            failed = true;
+        }
+        if (!failed) {
+            assert false : "Did not reject Rserve on already locked port";
+        }
+
+        d_ok.stop();
+        //d_fail.stop();
     }
 
     public static boolean haveRservePID(int Rp) {
