@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.IIOException;
@@ -111,12 +112,8 @@ public class StartRserve {
                 Log.Err.println("Seems Rserve is not well installed. Force remove!");
                 if (RserveDaemon.isWindows()) {
                     Log.Err.println("  OS:Windows, so try kill Rserve.exe:");
-                    Process k = Runtime.getRuntime().exec("taskkill /F /IM Rserve.exe");
-                    k.waitFor();
-                    Log.Err.println("     taskkill /F /IM Rserve.exe   " + (k.exitValue() == 0 ? "succeded" : "failed"));
-                    Process k2 = Runtime.getRuntime().exec("taskkill /F /IM Rserve_d.exe");
-                    k2.waitFor();
-                    Log.Err.println("     taskkill /F /IM Rserve_d.exe " + (k2.exitValue() == 0 ? "succeded" : "failed"));
+                    KillAll("Rserve.exe");
+                    KillAll("Rserve_d.exe");
                 }
                 FileUtils.forceDelete(dir);
                 if (dir.isDirectory()) {
@@ -186,10 +183,6 @@ public class StartRserve {
         Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
         if (p == null) {
             throw new IOException("Failed to install Rserve");
-        }
-
-        if (!RserveDaemon.isWindows()) {//on Windows the process will never return, so we cannot wait
-            p.waitFor();
         }
 
         int attempts = 10;
@@ -301,10 +294,6 @@ public class StartRserve {
             throw new IOException("Failed to install Rserve");
         }
 
-        if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
-            p.waitFor();
-        }
-
         int attempts = 10;
         while (attempts > 0) {
             try {
@@ -347,6 +336,14 @@ public class StartRserve {
         return false;
     }
 
+   static String[] splitCommand(String command) {
+            StringTokenizer st = new StringTokenizer(command);
+        String[] cmdarray = new String[st.countTokens()];
+        for (int i = 0; st.hasMoreTokens(); i++)
+            cmdarray[i] = st.nextToken();
+    return cmdarray;
+    }
+    
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
      * using any quotes in arguments
@@ -364,9 +361,33 @@ public class StartRserve {
             String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
             Log.Out.println("R> " + command);
             if (RserveDaemon.isWindows()) {
-                p = Runtime.getRuntime().exec(command);
+                ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
+                if (redirect == null) {
+                    pb.redirectErrorStream(true);
+                }
+                p = pb.start();
+                if (redirect == null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        Log.Out.println("  " + line);
+                    }
+                }
+                //p.waitFor(); 
             } else /* unix startup */ {
-                p = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", command});
+                ProcessBuilder pb = new ProcessBuilder(new String[]{"/bin/sh", "-c", command});
+                if (redirect == null) {
+                    pb.redirectErrorStream(true);
+                }
+                p = pb.start();
+                if (redirect == null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        Log.Out.println("  " + line);
+                    }
+                }
+                p.waitFor();
                 //new File(Rout).deleteOnExit();
             }
         } catch (Exception x) {
@@ -376,6 +397,66 @@ public class StartRserve {
     }
 
     static String UGLY_FIXES = "";//flush.console <- function(...) {return;}; options(error=function() NULL)";
+
+    public static boolean KillAll(String taskname) {
+        try {
+            Log.Out.print("Kill process " + taskname + ": ");
+            if (isWindows()) {
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("taskkill /F /IM " + taskname));
+                pb.redirectErrorStream(true);
+                Process k = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Log.Out.println("  " + line);
+                }
+                return true;//k.waitFor() == 0;
+            } else {
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("killall " + taskname));
+                pb.redirectErrorStream(true);
+                Process k = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Log.Out.println("  " + line);
+                }
+                return k.waitFor() == 0;
+            }
+        } catch (Exception ex) {
+            Log.Err.println("Exception: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean Kill(int pid) {
+        try {
+            Log.Out.print("Kill PID " + pid + ": ");
+            if (isWindows()) {
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("taskkill /F /T /PID " + pid));
+                pb.redirectErrorStream(true);
+                Process k = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Log.Out.println("  " + line);
+                }
+                return true;//k.waitFor() == 0;
+            } else {
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("kill -9 " + pid));
+                pb.redirectErrorStream(true);
+                Process k = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Log.Out.println("  " + line);
+                }
+                return k.waitFor() == 0;
+            }
+        } catch (Exception ex) {
+            Log.Err.println("Exception: " + ex.getMessage());
+            return false;
+        }
+    }
 
     public static class ProcessToKill {
 
@@ -388,18 +469,7 @@ public class StartRserve {
         }
 
         public void kill() {
-            try {
-                Log.Out.print("Kill PID " + pid + ": ");
-                if (isWindows()) {
-                    Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
-                    Log.Out.println((k.waitFor() == 0 ? "ok" : "failed"));
-                } else {
-                    Process k = Runtime.getRuntime().exec("kill -9 " + pid);
-                    Log.Out.println((k.waitFor() == 0 ? "ok" : "failed"));
-                }
-            } catch (Exception ex) {
-                Log.Err.println("Exception: "+ex.getMessage());
-            }
+            Kill(pid);
         }
     }
 
@@ -432,7 +502,6 @@ public class StartRserve {
         wd.deleteOnExit();
 
         Process p = null;
-        int pid = -1; // means "none"
         //synchronized (lockRserveLauncher) {
         int[] last_pids = getRservePIDs();
 
@@ -457,12 +526,14 @@ public class StartRserve {
             throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
 
-        int pid_attempts = 50;
+        int pid_attempts = 50;       
+        int pid = -1; // means "none"
         while (pid < 0 && pid_attempts > 0) {
             pid = diff(getRservePIDs(), last_pids);
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ix) {
+                ix.printStackTrace();
             }
             Log.Out.print(".");
             pid_attempts--;
@@ -477,34 +548,44 @@ public class StartRserve {
             try {
                 try {
                     Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
-                } catch (InterruptedException ix) {
+                } catch (InterruptedException ix) { 
+                    ix.printStackTrace();
                 }
                 RConnection c = null;
                 int port = -1;
+                 RserverConf testconf;
+                Log.Err.print("rsrvargs="+rsrvargs);
                 if (rsrvargs.contains("--RS-port")) {
                     String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
                     port = Integer.parseInt(rsport);
-                    c = new RConnection("localhost", port);
+                    Log.Err.print("port="+port);
+                    
+                     testconf = new RserverConf("localhost", port,null,null);
+                    //c = new RConnection("localhost", port);
                 } else {
-                    c = new RConnection("localhost");
+                     testconf = new RserverConf("localhost", -1,null,null);
+                    //c = new RConnection("localhost");
                 }
+                c = testconf.connect();
+                if (c == null) {
+                    throw new IOException("Failed start connection to " + testconf);
+                }
+                if (!c.isConnected()) {
+                    throw new IOException("Failed to connect to " + testconf);
+                }
+
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
-                    if (isWindows()) {
-                        Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
-                        k.waitFor();
-                    } else {
-                        Process k = Runtime.getRuntime().exec("kill -9 " + pid);
-                    }
+                    Kill(pid);
                     throw new IOException("Rserve was already running on port " + port + " with PID " + previous_pid);
                 }
                 c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
-            } catch (InterruptedException | NumberFormatException | REXPMismatchException | RserveException e2) {
+            } catch (NumberFormatException | REXPMismatchException | RserveException e2) {
                 Log.Out.print("o");
-                e2.printStackTrace();
+                //e2.printStackTrace();
             }
             connect_attempts--;
         }
@@ -532,25 +613,30 @@ public class StartRserve {
         List<Integer> pids = new LinkedList<>();
         if (RserveDaemon.isWindows()) { // Windows, so we expect tasklist is available in PATH
             try {
-                Process p = Runtime.getRuntime().exec("tasklist");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                ProcessBuilder pb = new ProcessBuilder("tasklist");
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
-                while ((line = reader.readLine()) != null) {
+                while ((line = reader.readLine()) != null) { 
+                    //Log.Out.print("\n> " + line);
                     if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
-                        //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
                     }
                 }
+                //process.waitFor();
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
             //Log.Out.println(">> "+pid);
         } else if (RserveDaemon.isLinux()) {
             try {
-                Process p = Runtime.getRuntime().exec("ps -aux");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("ps -aux"));
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
@@ -560,13 +646,16 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
+                process.waitFor();
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-        } else { // MacOS
+        } else if (RserveDaemon.isMacOSX()) { // MacOS
             try {
-                Process p = Runtime.getRuntime().exec("ps aux");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("ps aux"));
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
@@ -576,11 +665,12 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
+                process.waitFor();
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-        }
-        //Log.Out.println("Rserve PIDS: " + pids);
+        } else Log.Err.println("Cannot get OS");
+        Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);
