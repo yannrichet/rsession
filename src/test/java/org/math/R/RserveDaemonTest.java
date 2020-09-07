@@ -354,6 +354,8 @@ public class RserveDaemonTest {
             assert false : "Could not close lock:" + ex.getMessage();
         }
 
+        Thread.sleep(3000); // let time to effectively close port by system...
+        
         try {
             System.err.println("--- Try start Rserve (should work now)");
             d.start();
