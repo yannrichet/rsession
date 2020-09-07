@@ -386,6 +386,21 @@ public class StartRserve {
             process = p;
             this.pid = pid;
         }
+
+        public void kill() {
+            try {
+                Log.Out.print("Kill PID " + pid + ": ");
+                if (isWindows()) {
+                    Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
+                    Log.Out.println((k.waitFor() == 0 ? "ok" : "failed"));
+                } else {
+                    Process k = Runtime.getRuntime().exec("kill -9 " + pid);
+                    Log.Out.println((k.waitFor() == 0 ? "ok" : "failed"));
+                }
+            } catch (Exception ex) {
+                Log.Err.println("Exception: "+ex.getMessage());
+            }
+        }
     }
 
     final static Object lockRserveLauncher = new Object();
@@ -442,11 +457,11 @@ public class StartRserve {
             throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
 
-        int pid_attempts = 30;
+        int pid_attempts = 50;
         while (pid < 0 && pid_attempts > 0) {
             pid = diff(getRservePIDs(), last_pids);
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException ix) {
             }
             Log.Out.print(".");
@@ -473,8 +488,8 @@ public class StartRserve {
                 } else {
                     c = new RConnection("localhost");
                 }
-                if (c.eval("exists('RSERVE_PID')").asInteger() != 0) {
-                    int previous_pid = c.eval("RSERVE_PID").asInteger();
+                if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
+                    int previous_pid = c.eval(".RSERVE_PID").asInteger();
                     if (isWindows()) {
                         Process k = Runtime.getRuntime().exec("taskkill /F /T /PID " + pid);
                         k.waitFor();
@@ -483,7 +498,7 @@ public class StartRserve {
                     }
                     throw new IOException("Rserve was already running on port " + port + " with PID " + previous_pid);
                 }
-                c.voidEval("RSERVE_PID <- " + pid);
+                c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
@@ -579,7 +594,7 @@ public class StartRserve {
     final static Object lockPort = new Object();
 
     // Returns an open socket to lock the port on system
-    public static ServerSocket getPort(int p) {
+    public static ServerSocket lockPort(int p) {
         // synchronized (lockPort) {
         //System.err.print("? " + p);
         ServerSocket ss = null;
@@ -642,9 +657,19 @@ public class StartRserve {
         }
         try {
             if (RserveDaemon.isWindows()) {
-                return launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null) != null;
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null);
+                if (p == null) {
+                    return false;
+                }
+                p.kill();
+                return true;
             } else {
-                return launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null) != null;
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null);
+                if (p == null) {
+                    return false;
+                }
+                p.kill();
+                return true;
             }
         } catch (Exception e) {
             Log.Err.println("Local Rserve not available.");

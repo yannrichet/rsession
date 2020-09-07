@@ -298,7 +298,7 @@ public class RserveDaemonTest {
                 public void run() {
                     try {
                         System.err.println("--- Lock port #" + i);
-                        locks[i] = StartRserve.getPort(port);
+                        locks[i] = StartRserve.lockPort(port);
                     } catch (Exception e) {
                         assert false : e.getMessage();
                     }
@@ -348,12 +348,12 @@ public class RserveDaemonTest {
         final int port = 7777;
 
         System.err.println("--- Lock port " + port);
-        ServerSocket lock = StartRserve.getPort(port);
+        ServerSocket lock = StartRserve.lockPort(port);
 
         assert lock != null : "Could not lock port " + port;
 
         System.err.println("--- Check port is locked");
-        assert StartRserve.getPort(port) == null : "Port was not locked";
+        assert StartRserve.lockPort(port) == null : "Port was not locked";
 
         RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null);
         RserveDaemon d = null;
@@ -397,7 +397,7 @@ public class RserveDaemonTest {
         final int port = 8888;
 
         System.err.println("--- Check port is not already locked");
-        ServerSocket lock = StartRserve.getPort(port);
+        ServerSocket lock = StartRserve.lockPort(port);
         assert lock != null : "Port was already locked";
         try {
             lock.close();
