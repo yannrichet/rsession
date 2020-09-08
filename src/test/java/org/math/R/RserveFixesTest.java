@@ -72,9 +72,7 @@ public class RserveFixesTest {
     }
 
     @After
-    public void tearDown() throws RserveException {
-        RConnection c = new RConnection("localhost", 6666);
-        c.serverShutdown();
+    public void tearDown() {
         d.stop();
     }
 
