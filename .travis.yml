@@ -14,22 +14,22 @@ matrix:
       env:
         - JDK="adopt@1.8"
         - TRAVIS_DIST_NAME="xenial"
-    - name: "Linux JDK11"
-      os: linux
-      dist: xenial
-      #jdk:
-      #  - openjdk11
-      env:
-        - JDK="openjdk@1.11"
-        - TRAVIS_DIST_NAME="xenial"
-    - name: "Linux JDK13"
-      os: linux
-      dist: xenial
-      #jdk:
-      #  - openjdk13
-      env:
-        - JDK="openjdk@1.13"
-        - TRAVIS_DIST_NAME="xenial"
+#    - name: "Linux JDK11"
+#      os: linux
+#      dist: xenial
+#      #jdk:
+#      #  - openjdk11
+#      env:
+#        - JDK="openjdk@1.11"
+#        - TRAVIS_DIST_NAME="xenial"
+#    - name: "Linux JDK13"
+#      os: linux
+#      dist: xenial
+#      #jdk:
+#      #  - openjdk13
+#      env:
+#        - JDK="openjdk@1.13"
+#        - TRAVIS_DIST_NAME="xenial"
     - name: "MacOS JDK8"
       os: osx
       osx_image: xcode10.1
@@ -38,37 +38,37 @@ matrix:
       env:
         - JDK="adopt@1.8"
         - TRAVIS_DIST_NAME="osx10"
-    - name: "MacOS JDK11"
-      os: osx
-      osx_image: xcode10.1
-      #jdk:
-      #  - openjdk11
-      env:
-        - JDK="openjdk@1.11"
-        - TRAVIS_DIST_NAME="osx10"
-    - name: "MacOS JDK13"
-      os: osx
-      osx_image: xcode10.1
-      #jdk:
-      #  - openjdk13
-      env:
-        - JDK="openjdk@1.13"
-        - TRAVIS_DIST_NAME="osx10"
+#    - name: "MacOS JDK11"
+#      os: osx
+#      osx_image: xcode10.1
+#      #jdk:
+#      #  - openjdk11
+#      env:
+#        - JDK="openjdk@1.11"
+#        - TRAVIS_DIST_NAME="osx10"
+#    - name: "MacOS JDK13"
+#      os: osx
+#      osx_image: xcode10.1
+#      #jdk:
+#      #  - openjdk13
+#      env:
+#        - JDK="openjdk@1.13"
+#        - TRAVIS_DIST_NAME="osx10"
     - name: "Windows JDK8"
       os: windows
       env:
         - JDK="1.8"
         - TRAVIS_DIST_NAME="win"
-    - name: "Windows JDK11"
-      os: windows
-      env:
-        - JDK="openjdk@1.11"
-        - TRAVIS_DIST_NAME="win"
-    - name: "Windows JDK13"
-      os: windows
-      env:
-        - JDK="openjdk@1.13"
-        - TRAVIS_DIST_NAME="win"
+#    - name: "Windows JDK11"
+#      os: windows
+#      env:
+#        - JDK="openjdk@1.11"
+#        - TRAVIS_DIST_NAME="win"
+#    - name: "Windows JDK13"
+#      os: windows
+#      env:
+#        - JDK="openjdk@1.13"
+#        - TRAVIS_DIST_NAME="win"
 env:
   global:
     # Convenience variables for shortening commands
