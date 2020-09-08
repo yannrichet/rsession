@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.math.R.StartRserve.checkLocalRserve;
 import org.rosuda.REngine.Rserve.RConnection;
-import org.rosuda.REngine.Rserve.RserveException;
 
 /**
  *
