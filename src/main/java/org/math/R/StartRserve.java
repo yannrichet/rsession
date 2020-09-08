@@ -683,7 +683,7 @@ public class StartRserve {
         return ps;
     }
 
-    /*public static Socket acceptTimeout(ServerSocket s) throws IOException {
+    public static Socket acceptTimeout(ServerSocket s) throws IOException {
         if (RserveDaemon.isMacOSX()) {
             try {
                 TimeOut t = new RserverConf.TimeOut() {
@@ -714,7 +714,7 @@ public class StartRserve {
         }
 
         return s.accept();
-    }*/
+    }
 
     final static Object lockPort = new Object();
 
@@ -732,7 +732,7 @@ public class StartRserve {
                 @Override
                 public void run() {
                     try {
-                        Socket s = sss.accept(); //acceptTimeout(sss);
+                        Socket s = acceptTimeout(sss);
                         //s.setReuseAddress(false);
                         s.setKeepAlive(true);
                         s.setSoTimeout(5000);
