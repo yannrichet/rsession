@@ -115,7 +115,10 @@ public class StartRserve {
                     KillAll("Rserve.exe");
                     KillAll("Rserve_d.exe");
                 }
-                FileUtils.forceDelete(dir);
+                int n=10;
+                while ((n--) > 0 && dir.isDirectory()){
+                    FileUtils.forceDelete(dir);
+                }
                 if (dir.isDirectory()) {
                     throw new IOException("Could not cleanup " + dir.getAbsolutePath() + " directory");
                 }
