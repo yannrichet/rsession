@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 import javax.imageio.IIOException;
 import org.codehaus.plexus.util.FileUtils;
 import static org.math.R.RserveDaemon.isWindows;
+import org.math.R.RserverConf.TimeOut;
+import org.math.R.RserverConf.TimeOut.TimeOutException;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -681,6 +683,39 @@ public class StartRserve {
         return ps;
     }
 
+    public static Socket acceptTimeout(ServerSocket s) throws IOException {
+        if (RserveDaemon.isMacOSX()) {
+            try {
+                TimeOut t = new RserverConf.TimeOut() {
+                    @Override
+                    protected Object defaultResult() {
+                        return (Socket) null;
+                    }
+
+                    @Override
+                    protected Object command() {
+                        try {
+                            return s.accept();
+                        } catch (IOException ex) {
+                            return ex;
+                        }
+                    }
+                };
+                t.execute(2000);
+                Object result = t.getResult();
+                if (result instanceof IOException) {
+                    throw new IOException(((IOException) result).getMessage());
+                } else {
+                    return (Socket) result;
+                }
+            } catch (TimeOutException e) {
+                throw new IOException(e.getMessage());
+            }
+        }
+
+        return s.accept();
+    }
+
     final static Object lockPort = new Object();
 
     // Returns an open socket to lock the port on system
@@ -697,7 +732,7 @@ public class StartRserve {
                 @Override
                 public void run() {
                     try {
-                        Socket s = sss.accept();
+                        Socket s = acceptTimeout(sss);
                         DataInputStream dis = new DataInputStream(s.getInputStream());
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
