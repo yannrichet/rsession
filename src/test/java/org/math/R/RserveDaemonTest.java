@@ -346,7 +346,7 @@ public class RserveDaemonTest {
     public void testLockPortAgainstRserve() throws InterruptedException {
         System.err.println("====================================== testLockPortAgainstRserve");
 
-        final int port = 7777;
+        final int port = 7654;
 
         System.err.println("--- Lock port " + port);
         ServerSocket lock = StartRserve.lockPort(port);
@@ -366,7 +366,6 @@ public class RserveDaemonTest {
         assert d != null : "No daemon";
         try {
             System.err.println("--- Try start Rserve (should fail)");
-
             d.start();
         } catch (Exception e) {
             assert true : "Did not reject Rserve on already locked port";
