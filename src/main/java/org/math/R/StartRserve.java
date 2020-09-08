@@ -115,8 +115,8 @@ public class StartRserve {
                     KillAll("Rserve.exe");
                     KillAll("Rserve_d.exe");
                 }
-                int n=10;
-                while ((n--) > 0 && dir.isDirectory()){
+                int n = 10;
+                while ((n--) > 0 && dir.isDirectory()) {
                     FileUtils.forceDelete(dir);
                 }
                 if (dir.isDirectory()) {
@@ -339,14 +339,15 @@ public class StartRserve {
         return false;
     }
 
-   static String[] splitCommand(String command) {
-            StringTokenizer st = new StringTokenizer(command);
+    static String[] splitCommand(String command) {
+        StringTokenizer st = new StringTokenizer(command);
         String[] cmdarray = new String[st.countTokens()];
-        for (int i = 0; st.hasMoreTokens(); i++)
+        for (int i = 0; st.hasMoreTokens(); i++) {
             cmdarray[i] = st.nextToken();
-    return cmdarray;
+        }
+        return cmdarray;
     }
-    
+
     /**
      * attempt to start Rserve. Note: parameters are <b>not</b> quoted, so avoid
      * using any quotes in arguments
@@ -527,7 +528,7 @@ public class StartRserve {
             throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
 
-        int pid_attempts = 50;       
+        int pid_attempts = 50;
         int pid = -1; // means "none"
         while (pid < 0 && pid_attempts > 0) {
             pid = diff(getRservePIDs(), last_pids);
@@ -541,7 +542,7 @@ public class StartRserve {
         if (pid == -1) {
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
-        Log.Out.println((pid_attempts<50?"\n":"")+"  With PID: " + pid);
+        Log.Out.println((pid_attempts < 50 ? "\n" : "") + "  With PID: " + pid);
 
         //}
         int connect_attempts = 30;
@@ -549,7 +550,7 @@ public class StartRserve {
             try {
                 try {
                     Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
-                } catch (InterruptedException ix) { 
+                } catch (InterruptedException ix) {
                 }
                 RConnection c = null;
                 int port = -1;
@@ -557,9 +558,9 @@ public class StartRserve {
                 if (rsrvargs.contains("--RS-port")) {
                     String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
                     port = Integer.parseInt(rsport);
-                     testconf = new RserverConf("localhost", port,null,null);
+                    testconf = new RserverConf("localhost", port, null, null);
                 } else {
-                     testconf = new RserverConf("localhost", -1,null,null);
+                    testconf = new RserverConf("localhost", -1, null, null);
                 }
                 c = testconf.connect();
                 if (c == null) {
@@ -568,7 +569,7 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
-                Log.Out.println((connect_attempts<30?"\n":"")+"  On port: " + testconf.port);
+                Log.Out.println((connect_attempts < 30 ? "\n" : "") + "  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
@@ -577,9 +578,9 @@ public class StartRserve {
                 }
                 c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + testconf.port + " (PID " + pid + ")");
-                Log.Err.println(">>>>>>>>>>>>>>>>> Rserve OK "+testconf.port + " (PID " + pid + ")");
+                Log.Err.println(">>>>>>>>>>>>>>>>> Rserve OK " + testconf.port + " (PID " + pid + ")");
                 c.close();
-                Log.Err.println(">>>>>>>>>>>>>>>>> close connection on "+testconf.port + " (PID " + pid + ")");
+                Log.Err.println(">>>>>>>>>>>>>>>>> close connection on " + testconf.port + " (PID " + pid + ")");
                 return new ProcessToKill(p, pid);
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
                 Log.Out.print("o");
@@ -616,7 +617,7 @@ public class StartRserve {
                 Process process = pb.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
-                while ((line = reader.readLine()) != null) { 
+                while ((line = reader.readLine()) != null) {
                     //Log.Out.print("\n> " + line);
                     if (line.startsWith("Rserve.exe") || line.startsWith("Rserve_d.exe")) {
                         String[] info = line.split("\\s+");
@@ -653,8 +654,8 @@ public class StartRserve {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("ps aux"));
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
-                System.err.println("process builder"+pb);
-                System.err.println("process "+process);
+                System.err.println("process builder" + pb);
+                System.err.println("process " + process);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -669,7 +670,9 @@ public class StartRserve {
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-        } else Log.Err.println("Cannot recognize OS: "+System.getProperty("os.name"));
+        } else {
+            Log.Err.println("Cannot recognize OS: " + System.getProperty("os.name"));
+        }
         Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
@@ -682,6 +685,7 @@ public class StartRserve {
 
     // Returns an open socket to lock the port on system
     public static ServerSocket lockPort(int p) {
+        Log.Err.println(">>>>>>>>>>>> lockPort " + p);
         // synchronized (lockPort) {
         //System.err.print("? " + p);
         ServerSocket ss = null;
@@ -698,9 +702,10 @@ public class StartRserve {
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
                             sss.close();
-                            throw new IOException();
+                            throw new IOException("Wrong port id!");
                         }
                     } catch (IOException ex) {
+                        Log.Err.println("Lock port " + p + " failed!");
                     }
                 }
             });
@@ -714,12 +719,16 @@ public class StartRserve {
             cs.close();
             t.join();
         } catch (BindException e) {
+            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
             return null;
         } catch (IOException e) {
+            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
             return null;
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException e) {
+            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
             return null;
         }
+        Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + !ss.isClosed());
         //System.err.println(" OK");
         return ss.isClosed() ? null : ss;
         //}
