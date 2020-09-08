@@ -244,6 +244,7 @@ public class RserveDaemonTest {
                         confs[i] = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null);// -1 will let Rdaemon find a free port to host Rserve
                         daemons[i] = new RserveDaemon(confs[i], new RLogPrintStream(System.out));
                         daemons[i].start();
+                        System.err.println("--- Rserve daemon " + i+" Started");
                         confs[i] = daemons[i].conf;
                     } catch (Exception e) {
                         assert false : e.getMessage();

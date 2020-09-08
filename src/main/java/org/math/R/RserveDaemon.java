@@ -316,6 +316,7 @@ public class RserveDaemon {
             }
             log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort",Level.WARNING);
         }
+        StartRserve.lockPort.notify();
     }
 
     // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
