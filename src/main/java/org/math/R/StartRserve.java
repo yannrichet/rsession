@@ -522,7 +522,7 @@ public class StartRserve {
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                 + "print(getwd()); "
-                + "\n    Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
+                + "\n     Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
         if (p == null) {
             throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
@@ -651,11 +651,13 @@ public class StartRserve {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("ps aux"));
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
+                System.err.println("process builder"+pb);
+                System.err.println("process "+process);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
-                        //Log.Out.print("\n> " + line);
+                        Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
@@ -666,7 +668,7 @@ public class StartRserve {
                 Log.Err.println(e.getMessage());
             }
         } else Log.Err.println("Cannot recognize OS: "+System.getProperty("os.name"));
-        //Log.Out.println("Rserve PIDS: " + pids);
+        Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);
