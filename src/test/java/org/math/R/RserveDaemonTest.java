@@ -255,6 +255,7 @@ public class RserveDaemonTest {
         }
 
         for (int i = 0; i < tests.length; i++) {
+            System.err.println("--- Wait Rserve daemon " + i);
             tests[i].join();
         }
 

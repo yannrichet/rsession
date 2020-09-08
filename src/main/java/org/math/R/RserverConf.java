@@ -96,31 +96,34 @@ public class RserverConf {
             }
 
             protected Object command() {
-                try {
-                    if (host == null) {
-                        if (port > 0) {
-                            connection = new RConnection(DEFAULT_RSERVE_HOST, port);
+                int n = 10;
+                while ((n--) > 0) {
+                    try {
+                        if (host == null) {
+                            if (port > 0) {
+                                connection = new RConnection(DEFAULT_RSERVE_HOST, port);
+                            } else {
+                                connection = new RConnection(DEFAULT_RSERVE_HOST, DEFAULT_RSERVE_PORT);
+                            }
+                            if (connection.needLogin()) {
+                                connection.login(login, password);
+                            }
                         } else {
-                            connection = new RConnection(DEFAULT_RSERVE_HOST, DEFAULT_RSERVE_PORT);
+                            if (port > 0) {
+                                connection = new RConnection(host, port);
+                            } else {
+                                connection = new RConnection(host);
+                            }
+                            if (connection.needLogin()) {
+                                connection.login(login, password);
+                            }
                         }
-                        if (connection.needLogin()) {
-                            connection.login(login, password);
-                        }
-                    } else {
-                        if (port > 0) {
-                            connection = new RConnection(host, port);
-                        } else {
-                            connection = new RConnection(host);
-                        }
-                        if (connection.needLogin()) {
-                            connection.login(login, password);
-                        }
+                        return 0;
+                    } catch (RserveException ex) {
+                        Log.Err.println("Failed to connect on host:" + host + " port:" + port + " login:" + login + "\n  " + ex.getMessage());
                     }
-                    return 0;
-                } catch (RserveException ex) {
-                    Log.Err.println("Failed to connect on host:" + host + " port:" + port + " login:" + login + "\n  " + ex.getMessage());
-                    return -1;
                 }
+                return -1;
             }
         };
 

@@ -541,7 +541,7 @@ public class StartRserve {
         if (pid == -1) {
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
-        Log.Out.println("  With PID: " + pid);
+        Log.Out.println((pid_attempts<50?"\n":"")+"  With PID: " + pid);
 
         //}
         int connect_attempts = 30;
@@ -568,7 +568,7 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
-                Log.Out.println("  On port: " + testconf.port);
+                Log.Out.println((connect_attempts<30?"\n":"")+"  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
