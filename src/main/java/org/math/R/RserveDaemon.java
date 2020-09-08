@@ -290,6 +290,8 @@ public class RserveDaemon {
         StringBuffer RserveArgs = new StringBuffer("--vanilla --RS-enable-control");
         ServerSocket lock = null;
         synchronized (StartRserve.lockPort) {
+                        log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort",Level.WARNING);
+
             if (conf.port < 0) {
                 int rserverPort = RserverConf.DEFAULT_RSERVE_PORT;
                 if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
@@ -312,6 +314,7 @@ public class RserveDaemon {
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
             }
+            log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort",Level.WARNING);
         }
     }
 

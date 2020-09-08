@@ -577,11 +577,13 @@ public class StartRserve {
                 }
                 c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + testconf.port + " (PID " + pid + ")");
+                Log.Err.println(">>>>>>>>>>>>>>>>> Rserve OK "+testconf.port + " (PID " + pid + ")");
                 c.close();
+                Log.Err.println(">>>>>>>>>>>>>>>>> close connection on "+testconf.port + " (PID " + pid + ")");
                 return new ProcessToKill(p, pid);
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
                 Log.Out.print("o");
-                //e2.printStackTrace();
+                e2.printStackTrace();
             }
             connect_attempts--;
         }
