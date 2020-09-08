@@ -106,12 +106,12 @@ public class StartRserve {
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
             File desc = new File(dir, "DESCRIPTION");
-            if (desc.isFile()) {
+            if (desc.isFile() && org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5")) {
                 return true;
             } else {
                 Log.Err.println("Seems Rserve is not well installed. Force remove!");
                 if (RserveDaemon.isWindows()) {
-                    Log.Err.println("  OS:Windows, so try kill Rserve.exe:");
+                    Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
                     KillAll("Rserve.exe");
                     KillAll("Rserve_d.exe");
                 }
@@ -234,8 +234,8 @@ public class StartRserve {
      * @return success
      */
     public static boolean installCustomRserve(String Rcmd) throws InterruptedException, IOException {
-        if (new File(RserveDaemon.app_dir(), "Rserve").isDirectory()) {
-            Log.Out.println("Already installed Rserve. (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
+        if (isRserveInstalled(Rcmd)) {
+            Log.Out.println("Rserve already installed (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
             return true;
         }
 
@@ -359,7 +359,7 @@ public class StartRserve {
         Process p = null;
         try {
             String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-            Log.Out.println("R> " + command);
+            Log.Out.println("  R> " + command);
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
                 if (redirect == null) {
@@ -489,7 +489,7 @@ public class StartRserve {
      */
     public static ProcessToKill launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) throws IOException {
         Log.Out.println("Will launch Rserve (" + cmd + " " + rargs + ")");
-        Log.Out.println("  From lib directory: " + RserveDaemon.app_dir() + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
+        Log.Out.println("  From lib directory: " + RserveDaemon.app_dir());// + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
         Log.Out.println("  In working directory: " + wd.getAbsolutePath());
         try {
@@ -519,10 +519,8 @@ public class StartRserve {
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                 + "print(getwd()); "
-                + "\n   Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
-        if (p != null) {
-            Log.Out.print("  Rserve startup done.");
-        } else {
+                + "\n    Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
+        if (p == null) {
             throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
 
@@ -533,7 +531,6 @@ public class StartRserve {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ix) {
-                ix.printStackTrace();
             }
             Log.Out.print(".");
             pid_attempts--;
@@ -541,6 +538,7 @@ public class StartRserve {
         if (pid == -1) {
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
         }
+        Log.Out.println("  With PID: " + pid);
 
         //}
         int connect_attempts = 30;
@@ -549,7 +547,6 @@ public class StartRserve {
                 try {
                     Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
                 } catch (InterruptedException ix) { 
-                    ix.printStackTrace();
                 }
                 RConnection c = null;
                 int port = -1;
@@ -568,14 +565,15 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
+                Log.Out.println("  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
                     Kill(pid);
-                    throw new IOException("Rserve was already running on port " + port + " with PID " + previous_pid);
+                    throw new IOException("Rserve was already running on port " + port + " with previous PID " + previous_pid);
                 }
                 c.voidEval(".RSERVE_PID <- " + pid);
-                Log.Out.println("Rserve is well running on port " + port + " (PID " + pid + ")");
+                Log.Out.println("Rserve is well running on port " + testconf.port + " (PID " + pid + ")");
                 c.close();
                 return new ProcessToKill(p, pid);
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
@@ -664,8 +662,8 @@ public class StartRserve {
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
-        } else Log.Err.println("Cannot get OS");
-        Log.Out.println("Rserve PIDS: " + pids);
+        } else Log.Err.println("Cannot recognize OS: "+System.getProperty("os.name"));
+        //Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);

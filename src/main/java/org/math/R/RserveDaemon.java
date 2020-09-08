@@ -197,7 +197,7 @@ public class RserveDaemon {
             log.log("R daemon " + conf + " already stopped.", Level.INFO);
             return;
         }
-        log.log("stopping R daemon... " + conf, Level.INFO);
+        log.log("Stopping R daemon... " + conf, Level.INFO);
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Not authorized to stop a remote R daemon: " + conf.toString());
         }
@@ -205,14 +205,14 @@ public class RserveDaemon {
         try {
             RConnection s = conf.connection;//connect();
             if (s == null || !s.isConnected()) {
-                log.log("R daemon connection already closed.", Level.INFO);
+                //log.log("R daemon connection already closed.", Level.INFO);
                 s = conf.connect();
             }
             if (s != null && s.isConnected()) {
                 try {
                     s.serverShutdown();
                 } catch (RserveException ex) {
-                    log.log("Could not shutdown server", Level.WARNING);
+                    log.log("Could not remotely shutdown server", Level.WARNING);
                 }
                 s.shutdown();
                 if (rserve.process != null && rserve.process.isAlive()) {
@@ -224,7 +224,7 @@ public class RserveDaemon {
                 log.log("Could not connect Rserve to shutdown", Level.WARNING);
             }
         } catch (Exception ex) {
-            log.log("Failed to connect Rserve to shutdown", Level.ERROR);
+            log.log("Failed to connect Rserve to shutdown", Level.WARNING);
         }
 
         try {
@@ -240,17 +240,16 @@ public class RserveDaemon {
                 if (in) {
                     rserve.kill();
                 } else {
-                    log.log("Rserve PID not alive.", Level.INFO);
+                    log.log("Rserve PID not active.", Level.INFO);
                 }
             } else {
-                log.log("No Rserve PID to kill.", Level.WARNING);
+                log.log("No Rserve PID.", Level.WARNING);
             }
         } catch (Exception ex) {
-            log.log("Could not kill Rserve process: " + ex.getMessage(), Level.WARNING);
+            log.log("Could not kill Rserve process: " + ex.getMessage(), Level.ERROR);
         }
 
         stopped = true;
-        log.log("R daemon stopped.", Level.INFO);
     }
 
     public StartRserve.ProcessToKill rserve;
@@ -309,7 +308,7 @@ public class RserveDaemon {
                 rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
                         "--vanilla",
                         RserveArgs.toString(), false, lock);
-                log.log("  R daemon started.", Level.INFO);
+                log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
             }
