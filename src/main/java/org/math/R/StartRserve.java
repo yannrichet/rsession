@@ -656,13 +656,11 @@ public class StartRserve {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("ps aux"));
                 pb.redirectErrorStream(true);
                 Process process = pb.start();
-                System.err.println("process builder" + pb);
-                System.err.println("process " + process);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
-                        Log.Out.print("\n> " + line);
+                        //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         int pid = Integer.parseInt(info[1]);
                         pids.add(pid);
@@ -675,7 +673,7 @@ public class StartRserve {
         } else {
             Log.Err.println("Cannot recognize OS: " + System.getProperty("os.name"));
         }
-        Log.Out.println("Rserve PIDS: " + pids);
+        //Log.Out.println("Rserve PIDS: " + pids);
         int[] ps = new int[pids.size()];
         for (int i = 0; i < pids.size(); i++) {
             ps[i] = pids.get(i);
@@ -683,7 +681,7 @@ public class StartRserve {
         return ps;
     }
 
-    public static Socket acceptTimeout(ServerSocket s) throws IOException {
+    /*public static Socket acceptTimeout(ServerSocket s) throws IOException {
         if (RserveDaemon.isMacOSX()) {
             try {
                 TimeOut t = new RserverConf.TimeOut() {
@@ -714,9 +712,9 @@ public class StartRserve {
         }
 
         return s.accept();
-    }
-
+    }*/
     final static Object lockPort = new Object();
+    static volatile boolean locking = false;
 
     // Returns an open socket to lock the port on system
     public static ServerSocket lockPort(int p) {
@@ -725,6 +723,7 @@ public class StartRserve {
         //System.err.print("? " + p);
         ServerSocket ss = null;
         final String id = "" + Math.random();
+        boolean w = false;
         try {
             final ServerSocket sss = new ServerSocket(p);
             ss = sss;
@@ -732,10 +731,8 @@ public class StartRserve {
                 @Override
                 public void run() {
                     try {
-                        Socket s = acceptTimeout(sss);
-                        //s.setReuseAddress(false);
-                        s.setKeepAlive(true);
-                        s.setSoTimeout(5000);
+                        locking = true;
+                        Socket s = sss.accept(); //acceptTimeout(sss);
                         DataInputStream dis = new DataInputStream(s.getInputStream());
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
@@ -743,11 +740,24 @@ public class StartRserve {
                             throw new IOException("Wrong port id!");
                         }
                     } catch (IOException ex) {
-                        Log.Err.println("Lock port " + p + " failed!");
+                        Log.Err.println("Lock port " + p + " failed: " + ex.getMessage());
                     }
                 }
             });
             t.start();
+
+            int n = 50;
+            while ((n--) > 0) {
+                if (locking) {
+                    break;
+                }
+                Thread.sleep(100);
+                Log.Err.print("x");
+            }
+            if (!locking) {
+                throw new IOException("Did not start ServerSocket on port " + p);
+            }
+            locking = false;
 
             Socket cs = new Socket("localhost", p);
             DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
