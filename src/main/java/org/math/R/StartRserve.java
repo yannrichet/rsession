@@ -161,7 +161,7 @@ public class StartRserve {
             }
             attempts--;
         }
-        throw new IOException("Cannot check if Rserve is installed: " + result.replaceAll("^", "  | "));*/
+        throw new IOException("Cannot check if Rserve is installed: " + result.replaceAll("\n", "\n  | "));*/
     }
 
     /**
@@ -202,14 +202,14 @@ public class StartRserve {
                 Log.Out.print(" true ");
                 break;
             } else if (result.contains("FAILED") || result.contains("Error")) {
-                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("^", "  | "));
+                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
                 return false;
             }
             attempts--;
         }
         // If non english setup, it should be ignored... So just use isRserveInstalled instead
         //if (attempts <= 0) {
-        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("^", "  | "));
+        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("\n", "\n  | "));
         //}
 
         int n = 10;
@@ -311,14 +311,14 @@ public class StartRserve {
                 Log.Out.print(" true ");
                 break; //return true;
             } else if (result.contains("FAILED") || result.contains("Error")) {
-                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("^", "  | "));
+                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
                 return false;
             }
             attempts--;
         }
         // If non english setup, it should be ignored... So just use isRserveInstalled instead
         //if (attempts <= 0) {
-        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("^", "  | "));
+        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("\n", "\n  | "));
         //}
 
         int n = 10;
@@ -362,7 +362,7 @@ public class StartRserve {
         Process p = null;
         try {
             String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-            Log.Out.println("  R> " + command);
+            Log.Out.println("  R> " + todo);
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
                 if (redirect == null) {
@@ -524,7 +524,7 @@ public class StartRserve {
                 + "print(getwd()); "
                 + "\n    Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
         if (p == null) {
-            throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
+            throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
 
         int pid_attempts = 50;       
@@ -539,7 +539,7 @@ public class StartRserve {
             pid_attempts--;
         }
         if (pid == -1) {
-            throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
+            throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
         Log.Out.println("  With PID: " + pid);
 
@@ -585,7 +585,7 @@ public class StartRserve {
             }
             connect_attempts--;
         }
-        throw new IOException("Failed to launch Rserve:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("^", "  | "));
+        throw new IOException("Failed to launch Rserve:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
     }
 
     // find new elements in news, regarding previous
