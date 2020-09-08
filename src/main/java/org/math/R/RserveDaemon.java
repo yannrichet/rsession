@@ -296,8 +296,8 @@ public class RserveDaemon {
             while (starting) {
                 launchRserveLock.wait();
             }
-            
-starting = true;
+
+            starting = true;
 
             log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort", Level.WARNING);
 
@@ -322,11 +322,12 @@ starting = true;
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
-            }
-            log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort", Level.WARNING);
+            } finally {
+                log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort", Level.WARNING);
 
-            starting = false;
-            launchRserveLock.notify();
+                starting = false;
+                launchRserveLock.notify();
+            }
         }
     }
 
