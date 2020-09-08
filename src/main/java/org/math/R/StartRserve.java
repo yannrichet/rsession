@@ -727,7 +727,9 @@ public class StartRserve {
                 public void run() {
                     try {
                         locking = true;
+                        Log.Err.println("Listening Socket on port " + p + " will accept...");
                         Socket s = sss.accept(); //acceptTimeout(sss);
+                        Log.Err.println("Listening Socket on port " + p + " accepted !");
                         DataInputStream dis = new DataInputStream(s.getInputStream());
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
@@ -754,7 +756,9 @@ public class StartRserve {
             }
             locking = false;
 
+            Log.Err.println("Writing Socket on port " + p + " will be created...");
             Socket cs = new Socket("localhost", p);
+            Log.Err.println("Writing Socket on port " + p + " created!");
             DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
             dout.writeUTF(id);
             dout.flush();
