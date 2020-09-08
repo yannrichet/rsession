@@ -296,6 +296,8 @@ public class RserveDaemon {
             while (starting) {
                 launchRserveLock.wait();
             }
+            
+starting = true;
 
             log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort", Level.WARNING);
 

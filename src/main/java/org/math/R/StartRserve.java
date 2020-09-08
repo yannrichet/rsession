@@ -711,14 +711,11 @@ public class StartRserve {
 
         return s.accept();
     }*/
-
     static volatile boolean locking = false;
 
     // Returns an open socket to lock the port on system
     public static ServerSocket lockPort(int p) {
         Log.Err.println(">>>>>>>>>>>> lockPort " + p);
-        // synchronized (lockPort) {
-        //System.err.print("? " + p);
         ServerSocket ss = null;
         final String id = "" + Math.random();
         boolean w = false;
