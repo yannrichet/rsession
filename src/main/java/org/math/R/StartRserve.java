@@ -479,8 +479,6 @@ public class StartRserve {
         }
     }
 
-    final static Object lockRserveLauncher = new Object();
-
     /**
      * attempt to start Rserve.Note: parameters are <b>not</b> quoted, so avoid
      * using any quotes in arguments
@@ -713,7 +711,7 @@ public class StartRserve {
 
         return s.accept();
     }*/
-    final static Object lockPort = new Object();
+
     static volatile boolean locking = false;
 
     // Returns an open socket to lock the port on system

@@ -251,9 +251,13 @@ public class RserveDaemon {
 
         stopped = true;
     }
+    String RserveArgs = "--vanilla --RS-enable-control";
 
     public StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = false;
+
+    static boolean starting = false;
+    final static Object launchRserveLock = new Object();
 
     public void start() throws Exception {
         if (R_HOME == null || !(new File(R_HOME).exists())) {
@@ -287,36 +291,41 @@ public class RserveDaemon {
             //log.log("                           ...yes", Level.INFO);
         }
 
-        StringBuffer RserveArgs = new StringBuffer("--vanilla --RS-enable-control");
-        ServerSocket lock = null;
-        synchronized (StartRserve.lockPort) {
-                        log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort",Level.WARNING);
+        ServerSocket portLocker = null;
+        synchronized (launchRserveLock) {
+            while (starting) {
+                launchRserveLock.wait();
+            }
+
+            log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort", Level.WARNING);
 
             if (conf.port < 0) {
                 int rserverPort = RserverConf.DEFAULT_RSERVE_PORT;
                 if (RserveDaemon.isWindows() || !UNIX_OPTIMIZE) {
-                    while (lock == null) {
+                    while (portLocker == null) {
                         rserverPort++;
-                        lock = StartRserve.lockPort(rserverPort);
+                        portLocker = StartRserve.lockPort(rserverPort);
                     }
                 }
                 conf.port = rserverPort;
             }
-            RserveArgs.append(" --RS-port " + conf.port);
+            RserveArgs += " --RS-port " + conf.port;
 
             log.log("Starting R daemon... " + conf, Level.INFO);
 
             try {
                 rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
                         "--vanilla",
-                        RserveArgs.toString(), false, lock);
+                        RserveArgs.toString(), false, portLocker);
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
             }
-            log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort",Level.WARNING);
+            log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort", Level.WARNING);
+
+            starting = false;
+            launchRserveLock.notify();
         }
-        StartRserve.lockPort.notify();
     }
 
     // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
