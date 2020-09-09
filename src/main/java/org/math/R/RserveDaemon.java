@@ -294,13 +294,10 @@ public class RserveDaemon {
         ServerSocket portLocker = null;
         synchronized (launchRserveLock) {
             while (starting) {
-                log.log(">>>>>>>>>>>>>>>>>>>>>>> already starting...", Level.WARNING);
-                launchRserveLock.wait(1000);
+                launchRserveLock.wait();
             }
-            log.log(">>>>>>>>>>>>>>>>>>>>>>> starting!", Level.WARNING);
             starting = true;
 
-            log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort", Level.WARNING);
             try {
                 if (conf.port < 0) {
                     int rserverPort = RserverConf.DEFAULT_RSERVE_PORT;
@@ -313,8 +310,6 @@ public class RserveDaemon {
                     conf.port = rserverPort;
                 } else {
                     portLocker = StartRserve.lockPort(conf.port);
-                    log.log(">>>>>>>>>>>>>>>>>>>>>>> portLocker " + portLocker, Level.WARNING);
-
                     if (portLocker == null) {
                         throw new Exception("R daemon could not lock port " + conf.port);
                     }
@@ -330,7 +325,6 @@ public class RserveDaemon {
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
             } finally {
-                log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort", Level.WARNING);
                 starting = false;
                 launchRserveLock.notify();
             }

@@ -536,13 +536,13 @@ public class StartRserve {
                 Thread.sleep(100);
             } catch (InterruptedException ix) {
             }
-            Log.Out.print(".");
+            //Log.Out.print(".");
             pid_attempts--;
         }
         if (pid == -1) {
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
-        Log.Out.println((pid_attempts < 50 ? "\n" : "") + "  With PID: " + pid);
+        Log.Out.println("  With PID: " + pid);
 
         //}
         int connect_attempts = 30;
@@ -569,7 +569,7 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
-                Log.Out.println((connect_attempts < 30 ? "\n" : "") + "  On port: " + testconf.port);
+                Log.Out.println("  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
@@ -578,13 +578,10 @@ public class StartRserve {
                 }
                 c.voidEval(".RSERVE_PID <- " + pid);
                 Log.Out.println("Rserve is well running on port " + testconf.port + " (PID " + pid + ")");
-                Log.Err.println(">>>>>>>>>>>>>>>>> Rserve OK " + testconf.port + " (PID " + pid + ")");
                 c.close();
-                Log.Err.println(">>>>>>>>>>>>>>>>> close connection on " + testconf.port + " (PID " + pid + ")");
                 return new ProcessToKill(p, pid);
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
-                Log.Out.print("o");
-                e2.printStackTrace();
+                //Log.Out.print("o");
             }
             connect_attempts--;
         }
@@ -679,43 +676,10 @@ public class StartRserve {
         return ps;
     }
 
-    /*public static Socket acceptTimeout(ServerSocket s) throws IOException {
-        if (RserveDaemon.isMacOSX()) {
-            try {
-                TimeOut t = new RserverConf.TimeOut() {
-                    @Override
-                    protected Object defaultResult() {
-                        return (Socket) null;
-                    }
-
-                    @Override
-                    protected Object command() {
-                        try {
-                            return s.accept();
-                        } catch (IOException ex) {
-                            return ex;
-                        }
-                    }
-                };
-                t.execute(2000);
-                Object result = t.getResult();
-                if (result instanceof IOException) {
-                    throw new IOException(((IOException) result).getMessage());
-                } else {
-                    return (Socket) result;
-                }
-            } catch (TimeOutException e) {
-                throw new IOException(e.getMessage());
-            }
-        }
-
-        return s.accept();
-    }*/
     static volatile boolean locking = false;
 
     // Returns an open socket to lock the port on system
     public static ServerSocket lockPort(int p) {
-        Log.Err.println(">>>>>>>>>>>> lockPort " + p);
         ServerSocket ss = null;
         final String id = "" + Math.random();
         DataOutputStream dout = null;
@@ -729,9 +693,7 @@ public class StartRserve {
                 public void run() {
                     try {
                         locking = true;
-                        Log.Err.println("Listening Socket on port " + p + " will accept...");
-                        Socket s = sss.accept(); //acceptTimeout(sss);
-                        Log.Err.println("Listening Socket on port " + p + " accepted !");
+                        Socket s = sss.accept();
                         DataInputStream dis = new DataInputStream(s.getInputStream());
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
@@ -751,27 +713,23 @@ public class StartRserve {
             int n = 50;
             while ((n--) > 0 && !locking) {
                 Thread.sleep(100);
-                Log.Err.print("x");
+                //Log.Err.print("x");
             }
             if (!locking) {
                 throw new IOException("Did not start ServerSocket on port " + p);
             }
             locking = false;
 
-            Log.Err.println("Writing Socket on port " + p + " will be created...");
             cs = new Socket("localhost", p);
-            Log.Err.println("Writing Socket on port " + p + " created!");
             dout = new DataOutputStream(cs.getOutputStream());
             dout.writeUTF(id);
             dout.flush();
             t.join();
         } catch (IOException | InterruptedException e) {
-            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
             if (ss != null) {
                 try {
                     ss.close();
                 } catch (IOException ex) {
-                    ex.printStackTrace();
                 }
             }
             return null;
@@ -780,21 +738,16 @@ public class StartRserve {
                 try {
                     dout.close();
                 } catch (IOException ex) {
-                    ex.printStackTrace();
                 }
             }
             if (cs != null) {
                 try {
                     cs.close();
                 } catch (IOException ex) {
-                    ex.printStackTrace();
                 }
             }
         }
-        Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + !ss.isClosed());
-        //System.err.println(" OK");
         return ss.isClosed() ? null : ss;
-        //}
     }
 
     /**
