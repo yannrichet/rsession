@@ -62,27 +62,45 @@ env:
     # Convenience variables for shortening commands
     - GRAVIS_REPO="https://github.com/DanySK/Gravis-CI.git"
     - GRAVIS="$HOME/gravis"
+    
 before_install:
   # Check out the script set
   - travis_retry git clone --depth 1 $GRAVIS_REPO $GRAVIS
   - source $GRAVIS/install-jdk
   - source $GRAVIS/install-maven
-before_script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install xvfb -y; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export DISPLAY=:99.0; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 ; sleep 3; fi
-  - if [[ "$TRAVIS_DIST_NAME" == "xenial" ]]; then echo "deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/" | sudo tee -a /etc/apt/sources.list; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq --allow-unauthenticated; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install r-recommended ant --allow-unauthenticated -y; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export HOMEBREW_NO_AUTO_UPDATE=1; wd=$PWD; cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git reset --hard c3a244c627e; git checkout -b r-3.6.3; cd $wd; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install r; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install -y r --version 3.6; fi
 install: mvn install -DskipTests=true -Dgpg.skip=true
+
+before_script:
+  - >
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then 
+    sudo apt-get install xvfb -y;
+    export DISPLAY=:99.0;
+    sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 ;
+    sleep 3;
+    if [[ "$TRAVIS_DIST_NAME" == "xenial" ]]; then 
+    echo "deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/" | sudo tee -a /etc/apt/sources.list;
+    fi
+    sudo apt-get update -qq --allow-unauthenticated;
+    sudo apt-get install r-recommended ant --allow-unauthenticated -y;
+    fi
+  - >
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then 
+    export HOMEBREW_NO_AUTO_UPDATE=1; 
+    wd=$PWD; 
+    cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git reset --hard c3a244c627e; git checkout -b r-3.6.3; 
+    cd $wd; 
+    brew install r; 
+    fi
+  - >
+    if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 
+    choco install -y r --version 3.6; 
+    fi
 script:
   # preliminary test Rserve, that should fail quickly if R is not well installed
   #- mvn -Dtest=org.math.R.RserveDaemonTest test
   #- mvn -Dtest=org.math.R.RserveSessionTest test
   - mvn clean test
+  
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 #after_failure:
