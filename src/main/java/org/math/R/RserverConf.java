@@ -20,7 +20,7 @@ public class RserverConf {
         this.login = login;
         this.password = password;
     }
-    public static long CONNECT_TIMEOUT = 2000;
+    public static long CONNECT_TIMEOUT = 5000;
 
     public static abstract class TimeOut {
 

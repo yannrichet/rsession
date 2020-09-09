@@ -11,7 +11,7 @@ The back-end engine should be:
 
  * "true" R (3.5 & 3.6), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
  * Renjin 3.5 (lower compatibility, but still very good),
- * and R2js, which is an on-the-fly translation to math.js, with lowest compatibility and hack-style coding, but full BSD licence.
+ * and R2js, which is on-the-fly R translation to math.js, with lowest compatibility and hack-style coding, but full BSD licence.
 
 Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. It is also easier to use as it provides a multi session R engine for all these wrappers.
 
@@ -23,7 +23,9 @@ import static org.math.R.*;
 ...
  
     public static void main(String args[]) {
-        Rsession r = RserveSession.newInstanceTry(System.out, null);
+        //Rsession r = new RserveSession(System.out, null, null);
+        //Rsession r = new R2jsSession(System.out, null);
+        Rsession r = new RenjinSession(System.out, null);
 
         double[] rand = (double[]) r.eval("rnorm(10)"); //create java variable from R command
 
@@ -95,15 +97,15 @@ Install R 3.5 or 3.6 from http://cran.r-project.org, then add `rsession.jar:Rser
 Then:
   * start Rserve on localhost `/usr/bin/R CMD /usr/lib/R/library/Rserve/libs/Rserve --vanilla --RS-enable-control --RS-port 6311`, and instanciate R session using:
       ```java
-      Rsession r = RserveSession.newLocalInstance(System.out,null); 
+      Rsession r = new RserveSession(System.out,null,RserverConf.parse("R://localhost:6311")); 
       ```
   * or use the auto-spawned Rserve (may fail for exotic configuration):
       ```java
-      Rsession r = RserveSession.newInstanceTry(System.out,null);
+      Rsession r = new RserveSession(System.out,null,null);
       ```
   * connect to remote Rserve (eg. previously started on 192.168.1.1 with `/usr/bin/R CMD /usr/lib/R/library/Rserve/libs/Rserve --vanilla --RS-enable-control --RS-port 6311`:
       ```java
-      Rsession r = RserveSession.newRemoteInstance(System.out,RserverConf.parse("R://192.168.1.1"));
+      Rsession r = new RserveSession(System.out,null,RserverConf.parse("R://192.168.1.1:6311"));
       ```
 
 
@@ -118,7 +120,7 @@ Alternatively to setup classpath manually, just use maven:
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.0.8</version>
+      <version>3.1.0</version>
     </dependency>
 ...
 </dependencies>
