@@ -721,6 +721,7 @@ public class StartRserve {
         boolean w = false;
         try {
             final ServerSocket sss = new ServerSocket(p);
+            sss.setSoTimeout(5000);
             ss = sss;
             Thread t = new Thread(new Runnable() {
                 @Override
