@@ -73,6 +73,96 @@ public class RserveSession extends Rsession implements RLog {
     // </editor-fold>
 
     /**
+     * Build a new local Rsession
+     *
+     * @param console PrintStream for R output
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newLocalInstance(final RLog console, Properties localRProperties) {
+        return new RserveSession(console, localRProperties, null);
+    }
+
+    /**
+     * Build a new remote Rsession
+     *
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newRemoteInstance(final RLog console, RserverConf serverconf) {
+        return new RserveSession(console, null, serverconf);
+    }
+
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
+     * @param console PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newInstanceTry(final RLog console, RserverConf serverconf) {
+        try {
+            RConnection c = serverconf.connect();
+            Log.Out.println("Rserve is available on " + serverconf);
+            c.close();
+        } catch (Exception e) {
+            Log.Err.println("Rserve is not available on " + serverconf + ". Trying to spawn a new one");
+            serverconf = null;
+        }
+        return new RserveSession(console, null, serverconf);
+    }
+
+    /**
+     * Build a new local Rsession
+     *
+     * @param pconsole PrintStream for R output
+     * @param localRProperties properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newLocalInstance(PrintStream pconsole, Properties localRProperties) {
+        return new RserveSession(pconsole, localRProperties, null);
+    }
+
+    /**
+     * Build a new remote Rsession
+     *
+     * @param pconsole PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy or R
+     * libpath)
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newRemoteInstance(PrintStream pconsole, RserverConf serverconf) {
+        return new RserveSession(pconsole, null, serverconf);
+    }
+
+    /**
+     * Build a new Rsession. Fork to local spawned Rsession if given remote one
+     * failed to initialized.
+     *
+     * @param pconsole PrintStream for R output
+     * @param serverconf RserverConf server configuration object, giving IP,
+     * port, login, password, properties to pass to R (eg http_proxy)
+     * @return RserveSession instanciated
+     * @deprecated Use new RserveSession standard constructor instead
+     */
+    public static RserveSession newInstanceTry(PrintStream pconsole, RserverConf serverconf) {
+        return new RserveSession(pconsole, null, serverconf);
+    }
+
+    /**
      * create a new Rsession.
      *
      * @param console PrintStream for R output
@@ -211,7 +301,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return succeeded ?
      */
     @Override
-    protected boolean silentlyVoidEval(String expression, boolean tryEval) {
+    protected synchronized boolean silentlyVoidEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
@@ -227,61 +317,61 @@ public class RserveSession extends Rsession implements RLog {
             b.eval(expression);
         }
         REXP e = null;
-        synchronized (R) {
-            try {
-                if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
-                    R.eval("sink(.f,type='output')");
-                }
-                if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
-                    R.eval("sink(.fm,type='message')");
-                }
-                if (tryEval) {
-                    e = R.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
-                } else {
-                    e = R.parseAndEval(expression);
-                }
-            } catch (Exception ex) {
-                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-                return false;
-            } finally {
-                if (SINK_OUTPUT) {
+        //synchronized (R) {
+        try {
+            if (SINK_OUTPUT) {
+                R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
+                R.eval("sink(.f,type='output')");
+            }
+            if (SINK_MESSAGE) {
+                R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
+                R.eval("sink(.fm,type='message')");
+            }
+            if (tryEval) {
+                e = R.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
+            } else {
+                e = R.parseAndEval(expression);
+            }
+        } catch (Exception ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            return false;
+        } finally {
+            if (SINK_OUTPUT) {
+                try {
+                    R.parseAndEval("sink(type='output')");
+                    lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
+                    log(lastOuput, Level.OUTPUT);
+                } catch (Exception ex) {
+                    lastOuput = ex.getMessage();
+                    log(lastOuput, Level.WARNING);
+                } finally {
                     try {
-                        R.parseAndEval("sink(type='output')");
-                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
-                        log(lastOuput, Level.OUTPUT);
+                        R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
+                        R.parseAndEval("unlink('" + (SINK_FILE) + "')");
                     } catch (Exception ex) {
-                        lastOuput = ex.getMessage();
-                        log(lastOuput, Level.WARNING);
-                    } finally {
-                        try {
-                            R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + (SINK_FILE) + "')");
-                        } catch (Exception ex) {
-                            log(ex.getMessage(), Level.ERROR);
-                        }
+                        log(ex.getMessage(), Level.ERROR);
                     }
                 }
-                if (SINK_MESSAGE) {
+            }
+            if (SINK_MESSAGE) {
+                try {
+                    R.parseAndEval("sink(type='message')");
+                    lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
+                    log(lastMessage, Level.INFO);
+                } catch (Exception ex) {
+                    lastMessage = ex.getMessage();
+                    log(lastMessage, Level.WARNING);
+                } finally {
                     try {
-                        R.parseAndEval("sink(type='message')");
-                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
-                        log(lastMessage, Level.INFO);
+                        R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
+                        R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
                     } catch (Exception ex) {
-                        lastMessage = ex.getMessage();
-                        log(lastMessage, Level.WARNING);
-                    } finally {
-                        try {
-                            R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
-                        } catch (Exception ex) {
-                            log(ex.getMessage(), Level.ERROR);
-                        }
+                        log(ex.getMessage(), Level.ERROR);
                     }
                 }
             }
         }
+        //}
 
         if (tryEval && e != null) {
             try {
@@ -305,7 +395,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return REXP R expression
      */
     @Override
-    protected Object silentlyRawEval(String expression, boolean tryEval) {
+    protected synchronized Object silentlyRawEval(String expression, boolean tryEval) {
         //assert connected : "R environment not initialized.";
         if (!connected) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
@@ -321,61 +411,61 @@ public class RserveSession extends Rsession implements RLog {
             b.eval(expression);
         }
         Object e = null;
-        synchronized (R) {
-            try {
-                if (SINK_OUTPUT) {
-                    R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
-                    R.eval("sink(.f,type='output')");
-                }
-                if (SINK_MESSAGE) {
-                    R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
-                    R.eval("sink(.fm,type='message')");
-                }
-                if (tryEval) {
-                    e = R.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
-                } else {
-                    e = R.parseAndEval(expression);
-                }
-            } catch (Exception ex) {
-                log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
-                return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
-            } finally {
-                if (SINK_OUTPUT) {
+        //synchronized (R) {
+        try {
+            if (SINK_OUTPUT) {
+                R.eval(".f <- file('" + (SINK_FILE) + "',open='wt')");
+                R.eval("sink(.f,type='output')");
+            }
+            if (SINK_MESSAGE) {
+                R.eval(".fm <- file('" + (SINK_FILE) + ".m',open='wt')");
+                R.eval("sink(.fm,type='message')");
+            }
+            if (tryEval) {
+                e = R.parseAndEval("try(eval(parse(text='" + expression.replace("'", "\\'") + "')),silent=FALSE)");
+            } else {
+                e = R.parseAndEval(expression);
+            }
+        } catch (Exception ex) {
+            log(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression, Level.ERROR);
+            return new RException(HEAD_EXCEPTION + ex.getMessage() + "\n  " + expression);
+        } finally {
+            if (SINK_OUTPUT) {
+                try {
+                    R.parseAndEval("sink(type='output')");
+                    lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
+                    log(lastOuput, Level.OUTPUT);
+                } catch (Exception ex) {
+                    lastOuput = ex.getMessage();
+                    log(lastOuput, Level.WARNING);
+                } finally {
                     try {
-                        R.parseAndEval("sink(type='output')");
-                        lastOuput = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + "'))").asString();
-                        log(lastOuput, Level.OUTPUT);
+                        R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
+                        R.parseAndEval("unlink('" + (SINK_FILE) + "')");
                     } catch (Exception ex) {
-                        lastOuput = ex.getMessage();
-                        log(lastOuput, Level.WARNING);
-                    } finally {
-                        try {
-                            R.eval("close(.f)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + (SINK_FILE) + "')");
-                        } catch (Exception ex) {
-                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
-                        }
+                        log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                     }
                 }
-                if (SINK_MESSAGE) {
+            }
+            if (SINK_MESSAGE) {
+                try {
+                    R.parseAndEval("sink(type='message')");
+                    lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
+                    log(lastMessage, Level.INFO);
+                } catch (Exception ex) {
+                    lastMessage = ex.getMessage();
+                    log(lastMessage, Level.WARNING);
+                } finally {
                     try {
-                        R.parseAndEval("sink(type='message')");
-                        lastMessage = R.parseAndEval("paste(collapse='\n',readLines('" + (SINK_FILE) + ".m'))").asString();
-                        log(lastMessage, Level.INFO);
+                        R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
+                        R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
                     } catch (Exception ex) {
-                        lastMessage = ex.getMessage();
-                        log(lastMessage, Level.WARNING);
-                    } finally {
-                        try {
-                            R.eval("close(.fm)"); // because Renjin.sink() do not properly closeLog connection, so calling it explicitely
-                            R.parseAndEval("unlink('" + (SINK_FILE) + ".m')");
-                        } catch (Exception ex) {
-                            log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
-                        }
+                        log(HEAD_EXCEPTION + ex.getMessage(), Level.ERROR);
                     }
                 }
             }
         }
+        //}
 
         if (tryEval && e != null) {
             try {
@@ -494,7 +584,7 @@ public class RserveSession extends Rsession implements RLog {
      * @return succeeded ?
      */
     @Override
-    public boolean set(String varname, double[][] data, String... names) {
+    public synchronized boolean set(String varname, double[][] data, String... names) {
         note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
@@ -502,9 +592,9 @@ public class RserveSession extends Rsession implements RLog {
         RList list = buildRList(data, names);
         log(HEAD_SET + varname + " <- " + list, Level.INFO);
         try {
-            synchronized (R) {
-                R.assign(varname, REXP.createDataFrame(list));
-            }
+            //synchronized (R) {
+            R.assign(varname, REXP.createDataFrame(list));
+            //}
         } catch (REXPMismatchException re) {
             log(HEAD_ERROR + " RList " + list.toString() + " not convertible as dataframe.", Level.ERROR);
             return false;
@@ -525,7 +615,7 @@ public class RserveSession extends Rsession implements RLog {
      * @throws org.math.R.Rsession.RException Could not set var
      */
     @Override
-    public boolean set(String varname, Object var) throws RException {
+    public synchronized boolean set(String varname, Object var) throws RException {
         note_code(varname + " <- " + toRcode(var));
 
         //assert connected : "R environment not initialized. Please make sure that R.init() method was called first.";
@@ -549,9 +639,9 @@ public class RserveSession extends Rsession implements RLog {
         } else if (var instanceof RList) {
             RList l = (RList) var;
             try {
-                synchronized (R) {
-                    R.assign(varname, new REXPList(l));
-                }
+                //synchronized (R) {
+                R.assign(varname, new REXPList(l));
+                //}
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (RList) var)", Level.ERROR);
                 return false;
@@ -568,9 +658,9 @@ public class RserveSession extends Rsession implements RLog {
             double[] vard = new double[varD.length];
             System.arraycopy(varD, 0, vard, 0, varD.length);
             try {
-                synchronized (R) {
-                    R.assign(varname, vard);
-                }
+                //synchronized (R) {
+                R.assign(varname, vard);
+                //}
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Double[]) var)", Level.ERROR);
                 return false;
@@ -578,9 +668,9 @@ public class RserveSession extends Rsession implements RLog {
             return silentlyVoidEval(varname/*, cat((double[]) var)*/);
         } else if (var instanceof double[]) {
             try {
-                synchronized (R) {
-                    R.assign(varname, (double[]) var);
-                }
+                //synchronized (R) {
+                R.assign(varname, (double[]) var);
+                //}
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[]) var)", Level.ERROR);
                 return false;
@@ -591,9 +681,9 @@ public class RserveSession extends Rsession implements RLog {
             int rows = array.length;
             int col = array[0].length;
             try {
-                synchronized (R) {
-                    R.assign("row_" + varname, reshapeAsRow(array));
-                }
+                //synchronized (R) {
+                R.assign("row_" + varname, reshapeAsRow(array));
+                //}
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
                 return false;
@@ -606,9 +696,9 @@ public class RserveSession extends Rsession implements RLog {
             int rows = array.length;
             int col = array[0].length;
             try {
-                synchronized (R) {
-                    R.assign("row_" + varname, reshapeAsRow(array));
-                }
+                //synchronized (R) {
+                R.assign("row_" + varname, reshapeAsRow(array));
+                //}
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (double[][]) var)", Level.ERROR);
                 return false;
@@ -618,9 +708,9 @@ public class RserveSession extends Rsession implements RLog {
             return done && silentlyVoidEval("rm(row_" + varname + ")");
         } else if (var instanceof String) {
             try {
-                synchronized (R) {
-                    R.assign(varname, (String) var);
-                }
+                //synchronized (R) {
+                R.assign(varname, (String) var);
+                //}
             } catch (RserveException ex) {
                 log(HEAD_EXCEPTION + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String) var)", Level.ERROR);
                 return false;
@@ -628,9 +718,9 @@ public class RserveSession extends Rsession implements RLog {
             return silentlyVoidEval(varname/*, (String) var*/);
         } else if (var instanceof String[]) {
             try {
-                synchronized (R) {
-                    R.assign(varname, (String[]) var);
-                }
+                //synchronized (R) {
+                R.assign(varname, (String[]) var);
+                //}
             } catch (REngineException ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (String[]) var)", Level.ERROR);
                 return false;
@@ -638,9 +728,9 @@ public class RserveSession extends Rsession implements RLog {
             return silentlyVoidEval(varname/*, cat((String[]) var)*/);
         } else if (var instanceof Map) {
             try {
-                synchronized (R) {
-                    R.assign(varname, asRList((Map) var));
-                }
+                //synchronized (R) {
+                R.assign(varname, asRList((Map) var));
+                //}
             } catch (Exception ex) {
                 log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Map) var)", Level.ERROR);
                 return false;
@@ -1017,9 +1107,9 @@ public class RserveSession extends Rsession implements RLog {
 
             try {
                 String name = "function_" + (int) Math.floor(1000 * Math.random());
-                synchronized (R) {
-                    R.assign(name, eval);
-                }
+                //synchronized (R) {
+                R.assign(name, eval);
+                //}
                 if (R.eval("is.function(" + name + ")").asInteger() == 1) {
                     return new Function(name);
                 }
@@ -1139,7 +1229,7 @@ public class RserveSession extends Rsession implements RLog {
      * @param localfile local filesystem file
      * @param remoteFile R environment file name
      */
-    public void getFile(File localfile, String remoteFile) {
+    public synchronized void getFile(File localfile, String remoteFile) {
         try {
             if (((REXP) silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() != 1) {
                 log(HEAD_ERROR + IO_HEAD + "file " + remoteFile + " not found.", Level.ERROR);
@@ -1174,21 +1264,21 @@ public class RserveSession extends Rsession implements RLog {
         note_code("file.copy(from='" + localfile + "',to='" + remoteFile + "') # Rserve.putFile");
         InputStream is = null;
         OutputStream os = null;
-        synchronized (R) {
-            try {
-                is = R.openFile(remoteFile.replace("\\", "/"));
-                os = new BufferedOutputStream(new FileOutputStream(localfile));
-                IOUtils.copy(is, os);
-                log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
-                is.close();
-                os.close();
-            } catch (IOException e) {
-                log(HEAD_ERROR + IO_HEAD + R.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
-            } finally {
-                IOUtils.closeQuietly(is);
-                IOUtils.closeQuietly(os);
-            }
+        //synchronized (R) {
+        try {
+            is = R.openFile(remoteFile.replace("\\", "/"));
+            os = new BufferedOutputStream(new FileOutputStream(localfile));
+            IOUtils.copy(is, os);
+            log(IO_HEAD + "File " + remoteFile + " received.", Level.INFO);
+            is.close();
+            os.close();
+        } catch (IOException e) {
+            log(HEAD_ERROR + IO_HEAD + R.getLastError() + ": file " + remoteFile + " not transmitted.\n" + e.getMessage(), Level.ERROR);
+        } finally {
+            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(os);
         }
+        //}
     }
 
     /**
@@ -1196,11 +1286,11 @@ public class RserveSession extends Rsession implements RLog {
      *
      * @param remoteFile filename to delete
      */
-    private void deleteFile(String remoteFile) {
+    private synchronized void deleteFile(String remoteFile) {
         try {
-            synchronized (R) {
-                R.removeFile(remoteFile.replace("\\", "/"));
-            }
+            //synchronized (R) {
+            R.removeFile(remoteFile.replace("\\", "/"));
+            //}
         } catch (RserveException ex) {
             log(HEAD_EXCEPTION + ex.getMessage() + "\n  removeFile(String remoteFile=" + remoteFile + ")", Level.ERROR);
         }
@@ -1223,11 +1313,11 @@ public class RserveSession extends Rsession implements RLog {
      * @param remoteFile filename in R env.
      * @return remot File object
      */
-    public File putFile(File localfile, String remoteFile) {
+    public synchronized File putFile(File localfile, String remoteFile) {
         if (!localfile.exists()) {
-            synchronized (R) {
-                log(HEAD_ERROR + IO_HEAD + R.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.", Level.ERROR);
-            }
+            //synchronized (R) {
+            log(HEAD_ERROR + IO_HEAD + R.getLastError() + "\n  file " + localfile.getAbsolutePath() + " does not exists.", Level.ERROR);
+            //}
         }
         try {
             if (((REXP) silentlyRawEval("file.exists('" + remoteFile.replace("\\", "/") + "')", TRY_MODE)).asInteger() == 1) {
@@ -1240,21 +1330,21 @@ public class RserveSession extends Rsession implements RLog {
         }
         InputStream is = null;
         OutputStream os = null;
-        synchronized (R) {
-            try {
-                os = R.createFile(remoteFile.replace("\\", "/"));
-                is = new BufferedInputStream(new FileInputStream(localfile));
-                IOUtils.copy(is, os);
-                log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
-                is.close();
-                os.close();
-            } catch (IOException e) {
-                log(HEAD_ERROR + IO_HEAD + R.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage(), Level.ERROR);
-            } finally {
-                IOUtils.closeQuietly(is);
-                IOUtils.closeQuietly(os);
-            }
+        //synchronized (R) {
+        try {
+            os = R.createFile(remoteFile.replace("\\", "/"));
+            is = new BufferedInputStream(new FileInputStream(localfile));
+            IOUtils.copy(is, os);
+            log(IO_HEAD + "File " + remoteFile + " sent.", Level.INFO);
+            is.close();
+            os.close();
+        } catch (IOException e) {
+            log(HEAD_ERROR + IO_HEAD + R.getLastError() + ": file " + remoteFile + " not writable.\n" + e.getMessage(), Level.ERROR);
+        } finally {
+            IOUtils.closeQuietly(is);
+            IOUtils.closeQuietly(os);
         }
+        //}
         return new File(remoteFile);
     }
 

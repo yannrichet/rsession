@@ -115,7 +115,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     @Override
-    public boolean silentlyVoidEval(String expression, boolean tryEval) {
+    public synchronized boolean silentlyVoidEval(String expression, boolean tryEval) {
         if (R == null) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
             return false;
@@ -130,7 +130,7 @@ public class RenjinSession extends Rsession implements RLog {
             b.eval(expression);
         }
         SEXP e = null;
-        synchronized (R) {
+        //synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
                     R.eval(".f <- file('" + toRpath(SINK_FILE) + "',open='wt')");
@@ -183,7 +183,7 @@ public class RenjinSession extends Rsession implements RLog {
                     }
                 }
             }
-        }
+        //}
 
         if (tryEval && e != null) {
             try {
@@ -200,7 +200,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     @Override
-    public Object silentlyRawEval(String expression, boolean tryEval) {
+    public synchronized Object silentlyRawEval(String expression, boolean tryEval) {
         if (R == null) {
             log(HEAD_EXCEPTION + "R environment not initialized.", Level.ERROR);
             return new RException(HEAD_EXCEPTION + "R environment not initialized.");
@@ -215,7 +215,7 @@ public class RenjinSession extends Rsession implements RLog {
             b.eval(expression);
         }
         Object e = null;
-        synchronized (R) {
+        //synchronized (R) {
             try {
                 if (SINK_OUTPUT) {
                     R.eval(".f <- file('" + toRpath(SINK_FILE) + "',open='wt')");
@@ -268,7 +268,7 @@ public class RenjinSession extends Rsession implements RLog {
                         }
                     }
                 }
-            }
+            //}
         }
 
         if (tryEval && e != null) {
@@ -286,7 +286,7 @@ public class RenjinSession extends Rsession implements RLog {
     }
 
     @Override
-    public boolean set(String varname, double[][] data, String... names) {
+    public synchronized boolean set(String varname, double[][] data, String... names) {
         note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
@@ -301,7 +301,7 @@ public class RenjinSession extends Rsession implements RLog {
             }
 
             ListVector l = new ListVector(nulls);
-            synchronized (R) {
+            //synchronized (R) {
                 R.put(varname, l);
                 R.put(varname + ".names", new StringArrayVector(names));
                 try {
@@ -311,7 +311,7 @@ public class RenjinSession extends Rsession implements RLog {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
-            }
+            //}
             return true;
 
         } else {
@@ -321,7 +321,7 @@ public class RenjinSession extends Rsession implements RLog {
             }
             ListVector l = new ListVector(d);
             //l.setAttribute(Symbols.NAMES, new StringArrayVector(names)); 
-            synchronized (R) {
+            //synchronized (R) {
                 R.put(varname, l);
                 //R.put("names("+varname+")",new StringArrayVector(names));
                 R.put(varname + ".names", new StringArrayVector(names));
@@ -332,19 +332,19 @@ public class RenjinSession extends Rsession implements RLog {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
-            }
+            //}
             return true;
         }
     }
 
     @Override
-    public boolean set(String varname, Object var) {
+    public synchronized boolean set(String varname, Object var) {
         note_code(varname + " <- " + toRcode(var));
 
         if (var instanceof double[][]) {
             double[][] dd = (double[][]) var;
             double[] d = reshapeAsRow(dd);
-            synchronized (R) {
+            //synchronized (R) {
                 R.put(varname, d);
                 try {
                     R.eval(varname + " <- matrix(" + varname + ",nrow=" + dd.length + ")");
@@ -352,11 +352,11 @@ public class RenjinSession extends Rsession implements RLog {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
-            }
+            //}
         } else {
-            synchronized (R) {
+            //synchronized (R) {
                 R.put(varname, var);
-            }
+            //}
         }
         return true;
     }
@@ -698,7 +698,7 @@ public class RenjinSession extends Rsession implements RLog {
                     return asList(s);
                 case "closure":
                     String name = "function_" + (int) Math.floor(1000 * Math.random());
-                    synchronized (R) {
+                    //synchronized (R) {
                         R.put(name, s);
                         try {
                             if (((SEXP) rawEval("is.function(" + name + ")")).asLogical() == TRUE) {
@@ -707,7 +707,7 @@ public class RenjinSession extends Rsession implements RLog {
                         } catch (Exception ex) {
                             log(ex.getMessage(), Level.ERROR);
                         }
-                    }
+                    //}
                 case "NULL":
                     return null;
                 default:

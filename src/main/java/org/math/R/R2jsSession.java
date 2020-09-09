@@ -2551,7 +2551,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public void end() {
+    public synchronized void end() {
         js = null;       
         super.end();
     }
@@ -2581,7 +2581,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    protected boolean silentlyVoidEval(String expression, boolean tryEval) {
+    protected synchronized boolean silentlyVoidEval(String expression, boolean tryEval) {
 
         String jsExpr = convertRtoJs(expression);
         try {
@@ -2601,7 +2601,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    protected Object silentlyRawEval(String expression, boolean tryEval) {
+    protected synchronized Object silentlyRawEval(String expression, boolean tryEval) {
 
         Object result = null;
         String jsExpr = convertRtoJs(expression);
@@ -2623,7 +2623,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public boolean set(String varname, double[][] data, String... names) throws RException {
+    public synchronized boolean set(String varname, double[][] data, String... names) throws RException {
         
         note_code(varname + " <- " + (data==null?"list()":toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
@@ -2639,7 +2639,7 @@ public class R2jsSession extends Rsession implements RLog {
         }
         allnames = allnames.substring(1);
         try {
-            synchronized (js) {
+            //synchronized (js) {
                 String dim = "[" + data.length + "," + data[0].length + "]";
                 String stringMatrix = Arrays.deepToString(data);
                 js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
@@ -2647,7 +2647,7 @@ public class R2jsSession extends Rsession implements RLog {
                 js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                 js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                 variablesSet.add(varname);
-            }
+            //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
             return false;
@@ -2666,13 +2666,13 @@ public class R2jsSession extends Rsession implements RLog {
      * @return succeeded ?
      */
     @Override
-    public boolean set(String varname, Object var) {
+    public synchronized boolean set(String varname, Object var) {
 
         note_code(varname + " <- " + toRcode(var));
         
         varname = nameRtoJs(varname);
         try {
-            synchronized (js) {
+            //synchronized (js) {
                 // FIXME: find a better solution than this
                 // For 2d double array, we need to instanciate the matrix with the function "math.reshape"
                 // I don't know why but the function math.matrix doesn't create the same js object than math.reshape and
@@ -2705,8 +2705,7 @@ public class R2jsSession extends Rsession implements RLog {
                     js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                     variablesSet.add(varname);
                 }
-
-            }
+            //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
             return false;
@@ -2745,7 +2744,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public void source(File file) {
+    public synchronized void source(File file) {
         file = putFileInWorkspace(file);
         
         if (!file.isFile()) {
@@ -2790,15 +2789,15 @@ public class R2jsSession extends Rsession implements RLog {
      * @throws org.math.R.Rsession.RException Could not do rm
      */
     @Override
-    public boolean rm(String... vars) throws RException {
+    public synchronized boolean rm(String... vars) throws RException {
         try {
-            synchronized (js) {
+            //synchronized (js) {
                 for(String var : vars) {
                     js.eval("delete " +THIS_ENVIRONMENT + "." + var+ ";");
                     variablesSet.remove(var);
                     js.eval("delete " + var + ";");
                 }
-            }
+            //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
             return false;
@@ -2808,14 +2807,14 @@ public class R2jsSession extends Rsession implements RLog {
     }
     
     @Override
-    public boolean rmAll() {
+    public synchronized boolean rmAll() {
         try {
-            synchronized (js) {
+            //synchronized (js) {
                 js.eval("delete " + envName + ";");
                 variablesSet.clear();
                 js.eval("var " + envName + " = math.clone({});");
                 js.eval(THIS_ENVIRONMENT+" = "+envName);
-            }
+            //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
             return false;
