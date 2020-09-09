@@ -251,7 +251,7 @@ public class RserveDaemon {
 
         stopped = true;
     }
-    String RserveArgs = "--vanilla --RS-enable-control";
+    static String RESERVE_ARGS = "--vanilla --RS-enable-control";
 
     public StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = false;
@@ -296,7 +296,6 @@ public class RserveDaemon {
             while (starting) {
                 launchRserveLock.wait();
             }
-
             starting = true;
 
             log.log(">>>>>>>>>>>>>>>>>>>>>>> Lock lockPort", Level.WARNING);
@@ -310,11 +309,14 @@ public class RserveDaemon {
                     }
                 }
                 conf.port = rserverPort;
+            } else {
+                portLocker = StartRserve.lockPort(conf.port);
+                if (portLocker==null)
+                    throw new Exception("R daemon could not lock port " + conf.port);
             }
-            RserveArgs += " --RS-port " + conf.port;
 
             log.log("Starting R daemon... " + conf, Level.INFO);
-
+            String RserveArgs = RESERVE_ARGS + " --RS-port " + conf.port;
             try {
                 rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
                         "--vanilla",
@@ -324,7 +326,6 @@ public class RserveDaemon {
                 throw new Exception("R daemon startup failed: " + e.getMessage());
             } finally {
                 log.log(">>>>>>>>>>>>>>>>>>>>>>> Unlock lockPort", Level.WARNING);
-
                 starting = false;
                 launchRserveLock.notify();
             }
