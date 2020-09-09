@@ -718,7 +718,8 @@ public class StartRserve {
         Log.Err.println(">>>>>>>>>>>> lockPort " + p);
         ServerSocket ss = null;
         final String id = "" + Math.random();
-        boolean w = false;
+        DataOutputStream dout = null;
+        Socket cs = null;
         try {
             final ServerSocket sss = new ServerSocket(p);
             sss.setSoTimeout(5000);
@@ -734,10 +735,13 @@ public class StartRserve {
                         DataInputStream dis = new DataInputStream(s.getInputStream());
                         String str = (String) dis.readUTF();
                         if (!str.equals(id)) { // ensure there is no mess there...
-                            sss.close();
                             throw new IOException("Wrong port id!");
                         }
                     } catch (IOException ex) {
+                        try {
+                            sss.close();
+                        } catch (IOException ex1) {
+                        }
                         Log.Err.println("Lock port " + p + " failed: " + ex.getMessage());
                     }
                 }
@@ -745,10 +749,7 @@ public class StartRserve {
             t.start();
 
             int n = 50;
-            while ((n--) > 0) {
-                if (locking) {
-                    break;
-                }
+            while ((n--) > 0 && !locking) {
                 Thread.sleep(100);
                 Log.Err.print("x");
             }
@@ -758,23 +759,37 @@ public class StartRserve {
             locking = false;
 
             Log.Err.println("Writing Socket on port " + p + " will be created...");
-            Socket cs = new Socket("localhost", p);
+            cs = new Socket("localhost", p);
             Log.Err.println("Writing Socket on port " + p + " created!");
-            DataOutputStream dout = new DataOutputStream(cs.getOutputStream());
+            dout = new DataOutputStream(cs.getOutputStream());
             dout.writeUTF(id);
             dout.flush();
-            dout.close();
-            cs.close();
             t.join();
-        } catch (BindException e) {
+        } catch (IOException | InterruptedException e) {
             Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
             return null;
-        } catch (IOException e) {
-            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
-            return null;
-        } catch (InterruptedException e) {
-            Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + e.getMessage());
-            return null;
+        } finally {
+            if (dout != null) {
+                try {
+                    dout.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            if (cs != null) {
+                try {
+                    cs.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
         Log.Err.println(">>>>>>>>>>>> lockPort " + p + ": " + !ss.isClosed());
         //System.err.println(" OK");
