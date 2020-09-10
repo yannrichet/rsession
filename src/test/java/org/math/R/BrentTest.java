@@ -553,6 +553,8 @@ public class BrentTest {
             assert false : r;
         }
 
+        System.err.println("result "+result);
+
         assert result != null : "Null result !";
         assert result.contains("the root approximation is 5") : "Bad convergence:" + result;
     }

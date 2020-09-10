@@ -859,7 +859,7 @@ public class R2jsSession extends Rsession implements RLog {
      *            - the index i of the first "QUOTE_EXPRESSION_i_" replacement
      * @return a list containing all quotes expression
      */
-    private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
+    static List<String> replaceQuotesByVariables(String expr, int startIndex) {
         
         Pattern squotesPattern = Pattern.compile("(\'[^\']*\')");
         Matcher squotesMatcher = squotesPattern.matcher(expr);
@@ -903,7 +903,7 @@ public class R2jsSession extends Rsession implements RLog {
      *            expressions
      * @return the expression with variables replaced by quotes expressions
      */
-    private static String replaceNameByQuotes(List<String> quotesList, String expr, boolean removeRoundingQuotes) {
+    static String replaceNameByQuotes(List<String> quotesList, String expr, boolean removeRoundingQuotes) {
 
         for (int i = 1; i < quotesList.size(); i++) {
             String quote = quotesList.get(i).trim();
