@@ -645,7 +645,7 @@
     }
 
     function asLogical(x) {
-        return (x.toLowerCase() === 'true')
+        return ((x+'').toLowerCase() === 'true')
     }
 
     function _lt(x, y) {
