@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -20,8 +19,6 @@ import org.math.R.Rsession.RException;
 
 import static org.junit.Assert.*;
 import org.junit.Before;
-import static org.math.R.RserveSession.asRList;
-import static org.math.R.Rsession.toRcode;
 
 /**
  * Test the converter r->js of the class {@link R2jsSession}
@@ -101,7 +98,7 @@ public class R2jsSessionTest {
         //engine.voidEval("math = 1");
         //engine.voidEval("1+pi");
     }
-    
+
     @Test
     public void testConvertWithEnv() throws Rsession.RException, UnknownHostException {
         System.err.println("================= testConvertWithEnv ===============");
@@ -352,7 +349,8 @@ public class R2jsSessionTest {
         assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4") : engine.eval("paste(c('a1','b2'),c('c3','d4'))");
         assert engine.eval("paste(c('a1','b2'),'d4')").equals("a1 d4;b2 d4") : engine.eval("paste(c('a1','b2'),'d4')");
 
-        System.err.println(engine.eval("paste(sep='<br/>',\n"
+        
+        assert engine.eval("paste(sep='<br/>',\n"
                 + "        paste('<HTML name=\"minimum\">minimum is ',0.1),\n"
                 + "        paste(sep='',\n"
                 + "            'found at ',\n"
@@ -360,7 +358,15 @@ public class R2jsSessionTest {
                 + "            '<br/><img src=\"',\n"
                 + "            'files',\n"
                 + "            '\" width=\"',600,'\" height=\"',600,\n"
-                + "            '\"/></HTML>'))"));
+                + "            '\"/></HTML>'))").toString().contains("\"minimum\"");
+
+        assert engine.eval("paste0(\"<HTML name='minimum'>minimum is \",0.1,\n"
+                + "                \" found at \",\n"
+                + "                paste0(paste(c('x1','x2'),'=',c(.5,.6), collapse=';')),\n"
+                + "                \"<br/><img src='\",\n"
+                + "                \"files\",\n"
+                + "                \"' width='600' height='600'/></HTML>\")").toString().contains("'minimum'");
+
     }
 
     @Test

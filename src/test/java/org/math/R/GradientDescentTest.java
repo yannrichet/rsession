@@ -105,6 +105,7 @@ public class GradientDescentTest {
             assert false : r;
         }
         
+        System.err.println("result "+result);
         assert result != null : "Null result !";
         assert result.contains("minimum is ") : "Bad convergence:" + result;
     }
