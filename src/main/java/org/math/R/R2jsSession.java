@@ -862,7 +862,7 @@ public class R2jsSession extends Rsession implements RLog {
             int singleQuoteIdx = currentExpr.indexOf(singleQuote);
             int startQuoteIdx=-1;
             String currentQuote = "";
-            if((singleQuoteIdx>=0 && doubleQuoteIdx<0) || (singleQuoteIdx < doubleQuoteIdx)){
+            if(singleQuoteIdx>=0 && (doubleQuoteIdx<0 || singleQuoteIdx<doubleQuoteIdx)){
                 currentQuote=singleQuote;
                 startQuoteIdx=singleQuoteIdx;
             } else {
