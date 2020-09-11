@@ -15,13 +15,22 @@ public class R2jsParserTest {
 
     @Test
     public void testQuoteExpr() {
-        String text = "abcabcabc\"defdef\"abcabc'ghighi'";//abc\"'jkl'\"abc'\"mno\"'";
+        String text = "0\"ab'cd\"e\"f'gf\"ij";
+        String text2 = "0'ab\"cd'e'f\"gf'ij";
         System.err.println("text:        " + text);
-        List vars = R2jsSession.replaceQuotesByVariables(text, 0);
+        List<String> vars = R2jsSession.replaceQuotesByVariables(text, 0);
+        List<String> vars2 = R2jsSession.replaceQuotesByVariables(text2, 0);
         System.err.println("vars: " + vars);
+        System.err.println("vars2: " + vars2);
         String quoted_text = R2jsSession.replaceNameByQuotes(vars, text, true);
+        String quoted_text2 = R2jsSession.replaceNameByQuotes(vars2, text2, true);
         //System.err.println("quoted text: "+quoted_text);
         assert quoted_text.equals(text) : "Failed to quote/unqote text: " + text + " -> " + quoted_text;
+        assert quoted_text2.equals(text2) : "Failed to quote/unqote text: " + text2 + " -> " + quoted_text2;
+        assert vars.size()==vars2.size() : "Not the same quoting between: " + text + " and " + text2;
+        for(int i=0; i<vars.size(); i++) {
+            assert vars.get(i).replaceAll("\"|'", "").equals(vars2.get(i).replaceAll("\"|'", "")) : "Not the same quoting between: " + text + " and " + text2;
+        }
 
         String paste = "html <- paste0(' <HTML name=\"Root\">in iteration number ',brent$i,'.<br/>',\n"
                 + "            'the root approximation is ', X[nrow(X)-1, 1], '.<br/>',\n"
@@ -45,8 +54,11 @@ public class R2jsParserTest {
         List vars_paste2 = R2jsSession.replaceQuotesByVariables(paste2, 0);
         System.err.println("vars: " + vars_paste2);
         String quoted_paste2 = R2jsSession.replaceNameByQuotes(vars_paste2, paste2, true);
-        //System.err.println("quoted text: "+quoted_text);
+        System.err.println("quoted text: "+quoted_paste2);
         assert quoted_paste2.equals(paste2) : "Failed to quote/unqote text: " + paste2 + " -> " + quoted_paste2;
+
+
+
     }
 
     @Test
