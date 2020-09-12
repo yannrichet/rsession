@@ -10,19 +10,7 @@ import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -859,35 +847,38 @@ public class R2jsSession extends Rsession implements RLog {
      *            - the index i of the first "QUOTE_EXPRESSION_i_" replacement
      * @return a list containing all quotes expression
      */
-    private static List<String> replaceQuotesByVariables(String expr, int startIndex) {
-        
-        Pattern squotesPattern = Pattern.compile("(\'[^\']*\')");
-        Matcher squotesMatcher = squotesPattern.matcher(expr);
-        
+    static List<String> replaceQuotesByVariables(String expr, int startIndex) {
+
         List<String> quotesList = new ArrayList<>();
-        quotesList.add(expr);
-        StringBuffer sb = new StringBuffer();
+        String singleQuote="'";
+        String doubleQuote="\"";
+
         int cmp = startIndex;
-        while (squotesMatcher.find()) {
-            quotesList.add(squotesMatcher.group(1));
-            squotesMatcher.appendReplacement(sb, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
+        quotesList.add(expr);
+        StringBuffer currentExpr = new StringBuffer(expr);
+        // While no more quotes founded
+        while(true) {
+            int doubleQuoteIdx = currentExpr.indexOf(doubleQuote);
+            int singleQuoteIdx = currentExpr.indexOf(singleQuote);
+            int startQuoteIdx=-1;
+            String currentQuote = "";
+            if(singleQuoteIdx>=0 && (doubleQuoteIdx<0 || singleQuoteIdx<doubleQuoteIdx)){
+                currentQuote=singleQuote;
+                startQuoteIdx=singleQuoteIdx;
+            } else {
+                currentQuote=doubleQuote;
+                startQuoteIdx=doubleQuoteIdx;
+            }
+            if(startQuoteIdx<0) break; // No more quotes
+            int endQuoteIdx = currentExpr.indexOf(currentQuote, startQuoteIdx+1);
+            if(endQuoteIdx<=startQuoteIdx) throw new IllegalArgumentException("No ending quotes for quote " + currentQuote + " at position: " + startQuoteIdx);
+            String quotedExpr = currentExpr.substring(startQuoteIdx, endQuoteIdx+1);
+            quotesList.add(quotedExpr);
+            currentExpr.replace(startQuoteIdx, endQuoteIdx+1, "QUOTE_EXPRESSION_" + cmp+"_");
             cmp++;
         }
-        squotesMatcher.appendTail(sb);
-        
-        
-        Pattern quotesPattern = Pattern.compile("(\"[^\"]*\")");
-        Matcher quotesMatcher = quotesPattern.matcher(sb.toString());
-        
-        StringBuffer sb2 = new StringBuffer();
-        while (quotesMatcher.find()) {
-            quotesList.add(quotesMatcher.group(1));
-            quotesMatcher.appendReplacement(sb2, "QUOTE_EXPRESSION_" + cmp+"_"); // need to finish with _ otherwise _1 will replace also _10
-            cmp++;
-        }
-        quotesMatcher.appendTail(sb2);
-        
-        quotesList.set(0, sb2.toString());
+
+        quotesList.set(0, currentExpr.toString());
         return quotesList;
     }
     
@@ -903,7 +894,7 @@ public class R2jsSession extends Rsession implements RLog {
      *            expressions
      * @return the expression with variables replaced by quotes expressions
      */
-    private static String replaceNameByQuotes(List<String> quotesList, String expr, boolean removeRoundingQuotes) {
+    static String replaceNameByQuotes(List<String> quotesList, String expr, boolean removeRoundingQuotes) {
 
         for (int i = 1; i < quotesList.size(); i++) {
             String quote = quotesList.get(i).trim();
