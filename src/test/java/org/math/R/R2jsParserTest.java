@@ -56,9 +56,6 @@ public class R2jsParserTest {
         String quoted_paste2 = R2jsSession.replaceNameByQuotes(vars_paste2, paste2, true);
         System.err.println("quoted text: "+quoted_paste2);
         assert quoted_paste2.equals(paste2) : "Failed to quote/unqote text: " + paste2 + " -> " + quoted_paste2;
-
-
-
     }
 
     @Test

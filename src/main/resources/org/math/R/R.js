@@ -488,6 +488,36 @@
         return str.substring(length(collapse));
     }
 
+    function all(b) {
+        for (var i = 0; i < length(b); i++) {
+            if (!asLogical(b[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function any(b) {
+        for (var i = 0; i < length(b); i++) {
+            if (asLogical(b[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function strsplit(txt,sep) {
+        return txt.toString().split(sep);
+    }
+
+    function unlist(l) {
+        var a = [];
+        for(var k in Object.keys(l)) {
+            a.push(l[k]);
+        }
+        return a;
+    }
+
     function apply(x, margin, f) {
         var y = [];
         if (margin === 1) {
@@ -639,13 +669,18 @@
         return parseFloat(x);
     }
 
-
     function asInteger(x) {
         return parseInt(x);
     }
 
     function asLogical(x) {
         return ((x+'').toLowerCase() === 'true')
+    }   
+
+    function asCharacter(x) {
+	if (isNull(x))
+            return null;
+        return x.toString()
     }
 
     function _lt(x, y) {
@@ -760,7 +795,10 @@
     proto._print = _print;
     proto.paste = paste;
     proto.paste0 = paste0;
-    //proto.c = c;
+    proto.unlist = unlist;
+    proto.strsplit = strsplit;
+    proto.all = all;
+    proto.any = any;
     proto.apply = apply;
     proto._in = _in;
     proto.getwd = getwd;
@@ -775,6 +813,7 @@
     proto.asNumeric = asNumeric;
     proto.asInteger = asInteger;
     proto.asLogical = asLogical;
+    proto.asCharacter = asCharacter;
     proto.asMatrix = asMatrix;
     proto._lt = _lt;
     proto._gt = _gt;

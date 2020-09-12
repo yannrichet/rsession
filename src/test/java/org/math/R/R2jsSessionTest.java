@@ -370,6 +370,21 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testParseStrArray() throws Rsession.RException {
+        String expr0 = "strsplit(\"a,b,c\",\",\")";
+        assert engine.eval("paste(" + expr0 + ",collapse=';')").equals("a;b;c") : engine.eval("paste(" + expr0 + ",collapse=';')");
+
+        String expr1 = "unlist(strsplit(\"a,b,c\",\",\"))";
+        assert engine.eval("paste(" + expr1 + ",collapse=';')").equals("a;b;c") : engine.eval("paste(" + expr1 + ",collapse=';')");
+
+        String expr2 = "as.character(\"a,b,c\")";
+        assert engine.eval(expr2).equals("a,b,c") : expr2 + " -> " + engine.eval(expr2);
+
+        String expr3 = "as.integer(unlist(strsplit(as.character(\"1,2,3\"),\",\")))";
+        engine.eval(expr3);
+    }
+
+    @Test
     public void testApply() throws Rsession.RException {
         String apply_f = "apply(X,1,function (x) {\n"
                 + "     x1 <- x[1] * 15 - 5\n"

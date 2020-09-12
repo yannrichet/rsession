@@ -10,7 +10,19 @@ import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -291,6 +303,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("as.numeric(", "asNumeric(");
         R_TO_JS.put("as.integer(", "asInteger(");
         R_TO_JS.put("as.logical(", "asLogical(");
+        R_TO_JS.put("as.character(", "asCharacter(");
         R_TO_JS.put("as.matrix(", "matrix(");
         R_TO_JS.put("rep_len(", "reLen(");
         R_TO_JS.put("as.array(", "array(");
@@ -602,10 +615,15 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)rbind\\(", "$1__R.rbind(");
         e = e.replaceAll("(?<!\\.)(\\b)cbind\\(", "$1__R.cbind(");
         e = e.replaceAll("(?<!\\.)(\\b)Rpaste\\(", "$1__R.paste(");
+        e = e.replaceAll("(?<!\\.)(\\b)all\\(", "$1__R.all(");
+        e = e.replaceAll("(?<!\\.)(\\b)any\\(", "$1__R.any(");
+        e = e.replaceAll("(?<!\\.)(\\b)strsplit\\(", "$1__R.strsplit(");
+        e = e.replaceAll("(?<!\\.)(\\b)unlist\\(", "$1__R.unlist(");
         e = e.replaceAll("(?<!\\.)(\\b)Rpaste0\\(", "$1__R.paste0(");
         e = e.replaceAll("(?<!\\.)(\\b)asNumeric\\(", "$1__R.asNumeric(");
         e = e.replaceAll("(?<!\\.)(\\b)asInteger\\(", "$1__R.asInteger(");
         e = e.replaceAll("(?<!\\.)(\\b)asLogical\\(", "$1__R.asLogical(");
+        e = e.replaceAll("(?<!\\.)(\\b)asCharacter\\(", "$1__R.asCharacter(");
 
         e = e.replaceAll("__R\\.__R\\.", "__R.");
         
@@ -2028,6 +2046,10 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("array", Arrays.asList("data", "dim", "dimnames"));
         argumentNamesByFunctions.put("paste0", new ArrayList<String>());
         argumentNamesByFunctions.put("paste", new ArrayList<String>());
+        argumentNamesByFunctions.put("unlist", new ArrayList<String>());
+        argumentNamesByFunctions.put("strsplit", new ArrayList<String>());
+        argumentNamesByFunctions.put("all", new ArrayList<String>());
+        argumentNamesByFunctions.put("any", new ArrayList<String>());
         argumentNamesByFunctions.put("vector", Arrays.asList("mode", "length"));
         argumentNamesByFunctions.put("matrix", Arrays.asList("data", "nrow", "ncol", "byrow", "dimnames"));
         argumentNamesByFunctions.put("c", Arrays.asList("data", "dim", "dimnames"));

@@ -850,6 +850,9 @@ public class BasicTest {
         r.toPNG(jpg, 400, 400, "plot(rnorm(10))");
         assert jpg.exists();
 
+        r.toPNG(jpg, 400, 400, "plot(rnorm(10))");
+        assert jpg.exists();
+
         //toTXT
         String txt = r.print("summary(rnorm(100))");
         System.out.println(txt);
