@@ -183,6 +183,7 @@ public class RserveSession extends Rsession implements RLog {
             startup();
         } catch (Exception ex) {
             console.log(ex.getMessage(), Level.ERROR);
+            return;
         }
 
         silentlyVoidEval("if (!any(file.access(.libPaths(),2)>=0)) .libPaths(new=tempdir())"); // ensure a writable directory for libPath
