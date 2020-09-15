@@ -246,9 +246,11 @@ public class RserveSession extends Rsession implements RLog {
         if (!connected) {
             log("Rserve " + RserveConf + " is not accessible.", Level.ERROR);
             status = STATUS_ERROR;
+            throw new RException("Rserve " + RserveConf + " is not accessible.");
         } else if (R.getServerVersion() < MinRserveVersion) {
             log("Rserve " + RserveConf + " version is too old.", Level.ERROR);
             status = STATUS_ERROR;
+            throw new RException("Rserve " + RserveConf + " version is too old.");
         } else {
             status = STATUS_READY;
         }
