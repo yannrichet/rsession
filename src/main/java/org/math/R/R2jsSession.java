@@ -7,12 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -34,103 +36,85 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import org.apache.commons.io.FileUtils;
 
-
 /**
- * This class evaluate an R expression by parsing it in javascript expression and then
- * evaluate the javascript expression with the Java ScriptEngine. This class
- * uses external javascript library like mathjs to evaluate expressions.
- * 
- * 
- * ------------------------------ Supported and unsupported syntaxes ------------------------------------------------------------------
- * ## Basic syntaxes
- *      - affectation (=, &lt;-)
- *      - mathematical expression (pi, ^, **, &lt;, &lt;=, &gt;, &gt;=, !=, ==, ++, +=, -=, priority of operators, for, for in, if, else, range)
- * ## Functions
- *      - All syntaxes of functions in R
- *      - recursive functions
- *      - Mathematical functions ("abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor", "log", "max", "min", "round", "sin", "sqrt", "tan" )
- *      - NOT SUPPORTED: - function with named argument (ex: "f(y=1.23,x=4.56)") (impossible to support in the ES5)
- *                 - multiple functions in one command (impossible just write multiple lines)
- * ## Arrays
- *      - definition of arrays (c(1,2,3), c(0:4), array(0.0,c(4,3)))
- *      - accessor: a[1], 
- *      - operations (+, -, *, /)
- *      - function: length
- *      - NOT SUPPORTED: %*%, %/% : create matrices instead of arrays to use theses operations
- * ## Matrices
- *      - definition of matrices with: nrow, ncol, byrow
- *      - operations (transpose, +, -, *, ^, %*%, %/%, %%)
- *      - column and row selection ([1,], [,1], [,], [c(1,2),])
- *      - function supported: determinant, solve, dim
- *      - TO SUPPORT: eigen
- * ## DataFrames
- *      - constructor: data.frame(first=a,second=b), data.frame('first'=a,'second'=b), data.frame(a,b)
- *      - accessor: '$', "[['element']]"
- *      NOT SUPPORTED: column extraction "[1:2,]"
- * ## Lists
- *      - constructor: list(first=a,second=b), list('first'=a,'second'=b), list(a,b)
- *      - accessor: '$', "[['element']]"
- *      NOT SUPPORTED: column extraction "[1:2,]", accessor "[[1]]"
- * ## R functions
- *      - write.csv
- *      - runif
- *      - save and load variables
- *      - ls
- *      - rm variables
- *      - cbind (on matrices only)
- *      - rbind (on matrices only)
- *      - file.exists
- *      - savels
- *      TO SUPPORT: rnorm, capture.output
- *      NOT SUPPORTED:  toPNG, asHTML, cbind (array and dataframe), rbind (array and dataframe), multiple imbricated functions
- * 
+ * This class evaluate an R expression by parsing it in javascript expression
+ * and then evaluate the javascript expression with the Java ScriptEngine. This
+ * class uses external javascript library like mathjs to evaluate expressions.
+ *
+ *
+ * ------------------------------ Supported and unsupported syntaxes
+ * ------------------------------------------------------------------ ## Basic
+ * syntaxes - affectation (=, &lt;-) - mathematical expression (pi, ^, **, &lt;,
+ * &lt;=, &gt;, &gt;=, !=, ==, ++, +=, -=, priority of operators, for, for in,
+ * if, else, range) ## Functions - All syntaxes of functions in R - recursive
+ * functions - Mathematical functions ("abs", "acos", "asin", "atan", "atan2",
+ * "ceil", "cos", "exp", "floor", "log", "max", "min", "round", "sin", "sqrt",
+ * "tan" ) - NOT SUPPORTED: - function with named argument (ex:
+ * "f(y=1.23,x=4.56)") (impossible to support in the ES5) - multiple functions
+ * in one command (impossible just write multiple lines) ## Arrays - definition
+ * of arrays (c(1,2,3), c(0:4), array(0.0,c(4,3))) - accessor: a[1], -
+ * operations (+, -, *, /) - function: length - NOT SUPPORTED: %*%, %/% : create
+ * matrices instead of arrays to use theses operations ## Matrices - definition
+ * of matrices with: nrow, ncol, byrow - operations (transpose, +, -, *, ^, %*%,
+ * %/%, %%) - column and row selection ([1,], [,1], [,], [c(1,2),]) - function
+ * supported: determinant, solve, dim - TO SUPPORT: eigen ## DataFrames -
+ * constructor: data.frame(first=a,second=b), data.frame('first'=a,'second'=b),
+ * data.frame(a,b) - accessor: '$', "[['element']]" NOT SUPPORTED: column
+ * extraction "[1:2,]" ## Lists - constructor: list(first=a,second=b),
+ * list('first'=a,'second'=b), list(a,b) - accessor: '$', "[['element']]" NOT
+ * SUPPORTED: column extraction "[1:2,]", accessor "[[1]]" ## R functions -
+ * write.csv - runif - save and load variables - ls - rm variables - cbind (on
+ * matrices only) - rbind (on matrices only) - file.exists - savels TO SUPPORT:
+ * rnorm, capture.output NOT SUPPORTED: toPNG, asHTML, cbind (array and
+ * dataframe), rbind (array and dataframe), multiple imbricated functions
+ *
  * -----------------------------------------------------------------------------------------------------------------------------------
- * 
+ *
  * @author Nicolas Chabalier
  */
 public class R2jsSession extends Rsession implements RLog {
-        
+
     File wdir;
 
-    private static final String[] MATH_FUN_JS = { "abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
-        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum","mean", "median", "std", "var" };
-    private static final String[] MATH_CONST_JS = { "pi" };
-    
+    private static final String[] MATH_FUN_JS = {"abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
+        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum", "mean", "median", "std", "var"};
+    private static final String[] MATH_CONST_JS = {"pi"};
+
     // JavaScript libraries used to evaluate expression
     private static final String MATH_JS_FILE = "/org/math/R/math.js";
     private static final String R_JS_FILE = "/org/math/R/R.js";
     private static final String RAND_JS_FILE = "/org/math/R/rand.js";
 //    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
-    
+
     public ScriptEngine js;
-    
+
     private static final String ENVIRONMENT_DEFAULT = "__r2js__";
     private static final String THIS_ENVIRONMENT = "__this__";
-    
+
     public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
 
     // Set of global variables declared
     public Set<String> variablesSet;
     public Set<String> functionsSet;
-    
+
     // List of quotes expression
     private List<String> quotesList;
-    
+
     // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
     private final static Map<String, Object> jsLibraries = new HashMap<>();
-    
+
     public static R2jsSession newInstance(final RLog console, Properties properties) {
         return new R2jsSession(console, properties);
     }
-    
+
     public R2jsSession(RLog console, Properties properties) {
         this(console, properties, null);
     }
 
     /**
      * Default constructor
-
- Initialize the Javascript js and load external js libraries
+     *
+     * Initialize the Javascript js and load external js libraries
      *
      * @param console - console
      * @param properties - properties
@@ -148,16 +132,17 @@ public class R2jsSession extends Rsession implements RLog {
         functionsSet = new HashSet<>();
 
         TRY_MODE_DEFAULT = false;
-        
+
         ScriptEngineManager manager = new ScriptEngineManager();
         js = manager.getEngineByName("js");
 
         // Load external js libraries used by the js to evaluate expressions
         try {
             loadJSLibraries();
-            
-            for (String f : DISABLED_FUNCTIONS)
+
+            for (String f : DISABLED_FUNCTIONS) {
                 addReturnNullFunction(f);
+            }
 
             // Instantiate the variables storage object which store all variables defined in the current session
             js.eval("var " + envName + " = math.clone({});");
@@ -166,7 +151,7 @@ public class R2jsSession extends Rsession implements RLog {
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        
+
         try {
             int rand = Math.round((float) Math.random() * 10000);
             wdir = new File(new File(FileUtils.getTempDirectory(), ".R2js"), "" + rand);
@@ -181,12 +166,12 @@ public class R2jsSession extends Rsession implements RLog {
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
-        
+
         setenv(properties);
     }
 
     @Override
-     void setenv(Properties properties) {
+    void setenv(Properties properties) {
         if (properties != null) {
             for (String p : properties.stringPropertyNames()) {
                 if (p != null) {
@@ -204,12 +189,11 @@ public class R2jsSession extends Rsession implements RLog {
             }
         }
     }
-    
-    
+
     public R2jsSession(final PrintStream p, Properties properties) {
         this(p, properties, null);
     }
-    
+
     public R2jsSession(final PrintStream p, Properties properties, String environmentName) {
         this(new RLogPrintStream(p), properties, environmentName);
     }
@@ -220,37 +204,38 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     public void addJSFunction(String name, String js) throws ScriptException {
-        this.js.eval("function " + name + (js.startsWith("function")?js.substring("function".length()):js));
+        this.js.eval("function " + name + (js.startsWith("function") ? js.substring("function".length()) : js));
         functionsSet.add(name);
     }
-    
+
     /**
-     * Load external js libraries to evaluate js expresions:
-     * - 'math.js' : evaluate all mathematical expressions with numbers, arrays and matrices. 
-     * - 'r.js': contains various function ( loading and saving files/variables, range function, ...)
-     * 
-     * @throws ScriptException 
+     * Load external js libraries to evaluate js expresions: - 'math.js' :
+     * evaluate all mathematical expressions with numbers, arrays and matrices.
+     * - 'r.js': contains various function ( loading and saving files/variables,
+     * range function, ...)
+     *
+     * @throws ScriptException
      */
     private synchronized void loadJSLibraries() throws ScriptException {
-        
+
         // Loading math.JS
-        if(!jsLibraries.containsKey("math")) {
+        if (!jsLibraries.containsKey("math")) {
             InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
-            js.eval(new InputStreamReader(mathInputStream,Charset.forName("UTF-8")));
+            js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
             jsLibraries.put("math", js.get("math"));
         } else {
             js.put("math", jsLibraries.get("math"));
         }
-        
+
         js.eval("var parser = math.parser();");
         // Change 'Matrix' mathjs config by 'Array'
         js.eval("math.config({matrix: 'Array'})");
         js.eval("var str = String.prototype;");
 
         // Loading rand.js
-        if(!jsLibraries.containsKey("rand")) {
+        if (!jsLibraries.containsKey("rand")) {
             InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
-            js.eval(new InputStreamReader(randInputStream,Charset.forName("UTF-8")));
+            js.eval(new InputStreamReader(randInputStream, Charset.forName("UTF-8")));
             js.eval("__rand = rand()");
             jsLibraries.put("__rand", js.get("rand"));
         } else {
@@ -261,13 +246,10 @@ public class R2jsSession extends Rsession implements RLog {
 //        InputStream RInputStream = this.getClass().getResourceAsStream(PLOT_JS_FILE);
 //        js.eval(new InputStreamReader(RInputStream));
 //        js.eval("Plotly = Plotly()");
-        
         // Loading R.js
-
-        
-        if(!jsLibraries.containsKey("R")) {
+        if (!jsLibraries.containsKey("R")) {
             InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
-            js.eval(new InputStreamReader(RInputStream,Charset.forName("UTF-8")));
+            js.eval(new InputStreamReader(RInputStream, Charset.forName("UTF-8")));
             js.eval("__R = R()");
             jsLibraries.put("__R", js.get("R"));
         } else {
@@ -278,13 +260,14 @@ public class R2jsSession extends Rsession implements RLog {
     static final String POINT_CHAR_JS_KEY = "__";
 
     /**
-     * Convert an R expression in a Js expression WARNING: many R syntaxes are not supported yet
+     * Convert an R expression in a Js expression WARNING: many R syntaxes are
+     * not supported yet
      *
      * @param e - the R expression
      * @return the js script expression
      */
     public static String nameRtoJs(String e) {
-        
+
         // Replace "." char by a dedicated key
         if (e.contains(POINT_CHAR_JS_KEY)) {
             throw new IllegalArgumentException("Cannot use " + POINT_CHAR_JS_KEY + " in expression (reserved substring)");
@@ -295,7 +278,7 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     public static Properties R_TO_JS = new Properties();
-    
+
     static {
         R_TO_JS.put("R.version.string", "'R2js'");
         R_TO_JS.put(".GlobalEnv", ENVIRONMENT_DEFAULT);
@@ -317,6 +300,7 @@ public class R2jsSession extends Rsession implements RLog {
         R_TO_JS.put("isTRUE(", "isTRUE(");
         R_TO_JS.put("isFALSE(", "isFALSE(");
         R_TO_JS.put("Sys.sleep(", "SysSleep(");
+        R_TO_JS.put("Sys.getenv(", "SysGetEnv(");
         R_TO_JS.put("capture.output(", "_print("); //should use the output stream capture instead...
         R_TO_JS.put("NA", "null");
         R_TO_JS.put("new.env()", "{}");
@@ -329,34 +313,39 @@ public class R2jsSession extends Rsession implements RLog {
     final static String AW = "((\\A)|(\\W)|(\\())(";
     final static String Az = ")((\\W)|(\\z)|(\\)))";
 
-    public boolean debug_js = false; 
-    
-    DecimalFormat formatter = new DecimalFormat("#.#############",DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-    
+    public boolean debug_js = false;
+
+    DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+
     /**
-     * Convert an R expression in a Js expression WARNING: many R syntaxes are not supported yet
+     * Convert an R expression in a Js expression WARNING: many R syntaxes are
+     * not supported yet
      *
      * @param e - the R expression
      * @return the js script expression
      */
     private String convertRtoJs(String e) {
-        
+
         // If e contains already "__this__" ... (should not happen, but...)
-        if (e.contains(THIS_ENVIRONMENT)) return convertRtoJs(e.replace(THIS_ENVIRONMENT, "THEENVIRONMENT")).replace("THEENVIRONMENT", THIS_ENVIRONMENT);
-       
+        if (e.contains(THIS_ENVIRONMENT)) {
+            return convertRtoJs(e.replace(THIS_ENVIRONMENT, "THEENVIRONMENT")).replace("THEENVIRONMENT", THIS_ENVIRONMENT);
+        }
+
         String R = null;
-        if (debug_js) R  =e;
+        if (debug_js) {
+            R = e;
+        }
 
         e = removeCommentedLines(e);
-        
+
         // remove ; at end of lines. We will re-add it later
         e = e.replaceAll(";+ *\\n", "\n");
-        
+
         // non-regexp keys in R2js.propto replace
         if (R_TO_JS != null) {
             for (Object R_key : R_TO_JS.keySet()) {
-                String var =  Pattern.quote(R_key.toString());
-                String regexp = AW +var + (R_key.toString().endsWith("(")?")":Az);
+                String var = Pattern.quote(R_key.toString());
+                String regexp = AW + var + (R_key.toString().endsWith("(") ? ")" : Az);
                 Matcher m = Pattern.compile(regexp).matcher(e);
                 while (m.find()) {
                     String val = R_TO_JS.getProperty(R_key.toString());
@@ -364,14 +353,14 @@ public class R2jsSession extends Rsession implements RLog {
                 }
             }
         }
-        
+
         //1E-8 -> 1*10^-8
         //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
         while (m.find()) {
-            try{
-            e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
-            }catch(Exception ex){//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
+            try {
+                e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+            } catch (Exception ex) {//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
             }
         }
 
@@ -387,7 +376,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("([a-zA-Z]*)\\.([a-zA-Z]+)", "$1__$2");
 
         // Remove all leading zeros before a number to prevent conversion from octal numeral system
-        e = e.replaceAll("(?<!\\.)\\b0+([1-9\\.])","$1");
+        e = e.replaceAll("(?<!\\.)\\b0+([1-9\\.])", "$1");
 
         // ceil() is an alias for ceiling() in R
         e = e.replaceAll("(?<!\\.)(\\b)" + "ceiling" + "(?<!\\.)(\\b)", "ceil");
@@ -396,33 +385,33 @@ public class R2jsSession extends Rsession implements RLog {
         for (String f : MATH_FUN_JS) {
             e = e.replaceAll("(?<!\\.)(\\b)" + f + "\\(", "$1 math." + f + "(");
         }
-        
+
         // Replace Math constants
         for (String c : MATH_CONST_JS) {
             e = e.replaceAll("(?<!\\.)(\\b)" + c + "(?<!\\.)(\\b)", "$1 math." + c.toUpperCase() + "$2");
         }
-        
+
         // Replace t(x) by math.transpose(x)
         e = e.replaceAll("(^|[^a-zA-Z\\d:])t\\(", "$1math.transpose(");
-        
+
         // Replace determinant(x) by math.det(x)
         e = e.replaceAll("(^|[^a-zA-Z\\d:])determinant\\(", "$1math.det(");
-        
+
         // Replace solve(A,B) by math.lusolve(A,B)
         e = e.replaceAll("(^|[^a-zA-Z\\d:])solve\\(", "$1math.lusolve(");
-        
+
         // Replace dim(A) by r.dim(A)
         e = e.replaceAll("(^|[^a-zA-Z\\d\\.:])dim\\(", "$1__R.dim(");
-        
+
         // replace '->' by '='
         e = e.replaceAll("<<-", "=");
-	    e = e.replaceAll("<-", "=");
-        
+        e = e.replaceAll("<-", "=");
+
         // replace "+-" by "-"
         e = e.replaceAll("\\+ *-", "-");
         // replace "-123" by "0-123" (at begining of expr)
         e = e.replaceAll("^ *-", "0-");
-        
+
         // replace 'f = function(x)' by 'function f(x)'
         //e = e.replaceAll("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)]", "function $1($2)");
         /*Matcher matcherFunction = Pattern.compile("([\\w\\-]+) *= *function[(]([\\w\\-[^)]]*)[)](.*)").matcher(e);
@@ -444,18 +433,16 @@ public class R2jsSession extends Rsession implements RLog {
             }
             matcherFunction.appendTail(sb);
             e = sb.toString();
-        }   */     
-
+        }   */
         // replace the for expression
         e = e.replaceAll("[(]([^=\\s]+)\\s*in\\s*([\\w\\-]+)\\s*:\\s*([[\\w\\-][.][)][(]]+)[)]\\s*",
                 "($1=$2; $1<=$3; $1++) ");
-        
+
         // Add '{}' between the 'if' and the 'else'
         //e = e.replaceAll("if( *[(][^)]*[)])(.[^}]*)else(.*)", "if$1{$2} else{$3}");
-        
         e = e.replaceAll("(?<!\\.)(\\b)if \\(", "if(");
         e = addIfElseBrackets(e);
-        
+
         // Add "{" and "}" if the function doesn't have them
         e = e.replaceAll("function([.[^)]]*[)]) *([a-zA-Z0-9].*)$", "function$1 {$2}");
 
@@ -467,49 +454,48 @@ public class R2jsSession extends Rsession implements RLog {
         // e = e.replaceAll("function([.[^)]]*[)])
         // *[{](((?!return|function).)*)[}] *;", "function$1 {return $2};");
         // *[{](((?!return|function).)*)[}] *\n", "function$1 {return $2}\n");
-        
+
         // replace operator '**' by '^'
         e = e.replaceAll("\\*\\*", "\\^");
 
-        
         // Replace array indexing
         e = replaceIndexesSet(e);
         e = replaceIndexes(e);
-        
+
         // replace the array in R defined by c(1, 2, ...) by array in js [1, 2, ...]
         // FIXME: this will not work with c(a(2), b) because of parenthesis (maybe treat c like other functions?)
         e = e.replaceAll("(?<!\\.)(\\b)c[(]([.[^):]]*)[)]", "$1[$2]");
         e = e.replaceAll("(?<!\\.)(\\b)c[(]([.[^)]]*)[)]", "$1$2");
-        
+
         // replace "for (x in array) {...}" by: "var arrayLength = array.length;
         // for(var i = 0; i < arrayLength; i++) { x = array[i]; ...}"
         // We can't used the "for (x of array)" expression in javascript because
         // it's not supported by Java8 and his javascript evaluator
         e = e.replaceAll("for *[(]([\\w\\-]+) +in +([\\w\\-]+)[)] *[{]",
                 "var $2Length = __R.dim($2)[0]; for(var i = 0; i < $2Length; i++) {$1 = $2[i]; ");
-        
+
         // Replace "TRUE" by "true" and "FALSE" by "false"
         e = e.replaceAll("(?<!\\.)(\\b)TRUE(\\b)", "true");
         e = e.replaceAll("(?<!\\.)(\\b)FALSE(\\b)", "false");
 
         e = e.replaceAll("(?<!\\.)(\\b)NULL(\\b)", "null");
         e = e.replaceAll("(?<!\\.)(\\b)NA(\\b)", "null");
-        
+
         // Replace '++' operator by a=a+1
-        e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1"); 
-        
+        e = e.replaceAll("([^ ]+)\\+\\+", "$1=$1+1");
+
         // Replace '+=' operator by a=a+x
         e = e.replaceAll("([^ ]+) *\\+\\=", "$1=$1+");
-        
+
         // FIXME this doesn't support += ...
         // Replace operators (+, -, *, /, ...)
-        e = e.replaceAll("\\=\\=","ê");
-        e = e.replaceAll("\\<\\=","ŝ");
-        e = e.replaceAll("\\>\\=","ĝ");
-        e = e.replaceAll("\\|\\|","ô");
-        e = e.replaceAll("\\&\\&","â"); // to avoid replacing 'tolerance &' by two _and
+        e = e.replaceAll("\\=\\=", "ê");
+        e = e.replaceAll("\\<\\=", "ŝ");
+        e = e.replaceAll("\\>\\=", "ĝ");
+        e = e.replaceAll("\\|\\|", "ô");
+        e = e.replaceAll("\\&\\&", "â"); // to avoid replacing 'tolerance &' by two _and
         e = replaceOperators(e);
-        
+
         // Default parameter ("function(arg = defaultValue) {...}") is defined after the version ES6 of javascript
         // Java8 uses a previous version of javascript so we have to transform this expression in:
         // function(arg) { arg = typeof arg !== 'undefined' ? arg :
@@ -529,57 +515,59 @@ public class R2jsSession extends Rsession implements RLog {
 
         // replace matrix expression
         e = createMatrix(e);
-        
+
         // replace array expression
         e = createArray(e);
 
         // replace write csv expression
         e = createWriteCSV(e);
-        
+
         // replace data.frame expression
         e = createDataFrame(e);
-        
+
         // replace list expression
-        e = e.replaceAll("(?<!\\.)(\\b)list\\(\\)","{}");
+        e = e.replaceAll("(?<!\\.)(\\b)list\\(\\)", "{}");
         e = createList(e);
+
+        e = createSetEnv(e);
 
         // format paste function (with sep & collapse args)
         e = createPaste(e);
         e = createPaste0(e);
-        
+
         // replace ls fct expression
         e = createLs(e);
-        
+
         // replace save fct expression
         e = createSaveFunction(e);
-        
+
         // replace load fct expression
         e = createLoadFunction(e);
-        
+
         // replace length fct expression
         e = createLengthFunction(e);
-        
+
         // replace file.exist fct expression
         e = createFileExistsFunction(e);
-        
+
         e = createExistsFunction(e);
         e = createStopIfNotFunction(e);
         //e = createPredefinedFunction(e);
 
         // change for (x in X) {...} by for (x in R._in(X)) {...}, because in R in returns values for arrays (and keys for maps)
         e = e.replaceAll(" in ([^\\{]+)\\{", " in __R._in($1){");
-        
+
         // force regular 'if' to throw error when arg is null
         e = e.replaceAll("if *\\(([^\\{\\n]+)\\)\\s*(\\{|(return))", "if (__R._if($1)) $2");
-        
+
         // replace line return (\n) by ";" if there is a "=" or a "return" in the line
         e = e.replaceAll("return(.*)\n", "return$1 ;\n");
         //e = e.replaceAll("=(.*)\n", "=$1 ;\n");
         e = e.replaceAll("(.[^\\n+-=/\\*]+)\n", "$1 ;\n");
-                
+
         // Remove '+' at begining
         e = e.replaceAll("^ *\\+", "");
-        
+
         // Remove unused ';' (after a bracket for instance)
         e = e.replaceAll("\\{ *;", "\\{");
         //e = e.replaceAll("\\} *;", "\\}"); No! otherwise, will replace 'a={}; \n b=2' by 'a={} \n b=2'
@@ -587,9 +575,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("\\( *;", "\\(");
         e = e.replaceAll("; *;", ";");
 
-        
         e = e.replaceAll("(?<!\\.)(\\b)is__array\\(", "$1Array.isArray(");
-
 
         e = e.replaceAll("(?<!\\.)(\\b)ncol\\(", "$1__R.ncol(");
         e = e.replaceAll("(?<!\\.)(\\b)nrow\\(", "$1__R.nrow(");
@@ -606,6 +592,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)getwd\\(", "$1__R.getwd(");
         e = e.replaceAll("(?<!\\.)(\\b)setwd\\(", "$1__R.setwd(");
         e = e.replaceAll("(?<!\\.)(\\b)SysSleep\\(", "$1__R.SysSleep(");
+        e = e.replaceAll("(?<!\\.)(\\b)SysGetEnv\\(", "$1__R.SysGetEnv(");
         e = e.replaceAll("(?<!\\.)(\\b)isFunction\\(", "$1__R.isFunction(");
         e = e.replaceAll("(?<!\\.)(\\b)isNull\\(", "$1__R.isNull(");
         e = e.replaceAll("(?<!\\.)(\\b)isNA\\(", "$1__R.isNA(");
@@ -626,7 +613,7 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)asCharacter\\(", "$1__R.asCharacter(");
 
         e = e.replaceAll("__R\\.__R\\.", "__R.");
-        
+
         e = e.replaceAll("(?<!\\.)(\\b)runif\\(", "$1__rand.runif(");
         e = e.replaceAll("(?<!\\.)(\\b)rnorm\\(", "$1__rand.rnorm(");
         e = e.replaceAll("(?<!\\.)(\\b)rpois\\(", "$1__rand.rpois(");
@@ -634,21 +621,21 @@ public class R2jsSession extends Rsession implements RLog {
         e = e.replaceAll("(?<!\\.)(\\b)rchisq\\(", "$1__rand.rchisq(");
 
         e = e.replaceAll("__rand\\.__rand\\.", "__rand.");
-        
+
         // Replace function() {return if(condition){a} else {b}} by function() {if(condition{return a} else {return b}}
         e = replaceReturnIf(e);
-        
+
         try {
             e = convertFunction(e);
         } catch (ScriptException ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        
+
         // Store global variables in the object containing all global variables
         storeGlobalVariables(e);
 
         e = replaceArgsNames(e, "__");
-      
+
         // Replace variables by variableStorageObject.variable
         e = replaceVariables(e, variablesSet, THIS_ENVIRONMENT + ".");
 
@@ -658,12 +645,11 @@ public class R2jsSession extends Rsession implements RLog {
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
         e = e.replaceAll("\\$([a-zA-Z._])", ".$1"); //FIXME
-        
+
         // R Comments
         e = e.replaceAll("#", "//");
         //e = e.replaceAll("^(.*)#(.*)$", "$1/*$2*/");
-        
-        
+
         if (debug_js) {
             String[] lines_R = R.split("\n");
             String[] lines_JS = e.split("\n");
@@ -672,7 +658,7 @@ public class R2jsSession extends Rsession implements RLog {
             for (int i = 0; i < Math.max(lines_R.length, lines_JS.length); i++) {
                 System.err.println(
                         rightPad((lines_R.length > i ? lines_R[i] : ""), w)
-                        + " | " + rightPad((i +1)+ "", 3) + " | "
+                        + " | " + rightPad((i + 1) + "", 3) + " | "
                         + (lines_JS.length > i ? lines_JS[i] : ""));
             }
             System.err.println("------------------------------------------------------------------------------------");
@@ -680,27 +666,27 @@ public class R2jsSession extends Rsession implements RLog {
 
         return e;
     }
-    
+
     private String convertFunction(String expr) throws ScriptException {
         Pattern indexPattern = Pattern.compile("(^|[^\\.\\w])((?!function|if|for|while|switch|return)\\w+)[(]");
         Matcher indexMatcher = indexPattern.matcher(expr);
-        
+
         if (indexMatcher.find()) {
             indexMatcher.reset();
             while (indexMatcher.find()) {
                 String fctName = indexMatcher.group(2);
                 // Ignore if the functions is already defined
-                if(!this.variablesSet.contains(fctName)) {
+                if (!this.variablesSet.contains(fctName)) {
                     // If the function is not defined yet in js environment
-                    if(!this.asLogical(this.js.eval("typeof "+ fctName +" !== 'undefined'"))) {
-                         this.variablesSet.add(fctName);
+                    if (!this.asLogical(this.js.eval("typeof " + fctName + " !== 'undefined'"))) {
+                        this.variablesSet.add(fctName);
                     }
                 }
             }
         } else {
             return expr;
         }
-        
+
         return expr;
     }
 
@@ -725,18 +711,18 @@ public class R2jsSession extends Rsession implements RLog {
         }
         return s + sb.toString();
     }
-    
+
     /**
      * Remove commented lines
-     * 
+     *
      * @param expr
-     * @return 
+     * @return
      */
     private String removeCommentedLines(String expr) {
         StringBuilder sb = new StringBuilder();
         String lines[] = expr.split("\\r?\\n");
-        for(String line : lines) {
-            if(!line.trim().startsWith("#")) {
+        for (String line : lines) {
+            if (!line.trim().startsWith("#")) {
                 sb.append(line);
                 sb.append("\n");
             }
@@ -744,59 +730,57 @@ public class R2jsSession extends Rsession implements RLog {
         sb.setLength(sb.length() - 1);
         return sb.toString();
     }
-    
+
     /**
-     * Add prefix before arguments names of the function to not replace 
-     * them after by "global variables"
-     * 
-     * Ex:
-     * In this example we add the prefix "__" before var1 to not mix up with the __this__.var1 variable
-     * var1 <- 1                        : __this__.var1 = 1
-     * f1 <- function(var1) { var1 + 1} : __this__.f1 = function(__var1) {return math.add(__var1 , 1)}
-     * 
+     * Add prefix before arguments names of the function to not replace them
+     * after by "global variables"
+     *
+     * Ex: In this example we add the prefix "__" before var1 to not mix up with
+     * the __this__.var1 variable var1 <- 1 : __this__.var1 = 1 f1 <-
+     * function(var1) { var1 + 1} : __this__.f1 = function(__var1) {return
+     * math.add(__var1 , 1)}
+     *
      * @param expr - the expression to replace
      * @param prefix - the prefix to add before arguments of the function
-     * @return 
+     * @return
      */
     private String replaceArgsNames(String expr, String prefix) {
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "function");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
 
             Collection<String> arguments = Arrays.stream(argumentsMap.get("default").split(",")).map(String::trim).collect(Collectors.toList());
-            
+
             int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
-            int fctCloseBracketIndex =  getNextExpressionLastIndex(result, ifStartBracketIndex+1, "}")+1;
+            int fctCloseBracketIndex = getNextExpressionLastIndex(result, ifStartBracketIndex + 1, "}") + 1;
 
+            String function = result.substring(startIndex, fctCloseBracketIndex + 1);
 
-            String function = result.substring(startIndex, fctCloseBracketIndex+1);
-            
             // Prefix function's arguments by "__"
             String replacedFunction = replaceVariables(function, arguments, prefix);
             replacedFunction = replacedFunction.replaceAll("(\\b)function(\\b)", "$1_function$2");
-            
+
             // expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(replacedFunction);
             sb.append(result.substring(fctCloseBracketIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "function" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "function");
         }
         result = result.replaceAll("(\\b)_function(\\b)", "$1function$2");
 
         // Now replace also in calls to functions: f(a=2) -> f(__a=2)
-        
         for (String f : variablesSet) {
-            Pattern fPattern = Pattern.compile("\\b("+f+")\\(([^\\)]*)\\)");
+            Pattern fPattern = Pattern.compile("\\b(" + f + ")\\(([^\\)]*)\\)");
             Matcher fMatcher = fPattern.matcher(result);
 
             if (fMatcher.find()) {
@@ -813,13 +797,13 @@ public class R2jsSession extends Rsession implements RLog {
                             String[] kv_arg = argsArray[i].split("=");
                             argsArray[i] = "__" + kv_arg[0].trim() + " = " + kv_arg[1];
                         }
-                        args_buf.append(argsArray[i] + (i==(argsArray.length-1)?"":","));
+                        args_buf.append(argsArray[i] + (i == (argsArray.length - 1) ? "" : ","));
                     }
-                    fMatcher.appendReplacement(result_buf, (f+"("+args_buf.toString()+")").replace("$", "\\$"));
+                    fMatcher.appendReplacement(result_buf, (f + "(" + args_buf.toString() + ")").replace("$", "\\$"));
                 }
-                
+
                 fMatcher.appendTail(result_buf);
-                
+
                 result = result_buf.toString();
             }
         }
@@ -843,7 +827,7 @@ public class R2jsSession extends Rsession implements RLog {
         for (String variable : variables) {
             if (variable.length() > 0) {
                 //result = result.replaceAll("(\\b)^((?!" + JS_VARIABLE_STORAGE_OBJECT + "\\.).)*(\\b)(" + variable + ")(\\b)", JS_VARIABLE_STORAGE_OBJECT + "." + variable);
-                result = result.replaceAll("\\b(?<![\\$\\.[__]])" + variable + "\\b",prefix + variable);
+                result = result.replaceAll("\\b(?<![\\$\\.[__]])" + variable + "\\b", prefix + variable);
                 result = result.replaceAll(prefix + prefix, prefix);
             }
         }
@@ -859,74 +843,75 @@ public class R2jsSession extends Rsession implements RLog {
      * The result is a list containing all quotes expression and at the first
      * index the global expression with quotes replaced by all variables
      *
-     * @param expr
-     *            - the expression with quotes
-     * @param startIndex
-     *            - the index i of the first "QUOTE_EXPRESSION_i_" replacement
+     * @param expr - the expression with quotes
+     * @param startIndex - the index i of the first "QUOTE_EXPRESSION_i_"
+     * replacement
      * @return a list containing all quotes expression
      */
     static List<String> replaceQuotesByVariables(String expr, int startIndex) {
 
         List<String> quotesList = new ArrayList<>();
-        String singleQuote="'";
-        String doubleQuote="\"";
+        String singleQuote = "'";
+        String doubleQuote = "\"";
 
         int cmp = startIndex;
         quotesList.add(expr);
         StringBuffer currentExpr = new StringBuffer(expr);
         // While no more quotes founded
-        while(true) {
+        while (true) {
             int doubleQuoteIdx = currentExpr.indexOf(doubleQuote);
             int singleQuoteIdx = currentExpr.indexOf(singleQuote);
-            int startQuoteIdx=-1;
+            int startQuoteIdx = -1;
             String currentQuote = "";
-            if(singleQuoteIdx>=0 && (doubleQuoteIdx<0 || singleQuoteIdx<doubleQuoteIdx)){
-                currentQuote=singleQuote;
-                startQuoteIdx=singleQuoteIdx;
+            if (singleQuoteIdx >= 0 && (doubleQuoteIdx < 0 || singleQuoteIdx < doubleQuoteIdx)) {
+                currentQuote = singleQuote;
+                startQuoteIdx = singleQuoteIdx;
             } else {
-                currentQuote=doubleQuote;
-                startQuoteIdx=doubleQuoteIdx;
+                currentQuote = doubleQuote;
+                startQuoteIdx = doubleQuoteIdx;
             }
-            if(startQuoteIdx<0) break; // No more quotes
-            int endQuoteIdx = currentExpr.indexOf(currentQuote, startQuoteIdx+1);
-            if(endQuoteIdx<=startQuoteIdx) throw new IllegalArgumentException("No ending quotes for quote " + currentQuote + " at position: " + startQuoteIdx);
-            String quotedExpr = currentExpr.substring(startQuoteIdx, endQuoteIdx+1);
+            if (startQuoteIdx < 0) {
+                break; // No more quotes
+            }
+            int endQuoteIdx = currentExpr.indexOf(currentQuote, startQuoteIdx + 1);
+            if (endQuoteIdx <= startQuoteIdx) {
+                throw new IllegalArgumentException("No ending quotes for quote " + currentQuote + " at position: " + startQuoteIdx);
+            }
+            String quotedExpr = currentExpr.substring(startQuoteIdx, endQuoteIdx + 1);
             quotesList.add(quotedExpr);
-            currentExpr.replace(startQuoteIdx, endQuoteIdx+1, "QUOTE_EXPRESSION_" + cmp+"_");
+            currentExpr.replace(startQuoteIdx, endQuoteIdx + 1, "QUOTE_EXPRESSION_" + cmp + "_");
             cmp++;
         }
 
         quotesList.set(0, currentExpr.toString());
         return quotesList;
     }
-    
+
     /**
      * Replace variables: QUOTE_EXPRESSION_ID by their expression in quotesList
      *
-     * @param quotesList
-     *            - a list containing all quotes expression in the same order
-     *            than the ID of variables. (WARNING: The first index of the
-     *            list is not used)
-     * @param expr
-     *            - expression containing variables to replace by quotes
-     *            expressions
+     * @param quotesList - a list containing all quotes expression in the same
+     * order than the ID of variables. (WARNING: The first index of the list is
+     * not used)
+     * @param expr - expression containing variables to replace by quotes
+     * expressions
      * @return the expression with variables replaced by quotes expressions
      */
     static String replaceNameByQuotes(List<String> quotesList, String expr, boolean removeRoundingQuotes) {
 
         for (int i = 1; i < quotesList.size(); i++) {
             String quote = quotesList.get(i).trim();
-            if(removeRoundingQuotes) {
-                quote = quote.substring(1, quote.length()-1);
-            }   
+            if (removeRoundingQuotes) {
+                quote = quote.substring(1, quote.length() - 1);
+            }
             quote = quote.replace("\\", "\\\\\\\\"); // Add more backslash to pass java and js
-            
-            expr = expr.replaceAll("QUOTE_EXPRESSION_" + i+"_", quote);
+
+            expr = expr.replaceAll("QUOTE_EXPRESSION_" + i + "_", quote);
         }
-        
+
         return expr;
     }
-    
+
     /**
      * LS function
      *
@@ -934,24 +919,24 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private String createLs(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "ls");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             // Pattern to match
             String pattern = argumentsMap.get("pattern");
-            
+
             // Build the mathjs expression to generate random uniform
             // distribution
             StringBuilder unifRandomSb = new StringBuilder();
-            
+
             // If there is a regex pattern argument
             if (pattern != null) {
                 unifRandomSb.append("__R.removeMatching(Object.keys(");
@@ -964,7 +949,7 @@ public class R2jsSession extends Rsession implements RLog {
                 unifRandomSb.append(THIS_ENVIRONMENT);
                 unifRandomSb.append(")");
             }
-            
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -972,55 +957,58 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(unifRandomSb.toString());
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "ls" fct
             rFunctionArgumentsDTO = getFunctionArguments(result, "ls");
         }
-        
+
         return result;
     }
-    
+
     @Override
     public String[] ls(boolean all) {
         List<String> variablesandfunctions = new LinkedList<>();
         variablesandfunctions.addAll(variablesSet);
         variablesandfunctions.addAll(functionsSet);
         variablesandfunctions.removeAll(Arrays.asList(DISABLED_FUNCTIONS));
-        
+
         // replace by Obejct.keys() ?
-        if (all) 
+        if (all) {
             return variablesandfunctions.toArray(new String[]{});
-        else {
+        } else {
             List<String> notall = new LinkedList<>();
             for (String v : variablesandfunctions) {
-                if (!v.startsWith("_")) notall.add(v);
+                if (!v.startsWith("_")) {
+                    notall.add(v);
+                }
             }
             return notall.toArray(new String[]{});
         }
     }
-    
-    
+
     /**
-     * Split an array with the separator only if the separator string is not in parenthesis or bracket
+     * Split an array with the separator only if the separator string is not in
+     * parenthesis or bracket
+     *
      * @param expr - the expression containing the array to replace
      * @param sep - the separator between values in the array
      * @return the split String array
      */
     private static String[] splitString(String expr, String sep) {
         List<String> splitList = new ArrayList<>();
-        
+
         int sepIndex = -1;
         int exprLength = expr.length();
         while (sepIndex < exprLength) {
             int nextIndex = getNextExpressionLastIndex(expr, sepIndex, sep) + 1;
-            String argumentName = expr.substring(sepIndex+1, nextIndex).trim();
+            String argumentName = expr.substring(sepIndex + 1, nextIndex).trim();
             splitList.add(argumentName);
             sepIndex = nextIndex;
         }
-        
+
         return splitList.toArray(new String[0]);
     }
-    
+
     static String arrayIfNeeded(String[] l) {
         if (l == null) {
             return null;
@@ -1042,7 +1030,7 @@ public class R2jsSession extends Rsession implements RLog {
             return arrayif.toString();
         }
     }
-        
+
     // accept:
     //X[i]
     //X[[i]]
@@ -1052,9 +1040,9 @@ public class R2jsSession extends Rsession implements RLog {
     //f(X[i]
     //X[Y[i]]
     //X[[Y[i]]]
-   private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
-   // to get only one '[': "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]"
-   
+    private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
+    // to get only one '[': "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]"
+
     /**
      * Replace indexes by mathjs indexes
      *
@@ -1065,22 +1053,22 @@ public class R2jsSession extends Rsession implements RLog {
         Matcher intricated = Pattern.compile(".*(\\[+)(.[^\\]]+)(\\[).*").matcher(expr);
         if (intricated.find()) {
             intricated.reset();
-            List<String > found = new LinkedList<>();
-            while(intricated.find()){
-                found.add(intricated.group(1)+intricated.group(2)+intricated.group(3));
+            List<String> found = new LinkedList<>();
+            while (intricated.find()) {
+                found.add(intricated.group(1) + intricated.group(2) + intricated.group(3));
             }
-            throw new UnsupportedOperationException("Intricated indexes 'abc[def[i]]' not supported at:"+String.join("\n", found));
+            throw new UnsupportedOperationException("Intricated indexes 'abc[def[i]]' not supported at:" + String.join("\n", found));
         }
-        
+
         Pattern indexPattern = Pattern.compile(index_pattern);
         Matcher indexMatcher = indexPattern.matcher(expr);
 
-        if (indexMatcher.find()) {        
+        if (indexMatcher.find()) {
             indexMatcher.reset();
             StringBuffer sb = new StringBuffer("");
             while (indexMatcher.find()) {
                 String arrayName = indexMatcher.group(1);
-                String indexes =" " + indexMatcher.group(3) + " ";
+                String indexes = " " + indexMatcher.group(3) + " ";
                 String[] indexesArray = splitString(indexes, ",");
 
                 for (int i = 0; i < indexesArray.length; i++) {
@@ -1096,7 +1084,7 @@ public class R2jsSession extends Rsession implements RLog {
                 result.append(", __R._index(");
                 result.append(arrayIfNeeded(indexesArray));
                 result.append(")))");
-                
+
                 indexMatcher.appendReplacement(sb, result.toString().replace("$", "\\$"));
             }
             indexMatcher.appendTail(sb);
@@ -1111,14 +1099,14 @@ public class R2jsSession extends Rsession implements RLog {
         Matcher intricated = Pattern.compile(".*(\\[+)(.[^\\]]+)(\\[).*").matcher(expr);
         if (intricated.find()) {
             intricated.reset();
-            List<String > found = new LinkedList<>();
-            while(intricated.find()){
-            found.add(intricated.group(1)+intricated.group(2)+intricated.group(3));
+            List<String> found = new LinkedList<>();
+            while (intricated.find()) {
+                found.add(intricated.group(1) + intricated.group(2) + intricated.group(3));
             }
-            throw new UnsupportedOperationException("Intricated indexes 'abc[def[i]]' not supported at:"+String.join("\n", found));
+            throw new UnsupportedOperationException("Intricated indexes 'abc[def[i]]' not supported at:" + String.join("\n", found));
         }
-      
-        Pattern indexPattern = Pattern.compile(index_pattern+"\\s*[\\=]{1}(.*)");
+
+        Pattern indexPattern = Pattern.compile(index_pattern + "\\s*[\\=]{1}(.*)");
         Matcher indexMatcher = indexPattern.matcher(expr);
 
         if (indexMatcher.find()) {
@@ -1157,27 +1145,27 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     /**
-     * This function add brackets in if/else expression.
-     * In nashorn (Java8_161 - ECMA5) the if without '{' work but not the if else without '{'
-     * 
-     * Example: Before: "if(a>1) 1 else 2"
-     *          After : "if(a>1) {1} else {2}"
+     * This function add brackets in if/else expression. In nashorn (Java8_161 -
+     * ECMA5) the if without '{' work but not the if else without '{'
+     *
+     * Example: Before: "if(a>1) 1 else 2" After : "if(a>1) {1} else {2}"
+     *
      * @param expr
      * @return the transformed expression
      */
     private static String addIfElseBrackets(String expr) {
-        
+
         final String ifReplacementString = "__IF__";
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "if", true);
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             // Data to write
             String ifArg = argumentsMap.get("default");
 
@@ -1187,19 +1175,19 @@ public class R2jsSession extends Rsession implements RLog {
             ifSb.append(ifArg);
             ifSb.append(")");
 
-            if(!result.substring(endIndex+1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
-                
+            if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
+
                 ifSb.append("{");
                 int elseIndex = expr.indexOf("else", endIndex);
-                
-                if(elseIndex >= 0) {
-                    ifSb.append(result.substring(endIndex+1, elseIndex));
+
+                if (elseIndex >= 0) {
+                    ifSb.append(result.substring(endIndex + 1, elseIndex));
                     ifSb.append("} else {");
-                    ifSb.append(result.substring(elseIndex+5));
+                    ifSb.append(result.substring(elseIndex + 5));
                 } else {
-                    ifSb.append(result.substring(endIndex+1, result.length()));
+                    ifSb.append(result.substring(endIndex + 1, result.length()));
                 }
-                
+
                 StringBuilder sb = new StringBuilder();
                 sb.append(result.substring(0, startIndex));
                 sb.append(ifSb.toString());
@@ -1212,16 +1200,16 @@ public class R2jsSession extends Rsession implements RLog {
                 sb.append(result.substring(endIndex + 1));
                 result = sb.toString();
             }
-            
+
             // Search the next "if"
             rFunctionArgumentsDTO = getFunctionArguments(result, "if", true);
         }
-        
+
         result = result.replaceAll(ifReplacementString, "if");
-        
+
         return result;
     }
-    
+
     /**
      * Convert the R expression or write csv: write.csv(data, file) to js
      * expression: r.write(file, data)
@@ -1231,23 +1219,23 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private static String createWriteCSV(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "write__csv");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             // Data to write
             String data = argumentsMap.get("data");
-            
+
             // File
             String file = argumentsMap.get("file");
-            
+
             // Build the mathjs expression to generate random uniform
             // distribution
             StringBuilder unifRandomSb = new StringBuilder();
@@ -1256,7 +1244,7 @@ public class R2jsSession extends Rsession implements RLog {
             unifRandomSb.append(", ");
             unifRandomSb.append(data.trim());
             unifRandomSb.append(".toString())");
-            
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1264,14 +1252,14 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(unifRandomSb.toString());
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "write__csv");
         }
-        
+
         return result;
     }
-    
+
     /**
      * Convert the R expression of data.frame to js object.
      *
@@ -1280,36 +1268,37 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private String createDataFrame(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "data__frame");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
-            
+
             StringBuilder dataFrameSb = new StringBuilder();
             dataFrameSb.append("__R.createMathObject({");
-            
+
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                if(key.equals(value))
+                if (key.equals(value)) {
                     dataFrameSb.append("'");
+                }
                 dataFrameSb.append(key);
-                if(key.equals(value))
+                if (key.equals(value)) {
                     dataFrameSb.append("'");
+                }
                 dataFrameSb.append(":");
                 dataFrameSb.append(value);
                 dataFrameSb.append(",");
             }
-            
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
 
-            
+            dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), "})");
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1317,21 +1306,21 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(dataFrameSb.toString());
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
-            List<String> newQuoteList = replaceQuotesByVariables(result,quotesList.size());
+
+            List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
             result = newQuoteList.get(0);
-            for(int i=1; i<newQuoteList.size(); i++) {
+            for (int i = 1; i < newQuoteList.size(); i++) {
                 quotesList.add(newQuoteList.get(i));
             }
-            
+
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "data__frame");
         }
-        
+
         return result;
     }
-    
-        /**
+
+    /**
      * Convert the R expression of list to js object.
      *
      *
@@ -1340,34 +1329,35 @@ public class R2jsSession extends Rsession implements RLog {
      */
     private String createList(String expr) {
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "list");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
-            
+
             StringBuilder dataFrameSb = new StringBuilder();
             dataFrameSb.append("__R.createMathObject({");
-            
+
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
             for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                if(key.equals(value))
+                if (key.equals(value)) {
                     dataFrameSb.append("'");
+                }
                 dataFrameSb.append(key);
-                if(key.equals(value))
+                if (key.equals(value)) {
                     dataFrameSb.append("'");
+                }
                 dataFrameSb.append(":");
                 dataFrameSb.append(value);
                 dataFrameSb.append(",");
             }
-            
-            dataFrameSb.replace(dataFrameSb.length()-1, dataFrameSb.length(), "})");
 
-            
+            dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), "})");
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1375,45 +1365,125 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(dataFrameSb.toString());
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
-            List<String> newQuoteList = replaceQuotesByVariables(result,quotesList.size());
+
+            List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
             result = newQuoteList.get(0);
-            for(int i=1; i<newQuoteList.size(); i++) {
+            for (int i = 1; i < newQuoteList.size(); i++) {
                 quotesList.add(newQuoteList.get(i));
             }
-            
+
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "list");
         }
-        if (result.startsWith("{") && result.endsWith("}")) 
-            result = "("+result+")"; //hack to avoid passing "{a:1,b:2}" to javascript, which is then misinterpredted as an expression, and not as a list declaration.
+        if (result.startsWith("{") && result.endsWith("}")) {
+            result = "(" + result + ")"; //hack to avoid passing "{a:1,b:2}" to javascript, which is then misinterpredted as an expression, and not as a list declaration.
+        }
         return result;
     }
-    
+
+    private String createSetEnv(String expr) {
+        String result = expr;
+
+        RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "Sys__setenv");
+
+        while (rFunctionArgumentsDTO != null) {
+
+            int startIndex = rFunctionArgumentsDTO.getStartIndex();
+            int endIndex = rFunctionArgumentsDTO.getStopIndex();
+
+            StringBuilder dataFrameSb = new StringBuilder();
+            dataFrameSb.append("__R.SysSetEnv({");
+
+            Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (key.equals(value)) {
+                    dataFrameSb.append("'");
+                }
+                dataFrameSb.append(key);
+                if (key.equals(value)) {
+                    dataFrameSb.append("'");
+                }
+                dataFrameSb.append(":");
+                dataFrameSb.append(value);
+                dataFrameSb.append(",");
+            }
+
+            dataFrameSb.replace(dataFrameSb.length() - 1, dataFrameSb.length(), "})");
+
+            // Replace the R matrix expression by the current matrix js
+            // expression
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(dataFrameSb.toString());
+            sb.append(result.substring(endIndex + 1));
+            result = sb.toString();
+
+            List<String> newQuoteList = replaceQuotesByVariables(result, quotesList.size());
+            result = newQuoteList.get(0);
+            for (int i = 1; i < newQuoteList.size(); i++) {
+                quotesList.add(newQuoteList.get(i));
+            }
+
+            // Search the next "array"
+            rFunctionArgumentsDTO = getFunctionArguments(result, "Sys__setenv");
+        }
+
+        return result;
+    }
+
+    public static void setEnv(String k, String v) throws Exception {
+        try {
+            Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
+            Field theEnvironmentField = processEnvironmentClass.getDeclaredField("theEnvironment");
+            theEnvironmentField.setAccessible(true);
+            Map<String, String> env = (Map<String, String>) theEnvironmentField.get(null);
+            env.put(k,v);
+            Field theCaseInsensitiveEnvironmentField = processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment");
+            theCaseInsensitiveEnvironmentField.setAccessible(true);
+            Map<String, String> cienv = (Map<String, String>) theCaseInsensitiveEnvironmentField.get(null);
+            cienv.put(k,v);
+        } catch (NoSuchFieldException e) {
+            Class[] classes = Collections.class.getDeclaredClasses();
+            Map<String, String> env = System.getenv();
+            for (Class cl : classes) {
+                if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
+                    Field field = cl.getDeclaredField("m");
+                    field.setAccessible(true);
+                    Object obj = field.get(env);
+                    Map<String, String> map = (Map<String, String>) obj;
+                    map.clear();
+                    map.put(k,v);
+                }
+            }
+        }
+    }
+
     /**
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private static String createMatrix(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "matrix");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String data = argumentsMap.get("data");
             String nrow = argumentsMap.get("nrow");
             String ncol = argumentsMap.get("ncol");
             String byrow = argumentsMap.get("byrow");
-            
+
             // Build the mathjs expression to create an array/matrix
             StringBuilder arraySb = new StringBuilder();
-            
+
             if (nrow == null && ncol == null) {
                 // We just create an array nrow and ncol are null
                 nrow = "math.prod(dim(" + data + "))";
@@ -1427,7 +1497,7 @@ public class R2jsSession extends Rsession implements RLog {
                 // compute the number of rows
                 nrow = "math.ceil(math.dotDivide(math.prod(dim(" + data + ")), " + ncol + "))";
             }
-            
+
             // Create the array containing the dimension of the result matrix
             StringBuilder stringDimArraybuilder = new StringBuilder();
             stringDimArraybuilder.append("dim = [");
@@ -1436,7 +1506,7 @@ public class R2jsSession extends Rsession implements RLog {
             stringDimArraybuilder.append(ncol);
             stringDimArraybuilder.append("]");
             String stringDimArray = stringDimArraybuilder.toString();
-            
+
             if (byrow == null || byrow.equals("false")) {
                 arraySb.append("math.transpose(math.reshape(__R.expendArray(");
                 arraySb.append(data);
@@ -1454,7 +1524,7 @@ public class R2jsSession extends Rsession implements RLog {
                 arraySb.append(stringDimArray);
                 arraySb.append(")");
             }
-            
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1462,14 +1532,14 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(arraySb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "matrix");
         }
-        
+
         return result;
     }
-    
+
     /**
      * Convert the R expression: array(c(1, 2, 3),dim = c(3,3,2)) to js array
      *
@@ -1481,26 +1551,26 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private static String createArray(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "array");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             // Array containing data
             String stringArray = argumentsMap.get("data");
-            
+
             // Array containing dimension
             String stringDimArray = argumentsMap.get("dim");
-            
+
             // Build the mathjs expression to create an array/matrix
             StringBuilder arraySb = new StringBuilder();
-            
+
             // If the field 'dim' is not null
             if (stringDimArray != null) {
                 arraySb.append("math.transpose(math.reshape(__R.expendArray(");
@@ -1518,7 +1588,7 @@ public class R2jsSession extends Rsession implements RLog {
                 arraySb.append(stringArray);
                 arraySb.append("))))");
             }
-            
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1526,14 +1596,14 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(arraySb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "array"
             rFunctionArgumentsDTO = getFunctionArguments(result, "array");
         }
-        
+
         return result;
     }
-    
+
     private String createPaste(String expr) {
         String result = expr;
 
@@ -1546,7 +1616,7 @@ public class R2jsSession extends Rsession implements RLog {
 
             StringBuilder dataFrameSb = new StringBuilder();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String sep = argumentsMap.getOrDefault("sep", "' '");
             String collapse = argumentsMap.getOrDefault("collapse", "';'");
 
@@ -1582,7 +1652,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         return result;
     }
-    
+
     private String createPaste0(String expr) {
         String result = expr;
 
@@ -1595,7 +1665,7 @@ public class R2jsSession extends Rsession implements RLog {
 
             StringBuilder dataFrameSb = new StringBuilder();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String collapse = argumentsMap.getOrDefault("collapse", "';'");
 
             dataFrameSb.append("Rpaste0(" + collapse + ",");
@@ -1630,27 +1700,28 @@ public class R2jsSession extends Rsession implements RLog {
 
         return result;
     }
-    
+
     /**
-     * This function replaces the R function save by JS equivalent
-     * It writes in file the variable with its value sperated by ':' in the file (example: "variable:value")
-     * WARNING the function works only if the variable to save is between quotes
+     * This function replaces the R function save by JS equivalent It writes in
+     * file the variable with its value sperated by ':' in the file (example:
+     * "variable:value") WARNING the function works only if the variable to save
+     * is between quotes
      *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private String createSaveFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "save");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String listString = argumentsMap.get("list");
             String fileString = argumentsMap.get("file");
 
@@ -1658,7 +1729,7 @@ public class R2jsSession extends Rsession implements RLog {
 
             // Build the mathjs expression to create an array/matrix
             StringBuilder saveSb = new StringBuilder();
-            
+
             saveSb.append("__R.write(");
             saveSb.append(fileString);
             saveSb.append(", ");
@@ -1667,7 +1738,7 @@ public class R2jsSession extends Rsession implements RLog {
             saveSb.append(", ");
             saveSb.append(THIS_ENVIRONMENT);
             saveSb.append("))");
-            
+
             // Replace the R matrix expression by the current matrix js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1675,14 +1746,14 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(saveSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "save" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "save");
         }
-        
+
         return result;
     }
-    
+
     /**
      * Load variables in a json
      *
@@ -1690,28 +1761,28 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private String createLoadFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "load");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String fileString = argumentsMap.get("file");
-            
+
             // Add all loaded variables to the java list of variables
             try {
-                String readVariablesExpr = replaceNameByQuotes(quotesList,"__R.readJsonVariables(" + fileString + ")", false);
-                String[] loadedVariables = (String[])cast(js.eval(readVariablesExpr));
+                String readVariablesExpr = replaceNameByQuotes(quotesList, "__R.readJsonVariables(" + fileString + ")", false);
+                String[] loadedVariables = (String[]) cast(js.eval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
             } catch (ScriptException ex) {
                 Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             }
-            
+
             // Build the mathjs expression to create load data
             StringBuilder loadSb = new StringBuilder();
             loadSb.append("__R.loadJson(");
@@ -1719,9 +1790,8 @@ public class R2jsSession extends Rsession implements RLog {
             loadSb.append(", ");
             loadSb.append(THIS_ENVIRONMENT);
             loadSb.append(")");
-            
+
             // TODO add loaded function as global variables: storeGlobalVariables(String expr)
-            
             // Replace the R load expression by the current load js
             // expression
             StringBuilder sb = new StringBuilder();
@@ -1729,113 +1799,111 @@ public class R2jsSession extends Rsession implements RLog {
             sb.append(loadSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "load"
             rFunctionArgumentsDTO = getFunctionArguments(result, "load");
         }
-        
+
         return result;
     }
-    
-    
+
     /**
      *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private static String createLengthFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "length");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String values = argumentsMap.get("default");
-            
+
             // Build the mathjs expression
             StringBuilder rbindSb = new StringBuilder();
-            
+
             rbindSb.append("math.squeeze(math.subset(dim(");
             rbindSb.append(values);
             rbindSb.append("), math.index(0)))");
-            
+
             // Replace the R cbind expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(rbindSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "cbind" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "length");
         }
-        
+
         return result;
     }
-    
+
     /**
-     * Replace 'function() {return if(condition){a} else {b}}' by:
-     *         'function() {if(condition{return a} else {return b}}'
-     *  
+     * Replace 'function() {return if(condition){a} else {b}}' by: 'function()
+     * {if(condition{return a} else {return b}}'
+     *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private static String replaceReturnIf(String expr) {
-        
+
         String result = expr;
         result = result.replaceAll("\\breturn +if *\\(", "returnif(");
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(result, "returnif", true);
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String values = argumentsMap.get("default");
-            
+
             // Build the mathjs expression
             StringBuilder ifSb = new StringBuilder();
-            
+
             ifSb.append("if(");
             ifSb.append(values);
             ifSb.append(") {return ");
-            
+
             int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
-            int ifCloseBracketIndex =  getNextExpressionLastIndex(result, ifStartBracketIndex+1, "}")+1;
-            ifSb.append(result.substring(ifStartBracketIndex+1, ifCloseBracketIndex+1));
+            int ifCloseBracketIndex = getNextExpressionLastIndex(result, ifStartBracketIndex + 1, "}") + 1;
+            ifSb.append(result.substring(ifStartBracketIndex + 1, ifCloseBracketIndex + 1));
             //ifSb.append("}");
-            if(result.substring(ifCloseBracketIndex+1).trim().startsWith("else")) {
-                int elseStartBracketIndex = result.substring(ifCloseBracketIndex+1).indexOf("{") + ifCloseBracketIndex+1;
-                int elseCloseBracketIndex = getNextExpressionLastIndex(result, elseStartBracketIndex + 1, "}")+1;
+            if (result.substring(ifCloseBracketIndex + 1).trim().startsWith("else")) {
+                int elseStartBracketIndex = result.substring(ifCloseBracketIndex + 1).indexOf("{") + ifCloseBracketIndex + 1;
+                int elseCloseBracketIndex = getNextExpressionLastIndex(result, elseStartBracketIndex + 1, "}") + 1;
                 ifSb.append(" else {return ");
-                ifSb.append(result.substring(elseStartBracketIndex+1, elseCloseBracketIndex+1));
+                ifSb.append(result.substring(elseStartBracketIndex + 1, elseCloseBracketIndex + 1));
                 endIndex = elseCloseBracketIndex;
             } else {
                 endIndex = ifCloseBracketIndex;
             }
-            
-            
+
             // Replace the R cbind expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(ifSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "return if" in the expression
             result = result.replaceAll("\\breturn +if *\\(", "returnif(");
             rFunctionArgumentsDTO = getFunctionArguments(result, "returnif");
         }
-        
+
         return result;
     }
-    
+
     /**
      * This function replaces the R function file.exist in JavaScript
      *
@@ -1843,80 +1911,81 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private static String createFileExistsFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "file__exists");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String values = argumentsMap.get("default");
-            
+
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
-            
+
             fileExistSb.append("__R.fileExists(");
             fileExistSb.append(values);
             fileExistSb.append(")");
-            
+
             // Replace the R file.exist expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(fileExistSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "file.exist" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "file__exists");
         }
-        
+
         return result;
     }
-    
+
     /**
-     * This function replaces the R function exists in JavaScript
-     * WARNING: arguments('where', 'envir', 'frame', 'mode' and 'inherits') are not supported yet and ignored
+     * This function replaces the R function exists in JavaScript WARNING:
+     * arguments('where', 'envir', 'frame', 'mode' and 'inherits') are not
+     * supported yet and ignored
      *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private String createExistsFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "exists");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String variable = argumentsMap.get("default");
-            
+
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
-            
+
             fileExistSb.append(THIS_ENVIRONMENT);
             fileExistSb.append(".hasOwnProperty(");
             fileExistSb.append(variable);
             fileExistSb.append(")");
-            
+
             // Replace the R exists expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(fileExistSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "exists" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "exists");
         }
-        
+
         return result;
     }
 
@@ -1927,73 +1996,72 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the expression with replaced function
      */
     private static String createStopIfNotFunction(String expr) {
-        
+
         String result = expr;
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "stopifnot");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
+
             String values = argumentsMap.get("default");
-            
+
             // Build the mathjs expression
             StringBuilder fileExistSb = new StringBuilder();
-            
+
             fileExistSb.append("__R.stopIfNot(");
             fileExistSb.append(values);
             fileExistSb.append(",'");
             fileExistSb.append(values);
             fileExistSb.append("')");
-            
+
             // Replace the R file.exist expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(fileExistSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "stopifnot" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "stopifnot");
         }
-        
+
         return result;
     }
-    
+
     /**
-     * This function replace f = function(x=1, y=2) by 
-     * f = function(x = typeof x != 'undefined' ? x : 1, y = typeof y != 'undefined' ? y : 2)
+     * This function replace f = function(x=1, y=2) by f = function(x = typeof x
+     * != 'undefined' ? x : 1, y = typeof y != 'undefined' ? y : 2)
      *
-     * 
+     *
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private static String createPredefinedFunction(String expr) {
-        
+
         String result = expr;
         String functionReplacementString = "__FUNCTION_REPLACEMENT";
-        
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "function");
-        
+
         while (rFunctionArgumentsDTO != null) {
-            
+
             int startIndex = rFunctionArgumentsDTO.getStartIndex();
             int endIndex = rFunctionArgumentsDTO.getStopIndex();
             Map<String, String> argumentsMap = rFunctionArgumentsDTO.getGroups();
-            
-            
+
             // Build the mathjs expression
             StringBuilder functionSb = new StringBuilder();
             functionSb.append(functionReplacementString);
             functionSb.append("(");
-            
-            for(Map.Entry<String, String> entry : argumentsMap.entrySet()) {
+
+            for (Map.Entry<String, String> entry : argumentsMap.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                
+
                 functionSb.append("(");
                 functionSb.append(key);
                 functionSb.append(" = typeof ");
@@ -2003,44 +2071,47 @@ public class R2jsSession extends Rsession implements RLog {
                 functionSb.append(" : ");
                 functionSb.append(value);
                 functionSb.append(",");
-                
+
             }
-            
-            functionSb = functionSb.deleteCharAt(functionSb.length() -1);
+
+            functionSb = functionSb.deleteCharAt(functionSb.length() - 1);
             functionSb.append(");");
-            
+
             // Replace the R file.exist expression by the current js expression
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(functionSb);
             sb.append(result.substring(endIndex + 1));
             result = sb.toString();
-            
+
             // Search the next "function" in the expression
             rFunctionArgumentsDTO = getFunctionArguments(result, "function");
         }
-        
+
         result = result.replaceAll(functionReplacementString, "function");
-        
+
         return result;
     }
-    
+
     private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName) {
         return getFunctionArguments(expr, fctName, false);
     }
-    
+
     /**
-     * Get the beginning, the ending and arguments of a function. This function search for the first occurence
-     * of "fctName" in the "expr" and return a DTO containing all these informations.
-     * If an argument field is not informed, a default field will be affected.
+     * Get the beginning, the ending and arguments of a function. This function
+     * search for the first occurence of "fctName" in the "expr" and return a
+     * DTO containing all these informations. If an argument field is not
+     * informed, a default field will be affected.
      *
      * @param expr : the expression where we search the function
      * @param fctName : the name of the wanted function
-     * @param ignoreOperators: if true, ignore '==' and return only arguments separated by ','
-     * @return a DTO containing: start index , end index and arguments of the function found
+     * @param ignoreOperators: if true, ignore '==' and return only arguments
+     * separated by ','
+     * @return a DTO containing: start index , end index and arguments of the
+     * function found
      */
     private static RFunctionArgumentsDTO getFunctionArguments(String expr, String fctName, boolean ignoreOperators) {
-        
+
         // Map containing possible arguments associated to each R functions
         Map<String, List<String>> argumentNamesByFunctions = new LinkedHashMap<>();
         argumentNamesByFunctions.put("array", Arrays.asList("data", "dim", "dimnames"));
@@ -2059,20 +2130,21 @@ public class R2jsSession extends Rsession implements RLog {
         argumentNamesByFunctions.put("write__csv", Arrays.asList("data", "file", "row.names", "col.names", "sep", "na"));
         argumentNamesByFunctions.put("data__frame", new ArrayList<String>());
         argumentNamesByFunctions.put("list", new ArrayList<String>());
+        argumentNamesByFunctions.put("Sys__setenv", new ArrayList<String>());
         argumentNamesByFunctions.put("length", Arrays.asList("default"));
         argumentNamesByFunctions.put("file__exists", Arrays.asList("default"));
-        argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame","inherits"));
-        argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));   
+        argumentNamesByFunctions.put("exists", Arrays.asList("default", "where", "envir", "mode", "frame", "inherits"));
+        argumentNamesByFunctions.put("stopifnot", Arrays.asList("default"));
         argumentNamesByFunctions.put("function", Arrays.asList("default"));
-        argumentNamesByFunctions.put("if", Arrays.asList("default")); 
-        argumentNamesByFunctions.put("returnif", Arrays.asList("default")); 
+        argumentNamesByFunctions.put("if", Arrays.asList("default"));
+        argumentNamesByFunctions.put("returnif", Arrays.asList("default"));
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = null;
-        
+
         List<String> argumentNamesList = new ArrayList<>(argumentNamesByFunctions.get(fctName));
-        
+
         Map<String, String> argumentNamesAndValues = new LinkedHashMap<>(); //because we need to keep order of arguments, by default
-        
+
         Pattern pattern = Pattern.compile("(?<!\\.)(\\b)" + fctName + "\\(");
         Matcher matcher = pattern.matcher(expr);
 
@@ -2081,34 +2153,35 @@ public class R2jsSession extends Rsession implements RLog {
 
             int startIndex = matcher.start();
             int currentIndex = startIndex + fctName.length() + 1;
-            
+
             while (expr.charAt(currentIndex - 1) != ')') {
-                
+
                 String operators = ",=";
-                if(ignoreOperators) {
+                if (ignoreOperators) {
                     operators = ",";
                 }
-                
+
                 int argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, operators);
                 // Ignore if it is a comparison operator ( '!=', '<=', '>=' or '==')
-                if (expr.charAt(argumentEndIndex + 1) == '=' && ("!=<>".contains(""+expr.charAt(argumentEndIndex)) || expr.charAt(argumentEndIndex + 2)=='=')) {
-                    argumentEndIndex = getNextExpressionLastIndex(expr, argumentEndIndex+1, operators);
-                }                
-		String argumentName = null;
+                if (expr.charAt(argumentEndIndex + 1) == '=' && ("!=<>".contains("" + expr.charAt(argumentEndIndex)) || expr.charAt(argumentEndIndex + 2) == '=')) {
+                    argumentEndIndex = getNextExpressionLastIndex(expr, argumentEndIndex + 1, operators);
+                }
+                String argumentName = null;
                 String argument = null;
                 if (expr.charAt(argumentEndIndex + 1) == '=') {
                     argumentName = expr.substring(currentIndex, argumentEndIndex + 1).trim();
                     currentIndex = argumentEndIndex + 2;
                     argumentEndIndex = getNextExpressionLastIndex(expr, currentIndex - 1, operators);
                 }
-                
+
                 if (argumentName == null) {
-                    if(argumentNamesList.size()>0) {
+                    if (argumentNamesList.size() > 0) {
                         // If argument has no "name", we take the first of the list
                         argumentName = argumentNamesList.get(0);
                         // And we remove it from the list unless the name is "default"
-                        if(!argumentName.equals("default"))
+                        if (!argumentName.equals("default")) {
                             argumentNamesList.remove(0);
+                        }
                     }
                 } else {
                     // Remove the current argument name from the list
@@ -2117,21 +2190,21 @@ public class R2jsSession extends Rsession implements RLog {
 //                        Log.Err.println("Unknown argument:" + argumentName + " in function: " + fctName);
 //                    }
                 }
-                
+
                 argument = expr.substring(currentIndex, argumentEndIndex + 1);
-                
+
                 // If there is not argument name and the list argumentNamesList is empty, the argumentName is the name of argument
-                if(argumentName == null) {
+                if (argumentName == null) {
                     argumentName = argument;
                 }
-                
+
                 // If the map already contains the argumentName, we add the new argument after and separated with comma
-                if(argumentNamesAndValues.containsKey(argumentName)){
+                if (argumentNamesAndValues.containsKey(argumentName)) {
                     argumentNamesAndValues.put(argumentName, argumentNamesAndValues.get(argumentName) + "," + argument);
                 } else {
                     argumentNamesAndValues.put(argumentName, argument);
                 }
-                
+
                 currentIndex = argumentEndIndex + 2;
             }
             rFunctionArgumentsDTO = new RFunctionArgumentsDTO(startIndex, currentIndex - 1, argumentNamesAndValues);
@@ -2139,7 +2212,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         return rFunctionArgumentsDTO;
     }
-    
+
     /**
      * Replace '+' operator by the math.add() operator. To do that we need to
      * find what are the expressions to add, they can contains '(' or ')' This
@@ -2153,8 +2226,8 @@ public class R2jsSession extends Rsession implements RLog {
     private static String replaceOperators(String expr) {
         // We consider differently the '-' operator in '2-3' to the '-' negative: '-3'.
         // So we replace -3 by î3 first, but 2-3 stays 2-3
-        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]) *-", "$1 î");   
-                             
+        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]) *-", "$1 î");
+
         String stoppingCharacters = "-=*/^;%+:,><&|ôâêŝĝ\n"; // all operators but 'î'
         expr = expr.replaceAll("[)]/", ") /");
         expr = expr.replaceAll("(.)-", "$1 -");
@@ -2178,18 +2251,18 @@ public class R2jsSession extends Rsession implements RLog {
         operatorsMap.put("%%", "math.mod");
         operatorsMap.put(":", "__R.range");
         operatorsMap.put("^", "math.dotPow");
-        
-        String[] operators = new String[] {"^", "/%:ê", "*", "+-&|ôâŝĝ><" }; // '/' has to be treated before '*'
+
+        String[] operators = new String[]{"^", "/%:ê", "*", "+-&|ôâŝĝ><"}; // '/' has to be treated before '*'
 
         // replace '^' first then replace '*','/','%' and ':' and finaly replace '+' and '-'
         int priority = 0;
-        
+
         boolean continueReplacing = true;
-        
+
         int i = 0;
         while (continueReplacing) {
             char currentChar = expr.charAt(i);
-            
+
             // Ignore operators inside quotes
             if (currentChar == '\'') {
                 i++;
@@ -2199,31 +2272,31 @@ public class R2jsSession extends Rsession implements RLog {
                     i++;
                 }
             }
-            
+
             // If the character is a supported operator
             if (operators[priority].indexOf(currentChar) >= 0) {
 
                 // if the character is '%', it's a 3 character operator like
                 // "%*%" or "%/%", or the mod operator "%%"
                 if (currentChar == '%') {
-                    
+
                     int nbChar = 3;
                     // If it is the mod operator "%%"
                     if (expr.charAt(i + 1) == '%') {
                         nbChar = 2;
                     }
-                    
+
                     // Find the beginning of the left term
                     int startingIndex = getPreviousExpressionFirstIndex(expr, i, stoppingCharacters);
                     String prevExp = expr.substring(startingIndex, i);
-                    
+
                     // If the left expression is not only whitespace (for
                     // example a = -4 or a = +4)
                     if (prevExp.trim().length() > 0) {
-                        
+
                         // Find the end of the right term
                         int endingIndex = getNextExpressionLastIndex(expr, i + nbChar - 1, stoppingCharacters);
-                        
+
                         String operatorName = operatorsMap.get(expr.substring(i, i + nbChar));
                         StringBuilder resultExpr = new StringBuilder();
                         resultExpr.append(operatorName);
@@ -2232,87 +2305,85 @@ public class R2jsSession extends Rsession implements RLog {
                         resultExpr.append(",");
                         resultExpr.append(expr.substring(i + nbChar, endingIndex + 1));
                         resultExpr.append(") ");
-                        
+
                         // Add a parenthesis if the operator is "%/%" because we
                         // add floor(..)
                         if (expr.charAt(i + 1) == '/') {
                             resultExpr.append(")");
                         }
-                        
+
                         expr = expr.substring(0, startingIndex) + resultExpr
                                 + expr.substring(endingIndex + 1, expr.length());
-                        
+
                         // Decrement i to be sure to not miss an operator
                         //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
                         i = startingIndex - 1;
                         //System.err.println("\n"+repeat(" ",i +1)+"]: "+expr.charAt(i));
                     }
-                }
-                // if the next character is not and operator or "=" (not supported yet)
-                else if (!("-+*/=".indexOf(expr.charAt(i+1)) >= 0)) { // '-' is now a true operator ('î' replaces the sign)
+                } // if the next character is not and operator or "=" (not supported yet)
+                else if (!("-+*/=".indexOf(expr.charAt(i + 1)) >= 0)) { // '-' is now a true operator ('î' replaces the sign)
                     //System.err.print("\n  "+expr);
                     //System.err.println("\n  "+repeat(" ",i)+"^"); 
 
                     // Find the beginning of the left term
                     int startingIndex = getPreviousExpressionFirstIndex(expr, i, stoppingCharacters);
                     String prevExp = expr.substring(startingIndex, i);
-                    
+
                     // let 'return' in previous expression
-                    if(prevExp.trim().startsWith("return")) {
-                        startingIndex = startingIndex + prevExp.indexOf("return")+"return".length();
-                        prevExp = prevExp.replaceFirst("return","");
+                    if (prevExp.trim().startsWith("return")) {
+                        startingIndex = startingIndex + prevExp.indexOf("return") + "return".length();
+                        prevExp = prevExp.replaceFirst("return", "");
                     }
-                    
+
                     //if(!prevExp.trim().equals("return")) {
-                        
-                        // If the left expression is not only whitespace (for example a = -4 or a = +4)
-                        if (prevExp.trim().length() > 0) {
+                    // If the left expression is not only whitespace (for example a = -4 or a = +4)
+                    if (prevExp.trim().length() > 0) {
 
-                            // Find the end of the right term
-                            int endingIndex = getNextExpressionLastIndex(expr, i, stoppingCharacters);
+                        // Find the end of the right term
+                        int endingIndex = getNextExpressionLastIndex(expr, i, stoppingCharacters);
 
-                            String operatorName = operatorsMap.get(currentChar + "");
-                            StringBuilder resultExpr = new StringBuilder();
-                            // Add a "+" operator before:
-                            // Example: 1*2 -5*6 will be mult(1,2) + mult(-5,6) with a '+' between the two mult operators
-                            resultExpr.append(" + "); 
-                            resultExpr.append(operatorName);
-                            resultExpr.append("(");
-                            resultExpr.append(prevExp);
-                            resultExpr.append(",");
-                            resultExpr.append(expr.substring(i + 1, endingIndex + 1));
-                            resultExpr.append(") "); // add a space to not ignore ')-' later
-                            
-                            expr = expr.substring(0, startingIndex) + resultExpr
-                                    + expr.substring(endingIndex + 1, expr.length());
+                        String operatorName = operatorsMap.get(currentChar + "");
+                        StringBuilder resultExpr = new StringBuilder();
+                        // Add a "+" operator before:
+                        // Example: 1*2 -5*6 will be mult(1,2) + mult(-5,6) with a '+' between the two mult operators
+                        resultExpr.append(" + ");
+                        resultExpr.append(operatorName);
+                        resultExpr.append("(");
+                        resultExpr.append(prevExp);
+                        resultExpr.append(",");
+                        resultExpr.append(expr.substring(i + 1, endingIndex + 1));
+                        resultExpr.append(") "); // add a space to not ignore ')-' later
 
-                            //Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
-                            expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
-                            expr = expr.replaceAll("\\+ +\\+", "+");
-                            expr = expr.replaceAll("\\- +\\+", "-");
-                            expr = expr.replaceAll("\\* +\\+", "*");
-                            expr = expr.replaceAll("\\/ +\\+", "/");
-                            expr = expr.replaceAll("\\: +\\+", ":");
-                            expr = expr.replaceAll("\\; +\\+", ";");
-                            expr = expr.replaceAll("\\^ +\\+", "^");
-                            expr = expr.replaceAll("^ *\\+", "");
+                        expr = expr.substring(0, startingIndex) + resultExpr
+                                + expr.substring(endingIndex + 1, expr.length());
 
-                            // Decrement i to be sure to not miss an operator                                   
-                            //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
-                            i = startingIndex - 1;  
-                            //System.err.println("\n"+repeat(" ",i +1)+"]");
-                        }
+                        //Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
+                        expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
+                        expr = expr.replaceAll("\\+ +\\+", "+");
+                        expr = expr.replaceAll("\\- +\\+", "-");
+                        expr = expr.replaceAll("\\* +\\+", "*");
+                        expr = expr.replaceAll("\\/ +\\+", "/");
+                        expr = expr.replaceAll("\\: +\\+", ":");
+                        expr = expr.replaceAll("\\; +\\+", ";");
+                        expr = expr.replaceAll("\\^ +\\+", "^");
+                        expr = expr.replaceAll("^ *\\+", "");
+
+                        // Decrement i to be sure to not miss an operator                                   
+                        //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
+                        i = startingIndex - 1;
+                        //System.err.println("\n"+repeat(" ",i +1)+"]");
+                    }
                     //}
-                    
+
                 } else {
                     i = i + 1;
                 }
-                
+
             }
             i = i + 1;
-            
+
             if (i >= expr.length()) {
-                if (priority < operators.length-1) {
+                if (priority < operators.length - 1) {
                     priority++;
 //                    if(priority == 2)
 //                        nextStoppingCharacters+="-"; // no longer needed, as î replaces '-' sign
@@ -2322,10 +2393,10 @@ public class R2jsSession extends Rsession implements RLog {
                 }
             }
         }
-        
+
         return expr.replace('î', '-'); // back to '-' sign
     }
-    
+
     private void addGlobalVariables(String[] variables) {
         if (variablesSet == null) {
             variablesSet = new HashSet<String>();
@@ -2341,18 +2412,18 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr - the expression containing global variables
      */
     private void storeGlobalVariables(String expr) {
-        
+
         if (variablesSet == null) {
             variablesSet = new HashSet<String>();
         }
-        
+
         int equalIndex = getNextExpressionLastIndex(expr, -1, "=") + 1;
         int exprLength = expr.length();
-        
+
         while (equalIndex < exprLength) {
-            if(equalIndex>0 && expr.charAt(equalIndex)!='=') {
+            if (equalIndex > 0 && expr.charAt(equalIndex) != '=') {
                 // If there is no '=' (malformed expression)
-                equalIndex+=1;
+                equalIndex += 1;
             } else {
                 if ((equalIndex > 0 && expr.charAt(equalIndex - 1) == '=') || (equalIndex < exprLength - 1 && expr.charAt(equalIndex + 1) == '=')) {
                     // If it is a '==' we ignore it
@@ -2371,7 +2442,7 @@ public class R2jsSession extends Rsession implements RLog {
             equalIndex = getNextExpressionLastIndex(expr, equalIndex, "=") + 1;
         }
     }
-    
+
     /**
      * Get the index of the beginning of an expression The function starts at
      * the given startIndex and return the index of the first character founded
@@ -2379,20 +2450,18 @@ public class R2jsSession extends Rsession implements RLog {
      * brackets or parenthesis
      *
      * @param expr - the expression to check
-     * @param startIndex
-     *            - index to start with to search a stopping characters
-     * @param stoppingCharacters
-     *            - a String containing stopping characters.
+     * @param startIndex - index to start with to search a stopping characters
+     * @param stoppingCharacters - a String containing stopping characters.
      * @return the starting index of the previous expression
      */
     private static int getPreviousExpressionFirstIndex(String expr, int startIndex, String stoppingCharacters) {
         //System.err.println("getPreviousExpressionFirstIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
         int firstIndex = 0;
-        
+
         int parenthesis = 0; // '(' and ')'
         int brackets = 0; // '{' and '}'
         int brackets2 = 0; // '[' and ']'
-        
+
         // Ignore space character at beginning
         int startingIndex = startIndex - 1;
         while (startingIndex > 0 && expr.charAt(startingIndex) == ' ') {
@@ -2428,15 +2497,15 @@ public class R2jsSession extends Rsession implements RLog {
                 // If it's a stopping character
                 //System.err.println("\n"+repeat(" ",i + 1 +2)+"|");
                 return i + 1;
-                }
+            }
         }
-        
+
         // If there is no stopping character, the expression start at the
         // beginning of the sentence
         //System.err.println("\n" + repeat(" ", firstIndex + 2) + "|");
         return firstIndex;
     }
-    
+
     /**
      * Get the index of the end of an expression The function starts at the
      * given startIndex and return the index of the first character founded in
@@ -2444,27 +2513,25 @@ public class R2jsSession extends Rsession implements RLog {
      * brackets or paranthesis
      *
      * @param expr - the expression to check
-     * @param startIndex
-     *            - index to start with to search a stopping characters
-     * @param stoppingCharacters
-     *            - a String containing stopping characters.
+     * @param startIndex - index to start with to search a stopping characters
+     * @param stoppingCharacters - a String containing stopping characters.
      * @return the last index of the next expression
      */
     private static int getNextExpressionLastIndex(String expr, int startIndex, String stoppingCharacters) {
         //System.err.println("getNextExpressionLastIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
 
         int lastIndex = expr.length() - 1;
-        
+
         int parenthesis = 0; // '(' and ')'
         int brackets = 0; // '{' and '}'
         int brackets2 = 0; // '[' and ']'
-        
+
         // Ignore space character at beginning
         int startingIndex = startIndex + 1;
         while (startingIndex < expr.length() && expr.charAt(startingIndex) == ' ') {
             startingIndex++;
         }
-        
+
         // Stop at the first stopping character
         for (int i = startingIndex; i < expr.length(); i++) {
             char currentChar = expr.charAt(i);
@@ -2502,7 +2569,7 @@ public class R2jsSession extends Rsession implements RLog {
         //System.err.println("\n"+repeat(" ",lastIndex +2)+"|");
         return lastIndex;
     }
-    
+
     /**
      * This function replace default arguments of R function to interpret them
      * in javascript
@@ -2519,36 +2586,36 @@ public class R2jsSession extends Rsession implements RLog {
      * @return the javascript expression with default arguments
      */
     private static String replaceFunctionDefaultArguments(String arguments) {
-        
+
         // Linked hash map to keep the same order of arguments
         Map<String, String> parametersAndValuesMap = new LinkedHashMap<>();
-        
+
         // Put in map arguments with there values associated
         Matcher matcher = Pattern.compile("([\\w\\-]+) *=* *(([\\w\\-]+))?").matcher(arguments);
         while (matcher.find()) {
             parametersAndValuesMap.put(matcher.group(1), matcher.group(2));
         }
-        
+
         // Result string of arguments (we remove '= value' statement)
         StringBuilder resultParameters = new StringBuilder();
-        
+
         // Result string of inside function
         StringBuilder resultValues = new StringBuilder();
-        
+
         // True if it is the first element of the map
         boolean first = true;
-        
+
         for (Map.Entry<String, String> entry : parametersAndValuesMap.entrySet()) {
             String param = entry.getKey();
             String value = entry.getValue();
-            
+
             if (!first) {
                 resultParameters.append(",");
             } else {
                 first = false;
             }
             resultParameters.append(param);
-            
+
             resultValues.append(param);
             resultValues.append(" = typeof ");
             resultValues.append(param);
@@ -2558,26 +2625,26 @@ public class R2jsSession extends Rsession implements RLog {
             resultValues.append(value);
             resultValues.append("; ");
         }
-        
+
         String result = "(" + resultParameters + ") {" + resultValues;
         return result;
     }
 
     @Override
     public synchronized void end() {
-        js = null;       
+        js = null;
         super.end();
     }
-    
+
     @Override
     public boolean isAvailable() {
         return true;
     }
-    
+
     public String gethomedir() {
         return System.getProperty("user.home");
     }
-    
+
     @Override
     boolean isWindows() {
         return RserveDaemon.isWindows();
@@ -2606,7 +2673,7 @@ public class R2jsSession extends Rsession implements RLog {
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
-            log("Failed to evaluate code\n```{js}\n"+convertRtoJs(expression)+"\n```\n with variables: "+ls+"\n because: "+e.getMessage(),Level.ERROR);
+            log("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage(), Level.ERROR);
             return false;
         }
 
@@ -2628,8 +2695,8 @@ public class R2jsSession extends Rsession implements RLog {
                 } catch (Exception ee) {
                     ls = ee.getMessage();
                 }
-                log("Failed to evaluate code\n```{js}\n"+convertRtoJs(expression)+"\n```\n with variables: "+ls+"\n because: "+e.getMessage(),Level.ERROR);
-                return new RException("Failed to evaluate code\n```{js}\n"+convertRtoJs(expression)+"\n```\n with variables: "+ls+"\n because: "+e.getMessage());
+                log("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage(), Level.ERROR);
+                return new RException("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage());
             }
         }
         return result;
@@ -2637,8 +2704,8 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public synchronized boolean set(String varname, double[][] data, String... names) throws RException {
-        
-        note_code(varname + " <- " + (data==null?"list()":toRcode(data)));
+
+        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
         note_code(varname + " <- data.frame(" + varname + ")");
 
@@ -2653,13 +2720,13 @@ public class R2jsSession extends Rsession implements RLog {
         allnames = allnames.substring(1);
         try {
             //synchronized (js) {
-                String dim = "[" + data.length + "," + data[0].length + "]";
-                String stringMatrix = Arrays.deepToString(data);
-                js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+            String dim = "[" + data.length + "," + data[0].length + "]";
+            String stringMatrix = Arrays.deepToString(data);
+            js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-                js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
-                variablesSet.add(varname);
+            js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+            js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+            variablesSet.add(varname);
             //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2672,52 +2739,50 @@ public class R2jsSession extends Rsession implements RLog {
     /**
      * Set R object in R env.
      *
-     * @param varname
-     *            R object name
-     * @param var
-     *            R object value
+     * @param varname R object name
+     * @param var R object value
      * @return succeeded ?
      */
     @Override
     public synchronized boolean set(String varname, Object var) {
 
         note_code(varname + " <- " + toRcode(var));
-        
+
         varname = nameRtoJs(varname);
         try {
             //synchronized (js) {
-                // FIXME: find a better solution than this
-                // For 2d double array, we need to instanciate the matrix with the function "math.reshape"
-                // I don't know why but the function math.matrix doesn't create the same js object than math.reshape and
-                // the output ScriptMirrorObject is uncastable in java double[][] array and operations on a math.matrix
-                // object don't work.
-                if (var instanceof double[][]) {
-                    double[][] var2DArray = (double[][]) var;
-                    String dim = "[" + var2DArray.length + "," + var2DArray[0].length + "]";
-                    String stringMatrix = Arrays.deepToString(var2DArray);
-                    js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+            // FIXME: find a better solution than this
+            // For 2d double array, we need to instanciate the matrix with the function "math.reshape"
+            // I don't know why but the function math.matrix doesn't create the same js object than math.reshape and
+            // the output ScriptMirrorObject is uncastable in java double[][] array and operations on a math.matrix
+            // object don't work.
+            if (var instanceof double[][]) {
+                double[][] var2DArray = (double[][]) var;
+                String dim = "[" + var2DArray.length + "," + var2DArray[0].length + "]";
+                String stringMatrix = Arrays.deepToString(var2DArray);
+                js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-                    String allnames = "";
-                    for (int i = 0; i < var2DArray[0].length; i++) {
-                        allnames = allnames + ",'X" + (i + 1) + "'";
-                    }
-                    allnames = allnames.substring(1);
-                    js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
-                    variablesSet.add(varname);
-                } else if (var instanceof double[]) {
-                    double[] var1DArray = (double[]) var;
-                    String dim = "[" + var1DArray.length + ",1]";
-                    String stringMatrix = Arrays.toString(var1DArray);
-                    js.eval(varname + " = "+Arrays.toString(var1DArray));
-
-                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-                    variablesSet.add(varname);
-                } else {
-                    js.put(varname, var);
-                    js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-                    variablesSet.add(varname);
+                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                String allnames = "";
+                for (int i = 0; i < var2DArray[0].length; i++) {
+                    allnames = allnames + ",'X" + (i + 1) + "'";
                 }
+                allnames = allnames.substring(1);
+                js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+                variablesSet.add(varname);
+            } else if (var instanceof double[]) {
+                double[] var1DArray = (double[]) var;
+                String dim = "[" + var1DArray.length + ",1]";
+                String stringMatrix = Arrays.toString(var1DArray);
+                js.eval(varname + " = " + Arrays.toString(var1DArray));
+
+                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                variablesSet.add(varname);
+            } else {
+                js.put(varname, var);
+                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                variablesSet.add(varname);
+            }
             //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2728,7 +2793,9 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     public File putFileInWorkspace(File file) {
-        if (file.isAbsolute()) return file;
+        if (file.isAbsolute()) {
+            return file;
+        }
         File rf = local2remotePath(file);
         if (!rf.getAbsolutePath().equals(file.getAbsolutePath())) {
             try {
@@ -2739,27 +2806,32 @@ public class R2jsSession extends Rsession implements RLog {
         }
         return rf;
     }
-    
+
     public void getFileFromWorkspace(File file) {
-        if (file.isAbsolute()) return;
+        if (file.isAbsolute()) {
+            return;
+        }
         File rf = remote2localPath(file);
-        if (file.getParentFile()!=null)
-            if (!file.getParentFile().isDirectory())
-            if (!file.getParentFile().mkdirs()) {
-                throw new IllegalArgumentException("Cannot create parent dir: " + file);
+        if (file.getParentFile() != null) {
+            if (!file.getParentFile().isDirectory()) {
+                if (!file.getParentFile().mkdirs()) {
+                    throw new IllegalArgumentException("Cannot create parent dir: " + file);
+                }
             }
-        if (!rf.getAbsolutePath().equals(file.getAbsolutePath()))
+        }
+        if (!rf.getAbsolutePath().equals(file.getAbsolutePath())) {
             try {
                 FileUtils.copyFile(rf, new File(".", file.getPath()));
             } catch (IOException ex) {
                 log(IO_HEAD + ex.getMessage(), Level.ERROR);
             }
+        }
     }
 
     @Override
     public synchronized void source(File file) {
         file = putFileInWorkspace(file);
-        
+
         if (!file.isFile()) {
             throw new IllegalArgumentException("File " + file + " is not reachable.");
         }
@@ -2805,11 +2877,11 @@ public class R2jsSession extends Rsession implements RLog {
     public synchronized boolean rm(String... vars) throws RException {
         try {
             //synchronized (js) {
-                for(String var : vars) {
-                    js.eval("delete " +THIS_ENVIRONMENT + "." + var+ ";");
-                    variablesSet.remove(var);
-                    js.eval("delete " + var + ";");
-                }
+            for (String var : vars) {
+                js.eval("delete " + THIS_ENVIRONMENT + "." + var + ";");
+                variablesSet.remove(var);
+                js.eval("delete " + var + ";");
+            }
             //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2818,15 +2890,15 @@ public class R2jsSession extends Rsession implements RLog {
 
         return true;
     }
-    
+
     @Override
     public synchronized boolean rmAll() {
         try {
             //synchronized (js) {
-                js.eval("delete " + envName + ";");
-                variablesSet.clear();
-                js.eval("var " + envName + " = math.clone({});");
-                js.eval(THIS_ENVIRONMENT+" = "+envName);
+            js.eval("delete " + envName + ";");
+            variablesSet.clear();
+            js.eval("var " + envName + " = math.clone({});");
+            js.eval(THIS_ENVIRONMENT + " = " + envName);
             //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -2843,13 +2915,17 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public double asDouble(Object o) throws ClassCastException {
-        if (o instanceof Double) return (Double)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof Double) {
+            return (Double) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (double) ScriptUtils.convert(o, double.class);
     }
 
     @Override
     public double[] asArray(Object o) throws ClassCastException {
-        if (o instanceof double[]) return (double[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof double[]) {
+            return (double[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (double[]) ScriptUtils.convert(o, double[].class);
     }
 
@@ -2870,20 +2946,21 @@ public class R2jsSession extends Rsession implements RLog {
             try {
                 for (Object k : ((Map) o).keySet()) {
                     double[] v = null;
-                    if (o instanceof ScriptObjectMirror)
+                    if (o instanceof ScriptObjectMirror) {
                         try {
                             v = (double[]) ((ScriptObjectMirror) o).to(double[].class);
                         } catch (Exception ex) {
                             //ex.printStackTrace();
                             throw new ClassCastException("[asMatrix] Cannot cast ScriptObjectMirror list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
                         }
-                    else
+                    } else {
                         try {
                             v = (double[]) ((Map) o).get(k);
                         } catch (Exception ex) {
                             //ex.printStackTrace();
                             throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
                         }
+                    }
                     if (v == null) {
                         throw new ClassCastException("[asMatrix] Cannot get list element as double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
                     }
@@ -2897,59 +2974,75 @@ public class R2jsSession extends Rsession implements RLog {
                 }
                 return vals;
             } catch (Exception ex) {
-                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: "+ex.getMessage());
+                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: " + ex.getMessage());
             }
         }
     }
 
     @Override
     public String asString(Object o) throws ClassCastException {
-        if (o instanceof String) return (String)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof String) {
+            return (String) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (String) ScriptUtils.convert(o, String.class);
     }
 
     @Override
     public String[] asStrings(Object o) throws ClassCastException {
-        if (o instanceof String[]) return (String[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof String[]) {
+            return (String[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (String[]) ScriptUtils.convert(o, String[].class);
     }
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
-        if (o instanceof Integer) return (Integer)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof Integer) {
+            return (Integer) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (int) ScriptUtils.convert(o, int.class);
     }
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
-        if (o instanceof int[]) return (int[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof int[]) {
+            return (int[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (int[]) ScriptUtils.convert(o, int[].class);
     }
 
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
-        if (o instanceof Boolean) return (Boolean)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof Boolean) {
+            return (Boolean) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         if (o instanceof RException) {
-            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException)o).getMessage());
+            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException) o).getMessage());
         }
         return (boolean) ScriptUtils.convert(o, boolean.class);
     }
 
     @Override
     public boolean[] asLogicals(Object o) throws ClassCastException {
-       if (o instanceof boolean[]) return (boolean[])o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-       return (boolean[]) ScriptUtils.convert(o, boolean[].class);
+        if (o instanceof boolean[]) {
+            return (boolean[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
+        return (boolean[]) ScriptUtils.convert(o, boolean[].class);
     }
 
     @Override
     public Map asList(Object o) throws ClassCastException {
-        if (o instanceof Map) return (Map)o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if (o instanceof Map) {
+            return (Map) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        }
         return (Map) ScriptUtils.convert(o, Map.class);
     }
 
     @Override
     public boolean isNull(Object o) {
-        if (o==null) return true;
+        if (o == null) {
+            return true;
+        }
         return Arrays.asList(ls()).contains(o.toString());
     }
 
@@ -2962,9 +3055,9 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public Object cast(Object o) throws ClassCastException {
         // If it's a ScriptObjectMirror, it can be an array or a matrix
-         if (o instanceof Integer) {
-             return Double.valueOf((int)o);
-         } else if (o instanceof ScriptObjectMirror) {
+        if (o instanceof Integer) {
+            return Double.valueOf((int) o);
+        } else if (o instanceof ScriptObjectMirror) {
             try {
 //                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
                 return ((ScriptObjectMirror) o).to(double[][].class);
@@ -3015,8 +3108,8 @@ public class R2jsSession extends Rsession implements RLog {
         }
     }
 
-    Map<String,Set<String>> envVariables = new HashMap<>();
-    
+    Map<String, Set<String>> envVariables = new HashMap<>();
+
     @Override
     public void setGlobalEnv(String envName) {
         if (envName == null) {
@@ -3024,23 +3117,24 @@ public class R2jsSession extends Rsession implements RLog {
         } else {
             envName = "__" + envName + "__";
         }
-        
+
         try {
             if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
                 js.eval("var " + envName + " = math.clone({});");
-            }                
-            js.eval(THIS_ENVIRONMENT+" = "+envName);
+            }
+            js.eval(THIS_ENVIRONMENT + " = " + envName);
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
-        
+
         String oldEnv = this.envName;
         envVariables.put(oldEnv, new TreeSet(variablesSet));
 
         variablesSet.clear();
-        if (envVariables.containsKey(envName)) 
+        if (envVariables.containsKey(envName)) {
             variablesSet.addAll(envVariables.get(envName));
-        
+        }
+
         this.envName = envName;
     }
 
@@ -3051,10 +3145,12 @@ public class R2jsSession extends Rsession implements RLog {
         } else {
             envName = "__" + envName + "__";
         }
-        
+
         try {
             if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
+            {
                 js.eval("var " + envName + " = math.clone({});");
+            }
         } catch (ScriptException ex) {
             Log.Err.println(ex.getMessage());
         }
@@ -3073,7 +3169,7 @@ public class R2jsSession extends Rsession implements RLog {
             envVariables.get(envName).addAll(new TreeSet(variablesSet));
         }
     }
-    
+
     private static String html_tmpl
             = "<html>\n"
             + "    <head>\n"
@@ -3115,10 +3211,10 @@ public class R2jsSession extends Rsession implements RLog {
 
         html = html.replace("___SUBMIT___", submit_tmpl.replace("___ONCLICK___", "document.write(" + fun + "(" + cat(",", args) + "))"));
 
-        return(html);
+        return (html);
     }
 
-        public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         //args = new String[]{"install.packages('lhs',repos='\"http://cloud.r-project.org/\"',lib='.')", "1+1"};
         if (args == null || args.length == 0) {
             args = new String[10];

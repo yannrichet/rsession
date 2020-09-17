@@ -556,6 +556,22 @@
         return Thread.sleep(t);
     }
     
+    function SysSetEnv(kv) {
+        for(var k in kv) {
+print(k+"-> "+kv[k]);
+            Java.type('org.math.R.R2jsSession').setEnv(k,kv[k]);
+            //Java.type('java.lang.System').getenv().put(k,kv[k]);
+        }
+    }
+
+    function SysGetEnv(k) {
+print("? "+k);
+        var v = Java.type('java.lang.System').getenv(k);
+	if (isNull(v))
+            return '';
+        return v;
+    }
+
     function asMatrix(x,index) {
         //x = math.squeeze(x);
         var xCopy;
@@ -804,6 +820,8 @@
     proto.getwd = getwd;
     proto.setwd = setwd;
     proto.SysSleep = SysSleep;
+    proto.SysSetEnv = SysSetEnv;
+    proto.SysGetEnv = SysGetEnv;
     proto.isNull = isNull;
     proto.isNA = isNA;
     proto.isTRUE = isTRUE;

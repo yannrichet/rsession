@@ -349,7 +349,6 @@ public class R2jsSessionTest {
         assert engine.eval("paste(c('a1','b2'),c('c3','d4'))").equals("a1 c3;b2 d4") : engine.eval("paste(c('a1','b2'),c('c3','d4'))");
         assert engine.eval("paste(c('a1','b2'),'d4')").equals("a1 d4;b2 d4") : engine.eval("paste(c('a1','b2'),'d4')");
 
-        
         assert engine.eval("paste(sep='<br/>',\n"
                 + "        paste('<HTML name=\"minimum\">minimum is ',0.1),\n"
                 + "        paste(sep='',\n"
@@ -1007,6 +1006,20 @@ public class R2jsSessionTest {
         assert ((String) engine.eval("c$first[1]")).equals("aa");
         assert ((Double) engine.eval("c$second[2]")).equals(22.0);
 
+    }
+
+    @Test
+    public void testSysEnv() throws Rsession.RException {
+        engine.debug_js = true;
+
+        assert engine.eval("Sys.getenv('toto')").equals("") : "Sys.getenv('toto') -> " + engine.eval("Sys.getenv('toto')");
+        engine.voidEval("Sys.setenv(toto='titi')");
+        assert engine.eval("Sys.getenv('toto')").equals("titi") : "Sys.getenv('toto') -> " + engine.eval("Sys.getenv('toto')");
+        String HOME = System.getenv("HOME");
+        if (HOME == null) {
+            HOME = "";
+        }
+        assert engine.eval("Sys.getenv('HOME')").toString().equals(HOME) : "Sys.getenv('HOME') -> " + engine.eval("Sys.getenv('HOME')");
     }
 
     @Test
