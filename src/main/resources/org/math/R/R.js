@@ -558,14 +558,12 @@
     
     function SysSetEnv(kv) {
         for(var k in kv) {
-print(k+"-> "+kv[k]);
             Java.type('org.math.R.R2jsSession').setEnv(k,kv[k]);
             //Java.type('java.lang.System').getenv().put(k,kv[k]);
         }
     }
 
     function SysGetEnv(k) {
-print("? "+k);
         var v = Java.type('java.lang.System').getenv(k);
 	if (isNull(v))
             return '';

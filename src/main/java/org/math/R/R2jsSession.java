@@ -324,7 +324,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param e - the R expression
      * @return the js script expression
      */
-    private String convertRtoJs(String e) {
+    private String convertRtoJs(String e) throws RException {
 
         // If e contains already "__this__" ... (should not happen, but...)
         if (e.contains(THIS_ENVIRONMENT)) {
@@ -848,7 +848,7 @@ public class R2jsSession extends Rsession implements RLog {
      * replacement
      * @return a list containing all quotes expression
      */
-    static List<String> replaceQuotesByVariables(String expr, int startIndex) {
+    static List<String> replaceQuotesByVariables(String expr, int startIndex) throws RException {
 
         List<String> quotesList = new ArrayList<>();
         String singleQuote = "'";
@@ -875,7 +875,7 @@ public class R2jsSession extends Rsession implements RLog {
             }
             int endQuoteIdx = currentExpr.indexOf(currentQuote, startQuoteIdx + 1);
             if (endQuoteIdx <= startQuoteIdx) {
-                throw new IllegalArgumentException("No ending quotes for quote " + currentQuote + " at position: " + startQuoteIdx);
+                throw new RException("No ending quotes for quote " + currentQuote + " at position: " + startQuoteIdx + " in: " + expr);
             }
             String quotedExpr = currentExpr.substring(startQuoteIdx, endQuoteIdx + 1);
             quotesList.add(quotedExpr);
@@ -1267,7 +1267,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private String createDataFrame(String expr) {
+    private String createDataFrame(String expr) throws RException {
 
         String result = expr;
 
@@ -1327,7 +1327,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
-    private String createList(String expr) {
+    private String createList(String expr) throws RException {
         String result = expr;
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "list");
@@ -1381,7 +1381,7 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
 
-    private String createSetEnv(String expr) {
+    private String createSetEnv(String expr) throws RException {
         String result = expr;
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "Sys__setenv");
@@ -1439,11 +1439,11 @@ public class R2jsSession extends Rsession implements RLog {
             Field theEnvironmentField = processEnvironmentClass.getDeclaredField("theEnvironment");
             theEnvironmentField.setAccessible(true);
             Map<String, String> env = (Map<String, String>) theEnvironmentField.get(null);
-            env.put(k,v);
+            env.put(k, v);
             Field theCaseInsensitiveEnvironmentField = processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment");
             theCaseInsensitiveEnvironmentField.setAccessible(true);
             Map<String, String> cienv = (Map<String, String>) theCaseInsensitiveEnvironmentField.get(null);
-            cienv.put(k,v);
+            cienv.put(k, v);
         } catch (NoSuchFieldException e) {
             Class[] classes = Collections.class.getDeclaredClasses();
             Map<String, String> env = System.getenv();
@@ -1454,7 +1454,7 @@ public class R2jsSession extends Rsession implements RLog {
                     Object obj = field.get(env);
                     Map<String, String> map = (Map<String, String>) obj;
                     map.clear();
-                    map.put(k,v);
+                    map.put(k, v);
                 }
             }
         }
@@ -1604,7 +1604,7 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
 
-    private String createPaste(String expr) {
+    private String createPaste(String expr) throws RException {
         String result = expr;
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "paste");
@@ -1653,7 +1653,7 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
 
-    private String createPaste0(String expr) {
+    private String createPaste0(String expr) throws RException {
         String result = expr;
 
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "paste0");
@@ -2662,42 +2662,53 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     protected synchronized boolean silentlyVoidEval(String expression, boolean tryEval) {
-
-        String jsExpr = convertRtoJs(expression);
+        String jsExpr = "?";
         try {
+            jsExpr = convertRtoJs(expression);
             this.js.eval(jsExpr);
-        } catch (ScriptException e) {
+        } catch (Exception e) {
             String ls = "?";
             try {
                 ls = (this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
-            log("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage(), Level.ERROR);
+
+            String msg = null;
+            if (expression.contains("\n")) {
+                msg = "Failed to evaluate code\n  ```{r}\n" + expression.replaceAll("^", "^  ") + "\n  ```\n as\n  ```{js}\n" + jsExpr.replaceAll("^", "^  ") + "\n  ```\n with variables: " + ls + "\n because: " + e.getMessage();
+            } else {
+                msg = "Failed to evaluate code\n  `{r} " + expression + " ` as `{js} " + jsExpr + " `\n with variables: " + ls + "\n because: " + e.getMessage();
+            }
+            log(msg, Level.ERROR);
             return false;
         }
-
         return true;
     }
 
     @Override
     protected synchronized Object silentlyRawEval(String expression, boolean tryEval) {
-
         Object result = null;
-        String jsExpr = convertRtoJs(expression);
-        if (jsExpr != null) {
+        String jsExpr = "?";
+        try {
+            jsExpr = convertRtoJs(expression);
+            result = this.js.eval(jsExpr);
+        } catch (Exception e) {
+            String ls = "?";
             try {
-                result = this.js.eval(jsExpr);
-            } catch (ScriptException e) {
-                String ls = "?";
-                try {
-                    ls = (String) this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
-                } catch (Exception ee) {
-                    ls = ee.getMessage();
-                }
-                log("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage(), Level.ERROR);
-                return new RException("Failed to evaluate code\n```{js}\n" + convertRtoJs(expression) + "\n```\n with variables: " + ls + "\n because: " + e.getMessage());
+                ls = (String) this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
+            } catch (Exception ee) {
+                ls = ee.getMessage();
             }
+
+            String msg = null;
+            if (expression.contains("\n")) {
+                msg = "Failed to evaluate code\n  ```{r}\n" + expression.replaceAll("^", "^  ") + "\n  ```\n as\n  ```{js}\n" + jsExpr.replaceAll("^", "^  ") + "\n  ```\n with variables: " + ls + "\n because: " + e.getMessage();
+            } else {
+                msg = "Failed to evaluate code\n  `{r} " + expression + " ` as `{js} " + jsExpr + " `\n with variables: " + ls + "\n because: " + e.getMessage();
+            }
+            log(msg, Level.ERROR);
+            return new RException(msg);
         }
         return result;
     }
@@ -3196,7 +3207,7 @@ public class R2jsSession extends Rsession implements RLog {
     private static String submit_tmpl = "        <input type=\"submit\" value=\"___F___\" onclick=\"___ONCLICK___\">\n";
 
     // maybe the worst idea I ever had...
-    public static String HTMLfun(String Rcode, String fun, String... args) {
+    public static String HTMLfun(String Rcode, String fun, String... args) throws RException {
 
         R2jsSession R = new R2jsSession(System.out, null);
         String html = html_tmpl.replace("___JS___", R.convertRtoJs(Rcode).replace(R.THIS_ENVIRONMENT + ".", ""));

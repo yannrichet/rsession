@@ -14,7 +14,7 @@ import org.junit.Test;
 public class R2jsParserTest {
 
     @Test
-    public void testQuoteExpr() {
+    public void testQuoteExpr() throws Rsession.RException {
         String text = "0\"ab'cd\"e\"f'gf\"ij";
         String text2 = "0'ab\"cd'e'f\"gf'ij";
         System.err.println("text:        " + text);
@@ -57,7 +57,7 @@ public class R2jsParserTest {
         System.err.println("quoted text: "+quoted_paste2);
         assert quoted_paste2.equals(paste2) : "Failed to quote/unqote text: " + paste2 + " -> " + quoted_paste2;
     }
-
+    
     @Test
     public void testParser() {
 

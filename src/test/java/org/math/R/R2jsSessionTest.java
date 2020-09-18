@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.script.ScriptException;
@@ -105,6 +107,20 @@ public class R2jsSessionTest {
         engine.debug_js = true;
         engine.voidEval("__this__a = 123.5");
         assert engine.asDouble(engine.eval("__this__a+1")) == 124.5;
+    }
+
+    @Test
+    public void testQuoteExprError() {
+        System.err.println("================= testQuoteExprError ===============");
+        engine.debug_js = true;
+        try {
+            engine.voidEval("l = c('a','b','c')");
+            assert Arrays.equals(engine.ls(), new String[]{"l"}) : Arrays.toString(engine.ls());
+            engine.voidEval("l2 = c('a,'b','c')");
+        } catch (RException ex) {
+            assert ex.getMessage().contains("Failed to evaluate") : ex.getMessage();
+        }
+        assert Arrays.equals(engine.ls(), new String[]{"l"}) : Arrays.toString(engine.ls());
     }
 
     @Test

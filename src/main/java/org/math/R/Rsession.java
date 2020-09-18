@@ -34,16 +34,18 @@ public abstract class Rsession implements RLog {
     static String separator = ",";
     String install_packages_moreargs = "";
 
-    public class RException extends Exception {
+    public static class RException extends Exception {
 
         public RException(String cause) {
-            this(cause, false);
+            this(cause, null, false);
         }
 
-        public RException(String cause, boolean details) {
-            super(cause + "\nR: " + getLastLogEntry() + "\nR! " + getLastError() + (details ? "\nR: " + Arrays.asList(ls()) : ""));
+        public RException(String cause, Rsession r, boolean details) {
+            super(cause + 
+                    (r == null ? 
+                            "" : 
+                            "\nR: " + r.getLastLogEntry() + "\nR! " + r.getLastError() + (details ? "\nR: " + Arrays.asList(r.ls()) : "")));
         }
-
     }
 
     // <editor-fold defaultstate="collapsed" desc="Add/remove interfaces">
@@ -1146,16 +1148,16 @@ public abstract class Rsession implements RLog {
                         .replace(File.separator, "_-_")
                         .replace(":", "_._"));
     }
- 
+
     public File remote2localPath(File remotepath) {
         return new File(
                 //getwd().replace(File.separator,"/"),
                 remotepath.getPath()
-                        .replace((getwd()+"/").replace('/',File.separatorChar), "") // delete getwd
+                        .replace((getwd() + "/").replace('/', File.separatorChar), "") // delete getwd
                         .replace("_-_", File.separator) // '_-_' -> '/'
                         .replace("_._", ":"));// '_._' -> ':'
     }
-    
+
     /**
      * loads R source file (eg ".R" file)
      *
