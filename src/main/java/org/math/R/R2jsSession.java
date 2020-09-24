@@ -1433,6 +1433,7 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public static void setEnv(String k, String v) throws Exception {
         try {
             Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
