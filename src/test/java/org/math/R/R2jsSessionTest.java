@@ -206,6 +206,29 @@ public class R2jsSessionTest {
         assert (Double) engine.eval("2*+3+4*5") == 26;
         assert (Double) engine.eval("2*3+4*-5") == -14;
         assert (Double) engine.eval("2*-3+4*5") == 14;
+        assert (Double) engine.eval("2  * 3 + 4* + 5") == 26;
+        assert (Double) engine.eval("2 *+  3    +4  * 5") == 26;
+        assert (Double) engine.eval("2 * 3+ 4 * -5" ) == -14;
+        assert (Double) engine.eval("2 * -3  +4 * 5") == 14;
+        assertEquals((Double) engine.eval("2/4+4/+5"), 1.3, epsilon);
+        assertEquals((Double) engine.eval("2/+4+4/5"), 1.3, epsilon);
+        assertEquals((Double) engine.eval("2/4+4/-5"), -0.3, epsilon);
+        assertEquals((Double) engine.eval("2/-4+4/5"), 0.3, epsilon);
+        assertEquals((Double) engine.eval("2**4+4**-5"), 16.0009765625, epsilon);
+        assertEquals((Double) engine.eval("2**+4+4**+5"), 1040, epsilon);
+        assertEquals((Double) engine.eval("2 /  4 + 4/  +5"), 1.3, epsilon);
+        assertEquals((Double) engine.eval("2 /  +4  +4  /5 "), 1.3, epsilon);
+        assertEquals((Double) engine.eval("2 /4 +4/-5"), -0.3, epsilon);
+        assertEquals((Double) engine.eval("2 /-4 +4 /5"), 0.3, epsilon);
+        assertEquals((Double) engine.eval("2 ** 4+4 **- 5"), 16.0009765625, epsilon);
+        assertEquals((Double) engine.eval("2 **  + 4 +4** + 5"), 1040, epsilon);
+        assertEquals((Double) engine.eval("2^4+4^-5"), 16.0009765625, epsilon);
+        assertEquals((Double) engine.eval("2^+4+4^+5"), 1040, epsilon);
+        assertEquals((Double) engine.eval("2 ^ 4+4 ^- 5"), 16.0009765625, epsilon);
+        assertEquals((Double) engine.eval("2 ^  + 4 +4^ + 5"), 1040, epsilon);
+
+
+
 
         // Check infinity is available
         assert Double.isInfinite((Double) engine.eval("a <- Inf"));

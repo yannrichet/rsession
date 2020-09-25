@@ -915,7 +915,7 @@ public class R2jsSession extends Rsession implements RLog {
     /**
      * LS function
      *
-     * @param e - the expression containing the function to replace
+     * @param expr - the expression containing the function to replace
      * @return the expression with replaced function
      */
     private String createLs(String expr) {
@@ -2215,6 +2215,24 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     /**
+     * Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
+     * @param expr: the expression where we want to remove + operator
+     * @return expr without + operators
+     */
+    private static String removePlusOperator(String expr) {
+        expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
+        expr = expr.replaceAll("\\+\\s*\\+", "+");
+        expr = expr.replaceAll("\\-\\s*\\+", "-");
+        expr = expr.replaceAll("\\*\\s*\\+", "*");
+        expr = expr.replaceAll("\\/\\s*\\+", "/");
+        expr = expr.replaceAll("\\:\\s*\\+", ":");
+        expr = expr.replaceAll("\\;\\s*\\+", ";");
+        expr = expr.replaceAll("\\^\\s*\\+", "^");
+        expr = expr.replaceAll("^\\s*\\+", "");
+        return expr;
+    }
+
+    /**
      * Replace '+' operator by the math.add() operator. To do that we need to
      * find what are the expressions to add, they can contains '(' or ')' This
      * function start by replacing priority operators '*' and '/' and then
@@ -2226,7 +2244,7 @@ public class R2jsSession extends Rsession implements RLog {
      */
     private static String replaceOperators(String expr) {
 
-        expr = expr.replace("*+", "*");
+        expr = removePlusOperator(expr);
 
         // We consider differently the '-' operator in '2-3' to the '-' negative: '-3'.
         // So we replace -3 by î3 first, but 2-3 stays 2-3
@@ -2362,15 +2380,7 @@ public class R2jsSession extends Rsession implements RLog {
                                 + expr.substring(endingIndex + 1, expr.length());
 
                         //Remove + operator if it is after a "return, if, else, (, [, {,),],},=,+,-
-                        expr = expr.replaceAll("(return|if|else|\\(|\\{|\\|[\\|]|\\}|=|,|<|>) *\\+", "$1");
-                        expr = expr.replaceAll("\\+ +\\+", "+");
-                        expr = expr.replaceAll("\\- +\\+", "-");
-                        expr = expr.replaceAll("\\* +\\+", "*");
-                        expr = expr.replaceAll("\\/ +\\+", "/");
-                        expr = expr.replaceAll("\\: +\\+", ":");
-                        expr = expr.replaceAll("\\; +\\+", ";");
-                        expr = expr.replaceAll("\\^ +\\+", "^");
-                        expr = expr.replaceAll("^ *\\+", "");
+                        expr = removePlusOperator(expr);
 
                         // Decrement i to be sure to not miss an operator                                   
                         //System.err.println("\n"+repeat(" ",startingIndex +2)+"[");
