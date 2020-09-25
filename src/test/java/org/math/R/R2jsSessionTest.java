@@ -205,7 +205,7 @@ public class R2jsSessionTest {
         assert (Double) engine.eval("2*3+4*+5") == 26;
         assert (Double) engine.eval("2*+3+4*5") == 26;
         assert (Double) engine.eval("2*3+4*-5") == -14;
-        assert (Double) engine.eval("2*-3+4*5") == ²14;
+        assert (Double) engine.eval("2*-3+4*5") == 14;
 
         // Check infinity is available
         assert Double.isInfinite((Double) engine.eval("a <- Inf"));
