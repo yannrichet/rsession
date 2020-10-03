@@ -198,6 +198,56 @@ public class R2jsSessionTest {
         return l.substring(0, l.length() - 1) + ")";
     }
 
+
+    public void testThatEvaluationFail(String expr) {
+        boolean testFail=false;
+        try{
+            System.out.println(engine.eval(expr));
+        } catch (Exception e) {
+            testFail=true;
+        }
+        assertTrue("Evaluation should have thrown an exception", testFail);
+    }
+
+    @Test
+    public void testBasSyntaxes() throws Rsession.RException {
+        engine.debug_js = true;
+
+        testThatEvaluationFail("c(1,2");
+        testThatEvaluationFail(")c(1,2");
+        testThatEvaluationFail("1,2+3");
+        testThatEvaluationFail("1,2+3)");
+        testThatEvaluationFail("()1,2+3");
+        testThatEvaluationFail("1(,)2+3");
+        testThatEvaluationFail("c)1,2(");
+        testThatEvaluationFail("c1,2(");
+        testThatEvaluationFail("c)1,2");
+        testThatEvaluationFail("c(1,2))");
+        testThatEvaluationFail("c((1,2");
+        testThatEvaluationFail("(c(1,2())");
+        testThatEvaluationFail("c[1,2");
+        testThatEvaluationFail("]c[1,2");
+        testThatEvaluationFail("1,2+3");
+        testThatEvaluationFail("1,2+3]");
+        testThatEvaluationFail("[]1,2+3");
+        testThatEvaluationFail("1[,]2+3");
+        testThatEvaluationFail("c]1,2[");
+        testThatEvaluationFail("c1,2[");
+        testThatEvaluationFail("c]1,2");
+        testThatEvaluationFail("c[1,2]]");
+        testThatEvaluationFail("c[[1,2");
+        testThatEvaluationFail("[c[1,2[]]");
+        testThatEvaluationFail(")c(1,2[]]");
+        testThatEvaluationFail(")c(1,2[]()");
+        testThatEvaluationFail(")c(1,2()[]");
+        testThatEvaluationFail("c[(1,2])");
+        testThatEvaluationFail("c]]1,2[[");
+        testThatEvaluationFail("f{zee");
+        testThatEvaluationFail("f[zee");
+        testThatEvaluationFail("f(zee");
+        //testThatEvaluationFail("c([1,2)]"); todo: should fail
+    }
+
     @Test
     public void testBasicSyntaxes() throws Rsession.RException {
         engine.debug_js = true;

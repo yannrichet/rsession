@@ -11,20 +11,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,6 +22,7 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import org.apache.commons.io.FileUtils;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  * This class evaluate an R expression by parsing it in javascript expression
@@ -317,6 +305,43 @@ public class R2jsSession extends Rsession implements RLog {
 
     DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
+
+    private void checkBracketsCount(String expression, char openingBracket, char closingBracket) {
+        int countOpeningBrackets = StringUtils.countMatches(expression, ""+openingBracket);
+        int countClosingBrackets = StringUtils.countMatches(expression, ""+closingBracket);
+        if(countOpeningBrackets!=countClosingBrackets) {
+            throw new IllegalArgumentException("Not the same number of opening bracket '"+ openingBracket +"' " +
+                    "and closing brackets '"+ closingBracket + "' ( " +
+                    countOpeningBrackets + "!=" + countClosingBrackets +")");
+        }
+    }
+
+    /**
+     * Check if expression syntax is valid (this test doesn't cover all cases)
+     * @param expression - the expression to check
+     */
+    private void checkExpressionValidity(String expression) throws IllegalArgumentException {
+
+        checkBracketsCount(expression, '(', ')');
+        checkBracketsCount(expression, '[', ']');
+        checkBracketsCount(expression, '{', '}');
+
+        int commaIndex = expression.indexOf(",");
+        if(commaIndex>=0) {
+            String endingStoppingCharacters = ")]";
+            String startingStoppingCharacters = "([";
+            int nextParenthesis = getNextExpressionLastIndex(expression,commaIndex,endingStoppingCharacters);
+            int prevParenthesis = getPreviousExpressionFirstIndex(expression, commaIndex, startingStoppingCharacters);
+            if(prevParenthesis<=0 && !startingStoppingCharacters.contains(""+expression.charAt(0))) {
+                throw new IllegalArgumentException("No opening bracket before ',' at index " + commaIndex);
+            }
+            if(nextParenthesis>=expression.length()-1 && !endingStoppingCharacters.contains(""+expression.charAt(expression.length()-1))) {
+                throw new IllegalArgumentException("No closing bracket after ',' at index " + commaIndex);
+            }
+        }
+
+    }
+
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are
      * not supported yet
@@ -371,6 +396,8 @@ public class R2jsSession extends Rsession implements RLog {
         // Get the expression with replaced quotes (it's the first element of
         // the returned list)
         e = quotesList.get(0);
+
+        checkExpressionValidity(e);
 
         //change variable names containing "." by "__", but avoid file names (ending with ')
         e = e.replaceAll("([a-zA-Z]*)\\.([a-zA-Z]+)", "$1__$2");
@@ -2521,7 +2548,8 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     /**
-     * Get the index of the end of an expression The function starts at the
+     * Get the index of the end of an expression
+     * The function starts at the
      * given startIndex and return the index of the first character founded in
      * the stoppingCharacters string. This function ignore characters inside
      * brackets or paranthesis
