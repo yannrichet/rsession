@@ -22,7 +22,7 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import org.apache.commons.io.FileUtils;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class evaluate an R expression by parsing it in javascript expression
@@ -315,6 +315,8 @@ public class R2jsSession extends Rsession implements RLog {
                     countOpeningBrackets + "!=" + countClosingBrackets +")");
         }
     }
+
+
 
     /**
      * Check if expression syntax is valid (this test doesn't cover all cases)
