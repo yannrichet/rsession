@@ -22,7 +22,6 @@ import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class evaluate an R expression by parsing it in javascript expression
@@ -307,8 +306,8 @@ public class R2jsSession extends Rsession implements RLog {
 
 
     private void checkBracketsCount(String expression, char openingBracket, char closingBracket) {
-        int countOpeningBrackets = StringUtils.countMatches(expression, ""+openingBracket);
-        int countClosingBrackets = StringUtils.countMatches(expression, ""+closingBracket);
+        long countOpeningBrackets = expression.chars().filter(ch -> ch == openingBracket).count();
+        long countClosingBrackets =  expression.chars().filter(ch -> ch == closingBracket).count();
         if(countOpeningBrackets!=countClosingBrackets) {
             throw new IllegalArgumentException("Not the same number of opening bracket '"+ openingBracket +"' " +
                     "and closing brackets '"+ closingBracket + "' ( " +
