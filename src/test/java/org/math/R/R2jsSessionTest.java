@@ -479,6 +479,31 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testIfElse() throws RException {
+
+        engine.voidEval("x=12");
+
+        assert (Double) engine.eval("if (x>1) 1+x else 1-x") == 13.;
+        assert (Double) engine.eval("if(x>1) 1+x else 1-x") == 13.;
+        assert (Double) engine.eval("if (x>1) {1+x} else {1-x}") == 13.;
+        assert (Double) engine.eval("if  (x> 1)   {1+x}   else   {1- x}") == 13.;
+        assert (Double) engine.eval("if(x>1){1+x}else{1-x}") == 13.;
+        assert (Double) engine.eval("if(x>1)(1+x)else(1-x)") == 13.;
+        assert (Double) engine.eval("if (x>1) (1+x) else (1-x)") == 13.;
+        assert (Double) engine.eval("if(x>1){1+x}else(1-x)") == 13.;
+        assert (Double) engine.eval("if(x>1)(1+x)else{1-x}") == 13.;
+        assert (Double) engine.eval("if  (x>1) (1+x)   else {1-x}  ") == 13.;
+
+        engine.voidEval("MFR_Pu=0");
+        engine.voidEval("CPu_gL=2");
+        engine.voidEval("CU_gL=3");
+        assert (Double) engine.eval("if(MFR_Pu==1){CPu_gL}else(CU_gL)") == 3.0;
+        assert (Double) engine.eval("if(MFR_Pu==1){CPu_gL}else (CU_gL)") == 3.0;
+        engine.voidEval("MFR_Pu=1");
+        assert (Double) engine.eval("if(MFR_Pu==1){CPu_gL}else (CU_gL)") == 2.0;
+    }
+
+    @Test
     public void testApply() throws Rsession.RException {
         String apply_f = "apply(X,1,function (x) {\n"
                 + "     x1 <- x[1] * 15 - 5\n"

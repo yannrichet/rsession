@@ -788,6 +788,7 @@ public class R2jsSession extends Rsession implements RLog {
             int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
             int fctCloseBracketIndex = getNextExpressionLastIndex(result, ifStartBracketIndex + 1, "}") + 1;
 
+            if(fctCloseBracketIndex + 1 >= result.length()) fctCloseBracketIndex-=1;
             String function = result.substring(startIndex, fctCloseBracketIndex + 1);
 
             // Prefix function's arguments by "__"
@@ -1186,6 +1187,8 @@ public class R2jsSession extends Rsession implements RLog {
         final String ifReplacementString = "__IF__";
         String result = expr;
 
+
+
         RFunctionArgumentsDTO rFunctionArgumentsDTO = getFunctionArguments(expr, "if", true);
 
         while (rFunctionArgumentsDTO != null) {
@@ -1203,31 +1206,48 @@ public class R2jsSession extends Rsession implements RLog {
             ifSb.append(ifArg);
             ifSb.append(")");
 
-            if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
+            //if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
 
-                ifSb.append("{");
-                int elseIndex = expr.indexOf("else", endIndex);
 
-                if (elseIndex >= 0) {
-                    ifSb.append(result.substring(endIndex + 1, elseIndex));
-                    ifSb.append("} else {");
-                    ifSb.append(result.substring(elseIndex + 5));
+            int elseIndex = result.indexOf("else", endIndex);
+
+            boolean dontCloseBrack = false;
+
+            if (elseIndex >= 0) {
+                String ifStatement = result.substring(endIndex + 1, elseIndex).trim();
+                if(!ifStatement.startsWith("{")) ifSb.append("{");
+                ifSb.append(ifStatement);
+                if(!ifStatement.endsWith("}")) ifSb.append("}");
+                ifSb.append(" else ");
+                String elseStatement = result.substring(elseIndex + 4).trim();
+                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("{");
+                ifSb.append(elseStatement);
+                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("}");
+            } else {
+                String ifStatement = result.substring(endIndex + 1, result.length()).trim();
+                if(!ifStatement.startsWith("{")) {
+                    ifSb.append("{");
+                    int returnLineIdx = ifStatement.indexOf('\n');
+                    if(returnLineIdx>=0) {
+                        ifStatement = ifStatement.substring(0, returnLineIdx) + "}" + ifStatement.substring(returnLineIdx, ifStatement.length());
+                        ifSb.append(ifStatement);
+                        dontCloseBrack = true;
+                    } else {
+                        ifSb.append(ifStatement);
+                        ifSb.append("}");
+                    }
                 } else {
-                    ifSb.append(result.substring(endIndex + 1, result.length()));
+                    ifSb.append(ifStatement);
+                    dontCloseBrack = true;
                 }
 
-                StringBuilder sb = new StringBuilder();
-                sb.append(result.substring(0, startIndex));
-                sb.append(ifSb.toString());
-                sb.append("}");
-                result = sb.toString();
-            } else {
-                StringBuilder sb = new StringBuilder();
-                sb.append(result.substring(0, startIndex));
-                sb.append(ifSb.toString());
-                sb.append(result.substring(endIndex + 1));
-                result = sb.toString();
             }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(result.substring(0, startIndex));
+            sb.append(ifSb.toString());
+            if(!dontCloseBrack && !ifSb.toString().trim().endsWith("}")) sb.append("}");
+            result = sb.toString();
 
             // Search the next "if"
             rFunctionArgumentsDTO = getFunctionArguments(result, "if", true);
@@ -1906,8 +1926,12 @@ public class R2jsSession extends Rsession implements RLog {
 
             int ifStartBracketIndex = result.substring(endIndex).indexOf("{") + endIndex;
             int ifCloseBracketIndex = getNextExpressionLastIndex(result, ifStartBracketIndex + 1, "}") + 1;
-            ifSb.append(result.substring(ifStartBracketIndex + 1, ifCloseBracketIndex + 1));
-            //ifSb.append("}");
+            String returnStatement = result.substring(ifStartBracketIndex + 1, ifCloseBracketIndex + 1).trim();
+            if(returnStatement.startsWith("{")) returnStatement=returnStatement.substring(1);
+            if(returnStatement.endsWith("}")) returnStatement=returnStatement.substring(0, returnStatement.length() - 1);
+
+            ifSb.append(returnStatement);
+            ifSb.append("}");
             if (result.substring(ifCloseBracketIndex + 1).trim().startsWith("else")) {
                 int elseStartBracketIndex = result.substring(ifCloseBracketIndex + 1).indexOf("{") + ifCloseBracketIndex + 1;
                 int elseCloseBracketIndex = getNextExpressionLastIndex(result, elseStartBracketIndex + 1, "}") + 1;
@@ -2174,14 +2198,14 @@ public class R2jsSession extends Rsession implements RLog {
 
         Map<String, String> argumentNamesAndValues = new LinkedHashMap<>(); //because we need to keep order of arguments, by default
 
-        Pattern pattern = Pattern.compile("(?<!\\.)(\\b)" + fctName + "\\(");
+        Pattern pattern = Pattern.compile("(?<!\\.)(\\b)" + fctName + "\\s*\\(");
         Matcher matcher = pattern.matcher(expr);
 
         // If an occurrence has been found
         if (matcher.find()) {
 
             int startIndex = matcher.start();
-            int currentIndex = startIndex + fctName.length() + 1;
+            int currentIndex = expr.indexOf("(", startIndex)+1;
 
             while (expr.charAt(currentIndex - 1) != ')') {
 
