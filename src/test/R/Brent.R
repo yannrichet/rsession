@@ -2,7 +2,8 @@
 #author: Miguel Munoz Zuniga
 #ref: https://en.wikipedia.org/wiki/Brent%27s_method
 #tags: Inversion
-#options: ytarget='0.0';ytol='3.e-8';xtol='1.e-8';max_iterations='100'
+#options: ytarget='0.0';ytol='0.1';xtol='0.01';max_iterations='100'
+#options.help: ytarget='Output target value';ytol='Convergence precision on output value';xtol='Convergence precision on input value';max_iterations='Maximum iterations number'
 #input: x=list(min=0,max=1)
 #output: y=0.01
 
@@ -25,6 +26,13 @@ getInitialDesign <- function(brent, input, output) {
     if (length(input)!=1) stop("Cannot find root of more than 1D function")
     brent$i <- 0
     brent$input <- input
+
+    # Rescale xtol in [0,1]
+    Xname = names(brent$input)[1]
+    xminptol = matrix(c(brent$input[[ Xname ]]$min + brent$xtol),ncol=1)
+    names(xminptol) <- Xname
+    brent$xtol01 = to01(xminptol,brent$input) # Rescale xtol
+
     brent$exit <- -1    # Reason end of algo
     x = matrix(c(0, 1, 1),ncol=1)
     names(x) <- names(input)
@@ -77,7 +85,8 @@ getNextDesign <- function(brent, X, Y) {
         fc = fa
     }
 
-    tol1 = 2. * brent$ytol * abs(b) + 0.5 * brent$xtol # Convergence check tolerance.
+    #tol1 = 2. * brent$ytol * abs(b) + 0.5 * brent$xtol01 # Convergence check tolerance.
+    tol1 = 0.5 * brent$xtol01 # Convergence check tolerance.
     xm = .5 * (c - b)
     if ((abs(xm) <= tol1) | (fb == 0)) {
         # stop if fb = 0 return root b or tolerance reached
@@ -186,15 +195,15 @@ to01 = function(X, inp) {
 ##############################################################################################
 # @test
 # f <- function(X) matrix(Vectorize(function(x) {((x+5)/15)^3})(X),ncol=1)
-# 
+#
 # options = list(ytarget=0.3,ytol=3.e-8,xtol=1.e-8,max_iterations=100)
 # b = Brent(options)
-# 
+#
 # X0 = getInitialDesign(b, input=list(x=list(min=-5,max=10)), NULL)
 # Y0 = f(X0)
 # Xi = X0
 # Yi = Y0
-# 
+#
 # finished = FALSE
 # while (!finished) {
 #     Xj = getNextDesign(b,Xi,Yi)
@@ -206,5 +215,5 @@ to01 = function(X, inp) {
 #         Yi = rbind(Yi,Yj)
 #     }
 # }
-# 
+#
 # print(displayResults(b,Xi,Yi))
