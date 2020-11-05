@@ -696,6 +696,11 @@ public class R2jsSessionTest {
 
     @Test
     public void testMatrices() throws Rsession.RException {
+        engine.voidEval("A0 = matrix( c(123), nrow=1)");
+        assert Arrays.deepEquals((double[][]) engine.eval("A0"), new double[][]{{123}});
+        
+        engine.voidEval("A0 = matrix( 123, nrow=1)");
+        assert Arrays.deepEquals((double[][]) engine.eval("A0"), new double[][]{{123}});
 
         // Matrix transpose
         engine.voidEval("A = matrix( c(2, 4, 3, 1, 5, 7), nrow=3, ncol=2, byrow=TRUE)");

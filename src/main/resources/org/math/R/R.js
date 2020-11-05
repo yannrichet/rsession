@@ -282,7 +282,7 @@
             }
             return [s,1];
         } else {
-            return null;
+            return [1,1];
         }
     }
 
