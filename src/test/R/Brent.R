@@ -30,7 +30,7 @@ getInitialDesign <- function(brent, input, output) {
     # Rescale xtol in [0,1]
     Xname = names(brent$input)[1]
     xminptol = matrix(brent$input[[ Xname ]]$min + brent$xtol,ncol=1)
-    names(xminptol) <- Xname
+    names(xminptol) <- names(brent$input)
     brent$xtol01 = to01(xminptol,brent$input) # Rescale xtol
 
     brent$exit <- -1    # Reason end of algo
