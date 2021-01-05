@@ -520,6 +520,14 @@ public class R2jsSessionTest {
 
     @Test
     public void testFunctions() throws Rsession.RException {
+
+        engine.voidEval("height.cylinder_cm <- function(x,y,z) {return x*y*z}");
+        engine.voidEval("h <- function() { height.cylinder_cm(r(),m(),p()) }");
+        engine.voidEval("r <- function() {return 1}");
+        engine.voidEval("m <- function() {return 2}");
+        engine.voidEval("p <- function() {return 3}");
+        assert (Double) engine.eval("h()") == 6;
+
         engine.voidEval("f = function(x) {return(1+x)}");
         assert (Double) engine.eval("f(1.23)") == 2.23;
         assert (Double) engine.eval("f(x=1.23)") == 2.23;

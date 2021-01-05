@@ -696,6 +696,10 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     private String convertFunction(String expr) throws ScriptException {
+
+        // Add a space after a parenthesis, otherwise the second regex bellow doesn't work for function in function
+        expr = expr.replaceAll("[(](\\w)", "( $1");
+
         Pattern indexPattern = Pattern.compile("(^|[^\\.\\w])((?!function|if|for|while|switch|return)\\w+)[(]");
         Matcher indexMatcher = indexPattern.matcher(expr);
 
