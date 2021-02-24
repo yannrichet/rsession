@@ -120,7 +120,7 @@ Alternatively to setup classpath manually, just use maven:
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.1.0</version>
+      <version>3.1.2</version>
     </dependency>
 ...
 </dependencies>
