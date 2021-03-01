@@ -21,7 +21,7 @@ jobs:
   test:
     strategy: 
       matrix:
-        os: [macos-10.15, ubuntu-18.04, windows-2019]
+        os: [macos-latest, ubuntu-latest, windows-latest]
         java: [8]
     
     runs-on: {{ matrix.os }}
