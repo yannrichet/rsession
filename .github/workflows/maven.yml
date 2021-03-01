@@ -72,9 +72,7 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - run: |
-        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
-          choco install -y r --version 3.6; \
+    - run: choco install -y r --version 3.6
         fi
       shell: bash
     - run: mvn -B test --file pom.xml
