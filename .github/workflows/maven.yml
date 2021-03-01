@@ -29,10 +29,17 @@ jobs:
       with:
         java-version: 1.8
     - run: |
-        sudo apt-get install xvfb --allow-unauthenticated -y; 
-        export DISPLAY=:99.0; 
-        sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 ;
-        sleep 3;
+        sudo apt-get install xvfb --allow-unauthenticated -y
+        export DISPLAY=:99.0
+        sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24
+        sleep 3
+    - run: |
+        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then
+          CODENAME=`cat /etc/lsb-release | grep CODENAME| cut -d= -f2`
+          echo "deb https://cloud.r-project.org/bin/linux/ubuntu "$CODENAME"-cran35/" | sudo tee -a /etc/apt/sources.list
+        fi
+        sudo apt-get update -qq --allow-unauthenticated
+        sudo apt-get install r-base --allow-unauthenticated -y
     - run: mvn -B test --file pom.xml
       
   release:
