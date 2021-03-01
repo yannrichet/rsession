@@ -30,7 +30,7 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
-        java-package: jre
+        java-package: jdk
     - run: |
         sudo apt-get install xvfb --allow-unauthenticated -y
         sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
