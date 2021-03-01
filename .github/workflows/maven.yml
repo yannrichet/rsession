@@ -30,13 +30,14 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - uses: GabrielBB/xvfb-action@v1
     - uses: r-lib/actions/setup-r@v1
       with:
         r-version: 3.6
     - run: ls /Library/Frameworks/R.framework/Versions/
       if: matrix.os == 'macos-10.15'
-    - run: mvn -B test --file pom.xml
+    - uses: GabrielBB/xvfb-action@v1
+      with: 
+        run: mvn -B test --file pom.xml
     - uses: codecov/codecov-action@v1
       if: matrix.os == 'ubuntu-18.04'
       
