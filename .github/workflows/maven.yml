@@ -62,8 +62,6 @@ jobs:
             
   test-windows:
     runs-on: windows-latest
-    env: 
-      shell: bash
     strategy: 
       matrix:
         java: [8, 11, 13]
@@ -73,12 +71,19 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
     - run: |
         if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
           choco install -y r --version 3.6; \
         fi
+      shell: bash
     - run: mvn -B test --file pom.xml
+
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - uses: codecov/codecov-action@v1
 
   release:
     runs-on: ubuntu-latest
