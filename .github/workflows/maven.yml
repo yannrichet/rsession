@@ -23,9 +23,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
         java: [8, 10]
-    
     runs-on: {{ matrix.os }}
-    
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-java@v1
