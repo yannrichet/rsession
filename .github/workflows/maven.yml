@@ -11,20 +11,36 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 1.8
+    - name: Set up JDK
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
     - name: Build with Maven
       run: mvn -B package -DskipTests=true --file pom.xml
 
+  test-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Setup X
+      run: |
+        sudo apt-get install xvfb --allow-unauthenticated -y; 
+        export DISPLAY=:99.0; 
+        sudo /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1024x768x24 ;
+        sleep 3;
+    - name: Build with Maven
+      run: mvn -B test --file pom.xml
+      
   release:
-  
     runs-on: ubuntu-latest
     
     steps:
@@ -32,7 +48,7 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - run: mkdir dist && cp target/rsession.jar dist
+    - run: mkdir -p dist && cp target/rsession.jar dist
       if: ${{ github.ref == 'refs/heads/master' }}
     - uses: actions/upload-artifact@v2
       with:
