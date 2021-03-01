@@ -31,7 +31,7 @@ jobs:
     - run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
     - run: |
         if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
-          sudo apt purge r-base; \
+          sudo apt purge r-base r-recommended; \
           CODENAME=`cat /etc/lsb-release | grep CODENAME | cut -d= -f2`; \
           echo "deb https://cloud.r-project.org/bin/linux/ubuntu "$CODENAME"-cran35/" | sudo tee -a /etc/apt/sources.list; \
           sudo apt-get update -qq --allow-unauthenticated; \
