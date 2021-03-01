@@ -1,6 +1,3 @@
-# This workflow will build a Java project with Maven
-# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
-
 name: Java CI with Maven
 
 on:
@@ -31,16 +28,15 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
+    - run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
     - run: |
-        sudo apt-get install xvfb --allow-unauthenticated -y
-        sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
-    - run: |
-        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then
-          CODENAME=`cat /etc/lsb-release | grep CODENAME| cut -d= -f2`
-          echo "deb https://cloud.r-project.org/bin/linux/ubuntu "$CODENAME"-cran35/" | sudo tee -a /etc/apt/sources.list
+        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
+          sudo apt purge r-base; \
+          CODENAME=`cat /etc/lsb-release | grep CODENAME | cut -d= -f2`; \
+          echo "deb https://cloud.r-project.org/bin/linux/ubuntu "$CODENAME"-cran35/" | sudo tee -a /etc/apt/sources.list; \
+          sudo apt-get update -qq --allow-unauthenticated; \
+          sudo apt-get install r-base --allow-unauthenticated -y; \
         fi
-        sudo apt-get update -qq --allow-unauthenticated
-        sudo apt-get install r-base --allow-unauthenticated -y
     - run: mvn -B test --file pom.xml
       
   release:
@@ -52,7 +48,7 @@ jobs:
       with:
         java-version: 1.8
     - run: mvn -B package -DskipTests=true --file pom.xml
-    - run: mkdir -p dist && cp target/rsession.jar dist
+    - run: mkdir -p dist && cp target/rsession.jar dist/.
       if: ${{ github.ref == 'refs/heads/master' }}
     - uses: actions/upload-artifact@v2
       with:
