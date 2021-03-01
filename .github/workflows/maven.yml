@@ -15,6 +15,7 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 1.8
+        java-package: jdk
     - run: mvn -B compile -DskipTests=true --file pom.xml
 
   test-linux:
@@ -29,14 +30,9 @@ jobs:
         java-version: ${{ matrix.java }}
         java-package: jdk
     - run: sudo /usr/bin/Xvfb :0 -screen 0 1024x768x24 &
-    - run: |
-        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
-          sudo apt purge r-base r-recommended; \
-          CODENAME=`cat /etc/lsb-release | grep CODENAME | cut -d= -f2`; \
-          echo "deb https://cloud.r-project.org/bin/linux/ubuntu "$CODENAME"-cran35/" | sudo tee -a /etc/apt/sources.list; \
-          sudo apt-get update -qq --allow-unauthenticated; \
-          sudo apt-get install r-base --allow-unauthenticated -y; \
-        fi
+    - uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: 3.6
     - run: mvn -B test --file pom.xml
     - uses: codecov/codecov-action@v1
       
@@ -51,14 +47,9 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - run: |
-        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
-          export HOMEBREW_NO_AUTO_UPDATE=1; \
-          wd=$PWD; \
-          cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git reset --hard c3a244c627e; git checkout -b r-3.6.3; \
-          cd $wd; \
-          brew install r; \
-        fi
+    - uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: 3.6
     - run: mvn -B test --file pom.xml
             
   test-windows:
@@ -72,7 +63,9 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - run: choco install -y r --version 3.6
+    - uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: 3.6
     - run: mvn -B test --file pom.xml
 
   release:
@@ -83,6 +76,7 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 1.8
+        java-package: jdk
     - run: mvn -B package -DskipTests=true --file pom.xml
     - run: mkdir -p dist && cp target/rsession.jar dist/.
       if: ${{ github.ref == 'refs/heads/master' }}
