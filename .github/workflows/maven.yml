@@ -50,12 +50,12 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 1.8
+    - run: mvn -B package -DskipTests=true --file pom.xml
     - run: mkdir -p dist && cp target/rsession.jar dist
       if: ${{ github.ref == 'refs/heads/master' }}
     - uses: actions/upload-artifact@v2
       with:
         name: Release
         path: dist
-    - run: mvn -B package -DskipTests=true --file pom.xml
     
     
