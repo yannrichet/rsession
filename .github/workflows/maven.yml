@@ -28,7 +28,7 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
+    - run: sudo /usr/bin/Xvfb :0 -screen 0 1024x768x24 &
     - run: |
         if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
           sudo apt purge r-base r-recommended; \
