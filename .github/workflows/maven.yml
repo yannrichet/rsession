@@ -39,6 +39,47 @@ jobs:
         fi
     - run: mvn -B test --file pom.xml
       
+  test-macos:
+    runs-on: macos-latest
+    strategy: 
+      matrix:
+        java: [8, 11, 13]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+        java-package: jdk
+    - run: |
+        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
+          export HOMEBREW_NO_AUTO_UPDATE=1; \
+          wd=$PWD; \
+          cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git reset --hard c3a244c627e; git checkout -b r-3.6.3; \
+          cd $wd; \
+          brew install r; \
+        fi
+    - run: mvn -B test --file pom.xml
+            
+  test-windows:
+    runs-on: windows-latest
+    env: 
+      shell: bash
+    strategy: 
+      matrix:
+        java: [8, 11, 13]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: ${{ matrix.java }}
+        java-package: jdk
+    - run: sudo /usr/bin/Xvfb $DISPLAY -screen 0 1024x768x24 &
+    - run: |
+        if [ "`R --version | head -1 | cut -d' ' -f3 | cut -d. -f1`" -ne "3" ]; then \
+          choco install -y r --version 3.6; \
+        fi
+    - run: mvn -B test --file pom.xml
+
   release:
     runs-on: ubuntu-latest
     
