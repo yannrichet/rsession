@@ -22,7 +22,7 @@ jobs:
     strategy: 
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
-        java: [8]
+        java: [8, 10]
     
     runs-on: {{ matrix.os }}
     
