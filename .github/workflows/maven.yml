@@ -73,8 +73,6 @@ jobs:
         java-version: ${{ matrix.java }}
         java-package: jdk
     - run: choco install -y r --version 3.6
-        fi
-      shell: bash
     - run: mvn -B test --file pom.xml
 
   release:
