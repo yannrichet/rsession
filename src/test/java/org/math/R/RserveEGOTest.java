@@ -54,6 +54,8 @@ public class RserveEGOTest {
     }
 
     void initR() throws Exception {
+        R.eval(".libPaths()",true);
+        
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
