@@ -54,12 +54,12 @@ public class RserveEGOTest {
     }
 
     void initR() throws Exception {
-        R.eval(".libPaths()",true);
+        R.voidEval("for (l in .libPaths()) {print(paste0(l,': ',file.access(l,2)))}",true);
         
+        R.installPackage("pso", true);
         R.installPackage("DiceKriging", true);
         R.installPackage("rgenoud", true);
         R.installPackage("lhs", true);
-        R.installPackage("pso", true);
         //R.installPackage("DiceView", true);
 
         R.voidEval("distXmin <- function (x, Xmin) \n"
