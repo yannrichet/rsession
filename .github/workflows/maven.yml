@@ -44,7 +44,7 @@ jobs:
     - uses: OrbitalOwen/desktop-screenshot-action@0.1
       if: steps.mvntest.outcome != 'success'
       with:
-        file-name: 'test.jpg'
+        file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
     - uses: codecov/codecov-action@v1
       if: matrix.os == 'ubuntu-latest'
     - if: steps.mvntest.outcome != 'success'
