@@ -120,8 +120,14 @@ public class R2jsSession extends Rsession implements RLog {
 
         TRY_MODE_DEFAULT = false;
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        js = manager.getEngineByName("js");
+        ScriptEngineManager manager = new ScriptEngineManager(null);
+        js = manager.getEngineByName("JavaScript");
+        if (js==null) js = manager.getEngineByName("js");
+        if (js==null) js = manager.getEngineByExtension("js");
+        if (js==null) js = manager.getEngineByName("nashorn");
+        if (js==null) js = manager.getEngineByName("Nashorn");
+        if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
 
         // Load external js libraries used by the js to evaluate expressions
         try {
