@@ -39,8 +39,16 @@ jobs:
     - uses: GabrielBB/xvfb-action@v1
       with: 
         run: mvn -B test --file pom.xml
+      id: mvntest
+      continue-on-error: true
+    - uses: OrbitalOwen/desktop-screenshot-action@0.1
+      if: steps.mvntest.outcome != 'success'
+      with:
+        file-name: 'test.jpg'
     - uses: codecov/codecov-action@v1
       if: matrix.os == 'ubuntu-latest'
+    - if: steps.mvntest.outcome != 'success'
+      run: exit 1
       
   release:
     runs-on: ubuntu-latest
