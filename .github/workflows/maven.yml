@@ -39,8 +39,8 @@ jobs:
     - uses: GabrielBB/xvfb-action@v1
       with:
         run: mvn -B test --file pom.xml
-        id: mvntest
-        continue-on-error: true
+      id: mvntest
+      continue-on-error: true
     - run: sudo apt-get install imagemagick
       if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
     - uses: OrbitalOwen/desktop-screenshot-action@0.1
