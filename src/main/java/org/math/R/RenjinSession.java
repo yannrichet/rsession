@@ -287,9 +287,9 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public synchronized boolean set(String varname, double[][] data, String... names) {
-        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
+        note_code("`" + varname + "` <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
-        note_code(varname + " <- data.frame(" + varname + ")");
+        note_code("`" + varname + "` <- data.frame(" + varname + ")");
 
         if (data == null || data[0].length==0) {
             if (names == null) {
@@ -339,7 +339,7 @@ public class RenjinSession extends Rsession implements RLog {
 
     @Override
     public synchronized boolean set(String varname, Object var) {
-        note_code(varname + " <- " + toRcode(var));
+        note_code("`" + varname + "` <- " + toRcode(var));
 
         if (var instanceof double[][]) {
             double[][] dd = (double[][]) var;

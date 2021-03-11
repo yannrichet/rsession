@@ -2781,9 +2781,9 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public synchronized boolean set(String varname, double[][] data, String... names) throws RException {
 
-        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
+        note_code("`" + varname + "` <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
-        note_code(varname + " <- data.frame(" + varname + ")");
+        note_code("`" + varname + "` <- data.frame(" + varname + ")");
 
         // RList list = buildRList(data, names);
         // log(HEAD_SET + varname + " <- " + list, Level.INFO);
@@ -2821,8 +2821,7 @@ public class R2jsSession extends Rsession implements RLog {
      */
     @Override
     public synchronized boolean set(String varname, Object var) {
-
-        note_code(varname + " <- " + toRcode(var));
+        note_code("`" + varname + "` <- " + toRcode(var));
 
         varname = nameRtoJs(varname);
         try {
