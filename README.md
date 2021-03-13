@@ -1,15 +1,14 @@
-Linux, MacOS, Windows: [![Build Status](https://travis-ci.org/yannrichet/rsession.png)](https://travis-ci.org/yannrichet/rsession)
-Windows: [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/yannrichet/rsession?branch=master&svg=true)](https://ci.appveyor.com/project/yannrichet/rsession)
+[![Java CI with Maven](https://github.com/yannrichet/rsession/actions/workflows/maven.yml/badge.svg)](https://github.com/yannrichet/rsession/actions/workflows/maven.yml)
 
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 
-# Rsession: R (3.5) sessions wrapping for Java (8+) #
+# Rsession: R (3.5+) sessions wrapping for Java (8+) #
 
 Rsession provides an easy to use java class giving access to remote or local R sessions.
 The back-end engine should be:
 
- * "true" R (3.5 & 3.6), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
+ * "true" R (3.5, 3.6 (and 4.0 on Linux)), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
  * Renjin 3.5 (lower compatibility, but still very good),
  * and R2js, which is on-the-fly R translation to math.js, with lowest compatibility and hack-style coding, but full BSD licence.
 
@@ -58,9 +57,25 @@ import static org.math.R.*;
 ```
 ## Use it ##
 
-### Using R2js backend: ###
+### Using maven: ###
 
-No dependency required. Only based on Nashorn engine bundled in Java >8, so just add `rsession.jar` in your classpath:
+Use this maven dependency:
+
+```xml
+<dependencies>
+...
+    <dependency>
+      <groupId>com.github.yannrichet</groupId>
+      <artifactId>Rsession</artifactId>
+      <version>3.1.2</version>
+    </dependency>
+...
+</dependencies>
+```
+
+### Using only R2js backend: ###
+
+No 2nd order dependency required. Only based on Nashorn engine bundled in Java >8, so just add `rsession.jar` in your classpath:
 
   * https://github.com/yannrichet/rsession/blob/master/dist/rsession.jar
 
@@ -70,7 +85,7 @@ Then instanciate R session using:
 ```
 
 
-### Using Renjin backend: ###
+### Using only Renjin backend: ###
 
 Add `rsession.jar:renjin-jar-with-dependencies.jar` in your classpath: 
 
@@ -85,7 +100,7 @@ Then instanciate R session using:
 ```
 
 
-### Using Rserve backend: ###
+### Using only Rserve backend: ###
 
 Install R 3.5 or 3.6 from http://cran.r-project.org, then add `rsession.jar:Rserve*.jar:REngine*.jar` in your project classpath:
 
@@ -108,22 +123,5 @@ Then:
       Rsession r = new RserveSession(System.out,null,RserverConf.parse("R://192.168.1.1:6311"));
       ```
 
-
-### Through maven dependency: ###
-
-
-Alternatively to setup classpath manually, just use maven:
-
-```xml
-<dependencies>
-...
-    <dependency>
-      <groupId>com.github.yannrichet</groupId>
-      <artifactId>Rsession</artifactId>
-      <version>3.1.2</version>
-    </dependency>
-...
-</dependencies>
-```
 
 ![Analytics](https://ga-beacon.appspot.com/UA-109580-20/rsession)

@@ -120,8 +120,14 @@ public class R2jsSession extends Rsession implements RLog {
 
         TRY_MODE_DEFAULT = false;
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        js = manager.getEngineByName("js");
+        ScriptEngineManager manager = new ScriptEngineManager(null);
+        js = manager.getEngineByName("JavaScript");
+        if (js==null) js = manager.getEngineByName("js");
+        if (js==null) js = manager.getEngineByExtension("js");
+        if (js==null) js = manager.getEngineByName("nashorn");
+        if (js==null) js = manager.getEngineByName("Nashorn");
+        if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
 
         // Load external js libraries used by the js to evaluate expressions
         try {
@@ -1485,32 +1491,20 @@ public class R2jsSession extends Rsession implements RLog {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    public static void setEnv(String k, String v) throws Exception {
-        try {
-            Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
-            Field theEnvironmentField = processEnvironmentClass.getDeclaredField("theEnvironment");
-            theEnvironmentField.setAccessible(true);
-            Map<String, String> env = (Map<String, String>) theEnvironmentField.get(null);
-            env.put(k, v);
-            Field theCaseInsensitiveEnvironmentField = processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment");
-            theCaseInsensitiveEnvironmentField.setAccessible(true);
-            Map<String, String> cienv = (Map<String, String>) theCaseInsensitiveEnvironmentField.get(null);
-            cienv.put(k, v);
-        } catch (NoSuchFieldException e) {
-            Class[] classes = Collections.class.getDeclaredClasses();
-            Map<String, String> env = System.getenv();
-            for (Class cl : classes) {
-                if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
-                    Field field = cl.getDeclaredField("m");
-                    field.setAccessible(true);
-                    Object obj = field.get(env);
-                    Map<String, String> map = (Map<String, String>) obj;
-                    map.clear();
-                    map.put(k, v);
-                }
-            }
-        }
+    static Map<String, String> Env = new HashMap();
+
+    public static void setEnv(String k, String v) {
+        Env.put(k, v);
+    }
+
+    public static String getEnv(String k) {
+        if (Env.containsKey(k))
+            return Env.get(k);
+        if (System.getenv().containsKey(k))
+            return System.getenv().get(k);
+        if (System.getProperties().containsKey(k))
+            return System.getProperties().get(k).toString();
+        return "";
     }
 
     /**
@@ -2787,9 +2781,9 @@ public class R2jsSession extends Rsession implements RLog {
     @Override
     public synchronized boolean set(String varname, double[][] data, String... names) throws RException {
 
-        note_code(varname + " <- " + (data == null ? "list()" : toRcode(data)));
+        note_code("`" + varname + "` <- " + (data == null ? "list()" : toRcode(data)));
         note_code("names(" + varname + ") <- " + toRcode(names));
-        note_code(varname + " <- data.frame(" + varname + ")");
+        note_code("`" + varname + "` <- data.frame(" + varname + ")");
 
         // RList list = buildRList(data, names);
         // log(HEAD_SET + varname + " <- " + list, Level.INFO);
@@ -2827,8 +2821,7 @@ public class R2jsSession extends Rsession implements RLog {
      */
     @Override
     public synchronized boolean set(String varname, Object var) {
-
-        note_code(varname + " <- " + toRcode(var));
+        note_code("`" + varname + "` <- " + toRcode(var));
 
         varname = nameRtoJs(varname);
         try {
