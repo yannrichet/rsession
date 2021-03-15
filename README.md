@@ -10,7 +10,7 @@ The back-end engine should be:
 
  * "true" R (3.5, 3.6 (and 4.0 on Linux)), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
  * Renjin 3.5 (lower compatibility, but still very good),
- * and R2js, which is on-the-fly R translation to math.js, with lowest compatibility and hack-style coding, but full BSD licence.
+ * and R2js, which is on-the-fly R translation to math.js, with lower compatibility and hack-style coding, but full BSD licence.
 
 Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. It is also easier to use as it provides a multi session R engine for all these wrappers.
 
@@ -67,7 +67,7 @@ Use this maven dependency:
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.1.2</version>
+      <version>3.1.3</version>
     </dependency>
 ...
 </dependencies>
@@ -81,7 +81,7 @@ No 2nd order dependency required. Only based on Nashorn engine bundled in Java >
 
 Then instanciate R session using:
 ```java
-        Rsession r = new R2jsSession(System.out,null);
+Rsession r = new R2jsSession(System.out,null);
 ```
 
 
@@ -95,8 +95,8 @@ Add `rsession.jar:renjin-jar-with-dependencies.jar` in your classpath:
 
 Then instanciate R session using:
 ```java
-      Rsession r = new RenjinSession(System.out,null);
-      ...
+Rsession r = new RenjinSession(System.out,null);
+...
 ```
 
 
