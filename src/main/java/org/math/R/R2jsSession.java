@@ -3000,8 +3000,14 @@ public class R2jsSession extends Rsession implements RLog {
     public double[] asArray(Object o) throws ClassCastException {
         if (o instanceof double[]) {
             return (double[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof Double) {
+            return new double[]{(double)o};
         }
-        return (double[]) ScriptUtils.convert(o, double[].class);
+        Object co = ScriptUtils.convert(o, double[].class);
+        if (co instanceof Double) {
+            return new double[]{(double)co};
+        }            
+        return (double[]) co; 
     }
 
     @Override
@@ -3066,8 +3072,14 @@ public class R2jsSession extends Rsession implements RLog {
     public String[] asStrings(Object o) throws ClassCastException {
         if (o instanceof String[]) {
             return (String[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof String) {
+            return new String[]{(String)o};
         }
-        return (String[]) ScriptUtils.convert(o, String[].class);
+        Object co = ScriptUtils.convert(o, String[].class);
+        if (co instanceof String) {
+            return new String[]{(String)co};
+        }            
+        return (String[]) co; 
     }
 
     @Override
@@ -3082,8 +3094,14 @@ public class R2jsSession extends Rsession implements RLog {
     public int[] asIntegers(Object o) throws ClassCastException {
         if (o instanceof int[]) {
             return (int[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof Integer) {
+            return new int[]{(int)o};
         }
-        return (int[]) ScriptUtils.convert(o, int[].class);
+        Object co = ScriptUtils.convert(o, int[].class);
+        if (co instanceof Integer) {
+            return new int[]{(int)co};
+        }            
+        return (int[]) co; 
     }
 
     @Override
@@ -3101,8 +3119,14 @@ public class R2jsSession extends Rsession implements RLog {
     public boolean[] asLogicals(Object o) throws ClassCastException {
         if (o instanceof boolean[]) {
             return (boolean[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof Boolean) {
+            return new boolean[]{(boolean)o};
         }
-        return (boolean[]) ScriptUtils.convert(o, boolean[].class);
+        Object co =  ScriptUtils.convert(o, boolean[].class);
+        if (co instanceof Boolean) {
+            return new boolean[]{(boolean)co};
+        }            
+        return (boolean[]) co; 
     }
 
     @Override
