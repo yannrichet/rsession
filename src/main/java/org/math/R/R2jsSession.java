@@ -3084,24 +3084,17 @@ public class R2jsSession extends Rsession implements RLog {
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
-        if (o instanceof Integer) {
-            return (Integer) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        return (int) ScriptUtils.convert(o, int.class);
+        return (int) asDouble(o); // because int type does not exists in js
     }
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
-        if (o instanceof int[]) {
-            return (int[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof Integer) {
-            return new int[]{(int)o};
+        double[] d = asArray(o); // because int type does not exists in js
+        int[] I = new int[d.length];
+        for (int i =0; i<I.length; i++) {
+            I[i] = (int) d[i];
         }
-        Object co = ScriptUtils.convert(o, int[].class);
-        if (co instanceof Integer) {
-            return new int[]{(int)co};
-        }            
-        return (int[]) co; 
+        return I;
     }
 
     @Override

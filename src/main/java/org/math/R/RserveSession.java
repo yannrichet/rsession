@@ -928,7 +928,7 @@ public class RserveSession extends Rsession implements RLog {
             return (int) o;
         }
         if (!(o instanceof REXP)) {
-            throw new IllegalArgumentException("[asInteger] Not an REXP object: " + o);
+            throw new IllegalArgumentException("[asInteger] Not an REXP object: " + o.getClass());
         }
         try {
             return ((REXP) o).asInteger();
@@ -1055,14 +1055,25 @@ public class RserveSession extends Rsession implements RLog {
         try {
             if (eval.isNumeric()) {
                 if (eval.dim() == null || eval.dim().length == 1) {
-                    double[] array = eval.asDoubles();
-                    if (array.length == 0) {
-                        return null;
+                    if (eval.isInteger()) {
+                        int[] array = eval.asIntegers();
+                        if (array.length == 0) {
+                            return null;
+                        }
+                        if (array.length == 1) {
+                            return array[0];
+                        }
+                        return array;
+                    } else {
+                        double[] array = eval.asDoubles();
+                        if (array.length == 0) {
+                            return null;
+                            }
+                        if (array.length == 1) {
+                            return array[0];
+                        }
+                        return array;
                     }
-                    if (array.length == 1) {
-                        return array[0];
-                    }
-                    return array;
                 } else {
                     double[][] mat = eval.asDoubleMatrix();
                     if (mat.length == 0) {

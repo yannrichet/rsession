@@ -161,6 +161,7 @@ public class BasicTest {
         assert s.asStrings(s.eval("'abcd'")).length == 1; 
         assert s.asArray(s.eval("123")).length == 1; 
         assert s.asLogicals(s.eval("TRUE")).length == 1; 
+        assert s.asInteger(s.eval("length(c('a','b'))"))==2;
     }
 
     @Test
@@ -185,7 +186,8 @@ public class BasicTest {
         // Test immplicit vecotrization
         assert r.asStrings(r.eval("'abcd'")).length == 1; 
         assert r.asArray(r.eval("123")).length == 1; 
-        assert r.asLogicals(r.eval("TRUE")).length == 1; 
+        assert r.asLogicals(r.eval("TRUE")).length == 1;
+        assert r.asInteger(r.eval("length(c('a','b'))"))==2;
     }
 
     @Test
@@ -209,7 +211,8 @@ public class BasicTest {
         // Test immplicit vecotrization
         assert q.asStrings(q.eval("'abcd'")).length == 1; 
         assert q.asArray(q.eval("123")).length == 1; 
-        assert q.asLogicals(q.eval("TRUE")).length == 1; 
+        assert q.asLogicals(q.eval("TRUE")).length == 1;
+        assert q.asInteger(q.eval("length(c('a','b'))"))==2;
     }
     
     @Test
