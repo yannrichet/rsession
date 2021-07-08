@@ -107,8 +107,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param properties - properties
      * @param environmentName - name of the environment
      */
-    @SuppressWarnings("removal")
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"removal","deprecation"})
     public R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
         if (environmentName != null) {
