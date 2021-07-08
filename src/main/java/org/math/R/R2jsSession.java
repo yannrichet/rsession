@@ -107,6 +107,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param properties - properties
      * @param environmentName - name of the environment
      */
+    @SuppressWarnings("removal")
     public R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
         if (environmentName != null) {
@@ -126,7 +127,6 @@ public class R2jsSession extends Rsession implements RLog {
         if (js==null) js = manager.getEngineByExtension("js");
         if (js==null) js = manager.getEngineByName("nashorn");
         if (js==null) js = manager.getEngineByName("Nashorn");
-        @SuppressWarnings("removal")
         if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
         if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
 
