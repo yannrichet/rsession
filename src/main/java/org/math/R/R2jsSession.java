@@ -148,15 +148,18 @@ public class R2jsSession extends Rsession implements RLog {
 
         try {
             int rand = Math.round((float) Math.random() * 10000);
-            wdir = new File(new File(FileUtils.getTempDirectory(), ".R2js"), "" + rand);
+            wdir = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".R2js"), "" + rand);
             if (!wdir.mkdirs()) {
                 wdir = new File(new File(FileUtils.getUserDirectory(), ".R2js"), "" + rand);
                 if (!wdir.mkdirs()) {
-                    throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
+                    throw new IOException("Could not create directory " +
+                    new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand) + 
+                    "\n or " + 
+                    new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand));
                 }
             }
             eval("setwd('" + toRpath(wdir.getAbsolutePath()) + "')");
-            //wdir.deleteOnExit();
+            wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }

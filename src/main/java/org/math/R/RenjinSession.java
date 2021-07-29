@@ -71,11 +71,14 @@ public class RenjinSession extends Rsession implements RLog {
 
         try {
             int rand = Math.round((float) Math.random() * 10000);
-            wdir = new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + rand);
+            wdir = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand);
             if (!wdir.mkdirs()) {
                 wdir = new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand);
                 if (!wdir.mkdirs()) {
-                    throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
+                    throw new IOException("Could not create directory " + 
+                    new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand) +
+                    "\n or " +
+                    new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand));
                 }
             }
             setwd(wdir);
