@@ -351,6 +351,17 @@ public class R2jsSession extends Rsession implements RLog {
             }
         }
 
+        comaSyntaxCheck(expression);
+
+    }
+
+    private void comaSyntaxCheck(String e) throws IllegalArgumentException {
+        // Throw exception for wrong syntaxes with coma ex: 2*(1,2) instead of 2*(1.2)
+        Matcher m = Pattern.compile("(^|([=*\\+-<>()&%!^\\/\\s]\\b([^a-zA-Z_$,=*+\\-<()>&%!^\\/\\s])[a-zA-Z0-9_]*)|[=*+\\-<()>&%!^])[(](.[^,)(]*),(.[^,)(]*)[)]").matcher(e);
+        if(m.find()) {
+            int comaIdx = e.indexOf(",",m.start());
+            throw new IllegalArgumentException("wrong syntax with ',' at index " + comaIdx + ". Use '.' instead of ','?");
+        }
     }
 
     /**

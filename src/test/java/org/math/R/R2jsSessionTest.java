@@ -479,6 +479,18 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testWrongSyntaxes() throws RException {
+
+        try {
+            // good syntax is 2*(1.2)
+            engine.eval("2*(1,2)");
+            assert false : "Should throw exception";
+        } catch (Exception e) {
+            assert true;
+        }
+    }
+
+    @Test
     public void testIfElse() throws RException {
 
         engine.voidEval("x=12");
