@@ -23,7 +23,7 @@ public class RserveEGOTest {
     File tmpdir = new File("tmp"/*System.getProperty("java.io.tmpdir")*/);
 
     public static void main(String args[]) {
-        org.junit.runner.JUnitCore.main(RserveEGOTest.class.getName());
+        //org.junit.runner.JUnitCore.main(RserveEGOTest.class.getName());
     }
 
     /*
