@@ -156,6 +156,12 @@ public class BasicTest {
         assert ((Map) s.eval("list(aa=rnorm(10),bb=rnorm(10))")).size() == 2;
         assert ((String) s.eval("'abcd'")).equals("abcd");
         assert ((String[]) s.eval("c('abcd','sdfds')")).length == 2;
+
+        // Test immplicit vecotrization
+        assert s.asStrings(s.eval("'abcd'")).length == 1; 
+        assert s.asArray(s.eval("123")).length == 1; 
+        assert s.asLogicals(s.eval("TRUE")).length == 1; 
+        assert s.asInteger(s.eval("length(c('a','b'))"))==2;
     }
 
     @Test
@@ -176,6 +182,12 @@ public class BasicTest {
         assert ((Map) r.eval("list(aa=rnorm(10),bb=rnorm(10))")).size() == 2;
         assert ((String) r.eval("'abcd'")).equals("abcd");
         assert ((String[]) r.eval("c('abcd','sdfds')")).length == 2;
+
+        // Test immplicit vecotrization
+        assert r.asStrings(r.eval("'abcd'")).length == 1; 
+        assert r.asArray(r.eval("123")).length == 1; 
+        assert r.asLogicals(r.eval("TRUE")).length == 1;
+        assert r.asInteger(r.eval("length(c('a','b'))"))==2;
     }
 
     @Test
@@ -195,6 +207,12 @@ public class BasicTest {
         assert ((Map) q.eval("list(aa=rnorm(10),bb=rnorm(10))")).size() == 2;
         assert ((String) q.eval("'abcd'")).equals("abcd");
         assert ((String[]) q.eval("c('abcd','sdfds')")).length == 2;
+
+        // Test immplicit vecotrization
+        assert q.asStrings(q.eval("'abcd'")).length == 1; 
+        assert q.asArray(q.eval("123")).length == 1; 
+        assert q.asLogicals(q.eval("TRUE")).length == 1;
+        assert q.asInteger(q.eval("length(c('a','b'))"))==2;
     }
     
     @Test

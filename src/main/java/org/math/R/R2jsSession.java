@@ -107,6 +107,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param properties - properties
      * @param environmentName - name of the environment
      */
+    @SuppressWarnings({"removal","deprecation"})
     public R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
         if (environmentName != null) {
@@ -147,15 +148,18 @@ public class R2jsSession extends Rsession implements RLog {
 
         try {
             int rand = Math.round((float) Math.random() * 10000);
-            wdir = new File(new File(FileUtils.getTempDirectory(), ".R2js"), "" + rand);
+            wdir = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".R2js"), "" + rand);
             if (!wdir.mkdirs()) {
                 wdir = new File(new File(FileUtils.getUserDirectory(), ".R2js"), "" + rand);
                 if (!wdir.mkdirs()) {
-                    throw new IOException("Could not create directory " + new File(new File(FileUtils.getTempDirectory(), ".Renjin"), "" + hashCode()) + "\n or " + new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + hashCode()));
+                    throw new IOException("Could not create directory " +
+                    new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand) + 
+                    "\n or " + 
+                    new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand));
                 }
             }
             eval("setwd('" + toRpath(wdir.getAbsolutePath()) + "')");
-            //wdir.deleteOnExit();
+            wdir.deleteOnExit();
         } catch (Exception ex) {
             log("Could not use directory: " + wdir + "\n" + ex.getMessage(), Level.ERROR);
         }
@@ -347,6 +351,17 @@ public class R2jsSession extends Rsession implements RLog {
             }
         }
 
+        comaSyntaxCheck(expression);
+
+    }
+
+    private void comaSyntaxCheck(String e) throws IllegalArgumentException {
+        // Throw exception for wrong syntaxes with coma ex: 2*(1,2) instead of 2*(1.2)
+        Matcher m = Pattern.compile("(^|([=*\\+-<>()&%!^\\/\\s]\\b([^a-zA-Z_$,=*+\\-<()>&%!^\\/\\s])[a-zA-Z0-9_]*)|[=*+\\-<()>&%!^])[(](.[^,)(]*),(.[^,)(]*)[)]").matcher(e);
+        if(m.find()) {
+            int comaIdx = e.indexOf(",",m.start());
+            throw new IllegalArgumentException("wrong syntax with ',' at index " + comaIdx + ". Use '.' instead of ','?");
+        }
     }
 
     /**
@@ -3000,8 +3015,14 @@ public class R2jsSession extends Rsession implements RLog {
     public double[] asArray(Object o) throws ClassCastException {
         if (o instanceof double[]) {
             return (double[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof Double) {
+            return new double[]{(double)o};
         }
-        return (double[]) ScriptUtils.convert(o, double[].class);
+        Object co = ScriptUtils.convert(o, double[].class);
+        if (co instanceof Double) {
+            return new double[]{(double)co};
+        }            
+        return (double[]) co; 
     }
 
     @Override
@@ -3066,24 +3087,29 @@ public class R2jsSession extends Rsession implements RLog {
     public String[] asStrings(Object o) throws ClassCastException {
         if (o instanceof String[]) {
             return (String[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof String) {
+            return new String[]{(String)o};
         }
-        return (String[]) ScriptUtils.convert(o, String[].class);
+        Object co = ScriptUtils.convert(o, String[].class);
+        if (co instanceof String) {
+            return new String[]{(String)co};
+        }            
+        return (String[]) co; 
     }
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
-        if (o instanceof Integer) {
-            return (Integer) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        return (int) ScriptUtils.convert(o, int.class);
+        return (int) asDouble(o); // because int type does not exists in js
     }
 
     @Override
     public int[] asIntegers(Object o) throws ClassCastException {
-        if (o instanceof int[]) {
-            return (int[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        double[] d = asArray(o); // because int type does not exists in js
+        int[] I = new int[d.length];
+        for (int i =0; i<I.length; i++) {
+            I[i] = (int) d[i];
         }
-        return (int[]) ScriptUtils.convert(o, int[].class);
+        return I;
     }
 
     @Override
@@ -3101,8 +3127,14 @@ public class R2jsSession extends Rsession implements RLog {
     public boolean[] asLogicals(Object o) throws ClassCastException {
         if (o instanceof boolean[]) {
             return (boolean[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        } else if (o instanceof Boolean) {
+            return new boolean[]{(boolean)o};
         }
-        return (boolean[]) ScriptUtils.convert(o, boolean[].class);
+        Object co =  ScriptUtils.convert(o, boolean[].class);
+        if (co instanceof Boolean) {
+            return new boolean[]{(boolean)co};
+        }            
+        return (boolean[]) co; 
     }
 
     @Override

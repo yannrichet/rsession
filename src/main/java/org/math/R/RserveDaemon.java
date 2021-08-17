@@ -1,9 +1,12 @@
 package org.math.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.commons.io.FileUtils;
 import org.math.R.RLog.Level;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
@@ -17,7 +20,8 @@ public class RserveDaemon {
     RserverConf conf;
     Process process;
     private final RLog log;
-    private static File R_APP_DIR = new File(System.getProperty("user.home") + File.separator + ".Rserve") {
+    static int rand = Math.round((float) Math.random() * 10000);
+    private static File R_APP_DIR = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) {
         @Override
         public String toString() {
             if (RserveDaemon.isWindows()) {
@@ -27,16 +31,21 @@ public class RserveDaemon {
             }
         }
     };
-
-    static File app_dir() {
+    static File app_dir() throws IOException {
         boolean app_dir_ok = false;
         if (!R_APP_DIR.exists()) {
-            app_dir_ok = R_APP_DIR.mkdir();
+            app_dir_ok = R_APP_DIR.mkdirs();
         } else {
             app_dir_ok = R_APP_DIR.isDirectory() && R_APP_DIR.canWrite();
         }
         if (!app_dir_ok) {
-            Log.Err.println("Cannot write in " + R_APP_DIR.getAbsolutePath());
+            R_APP_DIR = new File(new File(FileUtils.getUserDirectory(), ".Rserve"), "" + rand);
+            if (!R_APP_DIR.mkdirs()) {
+                throw new IOException("Could not create directory " + 
+                new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) + 
+                "\n or " + 
+                new File(new File(FileUtils.getUserDirectory(), ".Rserve"), "" + rand));
+            }
         }
         return R_APP_DIR;
     }
@@ -332,5 +341,5 @@ public class RserveDaemon {
     }
 
     // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
-    public static final boolean UNIX_OPTIMIZE = false;
+    public static final boolean UNIX_OPTIMIZE = Boolean.parseBoolean(System.getProperty("RSERVE_NO_INC_PORT", "false"));
 }
