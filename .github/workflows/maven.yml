@@ -43,18 +43,18 @@ jobs:
       continue-on-error: true
       if: matrix.os != 'windows-latest'
     - run: mvn -B test --file pom.xml
-      id: mvntest
+      id: mvntest-win
       continue-on-error: true
       if: matrix.os == 'windows-latest'
     - run: sudo apt-get install imagemagick
       if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
     - uses: OrbitalOwen/desktop-screenshot-action@0.1
-      if: steps.mvntest.outcome != 'success'
+      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
       with:
         file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
     - uses: codecov/codecov-action@v1
       if: matrix.os == 'ubuntu-latest'
-    - if: steps.mvntest.outcome != 'success'
+    - if: steps.mvntest.outcome != 'success' && steps.mvntest-win.outcome != 'success'
       run: exit 1
       
   release:
