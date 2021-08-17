@@ -41,6 +41,11 @@ jobs:
         run: mvn -B test --file pom.xml
       id: mvntest
       continue-on-error: true
+      if: matrix.os != 'windows-latest'
+    - run: mvn -B test --file pom.xml
+      id: mvntest
+      continue-on-error: true
+      if: matrix.os == 'windows-latest'
     - run: sudo apt-get install imagemagick
       if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
     - uses: OrbitalOwen/desktop-screenshot-action@0.1
