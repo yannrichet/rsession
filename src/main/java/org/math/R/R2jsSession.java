@@ -267,11 +267,9 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace "." char by a dedicated key
         if (e.contains(POINT_CHAR_JS_KEY)) {
-            throw new IllegalArgumentException("Cannot use " + POINT_CHAR_JS_KEY + " in expression (reserved substring)");
+            throw new IllegalArgumentException("Cannot use " + POINT_CHAR_JS_KEY + " in expression (reserved substring): "+e);
         }
-        e = e.replace(".", POINT_CHAR_JS_KEY);
-
-        return e;
+        return e.replace(".", POINT_CHAR_JS_KEY);
     }
 
     public static Properties R_TO_JS = new Properties();
@@ -310,7 +308,7 @@ public class R2jsSession extends Rsession implements RLog {
     final static String AW = "((\\A)|(\\W)|(\\())(";
     final static String Az = ")((\\W)|(\\z)|(\\)))";
 
-    public boolean debug_js = false;
+    public boolean debug_js = Boolean.parseBoolean(System.getProperty("debug.js", "false"));
 
     DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
 
@@ -2805,7 +2803,7 @@ public class R2jsSession extends Rsession implements RLog {
         varname = nameRtoJs(varname);
         String allnames = "";
         for (int i = 0; i < names.length; i++) {
-            names[i] = nameRtoJs(names[i]);
+            //names[i] = nameRtoJs(names[i]); No! this will override the names[i] value
             allnames = allnames + ",'" + names[i] + "'";
         }
         allnames = allnames.substring(1);
