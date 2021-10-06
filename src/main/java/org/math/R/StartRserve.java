@@ -134,7 +134,7 @@ public class StartRserve {
         }
 
         if (!RserveDaemon.isWindows()) {// on Windows the process will never return, so we cannot wait
-            p.waitFor();
+            p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
         }
 
         String result = org.apache.commons.io.FileUtils.readFileToString(out);
@@ -371,7 +371,7 @@ public class StartRserve {
                         Log.Out.println("  " + line);
                     }
                 }
-                //p.waitFor(); 
+                //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
                 ProcessBuilder pb = new ProcessBuilder(new String[]{"/bin/sh", "-c", command});
                 if (redirect == null) {
@@ -385,7 +385,7 @@ public class StartRserve {
                         Log.Out.println("  " + line);
                     }
                 }
-                p.waitFor();
+                p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
                 //new File(Rout).deleteOnExit();
             }
         } catch (Exception x) {
@@ -393,6 +393,8 @@ public class StartRserve {
         }
         return p;
     }
+
+    public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
 
     static String UGLY_FIXES = "";//flush.console <- function(...) {return;}; options(error=function() NULL)";
 
@@ -408,7 +410,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return true;//k.waitFor() == 0;
+                return true;//k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
             } else {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("killall " + taskname));
                 pb.redirectErrorStream(true);
@@ -418,7 +420,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return k.waitFor() == 0;
+                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
             }
         } catch (Exception ex) {
             Log.Err.println("Exception: " + ex.getMessage());
@@ -438,7 +440,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return true;//k.waitFor() == 0;
+                return true;//k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
             } else {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("kill -9 " + pid));
                 pb.redirectErrorStream(true);
@@ -448,7 +450,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return k.waitFor() == 0;
+                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
             }
         } catch (Exception ex) {
             Log.Err.println("Exception: " + ex.getMessage());
@@ -614,7 +616,7 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
-                //process.waitFor();
+                //process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
@@ -634,7 +636,7 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
-                process.waitFor();
+                process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
@@ -653,7 +655,7 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
-                process.waitFor();
+                process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }

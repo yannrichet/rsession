@@ -119,7 +119,7 @@ public class RserveDaemon {
                     try {
                         Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
                         RegistryHog regHog = new RegistryHog(rp.getInputStream(), true);
-                        rp.waitFor();
+                        rp.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
                         regHog.join();
                         R_HOME = regHog.getInstallPath();
                     } catch (Exception rge) {
@@ -186,6 +186,8 @@ public class RserveDaemon {
 
         return new File(R_HOME).isDirectory();
     }
+
+    public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
 
     static void setRecursiveExecutable(File path) {
         for (File f : path.listFiles()) {
