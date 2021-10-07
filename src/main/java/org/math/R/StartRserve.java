@@ -420,7 +420,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
+                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             }
         } catch (Exception ex) {
             Log.Err.println("Exception: " + ex.getMessage());
@@ -450,7 +450,7 @@ public class StartRserve {
                 while ((line = reader.readLine()) != null) {
                     Log.Out.println("  " + line);
                 }
-                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
+                return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             }
         } catch (Exception ex) {
             Log.Err.println("Exception: " + ex.getMessage());
