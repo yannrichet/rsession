@@ -144,6 +144,9 @@ public class BasicTest {
         //cast
         assert Double.isNaN((Double) s.eval("NaN")) : r.eval("NaN");
         assert ((Boolean) s.eval("TRUE")) == true;
+        assert ((Boolean) s.eval("T")) == true;
+        assert ((Boolean) s.eval("FALSE")) == false;
+        assert ((Boolean) s.eval("F")) == false;
         assert ((Double) s.eval("0.123")) == 0.123;
         assert ((Double) s.eval("pi")) - 3.141593 < 0.0001;
         //assert (castStrict(s.eval("0.123+a"))) == null : s.eval("0.123+a").toDebugString();
@@ -170,6 +173,9 @@ public class BasicTest {
         //cast
         assert Double.isNaN((Double) r.eval("NaN")) : r.eval("NaN");
         assert ((Boolean) r.eval("TRUE")) == true;
+        assert ((Boolean) r.eval("T")) == true;
+        assert ((Boolean) r.eval("FALSE")) == false;
+        assert ((Boolean) r.eval("F")) == false;
         assert ((Double) r.eval("0.123")) == 0.123;
         assert ((Double) r.eval("pi")) - 3.141593 < 0.0001;
         //assert (castStrict(s.eval("0.123+a"))) == null : s.eval("0.123+a").toDebugString();
@@ -196,6 +202,9 @@ public class BasicTest {
         //cast
         assert Double.isNaN((Double) q.eval("NaN"));
         assert ((Boolean) q.eval("TRUE")) == true;
+        assert ((Boolean) q.eval("T")) == true;
+        assert ((Boolean) q.eval("FALSE")) == false;
+        assert ((Boolean) q.eval("F")) == false;
         assert ((Double) q.eval("0.123")) == 0.123 : ((Double) q.eval("0.123")) + " != " + 0.123;
         assert ((Double) q.eval("pi")) - 3.141593 < 0.0001;
         assert ((Double) q.eval("0.123")) == 0.123 : s.eval("0.123").toString();
