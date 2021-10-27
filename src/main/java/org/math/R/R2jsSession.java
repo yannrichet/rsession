@@ -229,6 +229,10 @@ public class R2jsSession extends Rsession implements RLog {
         js.eval("math.config({matrix: 'Array'})");
         js.eval("var str = String.prototype;");
 
+        // suport T/F TRUE/FALSE shortcuts
+        js.eval("var T = true;");
+        js.eval("var F = false;");
+        
         // Loading rand.js
         if (!jsLibraries.containsKey("rand")) {
             InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
