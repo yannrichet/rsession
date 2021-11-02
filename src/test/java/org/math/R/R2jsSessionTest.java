@@ -464,6 +464,15 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testZeros() throws Rsession.RException {
+        assert (Double) engine.eval("0.") == 0.;
+        assert (Double) engine.eval("000.") == 0.;
+        assert (Double) engine.eval("0.0") == 0.;
+        assert (Double) engine.eval(".0") == 0.;
+        assert (Double) engine.eval("0.+1") == 1.;
+    }
+
+    @Test
     public void testParseStrArray() throws Rsession.RException {
         String expr0 = "strsplit(\"a,b,c\",\",\")";
         assert engine.eval("paste(" + expr0 + ",collapse=';')").equals("a;b;c") : engine.eval("paste(" + expr0 + ",collapse=';')");
