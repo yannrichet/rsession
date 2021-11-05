@@ -659,9 +659,9 @@ public class BasicTest {
         assert s.asDouble(s.eval("b")) == 2;
         double x = Math.random();
 
-        assert s.asDouble(s.eval("f(" + x + ")")) == x + 1;
-        assert s.asDouble(s.eval("g(" + x + ")")) == x + 2;
-        assert s.asDouble(s.eval("h(" + x + ")")) == x + 3;
+        assert Math.abs(s.asDouble(s.eval("f(" + x + ")")) - (x + 1)) < 1E-13;
+        assert Math.abs(s.asDouble(s.eval("g(" + x + ")")) - (x + 2)) < 1E-13;
+        assert Math.abs(s.asDouble(s.eval("h(" + x + ")")) - (x + 3)) < 1E-13;
     }
 
     @Test
@@ -671,9 +671,21 @@ public class BasicTest {
         assert r.asDouble(r.eval("b")) == 2;
         double x = Math.random();
 
-        assert r.asDouble(r.eval("f(" + x + ")")) == x + 1;
-        assert r.asDouble(r.eval("g(" + x + ")")) == x + 2;
-        assert r.asDouble(r.eval("h(" + x + ")")) == x + 3;
+        assert Math.abs(r.asDouble(r.eval("f(" + x + ")")) - (x + 1)) < 1E-13;
+        assert Math.abs(r.asDouble(r.eval("g(" + x + ")")) - (x + 2)) < 1E-13;
+        assert Math.abs(r.asDouble(r.eval("h(" + x + ")")) - (x + 3)) < 1E-13;
+    }
+
+    @Test
+    public void testSource_R2Js_smallx() throws Exception {
+        q.source(new File("src/test/R/test.R"));
+        assert q.asDouble(q.eval("a")) == 1;
+        assert q.asDouble(q.eval("b")) == 2;
+        double x = 7.072726500331195E-4;
+
+        assert Math.abs(q.asDouble(q.eval("f(" + x + ")")) - (x + 1)) < 1E-13;
+        assert Math.abs(q.asDouble(q.eval("g(" + x + ")")) - (x + 2)) < 1E-13;
+        assert Math.abs(q.asDouble(q.eval("h(" + x + ")")) - (x + 3)) < 1E-13;
     }
 
     @Test
@@ -683,10 +695,11 @@ public class BasicTest {
         assert q.asDouble(q.eval("b")) == 2;
         double x = Math.random();
 
-        assert q.asDouble(q.eval("f(" + x + ")")) == x + 1;
-        assert q.asDouble(q.eval("g(" + x + ")")) == x + 2;
-        assert q.asDouble(q.eval("h(" + x + ")")) == x + 3;
+        assert Math.abs(q.asDouble(q.eval("f(" + x + ")")) - (x + 1)) < 1E-13;
+        assert Math.abs(q.asDouble(q.eval("g(" + x + ")")) - (x + 2)) < 1E-13;
+        assert Math.abs(q.asDouble(q.eval("h(" + x + ")")) - (x + 3)) < 1E-13;
     }
+
     public void testSave_Rserve() throws Exception {
         String str = "abcd";
         s.set("s", str);
