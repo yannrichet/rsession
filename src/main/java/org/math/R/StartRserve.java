@@ -16,6 +16,8 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
 import static org.math.R.RserveDaemon.isWindows;
 import org.rosuda.REngine.REXPMismatchException;
@@ -246,6 +248,17 @@ public class StartRserve {
                 pack_suffix = ".tgz";
             }
         }
+
+        String R_version_path = "R-3.6";
+        File outv = File.createTempFile("version", "Rout");
+        Process pv = doInR("cat('version:',R.version[['major']],'\\n')", Rcmd, "--vanilla --silent", outv);
+        if (pv == null) {
+            throw new IOException("Failed to check R version");
+        }
+        String outv_str = org.apache.commons.io.FileUtils.readFileToString(outv);
+        char version = outv_str.charAt(outv_str.lastIndexOf(':')+2);
+        if (version=='4') R_version_path = "R-4";
+
         File packFile;
         try {
             packFile = File.createTempFile("Rserve_1.7-5", pack_suffix);
@@ -256,10 +269,10 @@ public class StartRserve {
         }
         try {
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            InputStream fileStream = classloader.getResourceAsStream("org/math/R/Rserve_1.7-5" + pack_suffix);
+            InputStream fileStream = classloader.getResourceAsStream("org/math/R/"+R_version_path+"/Rserve_1.7-5" + pack_suffix);
 
             if (fileStream == null) {
-                throw new IOException("Cannot find resource " + "org/math/R/Rserve_1.7-5" + pack_suffix);
+                throw new IOException("Cannot find resource " + "org/math/"+R_version_path+"/Rserve_1.7-5" + pack_suffix);
             }
 
             // Create an output stream to barf to the temp file
