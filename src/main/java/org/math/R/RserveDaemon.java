@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 
@@ -181,20 +182,35 @@ public class RserveDaemon {
         }
 
         if (R_HOME == null) {
+            Log.Err.println("Failed to find R_HOME");
+            return false;
+        }
+
+        if (new File(R_HOME).isDirectory()){
+            Log.Err.println("Found wrong R_HOME: "+R_HOME);
             return false;
         }
 
         try{
-            Log.Out.println("Found R:\n * binary: " + R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            File bin =  new File(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            if (!bin.isFile()){
+                Log.Err.println("R binary not foun in R_HOME: "+R_HOME+
+                "\n  which contains:\n"+
+                Arrays.toString(new File(R_HOME).listFiles()));
+                return false;
+            }
+            Log.Out.println("Found R:\n * binary: " +bin);
+
             File out = File.createTempFile("Rversion", "out");
             StartRserve.system(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : "") + " --version", out);
             String version = org.apache.commons.io.FileUtils.readFileToString(out);
             Log.Out.println(" * version: " + version.split("\n")[0]);
+            
+            return true;
         } catch (Exception e) {
             Log.Err.println("Failed to get R version: "+e.getMessage());
+            return false;
         }
-
-        return new File(R_HOME).isDirectory();
     }
 
     public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
