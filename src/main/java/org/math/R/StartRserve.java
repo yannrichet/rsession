@@ -374,8 +374,9 @@ public class StartRserve {
      */
     public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
         Process p = null;
+        String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
+        Log.Out.println(command);
         try {
-            String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
             Log.Out.println("  R> " + todo);
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
@@ -408,7 +409,7 @@ public class StartRserve {
                 //new File(Rout).deleteOnExit();
             }
         } catch (Exception x) {
-            Log.Err.println(x.getMessage());
+            Log.Err.println(command + "\n  > " +x.getMessage());
         }
         return p;
     }
