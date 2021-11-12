@@ -204,8 +204,8 @@ public class RserveDaemon {
             File out = File.createTempFile("Rversion", "out");
             StartRserve.system(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : "") + " --version", out);
             String version = org.apache.commons.io.FileUtils.readFileToString(out);
-            Log.Out.println(" * version: " + version.split("\n")[0]);
-            
+            Log.Out.println(" * version:\n" + version);
+
             return true;
         } catch (Exception e) {
             Log.Err.println("Failed to get R version: "+e.getMessage());
