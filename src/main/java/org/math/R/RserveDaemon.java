@@ -202,7 +202,7 @@ public class RserveDaemon {
             Log.Out.println("Found R:\n * binary: " +bin);
 
             File out = File.createTempFile("Rversion", "out");
-            StartRserve.system(bin + " -e 'R.version'", out);
+            StartRserve.system(bin + " -e 'R.version'", null);
             String version = org.apache.commons.io.FileUtils.readFileToString(out);
             Log.Out.println(" * version:\n" + version);
 

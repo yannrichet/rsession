@@ -373,12 +373,12 @@ public class StartRserve {
      * started, <code>false</code> otherwise.
      */
     public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
-        String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-        Log.Out.println("  R> " + todo);
+        String command = Rcmd + " " + rargs + " -e \"" + todo + "\"";
         return system(command, redirect);
     }
 
     public static Process system(String command, File redirect) {
+        command = command + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
         Log.Out.println("  > " + command);
         Process p = null;
         try {
