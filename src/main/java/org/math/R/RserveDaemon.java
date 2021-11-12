@@ -186,7 +186,7 @@ public class RserveDaemon {
             return false;
         }
 
-        if (new File(R_HOME).isDirectory()){
+        if (!new File(R_HOME).isDirectory()){
             Log.Err.println("Found wrong R_HOME: "+R_HOME);
             return false;
         }
