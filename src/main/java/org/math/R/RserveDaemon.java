@@ -184,6 +184,16 @@ public class RserveDaemon {
             return false;
         }
 
+        try{
+            Log.Out.println("Found R:\n * binary: " + R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            File out = File.createTempFile("Rversion", "out");
+            StartRserve.system(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), out);
+            String version = org.apache.commons.io.FileUtils.readFileToString(out);
+            Log.Out.println(" * version: " + version.split("\n")[0]);
+        } catch (Exception e) {
+            Log.Err.println("Failed to get R version: "+e.getMessage());
+        }
+        
         return new File(R_HOME).isDirectory();
     }
 

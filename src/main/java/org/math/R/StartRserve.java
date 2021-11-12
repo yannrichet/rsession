@@ -102,7 +102,7 @@ public class StartRserve {
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
             File desc = new File(dir, "DESCRIPTION");
-            if (desc.isFile() && org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5")) {
+            if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
                 return true;
             } else {
                 Log.Err.println("Seems Rserve is not well installed. Force remove!");
@@ -373,11 +373,15 @@ public class StartRserve {
      * started, <code>false</code> otherwise.
      */
     public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
-        Process p = null;
         String command = Rcmd + " " + rargs + " -e \"" + todo + "\" " + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-        Log.Out.println(command);
+        Log.Out.println("  R> " + todo);
+        return system(command, redirect);
+    }
+
+    public static Process system(String command, File redirect) {
+        Log.Out.println("  > " + command);
+        Process p = null;
         try {
-            Log.Out.println("  R> " + todo);
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
                 if (redirect == null) {
