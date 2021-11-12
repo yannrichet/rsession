@@ -250,14 +250,20 @@ public class StartRserve {
         }
 
         String R_version_path = "R-3.6";
-        File outv = File.createTempFile("version", "Rout");
-        Process pv = doInR("cat('version:',R.version[['major']],'\\n')", Rcmd, "--vanilla --silent", outv);
-        if (pv == null) {
-            throw new IOException("Failed to check R version");
+        String outv_str = "?";
+        try {
+            File outv = File.createTempFile("version", "Rout");
+            Process pv = doInR("cat('version:',R.version[['major']],'\\n')", Rcmd, "--vanilla --silent", outv);
+            if (pv == null) {
+                throw new IOException("Failed to check R version");
+            }
+            outv_str = org.apache.commons.io.FileUtils.readFileToString(outv);
+            char version = outv_str.charAt(outv_str.lastIndexOf(':')+2);
+            if (version=='4') R_version_path = "R-4";
+        } catch (IOException ex) {
+            Log.Err.println(ex.getMessage()+": \n"+outv_str);
+            return false;
         }
-        String outv_str = org.apache.commons.io.FileUtils.readFileToString(outv);
-        char version = outv_str.charAt(outv_str.lastIndexOf(':')+2);
-        if (version=='4') R_version_path = "R-4";
 
         File packFile;
         try {
