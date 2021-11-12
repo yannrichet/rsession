@@ -260,7 +260,7 @@ public class StartRserve {
             outv_str = org.apache.commons.io.FileUtils.readFileToString(outv);
             char version = outv_str.charAt(outv_str.lastIndexOf(':')+2);
             if (version=='4') R_version_path = "R-4";
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
         }
