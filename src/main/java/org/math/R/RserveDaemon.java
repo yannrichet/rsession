@@ -192,9 +192,9 @@ public class RserveDaemon {
         }
 
         try{
-            File bin =  new File(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            File bin =  new File(R_HOME + File.separator + "bin" + File.separator + "Rscript" + (isWindows() ? ".exe" : ""));
             if (!bin.isFile()){
-                Log.Err.println("R binary not foun in R_HOME: "+R_HOME+
+                Log.Err.println("R binary not found in R_HOME: "+R_HOME+
                 "\n  which contains:\n"+
                 Arrays.toString(new File(R_HOME).listFiles()));
                 return false;
@@ -202,7 +202,7 @@ public class RserveDaemon {
             Log.Out.println("Found R:\n * binary: " +bin);
 
             File out = File.createTempFile("Rversion", "out");
-            StartRserve.system(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : "") + " -e 'R.version'", out);
+            StartRserve.system(bin + " -e 'R.version'", out);
             String version = org.apache.commons.io.FileUtils.readFileToString(out);
             Log.Out.println(" * version:\n" + version);
 
