@@ -390,10 +390,27 @@ public class StartRserve {
                 p = pb.start();
                 if (redirect == null) {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
+                    String line = ".";
+                    boolean started=false; // try a replacement for waitFor, which does not work in Windows
+                    while (!started || (line = reader.readLine()) != null) {
+                        if (line.equals(".")) 
+                            Thread.sleep(100);
+                        else
+                            started = true;
                         Log.Out.println("  " + line);
                     }
+                } else {
+                    String lines = ".";
+                    String last_lines = lines;
+                    boolean started=false; // try a replacement for waitFor, which does not work in Windows
+                    while (!started || !(lines = org.apache.commons.io.FileUtils.readFileToString(redirect)).equals(last_lines)) {
+                        if (lines.equals(".")) 
+                            Thread.sleep(100);
+                        else
+                            started = true;
+                        last_lines = lines;
+                    }
+                    Log.Out.println("  " + lines);
                 }
                 //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
