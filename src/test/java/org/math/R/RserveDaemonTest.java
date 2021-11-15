@@ -57,7 +57,7 @@ public class RserveDaemonTest {
     }
 
     @Test
-    public void testSystemCall() throws Exception {
+    public void testWindowsCall() throws Exception {
         System.err.println("====================================== testSystemCall");
         if (RserveDaemon.isWindows()) {
             String command = "C:\\R\\bin\\R.exe"; // matches GHA standard install
@@ -173,7 +173,7 @@ public class RserveDaemonTest {
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
-        assert classloader.getResource("org/math/R/Rserve_1.7-5.tar.gz") != null : "cannot access resources...";
+        assert classloader.getResource("org/math/R/Rserve_1.7-5.tar.gz") != null : "cannot access Rserve local source...";
 
         boolean install = StartRserve.installCustomRserve(Rcmd);
 

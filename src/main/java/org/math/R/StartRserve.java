@@ -111,7 +111,7 @@ public class StartRserve {
             if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
                 return true;
             } else {
-                Log.Err.println("Seems Rserve is not well installed. Force remove!");
+                Log.Err.println("Seems Rserve is not well installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):"No DESCRIPTION") +" Force remove!");
                 if (RserveDaemon.isWindows()) {
                     Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
                     KillAll("Rserve.exe");
@@ -270,7 +270,7 @@ public class StartRserve {
                 pack_suffix = ".zip";
             } else if (RserveDaemon.isMacOSX()) {
                 pack_suffix = ".tgz";
-            }
+            } else R_version_path="."; //back to source install
 
         File packFile;
         try {
@@ -312,7 +312,10 @@ public class StartRserve {
         }
 
         File out = File.createTempFile("installRserve", "Rout");
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + 
+            "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+
+            ", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", 
+        Rcmd, "--vanilla --silent", out);
         if (p == null) {
             throw new IOException("Failed to install Rserve");
         }
@@ -329,7 +332,7 @@ public class StartRserve {
 
             if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
                 break; //return true;
-            } else if (result.contains("FAILED") || result.contains("Error")) {
+            } else if (result.contains("FAILED") || result.contains("ERROR")) {
                 Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
                 return false;
             }
@@ -340,7 +343,7 @@ public class StartRserve {
         //}
 
         int n = 10;
-        while (n > 0) {
+        while (n-- > 0) {
             try {
                 Thread.sleep(1000);
                 Log.Out.print(".");
@@ -350,10 +353,9 @@ public class StartRserve {
                 Log.Out.println("\n well installed.");
                 return true;
             }
-            n--;
         }
 
-        Log.Out.println(" but not well installed !");
+        Log.Out.println(" not well installed !");
         return false;
     }
 
