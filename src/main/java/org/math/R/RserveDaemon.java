@@ -52,6 +52,7 @@ public class RserveDaemon {
     }
 
     public static String R_HOME = null;
+    public static String R_VERSION = null;
 
     private static String OS = System.getProperty("os.name").toLowerCase();
 
@@ -123,6 +124,7 @@ public class RserveDaemon {
                         rp.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
                         regHog.join();
                         R_HOME = regHog.getInstallPath();
+                        if (new File(R_HOME).isDirectory()) throw new Exception("R_HOME from HKLM\\Software\\R-core\\R is not correct: "+R_HOME);
                     } catch (Exception rge) {
                         for (int version = 4; version >= 0; version--) {
                             for (int major = 20; major >= 0; major--) {
@@ -130,12 +132,19 @@ public class RserveDaemon {
                                 for (int minor = 10; minor >= 0; minor--) {
                                     //int minor = 0;
                                     r_HOME = "C:\\Program Files\\R\\R-" + version + "." + major + "." + minor + "\\";
-                                    if (new File(r_HOME).isDirectory()) {
+                                    if (new File(r_HOME).isDirectory() && new File(r_HOME,"bin").isDirectory()) {
                                         R_HOME = r_HOME;
                                         break;
                                     }
+                                    
                                 }
                             }
+                        }    
+                    }
+                    if (!new File(R_HOME).isDirectory()) {
+                        r_HOME = "C:\\R";
+                        if (new File(r_HOME).isDirectory() && new File(r_HOME,"bin").isDirectory()) {
+                            R_HOME = r_HOME;
                         }
                     }
                 } else if (isMacOSX()) {
@@ -184,7 +193,9 @@ public class RserveDaemon {
         if (R_HOME == null) {
             Log.Err.println("Failed to find R_HOME");
             return false;
-        }
+        } //else            
+            //Log.Out.println("R_HOME: "+ R_HOME);
+
 
         if (!new File(R_HOME).isDirectory()){
             Log.Err.println("Found wrong R_HOME: "+R_HOME);
@@ -192,23 +203,24 @@ public class RserveDaemon {
         }
 
         try{
-            File bin =  new File(R_HOME + File.separator + "bin" + File.separator + "Rscript" + (isWindows() ? ".exe" : ""));
+            File bin =  new File(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
             if (!bin.isFile()){
                 Log.Err.println("R binary not found in R_HOME: "+R_HOME+
-                "\n  which contains:\n"+
+                "\n  which contains only:\n"+
                 Arrays.toString(new File(R_HOME).listFiles()));
                 return false;
             }
-            Log.Out.println("Found R:\n * binary: " +bin);
+            //Log.Out.println("Found R:\n * binary: " +bin);
 
             File out = File.createTempFile("Rversion", "out");
-            StartRserve.system(bin + " -e 'print(R.version)'", out);
-            String version = org.apache.commons.io.FileUtils.readFileToString(out);
-            Log.Out.println(" * version:\n" + version);
+            StartRserve.system(bin.getAbsolutePath() + " --silent -e cat(R.version$major)", out);
+            R_VERSION = org.apache.commons.io.FileUtils.readFileToString(out).replaceAll(">.*", "").trim();
+            //Log.Out.println(" * version: " + version);
 
             return true;
         } catch (Exception e) {
             Log.Err.println("Failed to get R version: "+e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -312,11 +324,12 @@ public class RserveDaemon {
         boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
         if (!RserveInstalled) {
             //log.log("                           ...no", Level.INFO);
-            if (USE_RSERVE_FROM_CRAN) {
-                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), System.getenv("http_proxy"), null);
-            } else {
+            if (!USE_RSERVE_FROM_CRAN) {
                 RserveInstalled = StartRserve.installCustomRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
-            }
+            } 
+            if (!RserveInstalled || USE_RSERVE_FROM_CRAN) // also try standard install if custom install failed
+                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), System.getenv("http_proxy"), null);
+
             if (RserveInstalled) {
                 //log.log("                           ...yes", Level.INFO);
             } else {

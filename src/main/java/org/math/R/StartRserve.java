@@ -11,11 +11,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -102,6 +107,7 @@ public class StartRserve {
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
             File desc = new File(dir, "DESCRIPTION");
+            // validate install if version >=1.7-5 or 1.8
             if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
                 return true;
             } else {
@@ -240,30 +246,30 @@ public class StartRserve {
 
         Log.Out.println("Install Rserve from local filesystem... (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
 
-        String pack_suffix = ".tar.gz";
-        if (RserveDaemon.isWindows()) {
-            pack_suffix = ".zip";
-        } else {
-            if (RserveDaemon.isMacOSX()) {
-                pack_suffix = ".tgz";
-            }
-        }
-
-        String R_version_path = "R-3.6";
+        String R_version_path = ".";
         String outv_str = "?";
         try {
             File outv = File.createTempFile("version", "Rout");
-            Process pv = doInR("cat('version:',R.version[['major']],'\\n')", Rcmd, "--vanilla --silent", outv);
+            Process pv = doInR("cat(R.version$major)", Rcmd, "--silent", outv);
             if (pv == null) {
                 throw new IOException("Failed to check R version");
             }
-            outv_str = org.apache.commons.io.FileUtils.readFileToString(outv);
-            char version = outv_str.charAt(outv_str.lastIndexOf(':')+2);
-            if (version=='4') R_version_path = "R-4";
+            outv_str = org.apache.commons.io.FileUtils.readFileToString(outv).replaceAll(">.*", "").trim();
+            if (outv_str.startsWith("4")) R_version_path = "R-4";
+            else if (outv_str.startsWith("3")) R_version_path = "R-3.6";
+            else Log.Err.println("Cannot identify R version. Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
         }
+        
+        String pack_suffix = ".tar.gz";
+        if (!R_version_path.equals("."))
+            if (RserveDaemon.isWindows()) {
+                pack_suffix = ".zip";
+            } else if (RserveDaemon.isMacOSX()) {
+                pack_suffix = ".tgz";
+            }
 
         File packFile;
         try {
@@ -305,7 +311,7 @@ public class StartRserve {
         }
 
         File out = File.createTempFile("installRserve", "Rout");
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
+        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
         if (p == null) {
             throw new IOException("Failed to install Rserve");
         }
@@ -353,12 +359,13 @@ public class StartRserve {
     }
 
     static String[] splitCommand(String command) {
-        StringTokenizer st = new StringTokenizer(command);
-        String[] cmdarray = new String[st.countTokens()];
-        for (int i = 0; st.hasMoreTokens(); i++) {
-            cmdarray[i] = st.nextToken();
+        List<String> matchList = new ArrayList<String>();
+        Pattern regex = Pattern.compile("[^\\s\"']+|\"[^\"]*\"|'[^']*'");
+        Matcher regexMatcher = regex.matcher(command);
+        while (regexMatcher.find()) {
+            matchList.add(regexMatcher.group());
         }
-        return cmdarray;
+        return matchList.toArray(new String[matchList.size()]);
     }
 
     /**
@@ -377,13 +384,13 @@ public class StartRserve {
         return system(command, redirect);
     }
 
-    public static Process system(String command, File redirect) {
+    public static Process system(String command, File redirect) { 
         command = command + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-        Log.Out.println("  > " + command);
+        //Log.Out.println("  > " + command);
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
-                ProcessBuilder pb = new ProcessBuilder(splitCommand(command));
+                ProcessBuilder pb = new ProcessBuilder(splitCommand("cmd.exe /c " + command));
                 if (redirect == null) {
                     pb.redirectErrorStream(true);
                 }
@@ -393,24 +400,27 @@ public class StartRserve {
                     String line = ".";
                     boolean started=false; // try a replacement for waitFor, which does not work in Windows
                     while (!started || (line = reader.readLine()) != null) {
-                        if (line.equals(".")) 
+                        if (line.equals(".")) {
                             Thread.sleep(100);
-                        else
+                            Log.Out.print(".");
+                    } else
                             started = true;
-                        Log.Out.println("  " + line);
+                        //Log.Out.println("  " + line);
                     }
                 } else {
                     String lines = ".";
                     String last_lines = lines;
                     boolean started=false; // try a replacement for waitFor, which does not work in Windows
-                    while (!started || !(lines = org.apache.commons.io.FileUtils.readFileToString(redirect)).equals(last_lines)) {
-                        if (lines.equals(".")) 
-                            Thread.sleep(100);
-                        else
+                    while (!started || !(lines.equals(last_lines))) {
+                        if (lines.equals(".")) {
+                            //Log.Out.print(".");
+                        } else
                             started = true;
+                        Thread.sleep(100);
                         last_lines = lines;
+                        lines = readFileNonBlocking(redirect);
                     }
-                    Log.Out.println("  " + lines);
+                    //Log.Out.println("  " + lines);
                 }
                 //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
@@ -427,12 +437,26 @@ public class StartRserve {
                     }
                 }
                 p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
-                //new File(Rout).deleteOnExit();
             }
         } catch (Exception x) {
-            Log.Err.println(command + "\n  > " +x.getMessage());
+            Log.Err.println("Command: "+command + " failed:\n" +x.getMessage());
         }
         return p;
+    }
+
+    public static String readFileNonBlocking(File path) {
+        StringBuffer lines = new StringBuffer();
+        try (InputStream is = Files.newInputStream(path.toPath(), StandardOpenOption.READ)) {
+            InputStreamReader reader = new InputStreamReader(is);
+            BufferedReader lineReader = new BufferedReader(reader);
+            String line;
+            while ((line = lineReader.readLine()) != null) {
+                lines.append(line+"\n");
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return lines.toString();
     }
 
     public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting

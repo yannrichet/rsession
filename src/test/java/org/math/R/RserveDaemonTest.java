@@ -1,9 +1,11 @@
 package org.math.R;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -25,6 +27,39 @@ public class RserveDaemonTest {
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(RserveDaemonTest.class.getName());
+    }
+
+    @Test
+    public void testRExecWindows() throws Exception {
+        System.err.println("====================================== testRExecWindows");
+        if (RserveDaemon.isWindows()) {
+            String command = "C:\\R\\bin\\R.exe";
+            if (new File(command).isFile()) {
+                String arg="--version";
+                ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/C", command+" "+arg) ;
+                pb.redirectErrorStream(true);
+                System.err.println("pb: "+pb);
+                
+                Process p = pb.start();
+                BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                String line;
+                StringBuffer ret = new StringBuffer();
+                while ((line = input.readLine()) != null)  {
+                    ret.append(line.trim());
+                }            
+                assert ret.toString().contains("R version") : "Wrong R message: "+ret.toString();
+        } else 
+            System.err.println("Cannot use R command: "+command+" , so skipping test");
+        }
+    }
+
+    @Test
+    public void testSystemCall() throws Exception {
+        System.err.println("====================================== testSystemCall");
+
+        File redirect = File.createTempFile("test", "systemCall");
+        StartRserve.system("C:\\R\\bin\\R.exe -e ls()", redirect);
     }
 
     @Test
@@ -129,7 +164,7 @@ public class RserveDaemonTest {
             }
             assert n > 1 : "Package Rserve was not removed !";
         } else {
-            System.err.println("Rserve is not installed. Continue.");
+            System.err.println("Rserve is not yet installed. Proceed...");
         }
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
