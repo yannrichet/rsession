@@ -387,7 +387,7 @@ public class StartRserve {
 
     public static Process system(String command, File redirect) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
-        Log.Out.println("$  " + command );
+        //Log.Out.println("$  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
@@ -400,14 +400,14 @@ public class StartRserve {
                 long attempts = TIMEOUT;
                 while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
                     if (lines.equals(".")) {
-                        Log.Out.print(".");
+                        //Log.Out.print(".");
                     } else
                         started = redirect.isFile();
                     Thread.sleep(1000);
                     last_lines = lines;
                     lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
                 }
-                Log.Out.println("> " + lines);
+                //Log.Out.println("> " + lines);
                 
                 //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
