@@ -254,9 +254,11 @@ public class StartRserve {
                 throw new IOException("Failed to check R version");
             }
             outv_str = org.apache.commons.io.FileUtils.readFileToString(outv).replaceAll(">.*", "").trim();
-            if (outv_str.startsWith("4")) R_version_path = "R-4";
-            else if (outv_str.startsWith("3")) R_version_path = "R-3.6";
-            else Log.Err.println("Cannot identify R version. Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
+            if (outv_str.startsWith("4")) 
+                R_version_path = "R-4";
+            else if (outv_str.startsWith("3")) 
+                R_version_path = "R-3.6";
+            else Log.Err.println("Cannot identify R version ('"+outv_str+"'):\n" + org.apache.commons.io.FileUtils.readFileToString(outv)+ "\nWill try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
