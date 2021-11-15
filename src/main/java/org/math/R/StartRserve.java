@@ -400,7 +400,7 @@ public class StartRserve {
                     if (lines.equals(".")) {
                         Log.Out.print(".");
                     } else
-                        started = true;
+                        started = redirect.isFile();
                     Thread.sleep(1000);
                     last_lines = lines;
                     lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
@@ -518,6 +518,7 @@ public class StartRserve {
         try {
             FileUtils.forceMkdir(wd);
         } catch (IOException ex) {
+            ex.printStackTrace();
         }
         if (!wd.isDirectory()) {
             throw new IOException("Working dir " + wd + " not available.");
