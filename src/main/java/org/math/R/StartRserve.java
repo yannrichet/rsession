@@ -364,6 +364,7 @@ public class StartRserve {
         while (regexMatcher.find()) {
             matchList.add(regexMatcher.group());
         }
+        Log.Out.println(command+" -> "+matchList);
         return matchList.toArray(new String[matchList.size()]);
     }
 
@@ -379,63 +380,37 @@ public class StartRserve {
      * started, <code>false</code> otherwise.
      */
     public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
-        String command = Rcmd + " " + rargs + " -e \"" + todo + "\"";
-        return system(command, redirect);
+        return system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", redirect);
     }
 
     public static Process system(String command, File redirect) { 
-        command = command + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-        Log.Out.println("$ " + command);
+        command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
+        Log.Out.println("$  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
-                ProcessBuilder pb = new ProcessBuilder(splitCommand("cmd.exe /c " + command));
-                if (redirect == null) {
-                    pb.redirectErrorStream(true);
-                }
+                ProcessBuilder pb = new ProcessBuilder("cmd.exe","/c", command);
                 p = pb.start();
-                if (redirect == null) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    String line = ".";
-                    boolean started=false; // try a replacement for waitFor, which does not work in Windows
-                    while (!started || (line = reader.readLine()) != null) {
-                        if (line.equals(".")) {
-                            Thread.sleep(100);
-                            //Log.Out.print(".");
+
+                String lines = ".";
+                String last_lines = lines;
+                boolean started=false; // try a replacement for waitFor, which does not work in Windows
+                long attempts = TIMEOUT;
+                while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
+                    if (lines.equals(".")) {
+                        Log.Out.print(".");
                     } else
-                            started = true;
-                        //Log.Out.println("  " + line);
-                    }
-                } else {
-                    String lines = ".";
-                    String last_lines = lines;
-                    boolean started=false; // try a replacement for waitFor, which does not work in Windows
-                    int attempts = 50;
-                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
-                        if (lines.equals(".")) {
-                            //Log.Out.print(".");
-                        } else
-                            started = true;
-                        Thread.sleep(100);
-                        last_lines = lines;
-                        lines = readFileNonBlocking(redirect);
-                    }
-                    //Log.Out.println("  " + lines);
+                        started = true;
+                    Thread.sleep(1000);
+                    last_lines = lines;
+                    lines = readFileNonBlocking(redirect);
                 }
+                Log.Out.println("> " + lines);
+                
                 //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
-                ProcessBuilder pb = new ProcessBuilder(new String[]{"/bin/sh", "-c", command});
-                if (redirect == null) {
-                    pb.redirectErrorStream(true);
-                }
+                ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", command);
                 p = pb.start();
-                if (redirect == null) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        Log.Out.println("  " + line);
-                    }
-                }
                 p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             }
         } catch (Exception x) {

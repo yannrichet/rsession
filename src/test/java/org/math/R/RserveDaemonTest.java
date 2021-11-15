@@ -33,7 +33,7 @@ public class RserveDaemonTest {
     public void testRExecWindows() throws Exception {
         System.err.println("====================================== testRExecWindows");
         if (RserveDaemon.isWindows()) {
-            String command = "C:\\R\\bin\\R.exe";
+            String command = "C:\\R\\bin\\R.exe"; // matches GHA standard install
             if (new File(command).isFile()) {
                 String arg="--version";
                 ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/C", command+" "+arg) ;
@@ -46,8 +46,10 @@ public class RserveDaemonTest {
                 String line;
                 StringBuffer ret = new StringBuffer();
                 while ((line = input.readLine()) != null)  {
-                    ret.append(line.trim());
-                }            
+                    ret.append(line.trim()+"\n");
+                }      
+                System.err.println("ret: "+ret);
+ 
                 assert ret.toString().contains("R version") : "Wrong R message: "+ret.toString();
         } else 
             System.err.println("Cannot use R command: "+command+" , so skipping test");
@@ -57,9 +59,15 @@ public class RserveDaemonTest {
     @Test
     public void testSystemCall() throws Exception {
         System.err.println("====================================== testSystemCall");
-
-        File redirect = File.createTempFile("test", "systemCall");
-        StartRserve.system("C:\\R\\bin\\R.exe -e ls()", redirect);
+        if (RserveDaemon.isWindows()) {
+            String command = "C:\\R\\bin\\R.exe"; // matches GHA standard install
+            if (new File(command).isFile()) {
+                File redirect = File.createTempFile("test", "systemCall");
+                if (new File(command).isFile()) {
+                    assert StartRserve.system("C:\\R\\bin\\R.exe -e ls()", redirect).exitValue()==0;
+                }
+            }
+        }
     }
 
     @Test
@@ -74,10 +82,6 @@ public class RserveDaemonTest {
         String expr = ".libPaths(); 1+1==2";
         Process p = doInR(expr, Rcmd, "--vanilla -q", out);
         assert p != null : "Cannot ceate R process";
-
-        if (!RserveDaemon.isWindows()) {//on Windows the process will never return, so we cannot wait
-            p.waitFor();
-        }
 
         int attempts = 10;
         String result = "";
@@ -169,7 +173,7 @@ public class RserveDaemonTest {
 
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
-        assert classloader.getResource("org/math/R/Rserve_1.7-5.zip") != null : "cannot access resources...";
+        assert classloader.getResource("org/math/R/Rserve_1.7-5.tar.gz") != null : "cannot access resources...";
 
         boolean install = StartRserve.installCustomRserve(Rcmd);
 

@@ -131,7 +131,7 @@ public class RserveDaemon {
                                 //int major = 10;//known to work with R 2.9 only.
                                 for (int minor = 10; minor >= 0; minor--) {
                                     //int minor = 0;
-                                    r_HOME = "C:\\Program Files\\R\\R-" + version + "." + major + "." + minor + "\\";
+                                    r_HOME = "C:\\Progra~1\\R\\R-" + version + "." + major + "." + minor + "\\";
                                     if (new File(r_HOME).isDirectory() && new File(r_HOME,"bin").isDirectory()) {
                                         R_HOME = r_HOME;
                                         break;
