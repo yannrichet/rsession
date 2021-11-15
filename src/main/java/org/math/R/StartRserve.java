@@ -191,7 +191,7 @@ public class StartRserve {
         }
 
         int attempts = 10;
-        while (attempts > 0) {
+        while (attempts-- > 0) {
             try {
                 Thread.sleep(1000);
                 Log.Out.print(".");
@@ -207,7 +207,6 @@ public class StartRserve {
                 Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
                 return false;
             }
-            attempts--;
         }
         // If non english setup, it should be ignored... So just use isRserveInstalled instead
         //if (attempts <= 0) {
@@ -317,7 +316,7 @@ public class StartRserve {
         }
 
         int attempts = 10;
-        while (attempts > 0) {
+        while (attempts-- > 0) {
             try {
                 Thread.sleep(1000);
                 Log.Out.print(".");
@@ -327,13 +326,11 @@ public class StartRserve {
             String result = org.apache.commons.io.FileUtils.readFileToString(out);
 
             if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
-                Log.Out.print(" true ");
                 break; //return true;
             } else if (result.contains("FAILED") || result.contains("Error")) {
-                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
+                Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
                 return false;
             }
-            attempts--;
         }
         // If non english setup, it should be ignored... So just use isRserveInstalled instead
         //if (attempts <= 0) {
@@ -348,13 +345,13 @@ public class StartRserve {
             } catch (InterruptedException ex) {
             }
             if (isRserveInstalled(Rcmd)) {
-                Log.Out.println(" well installed.");
+                Log.Out.println("\n well installed.");
                 return true;
             }
             n--;
         }
 
-        Log.Out.print(" but not well installed !");
+        Log.Out.println(" but not well installed !");
         return false;
     }
 
@@ -386,7 +383,7 @@ public class StartRserve {
 
     public static Process system(String command, File redirect) { 
         command = command + (redirect == null ? "" : " > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : ""));
-        //Log.Out.println("  > " + command);
+        Log.Out.println("$ " + command);
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
@@ -402,7 +399,7 @@ public class StartRserve {
                     while (!started || (line = reader.readLine()) != null) {
                         if (line.equals(".")) {
                             Thread.sleep(100);
-                            Log.Out.print(".");
+                            //Log.Out.print(".");
                     } else
                             started = true;
                         //Log.Out.println("  " + line);
@@ -411,7 +408,8 @@ public class StartRserve {
                     String lines = ".";
                     String last_lines = lines;
                     boolean started=false; // try a replacement for waitFor, which does not work in Windows
-                    while (!started || !(lines.equals(last_lines))) {
+                    int attempts = 50;
+                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
                         if (lines.equals(".")) {
                             //Log.Out.print(".");
                         } else
@@ -589,14 +587,13 @@ public class StartRserve {
 
         int pid_attempts = 50;
         int pid = -1; // means "none"
-        while (pid < 0 && pid_attempts > 0) {
+        while (pid < 0 && pid_attempts-- > 0) {
             pid = diff(getRservePIDs(), last_pids);
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ix) {
             }
             //Log.Out.print(".");
-            pid_attempts--;
         }
         if (pid == -1) {
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
@@ -605,7 +602,7 @@ public class StartRserve {
 
         //}
         int connect_attempts = 30;
-        while (connect_attempts > 0) {
+        while (connect_attempts-- > 0) {
             try {
                 try {
                     Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
@@ -642,7 +639,6 @@ public class StartRserve {
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
                 //Log.Out.print("o");
             }
-            connect_attempts--;
         }
         throw new IOException("Failed to launch Rserve:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
     }
