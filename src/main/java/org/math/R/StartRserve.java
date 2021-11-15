@@ -249,7 +249,7 @@ public class StartRserve {
         String outv_str = "?";
         try {
             File outv = File.createTempFile("version", "Rout");
-            Process pv = doInR("cat(R.version$major)", Rcmd, "--silent", outv);
+            Process pv = doInR("cat(R.version[['major']])", Rcmd, "--silent", outv);
             if (pv == null) {
                 throw new IOException("Failed to check R version");
             }
@@ -403,7 +403,7 @@ public class StartRserve {
                         started = true;
                     Thread.sleep(1000);
                     last_lines = lines;
-                    lines = readFileNonBlocking(redirect);
+                    lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
                 }
                 Log.Out.println("> " + lines);
                 
@@ -417,21 +417,6 @@ public class StartRserve {
             Log.Err.println("Command: "+command + " failed:\n" +x.getMessage());
         }
         return p;
-    }
-
-    public static String readFileNonBlocking(File path) {
-        StringBuffer lines = new StringBuffer();
-        try (InputStream is = Files.newInputStream(path.toPath(), StandardOpenOption.READ)) {
-            InputStreamReader reader = new InputStreamReader(is);
-            BufferedReader lineReader = new BufferedReader(reader);
-            String line;
-            while ((line = lineReader.readLine()) != null) {
-                lines.append(line+"\n");
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        return lines.toString();
     }
 
     public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
