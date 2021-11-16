@@ -113,7 +113,7 @@ public class StartRserve {
             } else {
                 Log.Err.println("Seems Rserve is not well installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):"No DESCRIPTION") +" Force remove!");
                 if (RserveDaemon.isWindows()) {
-                    Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
+                    //Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
                     KillAll("Rserve.exe");
                     KillAll("Rserve_d.exe");
                 }
@@ -366,7 +366,7 @@ public class StartRserve {
         while (regexMatcher.find()) {
             matchList.add(regexMatcher.group());
         }
-        Log.Out.println(command+" -> "+matchList);
+        //Log.Out.println(command+" -> "+matchList);
         return matchList.toArray(new String[matchList.size()]);
     }
 
@@ -387,7 +387,7 @@ public class StartRserve {
 
     public static Process system(String command, File redirect) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
-        //Log.Out.println("$  " + command );
+        Log.Out.println("$  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
@@ -427,7 +427,7 @@ public class StartRserve {
 
     public static boolean KillAll(String taskname) {
         try {
-            Log.Out.print("Kill process " + taskname + ": ");
+            //Log.Out.print("Kill process " + taskname + ": ");
             if (isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder(splitCommand("taskkill /F /IM " + taskname));
                 pb.redirectErrorStream(true);
@@ -435,7 +435,7 @@ public class StartRserve {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    Log.Out.println("  " + line);
+                    //Log.Out.println("  " + line);
                 }
                 return true;//k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS) == 0;
             } else {
@@ -445,7 +445,7 @@ public class StartRserve {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(k.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    Log.Out.println("  " + line);
+                    //Log.Out.println("  " + line);
                 }
                 return k.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             }
