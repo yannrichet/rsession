@@ -88,7 +88,7 @@ public class R2jsSession extends Rsession implements RLog {
     private List<String> quotesList;
 
     // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
-    private final static Map<String, Object> jsLibraries = new HashMap<>();
+    private final static Map<String, Object> jsLibraries = Collections.synchronizedMap(new HashMap<>());
 
     public static R2jsSession newInstance(final RLog console, Properties properties) {
         return new R2jsSession(console, properties);
