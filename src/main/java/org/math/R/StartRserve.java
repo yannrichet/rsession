@@ -96,6 +96,7 @@ public class StartRserve {
      * R batch to check Rserve is installed
      *
      * @param Rcmd command necessary to start R
+     * @throws java.io.IOException
      * @return Rserve is already installed
      */
     public static boolean isRserveInstalled(String Rcmd) throws IOException {
@@ -188,6 +189,8 @@ public class StartRserve {
      * R batch to install Rserve
      *
      * @param Rcmd command necessary to start R
+     * @throws java.io.IOException
+     * @throws java.lang.InterruptedException
      * @return success
      */
     public static boolean installCustomRserve(String Rcmd) throws InterruptedException, IOException {
@@ -298,8 +301,10 @@ public class StartRserve {
      * @param todo command to execute in R
      * @param Rcmd command necessary to start R
      * @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
+     * @param out file to redirect R output. If null set a default name.
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
+     * @throws java.io.IOException
      */
     public static String doInR(String todo, String Rcmd, String rargs, File out) throws IOException {
         if (out==null) out = File.createTempFile("doInR_", ".Rout");
@@ -432,13 +437,14 @@ public class StartRserve {
      * attempt to start Rserve.Note: parameters are <b>not</b> quoted, so avoid
      * using any quotes in arguments
      *
-     * @param cmd command necessary to start R
+     * @param Rcmd command necessary to start R
      * @param rargs arguments are are to be passed to R
      * @param rsrvargs arguments to be passed to Rserve
      * @param debug Rserve debug mode ?
      * @param lock ServerSocket locker. Should be closed before using Rserve
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
+     * @throws java.io.IOException
      */
     public static ProcessToKill launchRserve(String Rcmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) throws IOException {
         Log.Out.println("Will launch Rserve (" + Rcmd + " " + rargs + ")");
