@@ -303,7 +303,7 @@ public class RserveDaemon {
     static String RESERVE_ARGS = "--vanilla --RS-enable-control";
 
     public StartRserve.ProcessToKill rserve;
-    public static boolean USE_RSERVE_FROM_CRAN = false;
+    public static boolean USE_RSERVE_FROM_CRAN = Boolean.parseBoolean(System.getProperty("USE_RSERVE_FROM_CRAN","false"));
 
     volatile static boolean starting = false;
     final static Object launchRserveLock = new Object();
