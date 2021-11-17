@@ -20,6 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+
 import static org.math.R.RserveDaemon.isWindows;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -107,9 +109,15 @@ public class StartRserve {
                 Log.Out.println("Rserve not available in standard lib.loc. Trying install in lib.loc="+RserveDaemon.app_dir());
             } else {
                 String version = result.replaceAll(">.*", "").trim();
-                if (version.contains("1.7-5") || version.contains("1.7.5") || version.contains("1.8"))
+                if (version.contains("1.7-5") || version.contains("1.7.5") || version.contains("1.8")) {
+                    // perform a hard copy to RserveDaemon.app_dir()
+                    String desc = doInR("packageDescription('Rserve')", Rcmd, "--vanilla --silent", null);
+                    Pattern regex = Pattern.compile("(.*)File:\\s(.*)Meta");
+                    Matcher regexMatcher = regex.matcher(desc);
+                    File path = new File(isWindows()?regexMatcher.group(2).replaceAll("/", "\\"):regexMatcher.group(2));
+                    FileUtils.copyDirectoryToDirectory(path, RserveDaemon.app_dir());
                     return true;
-                else 
+                } else 
                     Log.Out.println("Rserve version not suitable: "+version+". Trying install in lib.loc="+RserveDaemon.app_dir());
             }
         } catch (Exception e) {
@@ -152,9 +160,15 @@ public class StartRserve {
      * internet access to rforge server
      * @param repository from which R repo ?
      * @return success
+     * @throws IOException
      */
     // If posisble, do not use this legacy Rserve (use patched version github.com/yannrichet/Rserve-1.7)
-    public static boolean installRserve(String Rcmd, String http_proxy, String repository) {
+    public static boolean installRserve(String Rcmd, String http_proxy, String repository) throws IOException {
+        if (isRserveInstalled(Rcmd)) {
+            Log.Out.println("Rserve already available.");
+            return true;
+        }
+        
         if (repository == null || repository.length() == 0) {
             repository = Rsession.DEFAULT_REPOS;
         }
@@ -164,25 +178,25 @@ public class StartRserve {
 
         Log.Out.println("Install Rserve from " + repository + " (http_proxy='" + http_proxy + "') ");
         try{
-        String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
+            String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
 
-        if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
-            Log.Out.print("  OK");
-        } else if (result.contains("FAILED") || result.contains("Error")) {
-            Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
-            return false;
-        }
+            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
+                Log.Out.print("  OK");
+            } else if (result.contains("FAILED") || result.contains("Error")) {
+                Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
+                return false;
+            }
 
-        if (isRserveInstalled(Rcmd)) {
-            return true;
-        } else {
+            if (isRserveInstalled(Rcmd)) {
+                return true;
+            } else {
+                Log.Err.print("Rserve NOT well installed !");
+                return false;
+            }
+        } catch (IOException ioe) {
             Log.Err.print("Rserve NOT well installed !");
             return false;
         }
-    }catch (IOException ioe) {
-        Log.Err.print("Rserve NOT well installed !");
-        return false;
-    }
     }
 
     /**
@@ -195,7 +209,7 @@ public class StartRserve {
      */
     public static boolean installCustomRserve(String Rcmd) throws InterruptedException, IOException {
         if (isRserveInstalled(Rcmd)) {
-            Log.Out.println("Rserve already installed (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
+            Log.Out.println("Rserve already available.");
             return true;
         }
 
