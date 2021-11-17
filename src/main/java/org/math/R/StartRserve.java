@@ -11,15 +11,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -102,7 +98,23 @@ public class StartRserve {
      * @param Rcmd command necessary to start R
      * @return Rserve is already installed
      */
-    public static boolean isRserveInstalled(String Rcmd) throws IOException, InterruptedException {
+    public static boolean isRserveInstalled(String Rcmd) throws IOException {
+        try{
+            String result = doInR("if (is.element(set=installed.packages(),el='Rserve')) packageVersion('Rserve') else print('No Rserve')", Rcmd, "--vanilla --silent", null);
+
+            if (result.contains("No Rserve")) {
+                Log.Out.println("Rserve not available in standard lib.loc. Trying install in lib.loc="+RserveDaemon.app_dir());
+            } else {
+                String version = result.replaceAll(">.*", "").trim();
+                if (version.contains("1.7-5") || version.contains("1.7.5") || version.contains("1.8"))
+                    return true;
+                else 
+                    Log.Out.println("Rserve version not suitable: "+version+". Trying install in lib.loc="+RserveDaemon.app_dir());
+            }
+        } catch (Exception e) {
+            Log.Err.println("Failed to check Rserve in standard lib.loc. Trying check in lib.loc="+RserveDaemon.app_dir());
+        }
+
         // shortcut & try avoid filesystem sync issues on windows
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
@@ -111,7 +123,7 @@ public class StartRserve {
             if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
                 return true;
             } else {
-                Log.Err.println("Seems Rserve is not well installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):"No DESCRIPTION") +" Force remove!");
+                Log.Err.println("Seems Rserve is not _well_ installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):"No DESCRIPTION") +" Force remove!");
                 if (RserveDaemon.isWindows()) {
                     //Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
                     KillAll("Rserve.exe");
@@ -129,41 +141,6 @@ public class StartRserve {
         } else {
             return false;
         }
-
-        /*if (!new File(RserveDaemon.app_dir(), "Rserve").isDirectory()) {
-            return false;
-        }
-
-        Log.Out.println("Check Rserve is installed in " + RserveDaemon.app_dir() + " ");
-        File out = File.createTempFile("isRserveInstalled", "Rout");
-        Process p = doInR("is.element(set=installed.packages(lib.loc='" + RserveDaemon.app_dir() + "'),el='Rserve')", Rcmd, "--vanilla --silent", out);
-        if (p == null) {
-            throw new IOException("Failed to ask if Rserve is installed");
-        }
-
-        if (!RserveDaemon.isWindows()) {// on Windows the process will never return, so we cannot wait
-            p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
-        }
-
-        String result = org.apache.commons.io.FileUtils.readFileToString(out);
-
-        int attempts = 10;
-        while (attempts > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-            if (result.contains("[1] TRUE")) {
-                Log.Out.println(" true.");
-                return true;
-            } else if (result.contains("[1] FALSE")) {
-                Log.Out.println(" false.");
-                return false;
-            }
-            attempts--;
-        }
-        throw new IOException("Cannot check if Rserve is installed: " + result.replaceAll("\n", "\n  | "));*/
     }
 
     /**
@@ -176,59 +153,35 @@ public class StartRserve {
      * @return success
      */
     // If posisble, do not use this legacy Rserve (use patched version github.com/yannrichet/Rserve-1.7)
-    public static boolean installRserve(String Rcmd, String http_proxy, String repository) throws IOException, InterruptedException {
+    public static boolean installRserve(String Rcmd, String http_proxy, String repository) {
         if (repository == null || repository.length() == 0) {
             repository = Rsession.DEFAULT_REPOS;
         }
         if (http_proxy == null) {
             http_proxy = "";
         }
+
         Log.Out.println("Install Rserve from " + repository + " (http_proxy='" + http_proxy + "') ");
-        File out = File.createTempFile("installRserve", "Rout");
-        Process p = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", out);
-        if (p == null) {
-            throw new IOException("Failed to install Rserve");
+        try{
+        String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
+
+        if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
+            Log.Out.print("  OK");
+        } else if (result.contains("FAILED") || result.contains("Error")) {
+            Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
+            return false;
         }
 
-        int attempts = 10;
-        while (attempts-- > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-
-            String result = org.apache.commons.io.FileUtils.readFileToString(out);
-
-            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
-                Log.Out.print(" true ");
-                break;
-            } else if (result.contains("FAILED") || result.contains("Error")) {
-                Log.Out.println(" false.\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
-                return false;
-            }
+        if (isRserveInstalled(Rcmd)) {
+            return true;
+        } else {
+            Log.Err.print("Rserve NOT well installed !");
+            return false;
         }
-        // If non english setup, it should be ignored... So just use isRserveInstalled instead
-        //if (attempts <= 0) {
-        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("\n", "\n  | "));
-        //}
-
-        int n = 10;
-        while (n > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-            if (isRserveInstalled(Rcmd)) {
-                Log.Out.println(" well installed.");
-                return true;
-            }
-            n--;
-        }
-
-        Log.Out.print(" but not well installed !");
+    }catch (IOException ioe) {
+        Log.Err.print("Rserve NOT well installed !");
         return false;
+    }
     }
 
     /**
@@ -248,17 +201,12 @@ public class StartRserve {
         String R_version_path = ".";
         String outv_str = "?";
         try {
-            File outv = File.createTempFile("version", "Rout");
-            Process pv = doInR("cat(R.version[['major']])", Rcmd, "--silent", outv);
-            if (pv == null) {
-                throw new IOException("Failed to check R version");
-            }
-            outv_str = org.apache.commons.io.FileUtils.readFileToString(outv).replaceAll(">.*", "").trim();
+            outv_str = doInR("cat(R.version[['major']])", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
             if (outv_str.startsWith("4")) 
                 R_version_path = "R-4";
             else if (outv_str.startsWith("3")) 
                 R_version_path = "R-3.6";
-            else Log.Err.println("Cannot identify R version ('"+outv_str+"'):\n" + org.apache.commons.io.FileUtils.readFileToString(outv)+ "\nWill try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
+            else Log.Err.println("Cannot identify R version ('"+outv_str+"').\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
@@ -311,52 +259,25 @@ public class StartRserve {
             throw new IOException("Could not create file " + packFile);
         }
 
-        File out = File.createTempFile("installRserve", "Rout");
-        Process p = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + 
-            "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+
-            ", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", 
-        Rcmd, "--vanilla --silent", out);
-        if (p == null) {
-            throw new IOException("Failed to install Rserve");
+        String result = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + 
+                            "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+
+                            ", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", 
+                            Rcmd, "--vanilla --silent", null);
+
+        if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
+            return true;
+        } else if (result.contains("FAILED") || result.contains("ERROR")) {
+            Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
+            return false;
         }
-
-        int attempts = 10;
-        while (attempts-- > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-
-            String result = org.apache.commons.io.FileUtils.readFileToString(out);
-
-            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
-                break; //return true;
-            } else if (result.contains("FAILED") || result.contains("ERROR")) {
-                Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
-                return false;
-            }
-        }
-        // If non english setup, it should be ignored... So just use isRserveInstalled instead
-        //if (attempts <= 0) {
-        //    throw new IOException("Rserve install unknown: " + org.apache.commons.io.FileUtils.readFileToString(out).replaceAll("\n", "\n  | "));
-        //}
-
-        int n = 10;
-        while (n-- > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-            if (isRserveInstalled(Rcmd)) {
-                Log.Out.println("\n well installed.");
-                return true;
-            }
-        }
-
-        Log.Out.println(" not well installed !");
-        return false;
+        
+        if (isRserveInstalled(Rcmd)) {
+            Log.Out.println("\n well installed.");
+            return true;
+        } else { 
+            Log.Out.println(" not well installed !");
+            return false;
+        }       
     }
 
     static String[] splitCommand(String command) {
@@ -377,46 +298,53 @@ public class StartRserve {
      * @param todo command to execute in R
      * @param Rcmd command necessary to start R
      * @param rargs arguments are are to be passed to R (e.g. --vanilla -q)
-     * @param redirect should we redirect output to a file ?
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static Process doInR(String todo, String Rcmd, String rargs, File redirect) {
-        return system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", redirect);
+    public static String doInR(String todo, String Rcmd, String rargs, File out) throws IOException {
+        if (out==null) out = File.createTempFile("doInR_", ".Rout");
+        Process p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", out, true);
+        if (p == null) {
+            throw new IOException("Failed to do in R: " + Rcmd + " "+ rargs + " -e \"" + todo + "\"");
+        }
+        return org.apache.commons.io.FileUtils.readFileToString(out);
     }
 
-    public static Process system(String command, File redirect) { 
+    public static Process system(String command, File redirect, boolean waitFor) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
         Log.Out.println("$  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder("cmd.exe","/c", command);
+                pb.redirectError(); // ~ 2>&1
                 p = pb.start();
 
-                String lines = ".";
-                String last_lines = lines;
-                boolean started=false; // try a replacement for waitFor, which does not work in Windows
-                long attempts = TIMEOUT;
-                while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
-                    if (lines.equals(".")) {
-                        //Log.Out.print(".");
-                    } else
-                        started = redirect.isFile();
-                    Thread.sleep(1000);
-                    last_lines = lines;
-                    lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
+                if (waitFor) {
+                    String lines = ".";
+                    String last_lines = lines;
+                    boolean started=false; // try emulate waitFor, which does not work in Windows
+                    long attempts = TIMEOUT;
+                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
+                        if (lines.equals(".")) {
+                            //Log.Out.print(".");
+                        } else
+                            started = redirect.isFile();
+                        Thread.sleep(1000);
+                        last_lines = lines;
+                        lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
+                    }
                 }
                 //Log.Out.println("> " + lines);
-                
-                //p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS); 
             } else /* unix startup */ {
                 ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", command);
                 p = pb.start();
-                p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+
+                if (waitFor) p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             }
         } catch (Exception x) {
             Log.Err.println("Command: "+command + " failed:\n" +x.getMessage());
+            return null;
         }
         return p;
     }
@@ -512,8 +440,8 @@ public class StartRserve {
      * @return <code>true</code> if Rserve is running or was successfully
      * started, <code>false</code> otherwise.
      */
-    public static ProcessToKill launchRserve(String cmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) throws IOException {
-        Log.Out.println("Will launch Rserve (" + cmd + " " + rargs + ")");
+    public static ProcessToKill launchRserve(String Rcmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) throws IOException {
+        Log.Out.println("Will launch Rserve (" + Rcmd + " " + rargs + ")");
         Log.Out.println("  From lib directory: " + RserveDaemon.app_dir());// + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
         File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
         Log.Out.println("  In working directory: " + wd.getAbsolutePath());
@@ -541,13 +469,14 @@ public class StartRserve {
         }
 
         File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
-        p = doInR("packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
+        String todo = "packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                 + "print(getwd()); "
-                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES, cmd, rargs, outstream);
+                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES; 
+        p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", outstream, false);
         if (p == null) {
-            throw new IOException("Failed to start Rserve process:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
+            throw new IOException("Failed to do in R: "+Rcmd + " "+ rargs + " -e \"" + todo + "\"");
         }
 
         int pid_attempts = 50;
