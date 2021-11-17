@@ -64,7 +64,7 @@ public class RserveDaemonTest {
             if (new File(command).isFile()) {
                 File redirect = File.createTempFile("test", "systemCall");
                 if (new File(command).isFile()) {
-                    assert StartRserve.system("C:\\R\\bin\\R.exe -e ls()", redirect).exitValue()==0;
+                    assert StartRserve.system("C:\\R\\bin\\R.exe -e ls()", redirect, true).exitValue()==0;
                 }
             }
         }
@@ -78,29 +78,8 @@ public class RserveDaemonTest {
             testFindR_HOME();
         }
 
-        File out = File.createTempFile("doInR", "Rout");
         String expr = ".libPaths(); 1+1==2";
-        Process p = doInR(expr, Rcmd, "--vanilla -q", out);
-        assert p != null : "Cannot ceate R process";
-
-        int attempts = 10;
-        String result = "";
-        while (attempts > 0) {
-            try {
-                Thread.sleep(1000);
-                Log.Out.print(".");
-            } catch (InterruptedException ex) {
-            }
-
-            result = org.apache.commons.io.FileUtils.readFileToString(out);
-
-            if (result.contains(expr)) {
-                Thread.sleep(1000);
-                break;
-            }
-
-            attempts--;
-        }
+        String result = doInR(expr, Rcmd, "--vanilla -q", null);
 
         assert result.contains("TRUE") : "Failed to eval " + expr + ": " + result;
     }
@@ -113,11 +92,8 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled(Rcmd)) {
             System.err.println("Rserve is already installed. Removing...");
-            Process p = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
-            if (!RserveDaemon.isWindows()) {// on Windows the process will never return, so we cannot wait
-                p.waitFor();
-            }
-            assert p.exitValue() == 0 : "Could not remove package Rserve...";
+            String res = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
+            assert res.contains(" package ") : "Could not remove package Rserve...";
         } else {
             System.err.println("Rserve is not installed.");
         }
