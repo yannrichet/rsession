@@ -312,30 +312,29 @@ public class RserveDaemon {
         if (R_HOME == null || !(new File(R_HOME).exists())) {
             throw new IllegalArgumentException("R_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + R_HOME_KEY + "=[Path to R] ...' startup command.");
         }
+        String Rcmd = R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : "");
 
         if (!conf.isLocal()) {
             throw new UnsupportedOperationException("Unable to start a remote R daemon: " + conf.toString());
         }
 
-        /*if (Rserve_HOME == null || !(new File(Rserve_HOME).exists())) {
-        throw new IllegalArgumentException("Rserve_HOME environment variable not correctly set.\nYou can set it using 'java ... -D" + Rserve_HOME_KEY + "=[Path to Rserve] ...' startup command.");
-        }*/
         //log.log("checking Rserve is available... ", Level.INFO);
-        boolean RserveInstalled = StartRserve.isRserveInstalled(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+        boolean RserveInstalled = StartRserve.isRserveInstalled();
         if (!RserveInstalled) {
             //log.log("                           ...no", Level.INFO);
-            if (!USE_RSERVE_FROM_CRAN) {
-                RserveInstalled = StartRserve.installCustomRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""));
+            RserveInstalled = StartRserve.installRserveFromLocalLibrary(Rcmd);
+            if (!RserveInstalled && !USE_RSERVE_FROM_CRAN) {
+                RserveInstalled = StartRserve.installBundledRserve(Rcmd);
             } 
-            if (!RserveInstalled || USE_RSERVE_FROM_CRAN) // also try standard install if custom install failed
-                RserveInstalled = StartRserve.installRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""), System.getenv("http_proxy"), null);
-
-            if (RserveInstalled) {
-                //log.log("                           ...yes", Level.INFO);
-            } else {
+            if (!RserveInstalled) {// also try standard install if custom install failed
+                RserveInstalled = StartRserve.installRserve(Rcmd, System.getenv("http_proxy"), null);
+            }
+            if (!RserveInstalled) {
                 //log.log("                           ...failed", Level.ERROR);
-                String notice = "Please install Rserve manually in your R environment using \"install.packages('Rserve')\" command.";
+                String notice = "Please install Rserve in your R environment using \"install.packages('Rserve')\" command, from R.";
                 throw new Exception(notice);
+            } else {
+                //log.log("                           ...yes", Level.INFO);
             }
         } else {
             //log.log("                           ...yes", Level.INFO);
@@ -368,9 +367,7 @@ public class RserveDaemon {
                 log.log("Starting R daemon... " + conf, Level.INFO);
                 String RserveArgs = RESERVE_ARGS + " --RS-port " + conf.port;
 
-                rserve = StartRserve.launchRserve(R_HOME + File.separator + "bin" + File.separator + "R" + (isWindows() ? ".exe" : ""),
-                        "--vanilla",
-                        RserveArgs.toString(), false, portLocker);
+                rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), false, portLocker);
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {
                 throw new Exception("R daemon startup failed: " + e.getMessage());

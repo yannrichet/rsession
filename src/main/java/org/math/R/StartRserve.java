@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 
 import static org.math.R.RserveDaemon.isWindows;
 import org.rosuda.REngine.REXPMismatchException;
@@ -95,35 +97,12 @@ class RegistryHog extends Thread {
 public class StartRserve {
 
     /**
-     * R batch to check Rserve is installed
+     * R batch to check Rserve is installed in RserveDaemon.app_dir()
      *
-     * @param Rcmd command necessary to start R
      * @throws java.io.IOException
      * @return Rserve is already installed
      */
-    public static boolean isRserveInstalled(String Rcmd) throws IOException {
-        try{
-            String result = doInR("if (is.element(set=installed.packages(),el='Rserve')) packageVersion('Rserve') else print('No Rserve')", Rcmd, "--vanilla --silent", null);
-
-            if (result.contains("No Rserve")) {
-                Log.Out.println("Rserve not available in standard lib.loc. Trying install in lib.loc="+RserveDaemon.app_dir());
-            } else {
-                String version = result.replaceAll(">.*", "").trim();
-                if (version.contains("1.7-5") || version.contains("1.7.5") || version.contains("1.8")) {
-                    // perform a hard copy to RserveDaemon.app_dir()
-                    String desc = doInR("packageDescription('Rserve')", Rcmd, "--vanilla --silent", null);
-                    Pattern regex = Pattern.compile("(.*)File:\\s(.*)Meta");
-                    Matcher regexMatcher = regex.matcher(desc);
-                    File path = new File(isWindows()?regexMatcher.group(2).replaceAll("/", "\\"):regexMatcher.group(2));
-                    FileUtils.copyDirectoryToDirectory(path, RserveDaemon.app_dir());
-                    return true;
-                } else 
-                    Log.Out.println("Rserve version not suitable: "+version+". Trying install in lib.loc="+RserveDaemon.app_dir());
-            }
-        } catch (Exception e) {
-            Log.Err.println("Failed to check Rserve in standard lib.loc. Trying check in lib.loc="+RserveDaemon.app_dir());
-        }
-
+    public static boolean isRserveInstalled() throws IOException {
         // shortcut & try avoid filesystem sync issues on windows
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
@@ -155,6 +134,85 @@ public class StartRserve {
     /**
      * R batch to install Rserve
      *
+     * @param Rcmd command to start R
+     * @return success
+     * @throws IOException
+     */
+    public static boolean installRserveFromLocalLibrary(String Rcmd) throws InterruptedException, IOException {
+        if (isRserveInstalled()) {
+            Log.Out.println("Rserve already available. (skip installRserveFromLocalLibrary)");
+            return true;
+        }
+
+        Log.Out.println("Install Rserve from local library");
+
+        try {
+            //String result = doInR("if (is.element(set=installed.packages(),el='Rserve')) packageVersion('Rserve') else print(paste('No','Rserve'))", Rcmd, "--vanilla --silent", null);
+            // That should emulate without using installed.packages, which may be locked by a parent install.packages
+            String result = doInR("which_Rserve = which(gregexpr('/Rserve$',list.files(.libPaths(),full.names=T))>0);"+
+                                    " if (length(which_Rserve)>0) "+
+                                    "print(readLines(file.path(list.files(.libPaths(),full.names=T)[which_Rserve],'DESCRIPTION'))[2]) "+
+                                    "else print(paste('No','Rserve'))", 
+                                Rcmd, "--vanilla --silent", null);
+            if (result.contains("No Rserve")) {
+                Log.Out.println("Rserve not available in standard lib.loc");
+                return false;
+            } else {
+                String version = result.replaceAll(">.*", "").trim();
+                if (version.contains("1.7-5") || version.contains("1.7.5") || version.contains("1.8")) {
+                    Log.Out.println("Rserve version suitable: "+version+". Trying to copy in lib.loc="+RserveDaemon.app_dir());
+                    // perform a hard copy to RserveDaemon.app_dir()
+                    //String desc = doInR("packageDescription('Rserve')", Rcmd, "--vanilla --silent", null);
+                    //Pattern regex = Pattern.compile("^(.*)File(.*)Meta(.*)$", Pattern.MULTILINE);
+                    //Matcher regexMatcher = regex.matcher(desc);
+                    //if (!regexMatcher.find()) {
+                    //    Log.Err.println("Could not find pattern "+regex+" in "+desc.replaceAll("\n", "\n  | "));
+                    //    return false;
+                    //}
+                    //String match = regexMatcher.group(2).replaceAll("/", File.separator);
+                    //File path = new File(match.substring(2)); 
+                    
+                    String print_path = doInR("which_Rserve = which(gregexpr('/Rserve$',list.files(.libPaths(),full.names=T))>0); "+
+                                            "print(file.path(list.files(.libPaths(),full.names=T)[which_Rserve]))", 
+                                            Rcmd, "--vanilla --silent", null);
+                    Pattern regex = Pattern.compile("^(.*)/Rserve\"$", Pattern.MULTILINE);
+                    Matcher regexMatcher = regex.matcher(print_path);
+                    if (!regexMatcher.find()) {
+                        Log.Err.println("Could not find pattern "+regex+" in "+print_path.replaceAll("\n", "\n  | "));
+                        return false;
+                    }
+                    String match = (regexMatcher.group(1)+"/Rserve").replaceAll("/", File.separator);
+                    File path = new File(match.substring(5));
+                
+                    FileUtils.copyDirectoryToDirectory(path, RserveDaemon.app_dir());
+                    for (File Rserve_exe : FileUtils.listFiles(RserveDaemon.app_dir(),FileFilterUtils.prefixFileFilter("Rserve"),FileFilterUtils.directoryFileFilter())) {
+                        if (!Rserve_exe.setExecutable(true)) {
+                            Log.Err.println("Could not set executable: "+Rserve_exe);
+                            return false;
+                        }
+                    }
+                } else {
+                    Log.Out.println("Rserve library version not suitable: "+version);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            Log.Err.println("Failed to check Rserve in standard lib.loc:"+ e.getMessage());
+            return false;
+        }
+
+        if (isRserveInstalled()) {
+            Log.Out.println(" well installed.");
+            return true;
+        } else { 
+            Log.Out.println(" not well installed !");
+            return false;
+        }
+    }
+
+    /**
+     * R batch to install Rserve from net
+     *
      * @param Rcmd command necessary to start R
      * @param http_proxy http://login:password@proxy:port string to enable
      * internet access to rforge server
@@ -162,10 +220,10 @@ public class StartRserve {
      * @return success
      * @throws IOException
      */
-    // If posisble, do not use this legacy Rserve (use patched version github.com/yannrichet/Rserve-1.7)
+    // If possible, do not use this legacy Rserve (use patched version github.com/yannrichet/Rserve-1.7)
     public static boolean installRserve(String Rcmd, String http_proxy, String repository) throws IOException {
-        if (isRserveInstalled(Rcmd)) {
-            Log.Out.println("Rserve already available.");
+        if (isRserveInstalled()) {
+            Log.Out.println("Rserve already available. (skip installRserve)");
             return true;
         }
         
@@ -181,39 +239,41 @@ public class StartRserve {
             String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
 
             if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
-                Log.Out.print("  OK");
+                Log.Out.println("  OK");
             } else if (result.contains("FAILED") || result.contains("Error")) {
                 Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
                 return false;
             }
 
-            if (isRserveInstalled(Rcmd)) {
-                return true;
-            } else {
-                Log.Err.print("Rserve NOT well installed !");
-                return false;
-            }
         } catch (IOException ioe) {
-            Log.Err.print("Rserve NOT well installed !");
+            Log.Err.print("Rserve NOT well installed: "+ioe.getMessage());
             return false;
-        }
+        }            
+        
+        if (isRserveInstalled()) {
+            Log.Out.println(" well installed.");
+            return true;
+        } else { 
+            Log.Out.println(" not well installed !");
+            return false;
+        }  
     }
 
     /**
-     * R batch to install Rserve
+     * R batch to install Rserve from included jar resources
      *
      * @param Rcmd command necessary to start R
      * @throws java.io.IOException
      * @throws java.lang.InterruptedException
      * @return success
      */
-    public static boolean installCustomRserve(String Rcmd) throws InterruptedException, IOException {
-        if (isRserveInstalled(Rcmd)) {
-            Log.Out.println("Rserve already available.");
+    public static boolean installBundledRserve(String Rcmd) throws InterruptedException, IOException {
+        if (isRserveInstalled()) {
+            Log.Out.println("Rserve already available. (skip installBundledRserve)");
             return true;
         }
 
-        Log.Out.println("Install Rserve from local filesystem... (in " + RserveDaemon.app_dir().getAbsolutePath() + ")");
+        Log.Out.println("Install Rserve from Rsession bundle");
 
         String R_version_path = ".";
         String outv_str = "?";
@@ -288,8 +348,8 @@ public class StartRserve {
             return false;
         }
         
-        if (isRserveInstalled(Rcmd)) {
-            Log.Out.println("\n well installed.");
+        if (isRserveInstalled()) {
+            Log.Out.println(" well installed.");
             return true;
         } else { 
             Log.Out.println(" not well installed !");
@@ -329,9 +389,10 @@ public class StartRserve {
         return org.apache.commons.io.FileUtils.readFileToString(out);
     }
 
+    public static boolean system_log = Boolean.parseBoolean(System.getProperty("print.system.call", "false"));
     public static Process system(String command, File redirect, boolean waitFor) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
-        Log.Out.println("$  " + command );
+        if (system_log) Log.Out.println("  $  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
