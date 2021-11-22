@@ -90,7 +90,7 @@ public class RserveDaemonTest {
             testFindR_HOME();
         }
 
-        if (StartRserve.isRserveInstalled(Rcmd)) {
+        if (StartRserve.isRserveInstalled()) {
             System.err.println("Rserve is already installed. Removing...");
             String res = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
             assert res.contains(" package ") : "Could not remove package Rserve...";
@@ -118,7 +118,7 @@ public class RserveDaemonTest {
 
         assert install : "Could not install Rserve";
 
-        assert StartRserve.isRserveInstalled(Rcmd) : "Could not find package Rserve";
+        assert StartRserve.isRserveInstalled() : "Could not find package Rserve";
     }
 
     @Test
@@ -129,7 +129,7 @@ public class RserveDaemonTest {
             testFindR_HOME();
         }
 
-        if (StartRserve.isRserveInstalled(Rcmd)) {
+        if (StartRserve.isRserveInstalled()) {
             System.err.println("Rserve is already installed. Removing...");
             FileUtils.forceDelete(new File(RserveDaemon.app_dir(), "Rserve"));
 //            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", null);
@@ -139,7 +139,7 @@ public class RserveDaemonTest {
 //            }
 
             int n = 10;
-            while (StartRserve.isRserveInstalled(Rcmd) && (n--) > 0) {
+            while (StartRserve.isRserveInstalled() && (n--) > 0) {
                 Thread.sleep(2000);
             }
             assert n > 1 : "Package Rserve was not removed !";
@@ -151,7 +151,7 @@ public class RserveDaemonTest {
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
         assert classloader.getResource("org/math/R/Rserve_1.7-5.tar.gz") != null : "cannot access Rserve local source...";
 
-        boolean install = StartRserve.installCustomRserve(Rcmd);
+        boolean install = StartRserve.installBundledRserve(Rcmd);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -171,7 +171,7 @@ public class RserveDaemonTest {
 
         assert install : "Could not install Rserve";
 
-        assert StartRserve.isRserveInstalled(Rcmd) : "Could not find package Rserve";
+        assert StartRserve.isRserveInstalled() : "Could not find package Rserve";
     }
 
     @Test
