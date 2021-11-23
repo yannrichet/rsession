@@ -191,6 +191,18 @@ public class StartRserve {
                             return false;
                         }
                     }
+                    for (File Rserve_exe : FileUtils.listFiles(RserveDaemon.app_dir(),FileFilterUtils.prefixFileFilter("Rserve.dbg"),FileFilterUtils.directoryFileFilter())) {
+                        if (!Rserve_exe.setExecutable(true)) {
+                            Log.Err.println("Could not set executable: "+Rserve_exe);
+                            return false;
+                        }
+                    }
+                    for (File Rserve_exe : FileUtils.listFiles(RserveDaemon.app_dir(),FileFilterUtils.prefixFileFilter("Rserve_dbg"),FileFilterUtils.directoryFileFilter())) {
+                        if (!Rserve_exe.setExecutable(true)) {
+                            Log.Err.println("Could not set executable: "+Rserve_exe);
+                            return false;
+                        }
+                    }
                 } else {
                     Log.Out.println("Rserve library version not suitable: "+version);
                     return false;
@@ -536,6 +548,7 @@ public class StartRserve {
             ex.printStackTrace();
         }
         if (!wd.isDirectory()) {
+            if (debug) Log.Err.println("Working dir " + wd + " not available.");
             throw new IOException("Working dir " + wd + " not available.");
         }
         wd.deleteOnExit();
@@ -549,21 +562,30 @@ public class StartRserve {
             try {
                 lock.close(); // release lock on this port, at last
             } catch (IOException ex) {
+                if (debug) Log.Err.println("Could not close Rserve locker");
                 throw new IOException("Could not close Rserve locker");
             }
         }
 
         File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
-        String todo = "packageDescription('Rserve',lib.loc='" + RserveDaemon.app_dir() + "'); "
-                + "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
+        String todo = "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
-                + "print(getwd()); "
                 + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES; 
         p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", outstream, false);
+        // just waitFor Rserve starting (not waiting for return)
+        int attempts = 50;
+        while (attempts-->10 && !outstream.exists())
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+
         if (p == null) {
+            if (debug) Log.Err.println("Failed to do in R: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
             throw new IOException("Failed to do in R: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
-        Log.Out.println(org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n    | "));
+
+        if (debug) Log.Err.println(org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n    | "));
 
         int pid_attempts = 50;
         int pid = -1; // means "none"
@@ -576,6 +598,7 @@ public class StartRserve {
             //Log.Out.print(".");
         }
         if (pid == -1) {
+            if (debug) Log.Err.println("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
             throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
         }
         Log.Out.println("  With PID: " + pid);
@@ -617,7 +640,7 @@ public class StartRserve {
                 c.close();
                 return new ProcessToKill(p, pid);
             } catch (NumberFormatException | REXPMismatchException | RserveException | RserverConf.TimeOut.TimeOutException e2) {
-                Log.Err.println("  "+e2.getMessage());
+                if (debug) Log.Err.println("  "+e2.getMessage());
             }
         }
         throw new IOException("Failed to launch Rserve:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));

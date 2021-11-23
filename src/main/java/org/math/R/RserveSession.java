@@ -183,6 +183,7 @@ public class RserveSession extends Rsession implements RLog {
             startup();
         } catch (Exception ex) {
             console.log(ex.getMessage(), Level.ERROR);
+            ex.printStackTrace(); // that should never occur. So print extended trace if any...
             return;
         }
 
