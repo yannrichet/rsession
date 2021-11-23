@@ -427,7 +427,7 @@ public class StartRserve {
                         if (lines.equals(".")) {
                             //Log.Out.print(".");
                         } else
-                            started = redirect.isFile();
+                            started = redirect.isFile() && redirect.length()>0;
                         Thread.sleep(1000);
                         last_lines = lines;
                         lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
