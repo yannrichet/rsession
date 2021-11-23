@@ -201,8 +201,14 @@ public class RserveDaemonTest {
             System.err.println("Rserve is not yet installed. Proceed...");
         }
 
-        System.out.println(doInR("install.packages('Rserve')",Rcmd, "--vanilla -q", null));
-        
+        try{
+            String result = doInR("install.packages('Rserve',repos='" + Rsession.DEFAULT_REPOS + "')", Rcmd, "--vanilla --silent", null);
+            assert result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)") : "  FAILED to install Rserve: \n" + result.replaceAll("\n", "\n  | ");
+        } catch (IOException ioe) {
+            Log.Err.print("Rserve NOT well installed: "+ioe.getMessage());
+            assert false;
+        }            
+                
         boolean install = StartRserve.installRserveFromLocalLibrary(Rcmd);
 
         assert install : "Could not install Rserve";
