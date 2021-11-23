@@ -247,16 +247,18 @@ public class StartRserve {
         }
 
         Log.Out.println("Install Rserve from " + repository + " (http_proxy='" + http_proxy + "') ");
-        try{
-            String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
+        try {
+            String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + 
+                                "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
 
             if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") ||
                 result.contains("* DONE (Rserve)") ||
                 doInR("'Rserve' %in% installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null).contains("TRUE")) {
-                Log.Out.println("  OK");
+                Log.Out.println("  OK: \n" + result.replaceAll("\n", "\n  | "));
             } else if (result.contains("FAILED") || result.contains("Error")) {
                 Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
-                return false;
+            } else {
+                Log.Out.println("  UNKNOWN: \n" + result.replaceAll("\n", "\n  | "));
             }
 
         } catch (IOException ioe) {

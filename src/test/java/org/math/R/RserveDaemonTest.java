@@ -205,6 +205,7 @@ public class RserveDaemonTest {
 
         try{
             String result = doInR("install.packages('Rserve',repos='" + Rsession.DEFAULT_REPOS + "')", Rcmd, "--vanilla --silent", null);
+            Thread.sleep(1000); // let time to start install... (windows)
             System.err.println("install.packages > "+result);
             String test = doInR("'Rserve' %in% installed.packages()", Rcmd, "--vanilla --silent", null);
             System.err.println("installed.packages > "+test);
