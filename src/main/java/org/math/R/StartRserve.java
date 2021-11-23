@@ -175,7 +175,7 @@ public class StartRserve {
                     String print_path = doInR("which_Rserve = which(gregexpr('/Rserve$',list.files(.libPaths(),full.names=T))>0); "+
                                             "print(file.path(list.files(.libPaths(),full.names=T)[which_Rserve]))", 
                                             Rcmd, "--vanilla --silent", null);
-                    Pattern regex = Pattern.compile("^(.*)/Rserve\\\"$", Pattern.MULTILINE);
+                    Pattern regex = Pattern.compile("^(.*)/Rserve.$", Pattern.MULTILINE);
                     Matcher regexMatcher = regex.matcher(print_path);
                     if (!regexMatcher.find()) {
                         Log.Err.println("Could not find pattern "+regex+" in "+print_path.replaceAll("\n", "\n  | "));
@@ -423,14 +423,16 @@ public class StartRserve {
                     String last_lines = lines;
                     boolean started=false; // try emulate waitFor, which does not work in Windows
                     long attempts = TIMEOUT;
-                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines)))) {
+                    int same = 10; // check no progress in last 5 s.
+                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines))) && same>0) {
                         if (lines.equals(".")) {
                             //Log.Out.print(".");
                         } else
                             started = redirect.isFile() && redirect.length()>0;
-                        Thread.sleep(1000);
+                        Thread.sleep(500);
                         last_lines = lines;
                         lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
+                        if (lines == last_lines) same--; else same = 10;
                     }
                 }
                 //Log.Out.println("> " + lines);
