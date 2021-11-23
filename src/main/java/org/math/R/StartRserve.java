@@ -175,7 +175,7 @@ public class StartRserve {
                     String print_path = doInR("which_Rserve = which(gregexpr('/Rserve$',list.files(.libPaths(),full.names=T))>0); "+
                                             "print(file.path(list.files(.libPaths(),full.names=T)[which_Rserve]))", 
                                             Rcmd, "--vanilla --silent", null);
-                    Pattern regex = Pattern.compile("^(.*)/Rserve\"$", Pattern.MULTILINE);
+                    Pattern regex = Pattern.compile("^(.*)/Rserve\\\"$", Pattern.MULTILINE);
                     Matcher regexMatcher = regex.matcher(print_path);
                     if (!regexMatcher.find()) {
                         Log.Err.println("Could not find pattern "+regex+" in "+print_path.replaceAll("\n", "\n  | "));
@@ -238,7 +238,9 @@ public class StartRserve {
         try{
             String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
 
-            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
+            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") ||
+                result.contains("* DONE (Rserve)") ||
+                doInR("'Rserve' %in% installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null).contains("TRUE")) {
                 Log.Out.println("  OK");
             } else if (result.contains("FAILED") || result.contains("Error")) {
                 Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
@@ -341,7 +343,9 @@ public class StartRserve {
                             ", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", 
                             Rcmd, "--vanilla --silent", null);
 
-        if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || result.contains("* DONE (Rserve)")) {
+        if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") || 
+            result.contains("* DONE (Rserve)") ||
+            doInR("'Rserve' %in% installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null).contains("TRUE")) {
             return true;
         } else if (result.contains("FAILED") || result.contains("ERROR")) {
             Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
