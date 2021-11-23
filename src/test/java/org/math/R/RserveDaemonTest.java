@@ -93,8 +93,8 @@ public class RserveDaemonTest {
 
         if (StartRserve.isRserveInstalled()) {
             System.err.println("Rserve is already installed. Removing...");
-            String res = doInR("remove.packages('Rserve')", Rcmd, "--vanilla -q", null);
-            assert res.contains(" package ") : "Could not remove package Rserve...";
+            String res = doInR("remove.packages('Rserve', lib='"+RserveDaemon.app_dir()+"')", Rcmd, "--vanilla -q", null);
+            assert !StartRserve.isRserveInstalled() : "Could not remove package Rserve...";
         } else {
             System.err.println("Rserve is not installed.");
         }
@@ -203,9 +203,13 @@ public class RserveDaemonTest {
 
         try{
             String result = doInR("install.packages('Rserve',repos='" + Rsession.DEFAULT_REPOS + "')", Rcmd, "--vanilla --silent", null);
+            System.err.println("install.packages > "+result);
+            String test = doInR("'Rserve' %in% installed.packages()", Rcmd, "--vanilla --silent", null);
+            System.err.println("installed.packages > "+test);
+
             assert result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") ||
                     result.contains("* DONE (Rserve)") ||
-                    doInR("'Rserve' %in% installed.packages()", Rcmd, "--vanilla --silent", null).contains("TRUE") 
+                    test.contains("TRUE") 
                 : "  FAILED to install Rserve: \n" + result.replaceAll("\n", "\n  | ");
         } catch (IOException ioe) {
             Log.Err.print("Rserve NOT well installed: "+ioe.getMessage());
