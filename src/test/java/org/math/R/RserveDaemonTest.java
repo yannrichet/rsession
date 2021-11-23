@@ -201,6 +201,8 @@ public class RserveDaemonTest {
             System.err.println("Rserve is not yet installed. Proceed...");
         }
 
+        System.out.println(doInR("install.packages('Rserve')",Rcmd, "--vanilla -q", null));
+        
         boolean install = StartRserve.installRserveFromLocalLibrary(Rcmd);
 
         assert install : "Could not install Rserve";
