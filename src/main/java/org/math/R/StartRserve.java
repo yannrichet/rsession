@@ -197,7 +197,7 @@ public class StartRserve {
                             return false;
                         }
                     }
-                    for (File Rserve_exe : FileUtils.listFiles(RserveDaemon.app_dir(),FileFilterUtils.prefixFileFilter("Rserve_dbg"),FileFilterUtils.directoryFileFilter())) {
+                    for (File Rserve_exe : FileUtils.listFiles(RserveDaemon.app_dir(),FileFilterUtils.prefixFileFilter("Rserve_d"),FileFilterUtils.directoryFileFilter())) {
                         if (!Rserve_exe.setExecutable(true)) {
                             Log.Err.println("Could not set executable: "+Rserve_exe);
                             return false;
