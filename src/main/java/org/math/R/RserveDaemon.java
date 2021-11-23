@@ -22,7 +22,7 @@ public class RserveDaemon {
     Process process;
     private final RLog log;
     static int rand = Math.round((float) Math.random() * 10000);
-    private static File R_APP_DIR = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) {
+    private static File R_APP_DIR = new File(new File(System.getProperty("Rserve.HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) {
         @Override
         public String toString() {
             if (RserveDaemon.isWindows()) {
@@ -43,7 +43,7 @@ public class RserveDaemon {
             R_APP_DIR = new File(new File(FileUtils.getUserDirectory(), ".Rserve"), "" + rand);
             if (!R_APP_DIR.mkdirs()) {
                 throw new IOException("Could not create directory " + 
-                new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) + 
+                new File(new File(System.getProperty("Rserve.HOME",FileUtils.getTempDirectoryPath()), ".Rserve"), "" + rand) + 
                 "\n or " + 
                 new File(new File(FileUtils.getUserDirectory(), ".Rserve"), "" + rand));
             }
@@ -121,7 +121,7 @@ public class RserveDaemon {
                     try {
                         Process rp = Runtime.getRuntime().exec("reg query HKLM\\Software\\R-core\\R");
                         RegistryHog regHog = new RegistryHog(rp.getInputStream(), true);
-                        rp.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+                        rp.waitFor(StartRserve.TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
                         regHog.join();
                         R_HOME = regHog.getInstallPath();
                         if (new File(R_HOME).isDirectory()) throw new Exception("R_HOME from HKLM\\Software\\R-core\\R is not correct: "+R_HOME);
@@ -225,8 +225,6 @@ public class RserveDaemon {
         }
     }
 
-    public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
-
     static void setRecursiveExecutable(File path) {
         for (File f : path.listFiles()) {
             if (f.isDirectory()) {
@@ -303,7 +301,7 @@ public class RserveDaemon {
     static String RESERVE_ARGS = "--vanilla --RS-enable-control";
 
     public StartRserve.ProcessToKill rserve;
-    public static boolean USE_RSERVE_FROM_CRAN = Boolean.parseBoolean(System.getProperty("USE_RSERVE_FROM_CRAN","false"));
+    public static boolean USE_RSERVE_FROM_CRAN = Boolean.parseBoolean(System.getProperty("Rserve.INSTALL_FROM_CRAN","false"));
 
     volatile static boolean starting = false;
     final static Object launchRserveLock = new Object();
@@ -367,7 +365,7 @@ public class RserveDaemon {
                 log.log("Starting R daemon... " + conf, Level.INFO);
                 String RserveArgs = RESERVE_ARGS + " --RS-port " + conf.port;
 
-                rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), Boolean.parseBoolean(System.getProperty("debug.Rserve","false")), portLocker);
+                rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), Boolean.parseBoolean(System.getProperty("Rserve.debug","false")), portLocker);
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {                
                 log.log("R daemon startup failed: " + e.getMessage(), Level.ERROR);
@@ -380,5 +378,5 @@ public class RserveDaemon {
     }
 
     // if we want to re-use older sessions. May wrongly behave if older session are already stucked...
-    public static final boolean UNIX_OPTIMIZE = Boolean.parseBoolean(System.getProperty("RSERVE_NO_INC_PORT", "false"));
+    public static final boolean UNIX_OPTIMIZE = Boolean.parseBoolean(System.getProperty("Rserve.NO_INC_PORT", "false"));
 }

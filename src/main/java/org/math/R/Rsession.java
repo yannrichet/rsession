@@ -569,7 +569,7 @@ public abstract class Rsession implements RLog {
         }
     }
     // <editor-fold defaultstate="collapsed" desc="Packages management">
-    public static String DEFAULT_REPOS = "http://cloud.r-project.org";
+    public static String DEFAULT_REPOS = System.getProperty("Rserve.repos","https://cloud.r-project.org");
     public String repos = DEFAULT_REPOS;
 
     /**

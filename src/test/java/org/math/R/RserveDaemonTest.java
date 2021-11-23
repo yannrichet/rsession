@@ -87,6 +87,8 @@ public class RserveDaemonTest {
     // Replaced by custom install instead... 
     @Test
     public void testInstallRserve() throws Exception {
+        System.err.println("====================================== testInstallRserve");
+
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
         }

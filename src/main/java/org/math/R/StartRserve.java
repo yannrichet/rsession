@@ -405,7 +405,7 @@ public class StartRserve {
         return org.apache.commons.io.FileUtils.readFileToString(out);
     }
 
-    public static boolean system_log = Boolean.parseBoolean(System.getProperty("print.system.call", "false"));
+    public static boolean system_log = Boolean.parseBoolean(System.getProperty("system.print", "false"));
     public static Process system(String command, File redirect, boolean waitFor) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
         if (system_log) Log.Out.println("  $  " + command );
@@ -445,7 +445,7 @@ public class StartRserve {
         return p;
     }
 
-    public static long TIMEOUT = Long.parseLong(System.getProperty("timeout","60")); // 1 min. as default timeout for process waiting
+    public static long TIMEOUT = Long.parseLong(System.getProperty("system.timeout","60")); // 1 min. as default timeout for process waiting
 
     static String UGLY_FIXES = "";//flush.console <- function(...) {return;}; options(error=function() NULL)";
 
