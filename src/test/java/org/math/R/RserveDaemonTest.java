@@ -84,7 +84,8 @@ public class RserveDaemonTest {
         assert result.contains("TRUE") : "Failed to eval " + expr + ": " + result;
     }
 
-    // Replaced by custom install instead... @Test
+    // Replaced by custom install instead... 
+    @Test
     public void testInstallRserve() throws Exception {
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
@@ -168,6 +169,39 @@ public class RserveDaemonTest {
                 System.err.println(f + ": " + ex.getMessage());
             }
         }
+
+        assert install : "Could not install Rserve";
+
+        assert StartRserve.isRserveInstalled() : "Could not find package Rserve";
+    }
+
+    @Test
+    public void testInstallRserveFromLocalLibrary() throws Exception {
+        System.err.println("====================================== testInstallRserveFromLocalLibrary");
+
+        if (RserveDaemon.R_HOME == null || Rcmd == null) {
+            testFindR_HOME();
+        }
+
+        if (StartRserve.isRserveInstalled()) {
+            System.err.println("Rserve is already installed. Removing...");
+            FileUtils.forceDelete(new File(RserveDaemon.app_dir(), "Rserve"));
+//            Process p = doInR("remove.packages('Rserve',lib='" + RserveDaemon.app_dir() + "');q(save='no')", Rcmd, "--vanilla --silent", null);
+//            if (!RserveDaemon.isWindows()) /* on Windows the process will never return, so we cannot wait */ {
+//                p.waitFor();
+//                assert p.exitValue() == 0 : "Could not remove package Rserve...";
+//            }
+
+            int n = 10;
+            while (StartRserve.isRserveInstalled() && (n--) > 0) {
+                Thread.sleep(2000);
+            }
+            assert n > 1 : "Package Rserve was not removed !";
+        } else {
+            System.err.println("Rserve is not yet installed. Proceed...");
+        }
+
+        boolean install = StartRserve.installRserveFromLocalLibrary(Rcmd);
 
         assert install : "Could not install Rserve";
 

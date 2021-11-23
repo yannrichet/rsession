@@ -50,7 +50,6 @@ jobs:
       with:
         file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
     - uses: codecov/codecov-action@v1
-      if: matrix.os == 'ubuntu-latest'
     - if: steps.mvntest.outcome != 'success'
       run: exit 1
       
