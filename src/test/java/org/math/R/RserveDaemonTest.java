@@ -101,7 +101,10 @@ public class RserveDaemonTest {
             System.err.println("Rserve is not installed.");
         }
 
+        String system_print = System.getProperty("system.print","false");
+        System.setProperty("system.print","true");
         boolean install = StartRserve.installRserve(Rcmd, http_proxy_env, Rsession.DEFAULT_REPOS);
+        System.setProperty("system.print",system_print);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -154,7 +157,10 @@ public class RserveDaemonTest {
         assert classloader.getResource("org/math/R/Rsession.class") != null : "cannot access class resources...";
         assert classloader.getResource("org/math/R/Rserve_1.7-5.tar.gz") != null : "cannot access Rserve local source...";
 
+        String system_print = System.getProperty("system.print","false");
+        System.setProperty("system.print","true");
         boolean install = StartRserve.installBundledRserve(Rcmd);
+        System.setProperty("system.print",system_print);
 
         File[] rout = new File(".").listFiles(
                 new FilenameFilter() {
@@ -217,9 +223,12 @@ public class RserveDaemonTest {
         } catch (IOException ioe) {
             Log.Err.print("Rserve NOT well installed: "+ioe.getMessage());
             assert false;
-        }            
-                
+        }        
+
+        String system_print = System.getProperty("system.print","false");
+        System.setProperty("system.print","true");
         boolean install = StartRserve.installRserveFromLocalLibrary(Rcmd);
+        System.setProperty("system.print",system_print);
 
         assert install : "Could not install Rserve";
 

@@ -144,7 +144,7 @@ public class StartRserve {
             return true;
         }
 
-        Log.Out.println("Install Rserve from local library");
+        Log.Out.println("Install/copy Rserve from local library");
 
         try {
             //String result = doInR("if (is.element(set=installed.packages(),el='Rserve')) packageVersion('Rserve') else print(paste('No','Rserve'))", Rcmd, "--vanilla --silent", null);
@@ -175,13 +175,13 @@ public class StartRserve {
                     String print_path = doInR("which_Rserve = which(gregexpr('/Rserve$',list.files(.libPaths(),full.names=T))>0); "+
                                             "print(file.path(list.files(.libPaths(),full.names=T)[which_Rserve]))", 
                                             Rcmd, "--vanilla --silent", null);
-                    Pattern regex = Pattern.compile("^(.*)/Rserve.$", Pattern.MULTILINE);
+                    Pattern regex = Pattern.compile("^(.*)/Rserve\"", Pattern.MULTILINE);
                     Matcher regexMatcher = regex.matcher(print_path);
                     if (!regexMatcher.find()) {
                         Log.Err.println("Could not find pattern "+regex+" in "+print_path.replaceAll("\n", "\n  | "));
                         return false;
                     }
-                    String match = (regexMatcher.group(1)+"/Rserve").replaceAll("/", File.separator);
+                    String match = isWindows() ? (regexMatcher.group(1)+"/Rserve").replaceAll("/", "\\\\") : regexMatcher.group(1)+"/Rserve";
                     File path = new File(match.substring(5));
                 
                     FileUtils.copyDirectoryToDirectory(path, RserveDaemon.app_dir());
@@ -251,14 +251,15 @@ public class StartRserve {
             String result = doInR((http_proxy != null ? "Sys.setenv(http_proxy='" + http_proxy + "');" : "") + 
                                 "install.packages('Rserve',repos='" + repository + "',lib='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
 
-            if (result.contains("package 'Rserve' successfully unpacked and MD5 sums checked") ||
+            String installed = doInR("'Rserve' %in% installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null);
+            if ((result.contains("MD5") && result.contains("'Rserve'"))||
                 result.contains("* DONE (Rserve)") ||
-                doInR("'Rserve' %in% installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')", Rcmd, "--vanilla --silent", null).contains("TRUE")) {
-                Log.Out.println("  OK: \n" + result.replaceAll("\n", "\n  | "));
-            } else if (result.contains("FAILED") || result.contains("Error")) {
-                Log.Out.println("  FAILED: \n" + result.replaceAll("\n", "\n  | "));
+                installed.contains("TRUE")) {
+                Log.Out.println("  OK: \n  |" + result.replaceAll("\n", "\n  | ") + "  ---\n" + installed.replaceAll("\n", "\n  | "));
+            } else if (result.contains("FAILED") || result.contains("Error") || installed.contains("FALSE")) {
+                Log.Out.println("  FAILED: \n  |" + result.replaceAll("\n", "\n  | ") + "  ---\n" + installed.replaceAll("\n", "\n  | "));
             } else {
-                Log.Out.println("  UNKNOWN: \n" + result.replaceAll("\n", "\n  | "));
+                Log.Out.println("  UNKNOWN: \n  |" + result.replaceAll("\n", "\n  | ")+ "  ---\n" + installed.replaceAll("\n", "\n  | "));
             }
 
         } catch (IOException ioe) {
@@ -407,9 +408,9 @@ public class StartRserve {
         return org.apache.commons.io.FileUtils.readFileToString(out);
     }
 
-    public static boolean system_log = Boolean.parseBoolean(System.getProperty("system.print", "false"));
     public static Process system(String command, File redirect, boolean waitFor) { 
         command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
+        boolean system_log = Boolean.parseBoolean(System.getProperty("system.print", "false"));
         if (system_log) Log.Out.println("  $  " + command );
         Process p = null;
         try {
@@ -419,12 +420,19 @@ public class StartRserve {
                 p = pb.start();
 
                 if (waitFor) {
+                    String line;
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    while ((line = reader.readLine()) != null) {
+                        //Log.Out.println(">>  " + line);
+                    }
+
+                    /* Another (but slower) alternative to emulate waitFor:
                     String lines = ".";
                     String last_lines = lines;
                     boolean started=false; // try emulate waitFor, which does not work in Windows
                     long attempts = TIMEOUT;
                     int same = 10; // check no progress in last 5 s.
-                    while (attempts-- > 0 && (!started || !(lines.equals(last_lines))) && same>0) {
+                    while ((attempts-- > 0 && (!started || !(lines.equals(last_lines)))) || same>0) {
                         if (lines.equals(".")) {
                             //Log.Out.print(".");
                         } else
@@ -432,9 +440,11 @@ public class StartRserve {
                         Thread.sleep(500);
                         last_lines = lines;
                         lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
-                        if (lines == last_lines) same--; else same = 10;
-                    }
+                        if (lines.equals(last_lines)) same--; else same = 10;
+                        System.err.println("same:"+same);
+                    }*/
                 }
+                //String lines = org.apache.commons.io.FileUtils.readFileToString(redirect);
                 //Log.Out.println("> " + lines);
             } else /* unix startup */ {
                 ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", command);
