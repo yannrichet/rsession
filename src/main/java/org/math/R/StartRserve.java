@@ -400,7 +400,10 @@ public class StartRserve {
      * @throws java.io.IOException
      */
     public static String doInR(String todo, String Rcmd, String rargs, File out) throws IOException {
-        if (out==null) out = File.createTempFile("doInR_", ".Rout");
+        if (out==null) {
+            out = File.createTempFile("doInR_", ".Rout");
+            out.deleteOnExit();
+        }
         Process p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", out, true);
         if (p == null) {
             throw new IOException("Failed to do in R: " + Rcmd + " "+ rargs + " -e \"" + todo + "\"");

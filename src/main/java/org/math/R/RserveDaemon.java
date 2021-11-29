@@ -213,6 +213,7 @@ public class RserveDaemon {
             //Log.Out.println("Found R:\n * binary: " +bin);
 
             File out = File.createTempFile("Rversion", "out");
+            out.deleteOnExit();
             StartRserve.system(bin.getAbsolutePath() + " --silent  -e \"cat(R.version[['major']])\"", out, true);
             R_VERSION = org.apache.commons.io.FileUtils.readFileToString(out).replaceAll(">.*", "").trim();
             //Log.Out.println(" * version: " + version);
