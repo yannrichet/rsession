@@ -163,9 +163,9 @@ public class RserveSessionTest {
     @Test
     public void testEnd() {
         System.err.println("====================================== testEnd");
-
-        for (int i = 0; i < 10; i++) {
-            new Thread(new Runnable() {
+        Thread[] t = new Thread[10];
+        for (int i = 0; i < t.length; i++) {
+            t[i] = new Thread(new Runnable() {
 
                 public void run() {
                     RserveSession s1 = new RserveSession(new RLogPanel(), null, null);
@@ -182,11 +182,15 @@ public class RserveSessionTest {
                     s1.end();
                     s1 = null;
                 }
-            }).start();
+            });
+            t[i].start();
         }
-        try {
-            Thread.sleep(50000);
-        } catch (InterruptedException ex) {
+        for (int i = 0; i < t.length; i++) {
+            try {
+                t[i].join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -723,7 +727,8 @@ public class RserveSessionTest {
     public void tearDown() {
         try {
             //uncomment following for sequential call. 
-            s.end();
+            if (s!=null)
+                s.end();
             Thread.sleep(1000);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
