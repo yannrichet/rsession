@@ -7,6 +7,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -554,5 +556,76 @@ public class RserveDaemonTest {
     @After
     public void tearDown() {
 
+    }
+    
+    public static int[] getRPIDs() {
+        List<Integer> pids = new LinkedList<>();
+        if (RserveDaemon.isWindows()) { // Windows, so we expect tasklist is available in PATH
+            try {
+                ProcessBuilder pb = new ProcessBuilder("tasklist");
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    //Log.Out.print("\n> " + line);
+                    if (line.startsWith("R.exe")) {
+                        String[] info = line.split("\\s+");
+                        int pid = Integer.parseInt(info[1]);
+                        pids.add(pid);
+                    }
+                }
+                //process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            //Log.Out.println(">> "+pid);
+        } else if (RserveDaemon.isLinux()) {
+            try {
+                ProcessBuilder pb = new ProcessBuilder(StartRserve.splitCommand("ps -aux"));
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("R --vanilla")&& line.contains("Ss")) {
+                        //Log.Out.print("\n> " + line);
+                        String[] info = line.split("\\s+");
+                        int pid = Integer.parseInt(info[1]);
+                        pids.add(pid);
+                    }
+                }
+                process.waitFor(StartRserve.TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+        } else if (RserveDaemon.isMacOSX()) { // MacOS
+            try {
+                ProcessBuilder pb = new ProcessBuilder(StartRserve.splitCommand("ps aux"));
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.contains("Rserve --vanilla") && line.contains("Ss")) {
+                        //Log.Out.print("\n> " + line);
+                        String[] info = line.split("\\s+");
+                        int pid = Integer.parseInt(info[1]);
+                        pids.add(pid);
+                    }
+                }
+                process.waitFor(StartRserve.TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+        } else {
+            Log.Err.println("Cannot recognize OS: " + System.getProperty("os.name"));
+        }
+        //Log.Out.println("Rserve PIDS: " + pids);
+        int[] ps = new int[pids.size()];
+        for (int i = 0; i < pids.size(); i++) {
+            ps[i] = pids.get(i);
+        }
+        return ps;
     }
 }

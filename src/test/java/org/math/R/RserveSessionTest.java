@@ -725,6 +725,9 @@ public class RserveSessionTest {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        //A shutdown hook kills all Rserve at the end.
+
+        assert StartRserve.getRservePIDs().length==0: "There are still some Rserve process remaining !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+        assert RserveDaemonTest.getRPIDs().length==0: "There are still some R process remaining !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+        //A shutdown hook kills all Rserve in the end.
     }
 }

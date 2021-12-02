@@ -429,6 +429,8 @@ public class StartRserve {
                         //Log.Out.println(">>  " + line);
                     }
 
+                    try {p.destroyForcibly();} catch (Exception e) {e.printStackTrace();}
+
                     /* Another (but slower) alternative to emulate waitFor:
                     String lines = ".";
                     String last_lines = lines;
@@ -453,7 +455,10 @@ public class StartRserve {
                 ProcessBuilder pb = new ProcessBuilder("/bin/sh", "-c", command);
                 p = pb.start();
 
-                if (waitFor) p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+                if (waitFor) {
+                    p.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+                    try {p.destroyForcibly();} catch (Exception e) {e.printStackTrace();}
+                }
             }
         } catch (Exception x) {
             Log.Err.println("Command: "+command + " failed:\n" +x.getMessage());
@@ -537,6 +542,7 @@ public class StartRserve {
         }
 
         public void kill() {
+            try {process.destroyForcibly();} catch (Exception e) {e.printStackTrace();}
             Kill(pid);
         }
     }
