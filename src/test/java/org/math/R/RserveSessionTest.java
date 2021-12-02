@@ -685,6 +685,9 @@ public class RserveSessionTest {
 
     @Before
     public void setUp() throws Exception {
+        assert StartRserve.getRservePIDs().length==0: "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! There are still some Rserve process remaining ("+Arrays.toString(StartRserve.getRservePIDs())+")";
+        assert RserveDaemonTest.getRPIDs().length==0: "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! There are still some R process remaining ("+Arrays.toString(RserveDaemonTest.getRPIDs())+")";
+    
         RLog l = new RLog() {
 
             public void log(String string, RLog.Level level) {
@@ -726,8 +729,8 @@ public class RserveSessionTest {
             ex.printStackTrace();
         }
 
-        assert StartRserve.getRservePIDs().length==0: "There are still some Rserve process remaining !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-        assert RserveDaemonTest.getRPIDs().length==0: "There are still some R process remaining !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+        assert StartRserve.getRservePIDs().length==0: "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! There are still some Rserve process remaining ("+Arrays.toString(StartRserve.getRservePIDs())+")";
+        assert RserveDaemonTest.getRPIDs().length==0: "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! There are still some R process remaining ("+Arrays.toString(RserveDaemonTest.getRPIDs())+")";
         //A shutdown hook kills all Rserve in the end.
     }
 }
