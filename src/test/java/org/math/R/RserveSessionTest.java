@@ -329,7 +329,7 @@ public class RserveSessionTest {
 
         String[] exp = {"TRUE", "0.123", "pi", "a", "A", "0.123+a", "0.123+b", "0.123", "(0.123)+pi", "rnorm(10)", "cbind(rnorm(10),rnorm(10))", "data.frame(aa=rnorm(10),bb=rnorm(10))", "'abcd'", "c('abcd','sdfds')"};
         for (String e : exp) {
-            System.out.println(e + " --> " + s.proxyEval(e, vars));
+            System.err.println(e + " --> " + s.proxyEval(e, vars));
         }
         assert Arrays.asList(s.ls()).contains("a") : "variable a disappeared";
         assert (Double) s.proxyEval("a", null) == a : "variable a changed";
@@ -401,15 +401,15 @@ public class RserveSessionTest {
         //get file test...
         String remoteFile1 = "get" + rand + ".csv";
         File localfile1 = new File(tmpdir.getParent(), remoteFile1);
-        System.out.println("GET :" + localfile1.getAbsolutePath());
+        System.err.println("GET :" + localfile1.getAbsolutePath());
         s.voidEval("aa<-data.frame(A=c(1,2,3),B=c(4,5,6))");
         s.voidEval("write.csv(file='" + remoteFile1 + "',aa)");
         InputStream is1 = null;
         OutputStream os1 = null;
         try {
-            //System.out.println("openFile");
+            //System.err.println("openFile");
             is1 = s.R.openFile(remoteFile1);
-            //System.out.println("OK");
+            //System.err.println("OK");
             os1 = new FileOutputStream(localfile1.getAbsolutePath());
             byte[] buf = new byte[65536];
             try {
@@ -458,7 +458,7 @@ public class RserveSessionTest {
         //put file test...
         String remoteFile2 = "put" + rand + ".csv";
         File localfile2 = new File(tmpdir.getParent(), remoteFile2);
-        System.out.println("PUT :" + localfile2.getAbsolutePath());
+        System.err.println("PUT :" + localfile2.getAbsolutePath());
         String content = "A,B,C\n1,2,3\n";
         try {
             FileOutputStream fos = new FileOutputStream(localfile2);
@@ -476,7 +476,7 @@ public class RserveSessionTest {
             Reader r = new BufferedReader(new InputStreamReader(fis));
             int n = 0;
             while ((n = r.read()) > 0) {
-                System.out.print((char) n);
+                System.err.print((char) n);
             }
             r.close();
         } catch (IOException e) {
@@ -487,9 +487,9 @@ public class RserveSessionTest {
         OutputStream os2 = null;
 
         try {
-            //System.out.println("createFile");
+            //System.err.println("createFile");
             os2 = s.R.createFile(remoteFile2);
-            //System.out.println("OK");
+            //System.err.println("OK");
             is2 = new FileInputStream(localfile2);
             byte[] buf = new byte[65536];
             try {
@@ -499,7 +499,7 @@ public class RserveSessionTest {
             }
             int n = 0;
             while ((n = is2.read(buf)) > 0) {
-                System.out.print(buf);
+                System.err.print(buf);
                 os2.write(buf, 0, n);
             }
         } catch (IOException e) {
@@ -517,7 +517,7 @@ public class RserveSessionTest {
             }
         }
         s.rawEval("ABC<-read.csv(file='" + remoteFile2 + "', header = TRUE,sep=',')");
-        System.out.println(s.toString(s.cast(s.rawEval("ABC"))));
+        System.err.println(s.toString(s.cast(s.rawEval("ABC"))));
         assert ((REXP) s.rawEval("ABC$A")).isNumeric();
         s.rawEval("rm(ABC)");
         localfile2.delete();
@@ -526,14 +526,14 @@ public class RserveSessionTest {
     /*@Test
      public void testPerformance() throws REXPMismatchException { //Performance rawEval
      long start = Calendar.getInstance().getTimeInMillis();
-     System.out.println("tic");
+     System.err.println("tic");
     
      for (int i = 0; i < 10000; i++) {
      s.silentlyRawEval("rnorm(10)").asDoubles();
      }
-     System.out.println("toc");
+     System.err.println("toc");
      long duration = Calendar.getInstance().getTimeInMillis() - start;
-     System.out.println("Spent time:" + (duration) + " ms");
+     System.err.println("Spent time:" + (duration) + " ms");
      }*/
     @Test
     public void testConcurrentEval() throws Exception {
@@ -609,7 +609,7 @@ public class RserveSessionTest {
 
                     double a = r1.asDouble(r1.rawEval("a"));
                     assert a == 1 : "a should be == 1 !";
-                    System.out.println("1: OK");
+                    System.err.println("1: OK");
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -624,11 +624,11 @@ public class RserveSessionTest {
 
                     double a2 = r2.asDouble(r2.rawEval("a"));
                     assert a2 == 2 : "a should be == 2 !";
-                    System.out.println("2: OK");
+                    System.err.println("2: OK");
 
                     double a1 = r1.asDouble(r1.rawEval("a"));
                     assert a1 == 1 : "a should be == 1 !";
-                    System.out.println("1: OK");
+                    System.err.println("1: OK");
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -688,7 +688,7 @@ public class RserveSessionTest {
         RLog l = new RLog() {
 
             public void log(String string, RLog.Level level) {
-                System.out.println("                              " + level + " " + string);
+                System.err.println("                              " + level + " " + string);
             }
 
             public void closeLog() {
@@ -703,17 +703,17 @@ public class RserveSessionTest {
 
         s = new RserveSession(l, prop, null);
         //s = RserveSession.newLocalInstance(l, prop);
-        System.out.println("| R.version:\t" + s.eval("R.version.string"));
-        System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
+        System.err.println("| R.version:\t" + s.eval("R.version.string"));
+        System.err.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
 
-        System.out.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
+        System.err.println("| tmpdir:\t" + tmpdir.getAbsolutePath());
         if (!(tmpdir.isDirectory() || tmpdir.mkdir())) {
             throw new IOException("Cannot access tmpdir=" + tmpdir);
         }
 
-        System.out.println("| getwd():\t" + s.eval("getwd()"));
-        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
+        System.err.println("| getwd():\t" + s.eval("getwd()"));
+        System.err.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
+        System.err.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
     }
 
     @After
