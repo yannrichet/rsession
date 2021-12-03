@@ -263,11 +263,6 @@ public class RserveDaemon {
                     log.log("Could not remotely shutdown server", Level.WARNING);
                 }
                 s.shutdown();
-                if (rserve.process != null && rserve.process.isAlive()) {
-                    rserve.process.destroyForcibly();
-                    rserve.process.getInputStream().close();
-                    rserve.process.getErrorStream().close();
-                }
             } else {
                 log.log("Could not connect Rserve to shutdown", Level.WARNING);
             }
@@ -293,6 +288,13 @@ public class RserveDaemon {
             } else {
                 log.log("No Rserve PID.", Level.WARNING);
             }
+
+            if (rserve.process != null && rserve.process.isAlive()) {
+                rserve.process.destroyForcibly();
+                rserve.process.getInputStream().close();
+                rserve.process.getErrorStream().close();
+            }
+            
         } catch (Exception ex) {
             log.log("Could not kill Rserve process: " + ex.getMessage(), Level.ERROR);
         }
@@ -366,6 +368,7 @@ public class RserveDaemon {
                 log.log("Starting R daemon... " + conf, Level.INFO);
                 String RserveArgs = RESERVE_ARGS + " --RS-port " + conf.port;
 
+                if (rserve!=null) rserve.kill(); // cleanup before restarting...
                 rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), Boolean.parseBoolean(System.getProperty("Rserve.debug","false")), portLocker);
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {                

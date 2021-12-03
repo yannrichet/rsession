@@ -7,6 +7,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -270,8 +271,16 @@ public class RserveDaemonTest {
 
         System.err.println("--- Get PREVIOUS Rserve PID");
         int[] pids = StartRserve.getRservePIDs();
+        System.err.println("---    "+Arrays.toString(pids));
         int last_pid = pids.length > 0 ? pids[pids.length - 1] : -1;
         System.err.println("---  " + last_pid);
+
+        System.err.println("--- Get PREVIOUS R PID");
+        int[] pids_r = getRPIDs();
+        System.err.println("---    "+Arrays.toString(pids_r));
+        int last_pid_r = pids_r.length > 0 ? pids_r[pids_r.length - 1] : -1;
+        System.err.println("---  " + last_pid_r);
+
 
         System.err.println("--- Start Rserve daemon");
         RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null);
@@ -281,8 +290,15 @@ public class RserveDaemonTest {
 
         System.err.println("--- Get THIS Rserve PID");
         pids = StartRserve.getRservePIDs();
+        System.err.println("---    "+Arrays.toString(pids));
         int pid = pids.length > 0 ? pids[pids.length - 1] : -666;
         System.err.println("---  " + pid);
+
+        System.err.println("--- Get THIS R PID");
+        pids_r = getRPIDs();
+        System.err.println("---    "+Arrays.toString(pids_r));
+        int pid_r = pids_r.length > 0 ? pids_r[pids_r.length - 1] : -666;
+        System.err.println("---  " + pid_r);
 
         assert pid != last_pid : "Did not start Rserve (no new PID)";
 
@@ -295,6 +311,15 @@ public class RserveDaemonTest {
         System.err.println("--- Stop Rserve");
         d.stop();
         Thread.sleep(1000);
+
+        System.err.println("--- Get REMAINING Rserve PID");
+        pids = StartRserve.getRservePIDs();
+        System.err.println("---    "+Arrays.toString(pids));
+
+        System.err.println("--- Get REMAINING R PID");
+        pids_r = getRPIDs();
+        System.err.println("---    "+Arrays.toString(pids_r));
+
 
         assert !haveRservePID(d.rserve.pid) : "Still alive !";
 
