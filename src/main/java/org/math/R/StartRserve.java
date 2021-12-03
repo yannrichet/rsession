@@ -578,7 +578,6 @@ public class StartRserve {
 
         Process p = null;
         //synchronized (lockRserveLauncher) {
-        int[] last_pids = getRservePIDs();
 
         if (lock != null) {
             //Log.Err.println("Release lock "+lock);
@@ -594,7 +593,13 @@ public class StartRserve {
         String todo = "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
                 + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES; 
+        int[] last_pids = getRservePIDs();
         p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", outstream, false);
+        if (p == null) {
+            if (debug) Log.Err.println("Failed to call: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
+            throw new IOException("Failed to call: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
+        }
+        
         // just waitFor Rserve starting (not waiting for return)
         int attempts = 50;
         while (attempts-->10 && !outstream.exists())
@@ -602,12 +607,6 @@ public class StartRserve {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
             }
-
-        if (p == null) {
-            if (debug) Log.Err.println("Failed to do in R: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
-            throw new IOException("Failed to do in R: "+Rcmd + " "+ rargs + " -e \"" + todo + "\":\n"+org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
-        }
-
         if (debug) Log.Err.println(org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n    | "));
 
         int pid_attempts = 50;
