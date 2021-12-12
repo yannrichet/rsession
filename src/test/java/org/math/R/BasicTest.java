@@ -321,6 +321,9 @@ public class BasicTest {
 
         assert r.set("ld", r.asMatrix(r.eval("d")), "d1") : "Failed to create list";
         assert r.print("ld").contains("d1") && r.print("ld").contains("1") && r.print("ld").contains("0") : "Bad print ld: " + r.print("ld");
+
+        assert r.set("lm", r.asMatrix(r.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert r.asStrings(r.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list: "+Arrays.toString(r.asStrings(r.eval("names(lm)")));
     }
 
     @Test
@@ -355,6 +358,9 @@ public class BasicTest {
 
         assert s.set("ld", s.asMatrix(s.eval("d")), "d1") : "Failed to create list";
         assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
+
+        assert s.set("lm", s.asMatrix(s.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert s.asStrings(s.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list";
     }
 
     @Test
@@ -377,18 +383,24 @@ public class BasicTest {
         q.set("d", d);
         assert Arrays.deepEquals(new double[][]{{d}}, q.asMatrix(q.eval("d"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{d}}) + " != " + Arrays.deepToString(q.asMatrix(q.eval("d")));
 
-        //assert q.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
-        //assert q.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
-        //assert q.set("lm", q.asMatrix(q.eval("m")), "m1", "m2") : "Failed to create list";
-        // TODO: support and uncomment these lines
-        //assert q.print("lm").contains("m1 m2") && q.print("lm").contains("2  3") : "Bad print: " + q.print("lm");
-        //assert q.asDouble(q.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + q.eval("print(lm)");
+        assert q.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
+        assert q.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
+
+        assert q.set("lm", q.asMatrix(q.eval("m")), "m1", "m2") : "Failed to create list";
+        //assert q.print("lm").contains("m1 m2") && q.print("lm").contains("2,3") : "Bad print: " + q.print("lm");
+        assert q.asStrings(q.eval("names(lm)"))[0].equals("m1") : "Failed to name list";
+        //System.err.println(q.eval("lm[['m1']]"));
+        //assert Arrays.equals(q.asArray(q.eval("lm[['m1']]")), new double[]{2.0,3.0}) : "Bad values in list: " + q.eval("lm[['m1']]");
+
         //assert q.set("la", q.asMatrix(q.eval("a")), "a1") : "Failed to create list";
         // TODO: support and uncomment these lines
         //assert q.print("la").contains("a1") && q.print("la").contains("2  1") : "Bad print: " + q.print("la");
         //assert q.set("ld", q.asMatrix(q.eval("d")), "d1") : "Failed to create list";
         // TODO: support and uncomment these lines
         //assert q.print("ld").contains("d1") && q.print("ld").contains("1  0") : "Bad print: " + q.print("ld");
+
+        assert q.set("lm", q.asMatrix(q.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert q.asStrings(q.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list";
     }
 
     @Test

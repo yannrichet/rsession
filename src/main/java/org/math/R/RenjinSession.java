@@ -330,7 +330,7 @@ public class RenjinSession extends Rsession implements RLog {
                 R.put(varname + ".names", new StringArrayVector(names));
                 try {
                     R.eval("names(" + varname + ") <- " + varname + ".names");
-                    R.eval(varname + " <- data.frame(" + varname + ")");
+                    R.eval(varname + " <- data.frame(" + varname + ", check.names=FALSE)");
                 } catch (ScriptException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
