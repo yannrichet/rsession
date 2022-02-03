@@ -356,6 +356,23 @@ public class RenjinSession extends Rsession implements RLog {
                     return false;
                 }
             //}
+        } else if (var instanceof Map) {
+            Map m = (Map)var;
+            try {
+                R.eval(varname + " <- list()");
+            } catch (ScriptException ex) {
+                log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                return false;
+            }
+            for (Object k : m.keySet()) {
+                R.put(varname+"."+k, m.get(k) );
+                try {
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k);
+                } catch (ScriptException ex) {
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                    return false;
+                }
+            }
         } else {
             //synchronized (R) {
                 R.put(varname, var);

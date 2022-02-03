@@ -2873,6 +2873,24 @@ public class R2jsSession extends Rsession implements RLog {
 
                 js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                 variablesSet.add(varname);
+            } else if (var instanceof Map) {
+                Map m = (Map)var;
+                try {
+                    js.eval(THIS_ENVIRONMENT + "." +varname + " = {}");
+                } catch (ScriptException ex) {
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                    return false;
+                }
+                for (Object k : m.keySet()) {
+                    set(varname+"_"+k, m.get(k) );
+                    try {
+                        js.eval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+k);
+                    } catch (ScriptException ex) {
+                        log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                        return false;
+                    }
+                }
+                variablesSet.add(varname);
             } else {
                 js.put(varname, var);
                 js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);

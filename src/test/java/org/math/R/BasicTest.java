@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import org.junit.After;
@@ -287,6 +288,13 @@ public class BasicTest {
 
         s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
         assert (Double) (s.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        s.set("m",m);
+        System.err.println(s.eval("m"));
+        assert (Double) (s.eval("m$x1[3]")) == 3;
     }
 
     @Test
@@ -619,9 +627,16 @@ public class BasicTest {
         assert ((String[]) q.eval("S")).length == Str.length;
 
         // TODO: support and uncomment these lines
-//        assert ((String) q.eval("S[1]")).equals(Str[0]);
-//        q.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
-//        assert (Double) (q.eval("df$x1[3]")) == 7;
+        //assert ((String) q.eval("S[1]")).equals(Str[0]);
+
+        //q.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
+        //assert (Double) (q.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        q.set("m",m);
+        assert (Double) (q.eval("m$x1[3]")) == 3;
     }
 
     @Test
@@ -662,6 +677,13 @@ public class BasicTest {
 
         r.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
         assert (Double) (r.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        r.set("m",m);
+        System.err.println(r.eval("m"));
+        assert (Double) (r.eval("m$x1[3]")) == 3;
     }
 
     @Test
