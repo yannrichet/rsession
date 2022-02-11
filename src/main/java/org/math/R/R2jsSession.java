@@ -698,10 +698,10 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$([\\w.]+)", ".$1"); //FIXME
-        // also support not-$ syntax : list[['x1']] instead of list$x1
-        e = e.replaceAll("\\[\\['([\\w.]+)'\\]\\]\\[(\\d+)\\]", ".$1 [ $2 -1]");
-        e = e.replaceAll("\\[\\['([\\w.]+)'\\]\\]", ".$1");
+        e = e.replaceAll("(\\S[^\\$]?+)\\$([^\\$]?+)", "$1.$2"); //FIXME
+        // support not-$ syntax : list[['x1']] instead of list$x1
+        e = e.replaceAll("(\\S[^\\$]?+)\\[\\['([\\w.]+)'\\]\\]\\[(\\d+)\\]", "$1.$2 [ $3 -1]");
+        e = e.replaceAll("(\\S[^\\$]?+)\\[\\['([\\w.]+)'\\]\\]", "$1.$2");
 
         // R Comments
         e = e.replaceAll("#", "//");
@@ -1103,9 +1103,9 @@ public class R2jsSession extends Rsession implements RLog {
     //X[Y[i]]
     //X[[Y[i]]]
     private static String index_pattern = 
-    //"([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
+      "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]']*)\\]+";
     // to get only one '[': 
-    "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]";
+    //"([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]";
 
     /**
      * Replace indexes by mathjs indexes

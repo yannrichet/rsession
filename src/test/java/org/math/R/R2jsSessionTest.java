@@ -34,6 +34,10 @@ public class R2jsSessionTest {
     final double epsilon = 1e-12;
     R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
 
+    public static void main(String args[]) {
+        org.junit.runner.JUnitCore.main(R2jsSessionTest.class.getName());
+    }
+
     @Before
     public void setUp() throws Exception {
         engine.debug_js = true;
@@ -1202,7 +1206,8 @@ public class R2jsSessionTest {
         engine.voidEval("b3 = c(11,22,33)");
         engine.voidEval("c3 = c(FALSE,TRUE,FALSE)");
         engine.voidEval("d3 = list(first=a3, second=b3, third=c3)");
-        engine.voidEval("e3 = list(first2=d3$first, third3=d3$third)");
+        assertTrue(Arrays.equals((String[]) engine.eval("d3$first"), new String[]{"aa", "bb", "cc"}));
+        engine.voidEval("e3 = list(first2=d3$first, first3=d3$first, third3=d3$third)"); 
         assertTrue(Arrays.equals((String[]) engine.eval("e3$first2"), new String[]{"aa", "bb", "cc"}));
         assertTrue(Arrays.equals((String[]) engine.eval("e3$third3"), new String[]{"false", "true", "false"}));
         assert ((String) engine.eval("e3$first2[1]")).equals("aa") : ((String) engine.eval("e3$first2[1]"));
