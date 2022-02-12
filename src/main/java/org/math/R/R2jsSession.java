@@ -1133,6 +1133,7 @@ public class R2jsSession extends Rsession implements RLog {
             while (indexMatcher.find()) {
                 String arrayName = indexMatcher.group(1);
                 String indexes = " " + indexMatcher.group(3) + " ";
+                if (indexes.trim().startsWith("QUOTE_EXPRESSION_")) return expr; // avoid to treat [['...']] as numerical index
                 String[] indexesArray = splitString(indexes, ",");
 
                 for (int i = 0; i < indexesArray.length; i++) {
@@ -1179,6 +1180,7 @@ public class R2jsSession extends Rsession implements RLog {
             while (indexMatcher.find()) {
                 String arrayName = indexMatcher.group(1);
                 String indexes = " " + indexMatcher.group(3) + " ";
+                if (indexes.trim().startsWith("QUOTE_EXPRESSION_")) return expr; // avoid to treat [['...']] as numerical index
                 String toset = " " + indexMatcher.group(4) + " ";
                 String[] indexesArray = splitString(indexes, ",");
 
