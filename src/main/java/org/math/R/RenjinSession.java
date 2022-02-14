@@ -365,9 +365,9 @@ public class RenjinSession extends Rsession implements RLog {
                 return false;
             }
             for (Object k : m.keySet()) {
-                R.put(varname+"."+k, m.get(k) );
+                R.put(varname+"."+k.hashCode(), m.get(k) );
                 try {
-                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k);
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k.hashCode());
                 } catch (ScriptException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;

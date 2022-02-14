@@ -739,9 +739,9 @@ public class RserveSession extends Rsession implements RLog {
                 return false;
             }
             for (Object k : m.keySet()) {
-                set(varname+"."+k, m.get(k) );
+                set(varname+"."+k.hashCode(), m.get(k) );
                 try {
-                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k);
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k.hashCode());
                 } catch (RserveException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
