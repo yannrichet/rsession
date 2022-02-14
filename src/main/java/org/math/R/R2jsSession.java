@@ -2889,13 +2889,15 @@ public class R2jsSession extends Rsession implements RLog {
                     return false;
                 }
                 for (Object k : m.keySet()) {
-                    set(varname+"_"+k.hashCode(), m.get(k) );
+                    String h = hash(k);
+                    set(varname+"_"+h, m.get(k) );
                     try {
-                        js.eval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+k.hashCode());
+                        js.eval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+h);
                     } catch (ScriptException ex) {
                         log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                         return false;
                     }
+                    rm(varname+"_"+h);
                 }
                 variablesSet.add(varname);
             } else {

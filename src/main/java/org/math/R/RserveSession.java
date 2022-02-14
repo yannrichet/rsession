@@ -739,12 +739,18 @@ public class RserveSession extends Rsession implements RLog {
                 return false;
             }
             for (Object k : m.keySet()) {
-                set(varname+"."+k.hashCode(), m.get(k) );
+                String h = hash(k);
+                set(varname+"."+h, m.get(k) );
                 try {
-                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k.hashCode());
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+h);
                 } catch (RserveException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
+                }
+                try {
+                    rm(varname+"."+h);
+                } catch (RException e) {                    
+                    log(HEAD_ERROR + e.getMessage(), Level.WARNING);
                 }
             }
             return silentlyVoidEval(varname);

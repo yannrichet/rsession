@@ -365,12 +365,18 @@ public class RenjinSession extends Rsession implements RLog {
                 return false;
             }
             for (Object k : m.keySet()) {
-                R.put(varname+"."+k.hashCode(), m.get(k) );
+                String h = hash(k);
+                R.put(varname+"."+h, m.get(k) );
                 try {
-                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+k.hashCode());
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+h);
                 } catch (ScriptException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
+                }
+                try {
+                    rm(varname+"."+h);
+                } catch (RException e) {                    
+                    log(HEAD_ERROR + e.getMessage(), Level.WARNING);
                 }
             }
         } else {

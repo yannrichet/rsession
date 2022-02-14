@@ -1779,8 +1779,9 @@ public abstract class Rsession implements RLog {
         return envName.substring(2, envName.length() - 2);
     }
 
-    ;
-    
     public abstract void copyGlobalEnv(String newEnvName);
 
+    protected String hash(Object k) {
+        return Integer.toString(Math.abs(k.hashCode()));
+    }
 }
