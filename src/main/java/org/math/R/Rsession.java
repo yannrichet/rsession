@@ -1301,9 +1301,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + getAbsolutePath(f) + "','" + vars[0] + "',ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + getAbsolutePath(f) + "',list=" + buildListString(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         getFileFromWorkspace(f);
     }
@@ -1325,9 +1325,9 @@ public abstract class Rsession implements RLog {
                 log("Nothing to save.", Level.WARNING);
                 return;
             }
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + getAbsolutePath(f) + "',list=" + buildListPattern(vars[0]) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         } else {
-            voidEval("save(file='" + f.getAbsolutePath().replace("\\", "/") + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
+            voidEval("save(file='" + getAbsolutePath(f) + "',list=" + buildListPattern(vars) + ",ascii=" + (SAVE_ASCII ? "TRUE" : "FALSE") + ")", TRY_MODE);
         }
         try {
             Thread.sleep(1000);
@@ -1506,7 +1506,7 @@ public abstract class Rsession implements RLog {
     public void toGraphic(File f, int width, int height, String fileformat, String... commands) {
         int h = Math.abs(f.hashCode());
         try {
-            set("plotfile_" + h, f.getAbsolutePath().replace("\\", "/"));
+            set("plotfile_" + h, getAbsolutePath(f));
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -1527,6 +1527,24 @@ public abstract class Rsession implements RLog {
     public final static String GRAPHIC_JPEG = "jpeg";
     public final static String GRAPHIC_BMP = "bmp";
     public final static String GRAPHIC_TIFF = "tiff";
+
+    /**
+     * Get absolute path of the file, except if the path begin with "/" (that is considered as an absolute path)
+     *
+     * This function answer the following special case: if the host is Windows and the remote server is Linux
+     * the File.getAbsolutePath() will add "C://" before the path of the file and we don't want it. So if the
+     * path begin by "/" we just use the function File.getPath().
+     *
+     * @param f
+     */
+    private static String getAbsolutePath(File f) {
+        String curPath = f.getPath().replace("\\", "/");
+        if(curPath.startsWith("/")) {
+            return curPath;
+        } else {
+            return f.getAbsolutePath().replace("\\", "/");
+        }
+    }
 
     public void toGraphic(File f, int width, int height, String... commands) {
         if (f.getName().endsWith(GRAPHIC_BMP)) {
