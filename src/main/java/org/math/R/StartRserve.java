@@ -127,6 +127,7 @@ public class StartRserve {
                 return false;
             }
         } else {
+            Log.Err.println("No Rserve directory in "+RserveDaemon.app_dir().getAbsolutePath());
             return false;
         }
     }
@@ -368,7 +369,7 @@ public class StartRserve {
         } else if (result.contains("FAILED") || result.contains("ERROR")) {
             Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
             return false;
-        }
+        } else Log.Out.println("\nRserve install result:" + result);
         
         if (isRserveInstalled()) {
             Log.Out.println(" well installed.");
