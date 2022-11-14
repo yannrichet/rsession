@@ -331,7 +331,7 @@ public class StartRserve {
             InputStream fileStream = classloader.getResourceAsStream("org/math/R/"+R_version_path+"/Rserve_" + Rserve_version + pack_suffix);
 
             if (fileStream == null) {
-                throw new IOException("Cannot find resource " + "org/math/"+R_version_path+"/Rserve_" + Rserve_version + pack_suffix);
+                throw new IOException("Cannot find resource " + "org/math/R/"+R_version_path+"/Rserve_" + Rserve_version + pack_suffix);
             }
 
             // Create an output stream to barf to the temp file
@@ -358,7 +358,7 @@ public class StartRserve {
         }
 
         String result = doInR("install.packages('" + packFile.getAbsolutePath().replace("\\", "/") + 
-                            "',type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+
+                            "', type="+(packFile.getName().endsWith(".tar.gz")?"'source'":"'binary'")+
                             ", repos=NULL,lib='" + RserveDaemon.app_dir() + "')", 
                             Rcmd, "--vanilla --silent", null);
 
@@ -369,7 +369,7 @@ public class StartRserve {
         } else if (result.contains("FAILED") || result.contains("ERROR")) {
             Log.Out.println("\nRserve install failed: " + result.replaceAll("\n", "\n  | "));
             return false;
-        } else Log.Out.println("\nRserve install result:" + result);
+        } else Log.Out.println("\nRserve install result:" + result.replaceAll("\n", "\n  | "));
         
         if (isRserveInstalled()) {
             Log.Out.println(" well installed.");
@@ -430,6 +430,7 @@ public class StartRserve {
                     String line;
                     BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                     while ((line = reader.readLine()) != null) {
+                        System.sleep(100);
                         //Log.Out.println(">>  " + line);
                     }
 
