@@ -293,14 +293,17 @@ public class StartRserve {
         Log.Out.println("Install Rserve from Rsession bundle");
 
         String R_version_path = ".";
+        String Rserve_version = "";
         String outv_str = "?";
         try {
             outv_str = doInR("cat(R.version[['major']])", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
-            if (outv_str.startsWith("4")) 
+            if (outv_str.startsWith("4")) {
                 R_version_path = "R-4";
-            else if (outv_str.startsWith("3")) 
+                Rserve_version = "1.8-10";
+            } else if (outv_str.startsWith("3")) {
                 R_version_path = "R-3.6";
-            else Log.Err.println("Cannot identify R version ('"+outv_str+"').\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
+                Rserve_version = "1.7-5";
+            } else Log.Err.println("Cannot identify R version ('"+outv_str+"').\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
@@ -316,7 +319,7 @@ public class StartRserve {
 
         File packFile;
         try {
-            packFile = File.createTempFile("Rserve_1.7-5", pack_suffix);
+            packFile = File.createTempFile("Rserve", pack_suffix);
             packFile.deleteOnExit();
         } catch (IOException ex) {
             Log.Err.println(ex.getMessage());
@@ -324,10 +327,10 @@ public class StartRserve {
         }
         try {
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            InputStream fileStream = classloader.getResourceAsStream("org/math/R/"+R_version_path+"/Rserve_1.7-5" + pack_suffix);
+            InputStream fileStream = classloader.getResourceAsStream("org/math/R/"+R_version_path+"/Rserve_" + Rserve_version + pack_suffix);
 
             if (fileStream == null) {
-                throw new IOException("Cannot find resource " + "org/math/"+R_version_path+"/Rserve_1.7-5" + pack_suffix);
+                throw new IOException("Cannot find resource " + "org/math/"+R_version_path+"/Rserve_" + Rserve_version + pack_suffix);
             }
 
             // Create an output stream to barf to the temp file
