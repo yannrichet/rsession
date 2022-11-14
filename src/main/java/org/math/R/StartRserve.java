@@ -320,7 +320,7 @@ public class StartRserve {
 
         File packFile;
         try {
-            packFile = File.createTempFile("Rserve", pack_suffix);
+            packFile = File.createTempFile("Rserve_" + Rserve_version, pack_suffix);
             packFile.deleteOnExit();
         } catch (IOException ex) {
             Log.Err.println(ex.getMessage());
