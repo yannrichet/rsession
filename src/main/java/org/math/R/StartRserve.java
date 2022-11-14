@@ -430,7 +430,7 @@ public class StartRserve {
                     String line;
                     BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                     while ((line = reader.readLine()) != null) {
-                        System.sleep(100);
+                        try{Thread.sleep(100);}catch(InterruptedException e){}    
                         //Log.Out.println(">>  " + line);
                     }
 
