@@ -429,9 +429,13 @@ public class StartRserve {
                 if (waitFor) {
                     String line;
                     BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    int t = 0;
+                    while ((line = reader.readLine()) == null && t<100) {
+                        try{Thread.sleep(100);}catch(InterruptedException e){} // ensure writer started or wait 10 s.
+                        t+=1;
+                    }
                     while ((line = reader.readLine()) != null) {
-                        //try{Thread.sleep(100);}catch(InterruptedException e){}    
-                        Log.Out.println(">>  " + line);
+                        try{Thread.sleep(100);}catch(InterruptedException e){}    
                     }
 
                     try {p.destroyForcibly();} catch (Exception e) {e.printStackTrace();}
