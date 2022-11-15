@@ -297,14 +297,17 @@ public class StartRserve {
         String Rserve_version = "";
         String outv_str = "?";
         try {
-            outv_str = doInR("cat(R.version[['major']])", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
-            if (outv_str.startsWith("4")) {
-                R_version_path = "R-4";
-                Rserve_version = "1.8-10";
-            } else if (outv_str.startsWith("3")) {
+            outv_str = doInR("cat(paste0(R.version[['major']],".",floor(as.numeric(R.version[['minor']]))))", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
+            if (outv_str.startsWith("3.6")) {
                 R_version_path = "R-3.6";
                 Rserve_version = "1.7-5";
-            } else Log.Err.println("Cannot identify R version ('"+outv_str+"').\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
+            } else if (outv_str.startsWith("4.1")) {
+                R_version_path = "R-4.1";
+                Rserve_version = "1.8-10";
+            } else if (outv_str.startsWith("4.2")) {
+                R_version_path = "R-4.2";
+                Rserve_version = "1.8-10";
+            } else Log.Err.println("R version ('"+outv_str+"') not supported.\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
             return false;
@@ -859,14 +862,14 @@ public class StartRserve {
         }
         try {
             if (RserveDaemon.isWindows()) {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
                 if (p == null) {
                     return false;
                 }
                 p.kill();
                 return true;
             } else {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla --RS-enable-control --RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
                 if (p == null) {
                     return false;
                 }
