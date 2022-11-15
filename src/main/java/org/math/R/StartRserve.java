@@ -297,7 +297,7 @@ public class StartRserve {
         String Rserve_version = "";
         String outv_str = "?";
         try {
-            outv_str = doInR("cat(paste0(R.version[['major']],".",floor(as.numeric(R.version[['minor']]))))", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
+            outv_str = doInR("cat(paste0(R.version[['major']],'.',floor(as.numeric(R.version[['minor']]))))", Rcmd, "--silent", null).replaceAll(">.*", "").trim();
             if (outv_str.startsWith("3.6")) {
                 R_version_path = "R-3.6";
                 Rserve_version = "1.7-5";
