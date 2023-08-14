@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -314,9 +315,6 @@ public class R2jsSession extends Rsession implements RLog {
 
     public boolean debug_js = Boolean.parseBoolean(System.getProperty("debug.js", "false"));
 
-    DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-
-
     private void checkBracketsCount(String expression, char openingBracket, char closingBracket) {
         long countOpeningBrackets = expression.chars().filter(ch -> ch == openingBracket).count();
         long countClosingBrackets =  expression.chars().filter(ch -> ch == closingBracket).count();
@@ -408,7 +406,7 @@ public class R2jsSession extends Rsession implements RLog {
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
         while (m.find()) {
             try {
-                e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+                e = e.replace(m.group(), new BigDecimal(m.group()).toPlainString()); // direct eval within java
             } catch (Exception ex) {//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
             }
         }

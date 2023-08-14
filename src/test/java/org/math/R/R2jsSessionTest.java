@@ -1476,4 +1476,11 @@ public class R2jsSessionTest {
         }
 
     }
+
+    @Test
+    public void testDecimalPoints() throws Rsession.RException {
+        assert (Double) engine.eval("1e-27") == 1e-27;
+        assert (Double) engine.eval("1e-31+1e-32") == 1.1e-31;
+        assertEquals((Double) engine.eval("1e-31*1e-32"),  1e-63, 1e-75); //"normal" floating error of 1e-15 on multiplication
+    }
 }
