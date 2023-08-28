@@ -38,18 +38,18 @@ jobs:
         r-version: ${{ matrix.r }}
     - run: ln -s /Library/Frameworks/R.framework/Versions/3.6 /Library/Frameworks/R.framework/Versions/3.5
       if: matrix.os == 'macos-latest'
-    - uses: GabrielBB/xvfb-action@v1.6
+    - uses: coactions/setup-xvfb@v1
       with:
         run: mvn -B test --file pom.xml
       id: mvntest
       continue-on-error: true
-    - run: sudo apt-get install imagemagick x11-xserver-utils libxrandr2
-    - run: export DISPLAY=:0
-      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
-    - uses: OrbitalOwen/desktop-screenshot-action@0.1
-      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
-      with:
-        file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
+#    - run: sudo apt-get install imagemagick x11-xserver-utils libxrandr2
+#    - run: export DISPLAY=:0
+#      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
+#    - uses: OrbitalOwen/desktop-screenshot-action@0.1
+#      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
+#      with:
+#        file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
     - uses: codecov/codecov-action@v1
     - if: steps.mvntest.outcome != 'success'
       run: exit 1
