@@ -38,6 +38,8 @@ jobs:
         r-version: ${{ matrix.r }}
     - run: ln -s /Library/Frameworks/R.framework/Versions/3.6 /Library/Frameworks/R.framework/Versions/3.5
       if: matrix.os == 'macos-latest'
+    - run: rm -rf /usr/lib/R #should clenaup pre-installed R-release
+      if: matrix.os == 'ubuntu-latest'
     - uses: coactions/setup-xvfb@v1
       with:
         run: mvn -B test --file pom.xml
