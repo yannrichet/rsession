@@ -43,7 +43,7 @@ jobs:
         run: mvn -B test --file pom.xml
       id: mvntest
       continue-on-error: true
-    - run: sudo apt-get install imagemagick x11-xserver-utils
+    - run: sudo apt-get install imagemagick x11-xserver-utils libxrandr2
     - run: export DISPLAY=:0
       if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
     - uses: OrbitalOwen/desktop-screenshot-action@0.1
