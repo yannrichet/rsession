@@ -217,7 +217,7 @@
                 <version>0.8.5</version>
                 <configuration>
                     <excludes>
-                        <exclude>/org/rosuda/*</exclude>
+                        <exclude>**/org/rosuda/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
