@@ -330,7 +330,7 @@ public class RenjinSession extends Rsession implements RLog {
                 R.put(varname + ".names", new StringArrayVector(names));
                 try {
                     R.eval("names(" + varname + ") <- " + varname + ".names");
-                    R.eval(varname + " <- data.frame(" + varname + ")");
+                    R.eval(varname + " <- data.frame(" + varname + ", check.names=FALSE)");
                 } catch (ScriptException ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
@@ -356,6 +356,29 @@ public class RenjinSession extends Rsession implements RLog {
                     return false;
                 }
             //}
+        } else if (var instanceof Map) {
+            Map m = (Map)var;
+            try {
+                R.eval(varname + " <- list()");
+            } catch (ScriptException ex) {
+                log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                return false;
+            }
+            for (Object k : m.keySet()) {
+                String h = hash(k);
+                R.put(varname+"."+h, m.get(k) );
+                try {
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+h);
+                } catch (ScriptException ex) {
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                    return false;
+                }
+                try {
+                    rm(varname+"."+h);
+                } catch (RException e) {                    
+                    log(HEAD_ERROR + e.getMessage(), Level.WARNING);
+                }
+            }
         } else {
             //synchronized (R) {
                 R.put(varname, var);

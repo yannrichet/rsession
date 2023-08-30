@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         java: [8, 11, 13]
-        r: [3.6, 4]
+        r: [3.6, 4.2, 4.3]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -33,22 +33,25 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         java-package: jdk
-    - uses: r-lib/actions/setup-r@v1
+    - run: sudo rm -rf /usr/lib/R #should cleanup pre-installed R-release
+      if: matrix.os == 'ubuntu-latest'
+    - uses: r-lib/actions/setup-r@v2
       with:
         r-version: ${{ matrix.r }}
     - run: ln -s /Library/Frameworks/R.framework/Versions/3.6 /Library/Frameworks/R.framework/Versions/3.5
       if: matrix.os == 'macos-latest'
-    - uses: GabrielBB/xvfb-action@v1
+    - uses: coactions/setup-xvfb@v1
       with:
         run: mvn -B test --file pom.xml
       id: mvntest
       continue-on-error: true
-    - run: sudo apt-get install imagemagick
-      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
-    - uses: OrbitalOwen/desktop-screenshot-action@0.1
-      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
-      with:
-        file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
+#    - run: sudo apt-get install imagemagick x11-xserver-utils libxrandr2
+#    - run: export DISPLAY=:0
+#      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
+#    - uses: OrbitalOwen/desktop-screenshot-action@0.1
+#      if: matrix.os == 'ubuntu-latest' && steps.mvntest.outcome != 'success'
+#      with:
+#        file-name: 'test-${{ matrix.os }}-${{ matrix.java }}.jpg'
     - uses: codecov/codecov-action@v1
     - if: steps.mvntest.outcome != 'success'
       run: exit 1

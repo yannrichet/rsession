@@ -3,6 +3,7 @@ package org.math.R;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import org.junit.After;
@@ -90,19 +91,19 @@ public class BasicTest {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        s.closeLog();
-        r.closeLog();
-        q.closeLog();
+        if (s!=null) s.closeLog();
+        if (r!=null) r.closeLog();
+        if (q!=null) q.closeLog();
 
         System.out.println("========================================================================");
-        System.out.println(s.notebook());
-        System.out.println(r.notebook());
-        System.out.println(q.notebook());
+        if (s!=null) System.out.println(s.notebook());
+        if (r!=null) System.out.println(r.notebook());
+        if (q!=null) System.out.println(q.notebook());
         System.out.println("========================================================================");
         
-        s.end();
-        r.end();
-        q.end();
+        if (s!=null) s.end();
+        if (r!=null) r.end();
+        if (q!=null) q.end();
     }
 
     @Test
@@ -247,47 +248,6 @@ public class BasicTest {
         assert s.eval("if (1<2) print('a') else print('b')").toString().equals("a"):s.eval("if (1<2) print('a') else print('b')");
         //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
     }
-    
-    
-    @Test
-    public void testSet_Rserve() throws Exception {
-        System.err.println("====================================== Rserve");
-
-        assert s.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
-
-        assert s.set("n", null) : "Failed to create NULL object";
-
-        //set
-        double c = Math.random();
-        s.set("c", c);
-        assert ((Double) s.eval("c")) == c;
-
-        double[] C = new double[10];
-        s.set("C", C);
-        assert ((double[]) s.eval("C")).length == C.length;
-
-        double[][] CC = new double[10][2];
-        CC[9][1] = Math.random();
-        s.set("CC", CC);
-        //System.err.println("CC[9][1]="+((double[][]) Rcast(s.evalR("CC")))[9][1]);
-        assert ((double[][]) s.eval("CC"))[9][1] == CC[9][1];
-        assert ((double[]) s.eval("CC[1,]")).length == CC[0].length;
-
-        System.err.println(s.cat(s.ls("C")));
-        assert s.ls("C").length == 2 : "invalid ls(\"C\") : " + s.cat(s.ls("C"));
-
-        String str = "abcd";
-        s.set("s", str);
-        assert ((String) s.eval("s")).equals(str);
-
-        String[] Str = {"abcd", "cdef"};
-        s.set("S", Str);
-        assert ((String[]) s.eval("S")).length == Str.length;
-        assert ((String) s.eval("S[1]")).equals(Str[0]);
-
-        s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
-        assert (Double) (s.eval("df$x1[3]")) == 7;
-    }
 
     @Test
     public void testMatrix_Renjin() throws Exception {
@@ -321,6 +281,9 @@ public class BasicTest {
 
         assert r.set("ld", r.asMatrix(r.eval("d")), "d1") : "Failed to create list";
         assert r.print("ld").contains("d1") && r.print("ld").contains("1") && r.print("ld").contains("0") : "Bad print ld: " + r.print("ld");
+
+        assert r.set("lm", r.asMatrix(r.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert r.asStrings(r.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list: "+Arrays.toString(r.asStrings(r.eval("names(lm)")));
     }
 
     @Test
@@ -355,6 +318,9 @@ public class BasicTest {
 
         assert s.set("ld", s.asMatrix(s.eval("d")), "d1") : "Failed to create list";
         assert s.print("ld").contains("d1") && s.print("ld").contains("1  0") : "Bad print: " + s.print("ld");
+
+        assert s.set("lm", s.asMatrix(s.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert s.asStrings(s.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list";
     }
 
     @Test
@@ -377,18 +343,24 @@ public class BasicTest {
         q.set("d", d);
         assert Arrays.deepEquals(new double[][]{{d}}, q.asMatrix(q.eval("d"))) : "Failed asMatrix: " + Arrays.deepToString(new double[][]{{d}}) + " != " + Arrays.deepToString(q.asMatrix(q.eval("d")));
 
-        //assert q.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
-        //assert q.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
-        //assert q.set("lm", q.asMatrix(q.eval("m")), "m1", "m2") : "Failed to create list";
-        // TODO: support and uncomment these lines
-        //assert q.print("lm").contains("m1 m2") && q.print("lm").contains("2  3") : "Bad print: " + q.print("lm");
-        //assert q.asDouble(q.eval("lm$m1[2]")) == 2.0 : "Bad values in list: " + q.eval("print(lm)");
+        assert q.set("l", new double[][]{{0, 1}}, "a", "b") : "Failed to create list";
+        assert q.set("l", new double[][]{{0}, {1}}, "a") : "Failed to create list";
+
+        assert q.set("lm", q.asMatrix(q.eval("m")), "m1", "m2") : "Failed to create list";
+        //assert q.print("lm").contains("m1 m2") && q.print("lm").contains("2,3") : "Bad print: " + q.print("lm");
+        assert q.asStrings(q.eval("names(lm)"))[0].equals("m1") : "Failed to name list";
+        //System.err.println(q.eval("lm[['m1']]"));
+        //assert Arrays.equals(q.asArray(q.eval("lm[['m1']]")), new double[]{2.0,3.0}) : "Bad values in list: " + q.eval("lm[['m1']]");
+
         //assert q.set("la", q.asMatrix(q.eval("a")), "a1") : "Failed to create list";
         // TODO: support and uncomment these lines
         //assert q.print("la").contains("a1") && q.print("la").contains("2  1") : "Bad print: " + q.print("la");
         //assert q.set("ld", q.asMatrix(q.eval("d")), "d1") : "Failed to create list";
         // TODO: support and uncomment these lines
         //assert q.print("ld").contains("d1") && q.print("ld").contains("1  0") : "Bad print: " + q.print("ld");
+
+        assert q.set("lm", q.asMatrix(q.eval("m")), "m[1]", "m[2]") : "Failed to create list";
+        assert q.asStrings(q.eval("names(lm)"))[0].equals("m[1]") : "Failed to name list";
     }
 
     @Test
@@ -607,9 +579,20 @@ public class BasicTest {
         assert ((String[]) q.eval("S")).length == Str.length;
 
         // TODO: support and uncomment these lines
-//        assert ((String) q.eval("S[1]")).equals(Str[0]);
-//        q.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
-//        assert (Double) (q.eval("df$x1[3]")) == 7;
+        //assert ((String) q.eval("S[1]")).equals(Str[0]);
+
+        //q.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
+        //assert (Double) (q.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        q.set("m",m);
+        q.debug_js = true;
+        assert (Double) (q.eval("m$x1[3]")) == 3;
+        assert Arrays.equals( (double[]) (q.eval("m[['x1']]")),new double[]{1,2,3});
+        assert (Double) (q.eval("m[['x1']][2]")) == 2;
+        assert (Double) (q.eval("m[['x1']][3]")) == 3;
     }
 
     @Test
@@ -650,6 +633,61 @@ public class BasicTest {
 
         r.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
         assert (Double) (r.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        r.set("m",m);
+        assert (Double) (r.eval("m$x1[3]")) == 3;
+        assert (Double) (r.eval("m[['x1']][3]")) == 3;
+    }
+
+    @Test
+    public void testSet_Rserve() throws Exception {
+        System.err.println("====================================== Rserve");
+
+        assert s.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
+
+        assert s.set("n", null) : "Failed to create NULL object";
+
+        //set
+        double c = Math.random();
+        s.set("c", c);
+        assert ((Double) s.eval("c")) == c;
+
+        double[] C = new double[10];
+        s.set("C", C);
+        assert ((double[]) s.eval("C")).length == C.length;
+
+        double[][] CC = new double[10][2];
+        CC[9][1] = Math.random();
+        s.set("CC", CC);
+        //System.err.println("CC[9][1]="+((double[][]) Rcast(s.evalR("CC")))[9][1]);
+        assert ((double[][]) s.eval("CC"))[9][1] == CC[9][1];
+        assert ((double[]) s.eval("CC[1,]")).length == CC[0].length;
+
+        System.err.println(s.cat(s.ls("C")));
+        assert s.ls("C").length == 2 : "invalid ls(\"C\") : " + s.cat(s.ls("C"));
+
+        String str = "abcd";
+        s.set("s", str);
+        assert ((String) s.eval("s")).equals(str);
+
+        String[] Str = {"abcd", "cdef"};
+        s.set("S", Str);
+        assert ((String[]) s.eval("S")).length == Str.length;
+        assert ((String) s.eval("S[1]")).equals(Str[0]);
+
+        s.set("df", new double[][]{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, "x1", "x2", "x3");
+        assert (Double) (s.eval("df$x1[3]")) == 7;
+
+        Map m = new HashMap<>();
+        m.put("x1", new double[]{1,2,3});
+        m.put("x2", new double[]{4,5,6});
+        s.set("m",m);
+        System.err.println(s.eval("m"));
+        assert (Double) (s.eval("m$x1[3]")) == 3;
+        assert (Double) (s.eval("m[['x1']][3]")) == 3;
     }
 
     @Test

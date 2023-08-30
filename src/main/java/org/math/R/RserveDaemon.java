@@ -301,7 +301,7 @@ public class RserveDaemon {
 
         stopped = true;
     }
-    static String RESERVE_ARGS = "--vanilla --RS-enable-control";
+    static String RESERVE_ARGS = "--vanilla"; //just required for remote serverShutdown (which is never the case): --RS-enable-control";
 
     public StartRserve.ProcessToKill rserve;
     public static boolean USE_RSERVE_FROM_CRAN = Boolean.parseBoolean(System.getProperty("Rserve.INSTALL_FROM_CRAN","false"));

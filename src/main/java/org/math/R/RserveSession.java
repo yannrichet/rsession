@@ -731,13 +731,27 @@ public class RserveSession extends Rsession implements RLog {
             }
             return silentlyVoidEval(varname/*, cat((String[]) var)*/);
         } else if (var instanceof Map) {
+            Map m = (Map)var;
             try {
-                //synchronized (R) {
-                R.assign(varname, asRList((Map) var));
-                //}
-            } catch (Exception ex) {
-                log(HEAD_ERROR + ex.getMessage() + "\n  set(String varname=" + varname + ",Object (Map) var)", Level.ERROR);
+                R.eval(varname + " <- list()");
+            } catch (RserveException ex) {
+                log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                 return false;
+            }
+            for (Object k : m.keySet()) {
+                String h = hash(k);
+                set(varname+"."+h, m.get(k) );
+                try {
+                    R.eval(varname + "[['"+k+"']] <- "+varname+"."+h);
+                } catch (RserveException ex) {
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                    return false;
+                }
+                try {
+                    rm(varname+"."+h);
+                } catch (RException e) {                    
+                    log(HEAD_ERROR + e.getMessage(), Level.WARNING);
+                }
             }
             return silentlyVoidEval(varname);
         } else {

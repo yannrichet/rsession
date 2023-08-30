@@ -3,16 +3,17 @@
 [![codecov](https://codecov.io/gh/yannrichet/rsession/branch/master/graph/badge.svg)](https://codecov.io/gh/yannrichet/rsession)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.yannrichet/Rsession)
 
+
 # Rsession: R (3.5+) sessions wrapping for Java (8+) #
 
 Rsession provides an easy to use java class giving access to remote or local R sessions.
 The back-end engine should be:
 
- * "true" R (3.5, 3.6 (and 4.0 on Linux)), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
+ * "true" R (3.5, 3.6 and 4.x), through Rserve (locally spawned automatically if necessary, fully compatible with legacy R),
  * Renjin 3.5 (lower compatibility, but still very good),
  * and R2js, which is on-the-fly R translation to math.js, with lower compatibility and hack-style coding, but full BSD licence.
 
-Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. It is also easier to use as it provides a multi session R engine for all these wrappers.
+Rsession differs from R2js, Rserve or Renjin as it is a higher level API, and it includes server side startup of Rserve. It is also easier to use as it provides a multi session R engine for all these wrappers, whatever OS.
 
 JRI is another alternative, but it does not provide multi-sessions feature.
 
@@ -67,7 +68,7 @@ Use this maven dependency:
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.7</version>
     </dependency>
 ...
 </dependencies>
@@ -102,7 +103,7 @@ Rsession r = new RenjinSession(System.out,null);
 
 ### Using only Rserve backend: ###
 
-Install R 3.5 or 3.6 from http://cran.r-project.org, then add `rsession.jar:Rserve*.jar:REngine*.jar` in your project classpath:
+Install R 3.5+ or 4.x from http://cran.r-project.org, then add `rsession.jar:Rserve*.jar:REngine*.jar` in your project classpath:
 
   * https://github.com/yannrichet/rsession/blob/master/dist/rsession.jar
   * https://github.com/yannrichet/rsession/blob/master/lib/REngine-2.1.0.jar

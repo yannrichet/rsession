@@ -9,7 +9,7 @@
 
     <groupId>com.github.yannrichet</groupId>
     <artifactId>Rsession</artifactId>
-    <version>3.1.5</version>
+    <version>3.1.7</version>
     <packaging>jar</packaging>
     <name>rsession</name>
  
@@ -29,7 +29,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
+            <version>2.11.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -253,7 +253,7 @@
         <connection>scm:git:git@github.com:yannrichet/rsession.git</connection>
         <developerConnection>scm:git:git@github.com:yannrichet/rsession.git</developerConnection>
         <url>git@github.com:yannrichet/rsession.git</url>
-        <tag>Rsession-3.0.4</tag>
+        <tag>Rsession-3.1.7</tag>
     </scm>
 	
     <reporting>

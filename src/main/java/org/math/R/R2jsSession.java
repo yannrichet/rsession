@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -314,9 +315,6 @@ public class R2jsSession extends Rsession implements RLog {
 
     public boolean debug_js = Boolean.parseBoolean(System.getProperty("debug.js", "false"));
 
-    DecimalFormat formatter = new DecimalFormat("#.#############", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
-
-
     private void checkBracketsCount(String expression, char openingBracket, char closingBracket) {
         long countOpeningBrackets = expression.chars().filter(ch -> ch == openingBracket).count();
         long countClosingBrackets =  expression.chars().filter(ch -> ch == closingBracket).count();
@@ -408,7 +406,7 @@ public class R2jsSession extends Rsession implements RLog {
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
         while (m.find()) {
             try {
-                e = e.replace(m.group(), formatter.format(Double.parseDouble(m.group()))); // direct eval within java
+                e = e.replace(m.group(), new BigDecimal(m.group()).toPlainString()); // direct eval within java
             } catch (Exception ex) {//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
             }
         }
@@ -698,7 +696,10 @@ public class R2jsSession extends Rsession implements RLog {
 
         // Replace '$' accessor of data.frame by a '.'
         e = e.replaceAll("\\$" + THIS_ENVIRONMENT + "\\.", "\\$"); // Remove the JS variable if there is a '$' before
-        e = e.replaceAll("\\$([a-zA-Z._])", ".$1"); //FIXME
+        e = e.replaceAll("(\\S[^\\$]?+)\\$([^\\$]?+)", "$1.$2"); //FIXME
+        // support not-$ syntax : list[['x1']] instead of list$x1
+        e = e.replaceAll("(\\S[^\\$]?+)\\[\\['([\\w.]+)'\\]\\]\\[(\\d+)\\]", "$1.$2 [ $3 -1]");
+        e = e.replaceAll("(\\S[^\\$]?+)\\[\\['([\\w.]+)'\\]\\]", "$1.$2");
 
         // R Comments
         e = e.replaceAll("#", "//");
@@ -1099,8 +1100,10 @@ public class R2jsSession extends Rsession implements RLog {
     //f(X[i]
     //X[Y[i]]
     //X[[Y[i]]]
-    private static String index_pattern = "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]]*)\\]+";
-    // to get only one '[': "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]"
+    private static String index_pattern = 
+      "([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]*\\))*[\\w|\\$|\\.]*)\\[+(.[^\\]']*)\\]+";
+    // to get only one '[': 
+    //"([\\w|\\$|\\.]+(\\([\\w|\\$|\\=|\\,|\\-|\\(|\\)|\\.]+\\))*[\\w|\\$|\\.]*)\\[([.[^\\[\\]]]*)\\]";
 
     /**
      * Replace indexes by mathjs indexes
@@ -1128,6 +1131,7 @@ public class R2jsSession extends Rsession implements RLog {
             while (indexMatcher.find()) {
                 String arrayName = indexMatcher.group(1);
                 String indexes = " " + indexMatcher.group(3) + " ";
+                if (indexes.trim().startsWith("QUOTE_EXPRESSION_")) return expr; // avoid to treat [['...']] as numerical index
                 String[] indexesArray = splitString(indexes, ",");
 
                 for (int i = 0; i < indexesArray.length; i++) {
@@ -1174,6 +1178,7 @@ public class R2jsSession extends Rsession implements RLog {
             while (indexMatcher.find()) {
                 String arrayName = indexMatcher.group(1);
                 String indexes = " " + indexMatcher.group(3) + " ";
+                if (indexes.trim().startsWith("QUOTE_EXPRESSION_")) return expr; // avoid to treat [['...']] as numerical index
                 String toset = " " + indexMatcher.group(4) + " ";
                 String[] indexesArray = splitString(indexes, ",");
 
@@ -2872,6 +2877,26 @@ public class R2jsSession extends Rsession implements RLog {
                 js.eval(varname + " = " + Arrays.toString(var1DArray));
 
                 js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                variablesSet.add(varname);
+            } else if (var instanceof Map) {
+                Map m = (Map)var;
+                try {
+                    js.eval(THIS_ENVIRONMENT + "." +varname + " = {}");
+                } catch (ScriptException ex) {
+                    log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                    return false;
+                }
+                for (Object k : m.keySet()) {
+                    String h = hash(k);
+                    set(varname+"_"+h, m.get(k) );
+                    try {
+                        js.eval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+h);
+                    } catch (ScriptException ex) {
+                        log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
+                        return false;
+                    }
+                    rm(varname+"_"+h);
+                }
                 variablesSet.add(varname);
             } else {
                 js.put(varname, var);
