@@ -308,8 +308,8 @@ public class StartRserve {
                 R_version_path = "R-4.2";
                 Rserve_version = "1.8-10";
             } else if (outv_str.startsWith("4.3")) {
-                R_version_path = "R-4.2";
-                Rserve_version = "1.8-10";
+                R_version_path = "R-4.3";
+                Rserve_version = "1.8-11";
             } else Log.Err.println("R version ('"+outv_str+"') not supported.\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
