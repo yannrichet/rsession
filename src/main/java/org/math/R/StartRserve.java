@@ -307,6 +307,9 @@ public class StartRserve {
             } else if (outv_str.startsWith("4.2")) {
                 R_version_path = "R-4.2";
                 Rserve_version = "1.8-10";
+            } else if (outv_str.startsWith("4.3")) {
+                R_version_path = "R-4.2";
+                Rserve_version = "1.8-10";
             } else Log.Err.println("R version ('"+outv_str+"') not supported.\n  Will try to use source install."+ (isWindows()?" (assuming Rtools is available)":""));
         } catch (Exception ex) {
             Log.Err.println(ex.getMessage()+": \n"+outv_str);
@@ -604,7 +607,7 @@ public class StartRserve {
         File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
         String todo = "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
-                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "');" + UGLY_FIXES; 
+                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "',wait=TRUE);" + UGLY_FIXES; 
         int[] last_pids = getRservePIDs();
         p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", outstream, false);
         if (p == null) {
