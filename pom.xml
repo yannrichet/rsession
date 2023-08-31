@@ -218,6 +218,7 @@
                 <configuration>
                     <excludes>
                         <exclude>**/org/rosuda/*</exclude>
+			<exclude>**/*.zip</exclude>
                     </excludes>
                 </configuration>
                 <executions>
