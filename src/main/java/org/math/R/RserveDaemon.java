@@ -56,15 +56,15 @@ public class RserveDaemon {
 
     private static String OS = System.getProperty("os.name").toLowerCase();
 
-    static boolean isWindows() {
+    public static boolean isWindows() {
         return (OS.indexOf("win") >= 0);
     }
 
-    static boolean isMacOSX() {
+    public static boolean isMacOSX() {
         return (OS.indexOf("mac") >= 0);
     }
 
-    static boolean isLinux() {
+    public static boolean isLinux() {
         return OS.indexOf("inux") >= 0;
     }
 

@@ -1,8 +1,9 @@
-package org.math.R;
+package org.math.R.R2js;
 
-import java.io.File;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
@@ -10,13 +11,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+//import org.graalvm.polyglot.*;
 
 import org.junit.Test;
+import org.math.R.RLog;
+import org.math.R.RLogSlf4j;
 import org.math.R.Rsession.RException;
 
 import static org.junit.Assert.*;
@@ -40,11 +44,11 @@ public class R2jsSessionTest {
 
     @Before
     public void setUp() throws Exception {
-        engine.debug_js = true;
+        //engine.debug_js = true;
     }
 
     @Test
-    public void test2Sessions() throws Rsession.RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
+    public void test2Sessions() throws RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
         engine.debug_js = true;
 
         R2jsSession engine2 = R2jsSession.newInstance(new RLogSlf4j(), null);
@@ -89,7 +93,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testVarNames() throws Rsession.RException {
+    public void testVarNames() throws RException {
         engine.debug_js = true;
 
         // check that R variable is usable
@@ -106,7 +110,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testConvertWithEnv() throws Rsession.RException, UnknownHostException {
+    public void testConvertWithEnv() throws RException, UnknownHostException {
         System.err.println("================= testConvertWithEnv ===============");
         engine.debug_js = true;
         engine.voidEval("__this__a = 123.5");
@@ -128,7 +132,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testConvert() throws Rsession.RException, UnknownHostException {
+    public void testConvert() throws RException, UnknownHostException {
         System.err.println("================= testConvert ===============");
 
         String[] es = new String[]{"abc", "123", "1e5", "1ee1"};
@@ -153,7 +157,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testSys() throws Rsession.RException, UnknownHostException {
+    public void testSys() throws RException, UnknownHostException {
         System.err.println("================= testSys ===============");
         System.err.println("java.version: " + System.getProperty("java.version"));
         engine.log("java.version: " + System.getProperty("java.version"), RLog.Level.INFO);
@@ -214,7 +218,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testBasSyntaxes() throws Rsession.RException {
+    public void testBasSyntaxes() throws RException {
         engine.debug_js = true;
 
         testThatEvaluationFail("c(1,2");
@@ -253,7 +257,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testBasicSyntaxes() throws Rsession.RException {
+    public void testBasicSyntaxes() throws RException {
         engine.debug_js = true;
 
         assert (Double) engine.eval("2*3+4*+5") == 26;
@@ -419,7 +423,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testRand() throws Rsession.RException {
+    public void testRand() throws RException {
 
         assert ((double[]) engine.eval("runif(10,0,1)")).length == 10;
         assert ((double[]) engine.eval("rnorm(10,0,1)")).length == 10;
@@ -430,7 +434,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testPaste() throws Rsession.RException {
+    public void testPaste() throws RException {
         engine.debug_js = true;
 
         assert engine.eval("paste('a','b','c',sep='v')").equals("avbvc") : engine.eval("paste('a','b','c',sep='v')");
@@ -468,7 +472,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testZeros() throws Rsession.RException {
+    public void testZeros() throws RException {
         assert (Double) engine.eval("0.") == 0.;
         assert (Double) engine.eval("000.") == 0.;
         assert (Double) engine.eval("0.0") == 0.;
@@ -477,7 +481,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testParseStrArray() throws Rsession.RException {
+    public void testParseStrArray() throws RException {
         String expr0 = "strsplit(\"a,b,c\",\",\")";
         assert engine.eval("paste(" + expr0 + ",collapse=';')").equals("a;b;c") : engine.eval("paste(" + expr0 + ",collapse=';')");
 
@@ -529,7 +533,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testApply() throws Rsession.RException {
+    public void testApply() throws RException {
         String apply_f = "apply(X,1,function (x) {\n"
                 + "     x1 <- x[1] * 15 - 5\n"
                 + "     x2 <- x[2] * 15\n"
@@ -544,7 +548,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testFunctions() throws Rsession.RException {
+    public void testFunctions() throws RException {
 
         engine.voidEval("height.cylinder_cm <- function(x,y,z) {return x*y*z}");
         engine.voidEval("h <- function() { height.cylinder_cm(r(),m(),p()) }");
@@ -669,7 +673,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testArrays() throws Rsession.RException {
+    public void testArrays() throws RException {
         engine.voidEval("r = rep(3.14,1)");
         engine.voidEval("print(r)");
         assert engine.eval("r") instanceof double[];
@@ -728,7 +732,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testMatrices() throws Rsession.RException {
+    public void testMatrices() throws RException {
         engine.voidEval("A0 = matrix( c(123), nrow=1)");
         assert Arrays.deepEquals((double[][]) engine.eval("A0"), new double[][]{{123}});
         
@@ -903,7 +907,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testRbind() throws Rsession.RException {
+    public void testRbind() throws RException {
 
         engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
         engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
@@ -937,7 +941,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testCbind() throws Rsession.RException {
+    public void testCbind() throws RException {
 
         engine.voidEval("A <- matrix(nrow = 2, ncol = 2, data = c(1,2,5,6), byrow=TRUE)");
         engine.voidEval("B <- matrix(nrow = 2, ncol = 2, data = c(3,4,7,8), byrow=TRUE)");
@@ -971,7 +975,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testSaveAndLoad() throws Rsession.RException {
+    public void testSaveAndLoad() throws RException {
         engine.debug_js = true;
 
         double rand = (double) Math.random();
@@ -1034,7 +1038,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testSaveGlobalEnv() throws Rsession.RException {
+    public void testSaveGlobalEnv() throws RException {
         engine.debug_js = true;
 
         engine.voidEval("l = list(a=1,b=2)");
@@ -1052,7 +1056,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testRegexGlobalEnv() throws Rsession.RException {
+    public void testRegexGlobalEnv() throws RException {
         engine.debug_js = true;
 
         engine.voidEval("f = function(x,y){\n print(x)\nif(is.null(y)) stop('null y')\nprint(y)\n}");
@@ -1069,7 +1073,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testRmFunction() throws Rsession.RException {
+    public void testRmFunction() throws RException {
 
         engine.set("a1", "test1");
         engine.set("a2", "test2");
@@ -1081,20 +1085,20 @@ public class R2jsSessionTest {
         engine.rm("a1");
         try {
             engine.eval("a1");
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
         engine.rm(new String[]{"a2", "a3"});
         try {
             engine.eval("a2");
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
         try {
             engine.eval("a3");
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1102,7 +1106,7 @@ public class R2jsSessionTest {
         engine.rm("a4");
         try {
             engine.eval("a4");
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1110,14 +1114,14 @@ public class R2jsSessionTest {
         engine.rm("a5");
         try {
             engine.eval("a5");
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
     }
 
     @Test
-    public void testDataFrames() throws Rsession.RException {
+    public void testDataFrames() throws RException {
 
         engine.voidEval("a = c('aa','bb','cc')");
         engine.voidEval("b = c(11,22,33)");
@@ -1167,7 +1171,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testSysEnv() throws Rsession.RException {
+    public void testSysEnv() throws RException {
         engine.debug_js = true;
 
         assert engine.eval("Sys.getenv('toto')").equals("") : "Sys.getenv('toto') -> " + engine.eval("Sys.getenv('toto')");
@@ -1181,7 +1185,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testList() throws Rsession.RException {
+    public void testList() throws RException {
         engine.debug_js = true;
 
         engine.voidEval("a = c('aa','bb','cc')");
@@ -1230,7 +1234,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testLength() throws Rsession.RException {
+    public void testLength() throws RException {
         engine.voidEval("a <- c(1,2,3,4)");
         try {
             assert ((Double) engine.eval("length(a)")) == 4 : "Cannot get length:" + engine.eval("length(a)");
@@ -1240,7 +1244,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testPow() throws Rsession.RException {
+    public void testPow() throws RException {
 
         assertEquals((Double) engine.eval("10**(1/3)"), 2.154434690031884, epsilon);
         assertEquals((Double) engine.eval("10^(1/3)"), 2.154434690031884, epsilon);
@@ -1255,14 +1259,14 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testExistsFunction() throws Rsession.RException {
+    public void testExistsFunction() throws RException {
         engine.set("s", "abcdef");
         assertTrue(Arrays.deepToString(engine.ls()), (Boolean) engine.eval("exists('s')"));
         assertTrue(!(Boolean) engine.eval("exists('a')"));
     }
 
     @Test
-    public void testIsFunction() throws Rsession.RException {
+    public void testIsFunction() throws RException {
         engine.voidEval("x1 <- function() { 0 }");
         engine.voidEval("x2 <- 2");
         assertTrue((boolean) engine.eval("is.function(x1)"));
@@ -1270,14 +1274,14 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testWhichMin() throws Rsession.RException {
+    public void testWhichMin() throws RException {
         engine.set("x", new double[]{1, 2, 4, 8, 0, 5, 6, -1, 10, 9});
         assert (double) engine.eval("min(x)") == -1 : "Failed to find min: " + engine.eval("min(x)");
         assert Arrays.equals((double[]) engine.eval("which.min(x)"), new double[]{8}) : "Failed to find which.min: " + engine.eval("which.min(x)");
     }
 
     @Test
-    public void testNamedArgFunction() throws Rsession.RException {
+    public void testNamedArgFunction() throws RException {
         engine.debug_js = true;
         engine.voidEval("f = function(x) {return(x+1)}");
         engine.set("x", 1);
@@ -1309,14 +1313,14 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testStopIfNot() throws Rsession.RException {
+    public void testStopIfNot() throws RException {
         engine.set("a", 1);
         engine.set("b", 2);
         engine.voidEval("stopifnot(a!=b)");
         try {
             engine.voidEval("stopifnot(a==b)");
             assertTrue(false);
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1324,7 +1328,7 @@ public class R2jsSessionTest {
         try {
             engine.voidEval("stopifnot(a>b)");
             assertTrue(false);
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1332,7 +1336,7 @@ public class R2jsSessionTest {
         try {
             engine.voidEval("stopifnot(a>=b)");
             assertTrue(false);
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1340,7 +1344,7 @@ public class R2jsSessionTest {
         try {
             engine.voidEval("stopifnot((a)>=(b))");
             assertTrue(false);
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
@@ -1348,14 +1352,14 @@ public class R2jsSessionTest {
         try {
             engine.voidEval("stopifnot((a)==(b))");
             assertTrue(false);
-        } catch (Rsession.RException ex) {
+        } catch (RException ex) {
             assertTrue(true);
         }
 
     }
 
     @Test
-    public void testImbricatedFunctions() throws Rsession.RException {
+    public void testImbricatedFunctions() throws RException {
         // Test when the function is used before its definition
         engine.voidEval("a <- function() { return b()}");
         engine.voidEval("b <- function() { return 12.0}");
@@ -1363,7 +1367,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testSetWDFunctions() throws Rsession.RException {
+    public void testSetWDFunctions() throws RException {
 
         engine.debug_js = true;
         // Test when the function is used before its definition
@@ -1377,7 +1381,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testIfFunction() throws Rsession.RException, ScriptException {
+    public void testIfFunction() throws RException, ScriptException {
         engine.debug_js = true;
         engine.voidEval("f1 <- function() { return 4}");
         assertEquals((Double) engine.eval("if(f1() == 2) f1() else f1()+1"), 5, epsilon);
@@ -1389,7 +1393,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testReturnIfFunction() throws Rsession.RException, ScriptException {
+    public void testReturnIfFunction() throws RException, ScriptException {
         engine.debug_js = true;
         engine.voidEval("f1 <- function() { return if(1==2) {12.0} else {13.0}}");
         assertEquals((Double) engine.eval("f1()"), 13.0, epsilon);
@@ -1407,7 +1411,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testArgsFunction() throws Rsession.RException, ScriptException {
+    public void testArgsFunction() throws RException, ScriptException {
         engine.debug_js = true;
         engine.voidEval("var1 <- 2");
         engine.voidEval("f1 <- function(var1) { var1 + 1}");
@@ -1431,7 +1435,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testFunctionNames() throws Rsession.RException, ScriptException {
+    public void testFunctionNames() throws RException, ScriptException {
         engine.debug_js = true;
 
         List<String> names = Arrays.asList("array", "paste0", "paste", "vector", "matrix", "c", "ls", "save", "load", "write__csv",
@@ -1444,7 +1448,7 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testNumeralSystem() throws Rsession.RException, ScriptException {
+    public void testNumeralSystem() throws RException, ScriptException {
         // Test to prevent octal conversion
         assertEquals((Double) engine.eval("051+1"), 52.0, epsilon);
         assertEquals((Double) engine.eval("051+1"), 52.0, epsilon);
@@ -1458,29 +1462,112 @@ public class R2jsSessionTest {
     }
 
     @Test
-    public void testWrongExpression() throws Rsession.RException, ScriptException {
+    public void testWrongExpression() throws RException, ScriptException {
         engine.debug_js = true;
         engine.eval("x <- 12");
         assertEquals((Double) engine.eval("2"), 2., epsilon);
         try {
             engine.eval("1+ x)*2");
             assertTrue("Evaluation should return exception", false);
-        } catch (Rsession.RException e) {
+        } catch (RException e) {
         }
         assertEquals((Double) engine.eval("2"), 2., epsilon);
         assertEquals((Double) engine.eval("2+1"), 3., epsilon);
         try {
             engine.eval("$12");
             assertTrue("Evaluation should return exception", false);
-        } catch (Rsession.RException e) {
+        } catch (RException e) {
         }
 
     }
 
     @Test
-    public void testDecimalPoints() throws Rsession.RException {
+    public void testDecimalPoints() throws RException {
         assert (Double) engine.eval("1e-27") == 1e-27;
         assert (Double) engine.eval("1e-31+1e-32") == 1.1e-31;
         assertEquals((Double) engine.eval("1e-31*1e-32"),  1e-63, 1e-75); //"normal" floating error of 1e-15 on multiplication
     }
+
+    @Test
+    public void testEvaluationTime() throws RException, ScriptException, IOException {
+        String MATH_JS_FILE = "/org/math/R/math.js";
+        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+//
+//
+//        StringBuilder textBuilder = new StringBuilder();
+//        try (Reader reader = new BufferedReader(new InputStreamReader
+//                (mathInputStream, StandardCharsets.UTF_8))) {
+//            int c = 0;
+//            while ((c = reader.read()) != -1) {
+//                textBuilder.append((char) c);
+//            }
+//        }
+//
+//        Context polyglotContext = Context.create();
+
+//
+//        //polyglotContext.eval("js", textBuilder);
+
+
+        // POLYGLOT
+//        long time1 = System.currentTimeMillis();
+//        Source scriptSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
+//        Engine engine = Engine.create();
+//        Context ctx = Context.newBuilder()
+//                .engine(engine)
+//                .build();
+//        long time2 = System.currentTimeMillis();
+//
+//        Value result = ctx.eval(scriptSource);
+//        //Value math = ctx.getBindings("js").getMember("math");
+//        System.out.println("Res=" + ctx.eval("js", "math.add(1,2)"));
+//
+//        long time3 = System.currentTimeMillis();
+//
+//        //Context newContext = Context.newBuilder("js").(true).option("js.foreign-object-prototype", Boolean.TRUE.toString()).build();
+//        Context newContext = Context.newBuilder()
+//                .engine(engine)
+//                .build();
+//        newContext.eval(scriptSource);
+//        //newContext.getBindings("js").putMember("math", math);
+//
+//        System.out.println("Res=" + newContext.eval("js", "math.add(1,11)"));
+//
+//        long time4 = System.currentTimeMillis();
+//
+//        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
+//        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
+//        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
+
+
+
+        long time1 = System.currentTimeMillis();
+        ScriptEngineManager manager = new ScriptEngineManager(null);
+        long time11 = System.currentTimeMillis();
+        ScriptEngine js = manager.getEngineByName("JavaScript");
+        if (js==null) js = manager.getEngineByName("js");
+        if (js==null) js = manager.getEngineByExtension("js");
+        if (js==null) js = manager.getEngineByName("nashorn");
+        if (js==null) js = manager.getEngineByName("Nashorn");
+        //if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
+
+        long time2 = System.currentTimeMillis();
+        js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
+        System.out.println("Res="+ js.eval("math.add(1,2)"));
+        Object math = js.get("math");
+        long time3 = System.currentTimeMillis();
+        ScriptEngine js2 = manager.getEngineByName("JavaScript");
+        //System.out.println("Res="+ js2.eval("math.add(1,11)"));
+        js2.put("math", math);
+        System.out.println("Res="+ js2.eval("math.add(1,11)"));
+        long time4 = System.currentTimeMillis();
+
+        System.out.println("Evaluation time polyglot---:" + (time11 - time1) + " ms");
+        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
+        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
+        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
+
+    }
+
 }

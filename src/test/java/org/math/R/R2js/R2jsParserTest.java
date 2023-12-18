@@ -1,8 +1,11 @@
-package org.math.R;
+package org.math.R.R2js;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import org.math.R.R2js.R2jsSession;
+import org.math.R.R2js.R2jsUtils;
+import org.math.R.Rsession;
 
 /**
  * This class test the function 'R2jsUtils.parse(expr)' that parse a R

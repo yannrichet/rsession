@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.math.R.R2js.R2jsSession;
 import org.math.R.Rsession.RException;
 
 /**

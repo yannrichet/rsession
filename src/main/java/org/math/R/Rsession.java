@@ -350,7 +350,7 @@ public abstract class Rsession implements RLog {
         });
     }
 
-    void setenv(Properties properties) {
+    protected void setenv(Properties properties) {
         if (properties != null) {
             for (String p : properties.stringPropertyNames()) {
                 if (p != null) {
@@ -736,11 +736,11 @@ public abstract class Rsession implements RLog {
         }
     }
 
-    abstract boolean isWindows();
+    protected abstract boolean isWindows();
 
-    abstract boolean isLinux();
+    public abstract boolean isLinux();
 
-    abstract boolean isMacOSX();
+    public abstract boolean isMacOSX();
 
     /**
      * Start installation procedure of local R package
@@ -864,7 +864,7 @@ public abstract class Rsession implements RLog {
     // </editor-fold>
     final static String HEAD_EVAL = "[eval] ";
     final static String HEAD_EXCEPTION = "[exception] ";
-    final static String HEAD_ERROR = "[error] ";
+    public final static String HEAD_ERROR = "[error] ";
     final static String HEAD_CACHE = "[cache] ";
 
     public String getLastOutput() {
@@ -1657,7 +1657,7 @@ public abstract class Rsession implements RLog {
             return ex.getMessage();
         }
     }
-    final static String IO_HEAD = "[IO] ";
+    public final static String IO_HEAD = "[IO] ";
 
     final static String testExpression = "1+pi";
     final static double testResult = 1 + Math.PI;

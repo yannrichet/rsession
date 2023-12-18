@@ -103,17 +103,17 @@ public class RenjinSession extends Rsession implements RLog {
     }  
     
     @Override
-    boolean isWindows() {
+    protected boolean isWindows() {
         return RserveDaemon.isWindows();
     }
 
     @Override
-    boolean isMacOSX() {
+    public boolean isMacOSX() {
         return RserveDaemon.isMacOSX();
     }
 
     @Override
-    boolean isLinux() {
+    public boolean isLinux() {
         return RserveDaemon.isLinux();
     }
 
