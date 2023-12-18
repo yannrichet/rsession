@@ -558,12 +558,12 @@
     
     function SysSetEnv(kv) {
         for(var k in kv) {
-            Java.type('org.math.R.R2js.R2jsSession').setEnv(k,kv[k]);
+            Java.type('org.math.R.R2js.AbstractR2jsSession').setEnv(k,kv[k]);
         }
     }
 
     function SysGetEnv(k) {
-        var v = Java.type('org.math.R.R2js.R2jsSession').getEnv(k);
+        var v = Java.type('org.math.R.R2js.AbstractR2jsSession').getEnv(k);
 	    if (isNull(v))
             return '';
         return v;

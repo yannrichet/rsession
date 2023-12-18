@@ -3,8 +3,6 @@ package org.math.R.R2js;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
-import org.math.R.R2js.R2jsSession;
-import org.math.R.R2js.R2jsUtils;
 import org.math.R.Rsession;
 
 /**
@@ -21,12 +19,12 @@ public class R2jsParserTest {
         String text = "0\"ab'cd\"e\"f'gf\"ij";
         String text2 = "0'ab\"cd'e'f\"gf'ij";
         System.err.println("text:        " + text);
-        List<String> vars = R2jsSession.replaceQuotesByVariables(text, 0);
-        List<String> vars2 = R2jsSession.replaceQuotesByVariables(text2, 0);
+        List<String> vars = AbstractR2jsSession.replaceQuotesByVariables(text, 0);
+        List<String> vars2 = AbstractR2jsSession.replaceQuotesByVariables(text2, 0);
         System.err.println("vars: " + vars);
         System.err.println("vars2: " + vars2);
-        String quoted_text = R2jsSession.replaceNameByQuotes(vars, text, true);
-        String quoted_text2 = R2jsSession.replaceNameByQuotes(vars2, text2, true);
+        String quoted_text = AbstractR2jsSession.replaceNameByQuotes(vars, text, true);
+        String quoted_text2 = AbstractR2jsSession.replaceNameByQuotes(vars2, text2, true);
         //System.err.println("quoted text: "+quoted_text);
         assert quoted_text.equals(text) : "Failed to quote/unqote text: " + text + " -> " + quoted_text;
         assert quoted_text2.equals(text2) : "Failed to quote/unqote text: " + text2 + " -> " + quoted_text2;
@@ -41,9 +39,9 @@ public class R2jsParserTest {
                 + "            '<img src=\"',  brent$files,  '\" width=\"600\" height=\"600\"/>',\n"
                 + "            '<br/>Exit due to ', exit.txt, '<br/></HTML>')";
         System.err.println("text:        " + paste);
-        List vars_paste = R2jsSession.replaceQuotesByVariables(paste, 0);
+        List vars_paste = AbstractR2jsSession.replaceQuotesByVariables(paste, 0);
         System.err.println("vars: " + vars_paste);
-        String quoted_paste = R2jsSession.replaceNameByQuotes(vars_paste, paste, true);
+        String quoted_paste = AbstractR2jsSession.replaceNameByQuotes(vars_paste, paste, true);
         //System.err.println("quoted text: "+quoted_text);
         assert quoted_paste.equals(paste) : "Failed to quote/unqote text: " + paste + " -> " + quoted_paste;
 
@@ -54,9 +52,9 @@ public class R2jsParserTest {
                 + "                algorithm$files,\n"
                 + "                \"' width='600' height='600'/></HTML>\")";
         System.err.println("text:        " + paste2);
-        List vars_paste2 = R2jsSession.replaceQuotesByVariables(paste2, 0);
+        List vars_paste2 = AbstractR2jsSession.replaceQuotesByVariables(paste2, 0);
         System.err.println("vars: " + vars_paste2);
-        String quoted_paste2 = R2jsSession.replaceNameByQuotes(vars_paste2, paste2, true);
+        String quoted_paste2 = AbstractR2jsSession.replaceNameByQuotes(vars_paste2, paste2, true);
         System.err.println("quoted text: "+quoted_paste2);
         assert quoted_paste2.equals(paste2) : "Failed to quote/unqote text: " + paste2 + " -> " + quoted_paste2;
     }

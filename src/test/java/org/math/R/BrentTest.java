@@ -7,8 +7,8 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.math.R.R2js.R2jsBuilder;
 import org.math.R.R2js.R2jsSession;
+import org.math.R.R2js.AbstractR2jsSession;
 import org.math.array.DoubleArray;
 import org.math.array.LinearAlgebra;
 
@@ -102,7 +102,7 @@ public class BrentTest {
 
     @Test
     public void testfrom01R2js() {
-        R = R2jsBuilder.newInstance(l, prop);
+        R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -145,8 +145,8 @@ public class BrentTest {
 
     //@Test
     public void testfrom01FunR2js() {
-        R = R2jsBuilder.newInstance(l, prop);
-        ((R2jsSession)R).debug_js=true;
+        R = R2jsSession.newInstance(l, prop);
+        ((AbstractR2jsSession)R).debug_js=true;
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -194,7 +194,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignR2js() {
-        R = R2jsBuilder.newInstance(l, prop);
+        R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -245,7 +245,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignFunR2js() {
-        R = R2jsBuilder.newInstance(l, prop);
+        R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -494,7 +494,7 @@ public class BrentTest {
 
     @Test
     public void testErrorFunR2js() {
-        R = R2jsBuilder.newInstance(l, prop);
+        R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {
@@ -602,8 +602,8 @@ public class BrentTest {
 
     @Test
     public void testR2js() {
-        R = R2jsBuilder.newInstance(l, prop);
-        ((R2jsSession)R).debug_js = true;
+        R = R2jsSession.newInstance(l, prop);
+        ((AbstractR2jsSession)R).debug_js = true;
         try {
             System.err.println(R.eval("R.version.string"));
         } catch (Exception ex) {

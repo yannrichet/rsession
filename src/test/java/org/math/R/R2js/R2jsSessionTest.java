@@ -3,7 +3,6 @@ package org.math.R.R2js;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
@@ -13,8 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 //import org.graalvm.polyglot.*;
 
@@ -27,7 +24,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 
 /**
- * Test the converter r->js of the class {@link R2jsSession}
+ * Test the converter r->js of the class {@link AbstractR2jsSession}
  *
  * @author Nicolas Chabalier
  *
@@ -36,7 +33,7 @@ public class R2jsSessionTest {
 
     // maximal epsilon wanted between actual and expected values
     final double epsilon = 1e-12;
-    R2jsSession engine = R2jsBuilder.newInstance(new RLogSlf4j(), null);
+    AbstractR2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(R2jsSessionTest.class.getName());
@@ -51,7 +48,7 @@ public class R2jsSessionTest {
     public void test2Sessions() throws RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
         engine.debug_js = true;
 
-        R2jsSession engine2 = R2jsBuilder.newInstance(new RLogSlf4j(), null);
+        AbstractR2jsSession engine2 = R2jsSession.newInstance(new RLogSlf4j(), null);
         engine2.debug_js = true;
 
         // ok for simple list
@@ -849,7 +846,7 @@ public class R2jsSessionTest {
     @Test
     public void testInIndexNotSupported() {
         try {
-            String repl = R2jsSession.replaceIndexes("abc[def[i]]");
+            String repl = AbstractR2jsSession.replaceIndexes("abc[def[i]]");
             assert false : "Did not detect wrong index pattern: " + repl;
         } catch (UnsupportedOperationException e) {
             assert true;
@@ -857,26 +854,26 @@ public class R2jsSessionTest {
         }
 
         try {
-            String repl = R2jsSession.replaceIndexes("abc[[i]]");
+            String repl = AbstractR2jsSession.replaceIndexes("abc[[i]]");
             assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
         try {
-            String repl = R2jsSession.replaceIndexes("abc[i]");
+            String repl = AbstractR2jsSession.replaceIndexes("abc[i]");
             assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
         try {
-            String repl = R2jsSession.replaceIndexes("abc[i][j]");
+            String repl = AbstractR2jsSession.replaceIndexes("abc[i][j]");
             assert true;
         } catch (UnsupportedOperationException e) {
             assert false : "Detect wrong index pattern";
         }
 
         try {
-            String repl = R2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
+            String repl = AbstractR2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
                     + "    Y = Y[,1]\n"
                     + "    m = min(Y)\n"
                     + "    m.ix = which(Y==m)\n"
@@ -891,7 +888,7 @@ public class R2jsSessionTest {
             e.printStackTrace();
         }
         try {
-            String repl = R2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
+            String repl = AbstractR2jsSession.replaceIndexes("displayResults <- function(gradientdescent,X,Y) {\n"
                     + "    Y = Y[,1]\n"
                     + "    m = min(Y)\n"
                     + "    m.ix = which(Y==m)[1]\n"
