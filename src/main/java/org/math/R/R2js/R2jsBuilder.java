@@ -34,7 +34,7 @@ public class R2jsBuilder {
 
         if (javaVersion.startsWith("21")) {
             //return new SubClassJava11();
-            return null; // TODO graaljs builder
+            return new R2jsPolyglotSession(console, properties, environmentName);
         } else {
             return new R2jsNashornSession(console, properties, environmentName);
         }

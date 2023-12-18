@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.math.R.*;
 
-import javax.script.ScriptException;
-
 /**
  * This class evaluate an R expression by parsing it in javascript expression
  * and then evaluate the javascript expression with the Java ScriptEngine. This
@@ -115,6 +113,66 @@ public abstract class R2jsSession extends Rsession implements RLog {
         }
 
         setenv(properties);
+    }
+
+    @Override
+    public void setGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = "__" + envName + "__";
+        }
+
+        try {
+            if (asLogical(simpleEval("typeof " + envName + " == 'undefined'"))) {// env still not exists
+                simpleEval("var " + envName + " = math.clone({});");
+            }
+            simpleEval(THIS_ENVIRONMENT + " = " + envName);
+        } catch (Exception ex) {
+            Log.Err.println(ex.getMessage());
+        }
+
+        String oldEnv = this.envName;
+        envVariables.put(oldEnv, new TreeSet(variablesSet));
+
+        variablesSet.clear();
+        if (envVariables.containsKey(envName)) {
+            variablesSet.addAll(envVariables.get(envName));
+        }
+
+        this.envName = envName;
+    }
+
+    @Override
+    public void copyGlobalEnv(String envName) {
+        if (envName == null) {
+            envName = ENVIRONMENT_DEFAULT;
+        } else {
+            envName = "__" + envName + "__";
+        }
+
+        try {
+            if (asLogical(simpleEval("typeof " + envName + " == 'undefined'"))) // env still not exists
+            {
+                simpleEval("var " + envName + " = math.clone({});");
+            }
+        } catch (Exception ex) {
+            Log.Err.println(ex.getMessage());
+        }
+
+        String[] ls = ls(true);
+        for (String o : ls) {
+            try {
+                simpleEval(envName + "." + o + " = " + this.envName + "." + o);
+            } catch (Exception ex) {
+                Log.Err.println(ex.getMessage());
+            }
+        }
+        if (!envVariables.containsKey(envName)) {
+            envVariables.put(envName, new TreeSet(variablesSet));
+        } else {
+            envVariables.get(envName).addAll(new TreeSet(variablesSet));
+        }
     }
 
     protected abstract void loadJSLibraries() throws Exception;

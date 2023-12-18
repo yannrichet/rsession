@@ -295,66 +295,6 @@ public class R2jsNashornSession extends R2jsSession {
     }
 
     @Override
-    public void setGlobalEnv(String envName) {
-        if (envName == null) {
-            envName = ENVIRONMENT_DEFAULT;
-        } else {
-            envName = "__" + envName + "__";
-        }
-
-        try {
-            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists
-                js.eval("var " + envName + " = math.clone({});");
-            }
-            js.eval(THIS_ENVIRONMENT + " = " + envName);
-        } catch (ScriptException ex) {
-            Log.Err.println(ex.getMessage());
-        }
-
-        String oldEnv = this.envName;
-        envVariables.put(oldEnv, new TreeSet(variablesSet));
-
-        variablesSet.clear();
-        if (envVariables.containsKey(envName)) {
-            variablesSet.addAll(envVariables.get(envName));
-        }
-
-        this.envName = envName;
-    }
-
-    @Override
-    public void copyGlobalEnv(String envName) {
-        if (envName == null) {
-            envName = ENVIRONMENT_DEFAULT;
-        } else {
-            envName = "__" + envName + "__";
-        }
-
-        try {
-            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) // env still not exists
-            {
-                js.eval("var " + envName + " = math.clone({});");
-            }
-        } catch (ScriptException ex) {
-            Log.Err.println(ex.getMessage());
-        }
-
-        String[] ls = ls(true);
-        for (String o : ls) {
-            try {
-                js.eval(envName + "." + o + " = " + this.envName + "." + o);
-            } catch (ScriptException ex) {
-                Log.Err.println(ex.getMessage());
-            }
-        }
-        if (!envVariables.containsKey(envName)) {
-            envVariables.put(envName, new TreeSet(variablesSet));
-        } else {
-            envVariables.get(envName).addAll(new TreeSet(variablesSet));
-        }
-    }
-
-    @Override
     public synchronized void end() {
         js = null;
         super.end();

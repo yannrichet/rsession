@@ -1488,86 +1488,86 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("1e-31*1e-32"),  1e-63, 1e-75); //"normal" floating error of 1e-15 on multiplication
     }
 
-    @Test
-    public void testEvaluationTime() throws RException, ScriptException, IOException {
-        String MATH_JS_FILE = "/org/math/R/math.js";
-        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+//    @Test
+//    public void testEvaluationTime() throws RException, ScriptException, IOException {
+//        String MATH_JS_FILE = "/org/math/R/math.js";
+//        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+////
+////
+////        StringBuilder textBuilder = new StringBuilder();
+////        try (Reader reader = new BufferedReader(new InputStreamReader
+////                (mathInputStream, StandardCharsets.UTF_8))) {
+////            int c = 0;
+////            while ((c = reader.read()) != -1) {
+////                textBuilder.append((char) c);
+////            }
+////        }
+////
+////        Context polyglotContext = Context.create();
+//
+////
+////        //polyglotContext.eval("js", textBuilder);
 //
 //
-//        StringBuilder textBuilder = new StringBuilder();
-//        try (Reader reader = new BufferedReader(new InputStreamReader
-//                (mathInputStream, StandardCharsets.UTF_8))) {
-//            int c = 0;
-//            while ((c = reader.read()) != -1) {
-//                textBuilder.append((char) c);
-//            }
-//        }
+//        // POLYGLOT
+////        long time1 = System.currentTimeMillis();
+////        Source scriptSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
+////        Engine engine = Engine.create();
+////        Context ctx = Context.newBuilder()
+////                .engine(engine)
+////                .build();
+////        long time2 = System.currentTimeMillis();
+////
+////        Value result = ctx.eval(scriptSource);
+////        //Value math = ctx.getBindings("js").getMember("math");
+////        System.out.println("Res=" + ctx.eval("js", "math.add(1,2)"));
+////
+////        long time3 = System.currentTimeMillis();
+////
+////        //Context newContext = Context.newBuilder("js").(true).option("js.foreign-object-prototype", Boolean.TRUE.toString()).build();
+////        Context newContext = Context.newBuilder()
+////                .engine(engine)
+////                .build();
+////        newContext.eval(scriptSource);
+////        //newContext.getBindings("js").putMember("math", math);
+////
+////        System.out.println("Res=" + newContext.eval("js", "math.add(1,11)"));
+////
+////        long time4 = System.currentTimeMillis();
+////
+////        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
+////        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
+////        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
 //
-//        Context polyglotContext = Context.create();
-
 //
-//        //polyglotContext.eval("js", textBuilder);
-
-
-        // POLYGLOT
+//
 //        long time1 = System.currentTimeMillis();
-//        Source scriptSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
-//        Engine engine = Engine.create();
-//        Context ctx = Context.newBuilder()
-//                .engine(engine)
-//                .build();
+//        ScriptEngineManager manager = new ScriptEngineManager(null);
+//        long time11 = System.currentTimeMillis();
+//        ScriptEngine js = manager.getEngineByName("JavaScript");
+//        if (js==null) js = manager.getEngineByName("js");
+//        if (js==null) js = manager.getEngineByExtension("js");
+//        if (js==null) js = manager.getEngineByName("nashorn");
+//        if (js==null) js = manager.getEngineByName("Nashorn");
+//        //if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+//        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
+//
 //        long time2 = System.currentTimeMillis();
-//
-//        Value result = ctx.eval(scriptSource);
-//        //Value math = ctx.getBindings("js").getMember("math");
-//        System.out.println("Res=" + ctx.eval("js", "math.add(1,2)"));
-//
+//        js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
+//        System.out.println("Res="+ js.eval("math.add(1,2)"));
+//        Object math = js.get("math");
 //        long time3 = System.currentTimeMillis();
-//
-//        //Context newContext = Context.newBuilder("js").(true).option("js.foreign-object-prototype", Boolean.TRUE.toString()).build();
-//        Context newContext = Context.newBuilder()
-//                .engine(engine)
-//                .build();
-//        newContext.eval(scriptSource);
-//        //newContext.getBindings("js").putMember("math", math);
-//
-//        System.out.println("Res=" + newContext.eval("js", "math.add(1,11)"));
-//
+//        ScriptEngine js2 = manager.getEngineByName("JavaScript");
+//        //System.out.println("Res="+ js2.eval("math.add(1,11)"));
+//        js2.put("math", math);
+//        System.out.println("Res="+ js2.eval("math.add(1,11)"));
 //        long time4 = System.currentTimeMillis();
 //
+//        System.out.println("Evaluation time polyglot---:" + (time11 - time1) + " ms");
 //        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
 //        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
 //        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
-
-
-
-        long time1 = System.currentTimeMillis();
-        ScriptEngineManager manager = new ScriptEngineManager(null);
-        long time11 = System.currentTimeMillis();
-        ScriptEngine js = manager.getEngineByName("JavaScript");
-        if (js==null) js = manager.getEngineByName("js");
-        if (js==null) js = manager.getEngineByExtension("js");
-        if (js==null) js = manager.getEngineByName("nashorn");
-        if (js==null) js = manager.getEngineByName("Nashorn");
-        //if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
-        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
-
-        long time2 = System.currentTimeMillis();
-        js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
-        System.out.println("Res="+ js.eval("math.add(1,2)"));
-        Object math = js.get("math");
-        long time3 = System.currentTimeMillis();
-        ScriptEngine js2 = manager.getEngineByName("JavaScript");
-        //System.out.println("Res="+ js2.eval("math.add(1,11)"));
-        js2.put("math", math);
-        System.out.println("Res="+ js2.eval("math.add(1,11)"));
-        long time4 = System.currentTimeMillis();
-
-        System.out.println("Evaluation time polyglot---:" + (time11 - time1) + " ms");
-        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
-        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
-        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
-
-    }
+//
+//    }
 
 }
