@@ -37,6 +37,11 @@ public class R2jsNashornSession extends R2jsSession {
     }
 
     @Override
+    protected String getClassName() {
+        return this.getClass().getName();
+    }
+
+    @Override
     protected Object simpleEval(String toEval) throws ScriptException {
         return js.eval(toEval);
     }

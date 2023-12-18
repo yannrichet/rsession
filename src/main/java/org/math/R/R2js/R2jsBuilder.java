@@ -33,8 +33,8 @@ public class R2jsBuilder {
         String javaVersion = System.getProperty("java.version");
 
         if (javaVersion.startsWith("21")) {
-            //return new SubClassJava11();
-            return new R2jsPolyglotSession(console, properties, environmentName);
+            return null;
+            //return new R2jsPolyglotSession(console, properties, environmentName);
         } else {
             return new R2jsNashornSession(console, properties, environmentName);
         }

@@ -80,6 +80,8 @@ public abstract class R2jsSession extends Rsession implements RLog {
 
         // Load external js libraries used by the js to evaluate expressions
         try {
+            simpleEval("r2jsSessionClass = " + getClassName()); // used by setEnv and getEnv in R.js
+
             this.loadJSLibraries();
 
             for (String f : DISABLED_FUNCTIONS) {
@@ -114,6 +116,8 @@ public abstract class R2jsSession extends Rsession implements RLog {
 
         setenv(properties);
     }
+
+    protected abstract String getClassName();
 
     @Override
     public void setGlobalEnv(String envName) {
