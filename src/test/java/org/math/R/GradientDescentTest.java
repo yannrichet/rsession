@@ -6,6 +6,7 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.math.R.R2js.R2jsBuilder;
 import org.math.R.R2js.R2jsSession;
 import org.math.R.Rsession.RException;
 import org.math.array.DoubleArray;
@@ -151,7 +152,7 @@ public class GradientDescentTest {
 
     @Test
     public void testR2js() {
-        R = new R2jsSession(l, prop);
+        R = R2jsBuilder.newInstance(l, prop);
         ((R2jsSession)R).debug_js = true;
         try {
             System.err.println(R.eval("R.version.string"));
@@ -251,7 +252,7 @@ public class GradientDescentTest {
 
     @Test
     public void testFailR2js() {
-        R = new R2jsSession(l, prop);
+        R = R2jsBuilder.newInstance(l, prop);
         ((R2jsSession)R).debug_js = true;
         try {
             System.err.println(R.eval("R.version.string"));

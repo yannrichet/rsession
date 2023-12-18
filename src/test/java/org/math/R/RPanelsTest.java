@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.math.R.R2js.R2jsBuilder;
 import org.math.R.R2js.R2jsSession;
 import org.math.R.Rsession.RException;
 
@@ -89,7 +90,7 @@ public class RPanelsTest {
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
 
-        q = R2jsSession.newInstance(l, null);
+        q = R2jsBuilder.newInstance(l, null);
         System.out.println("| R.version:\t" + q.eval("R.version.string"));
 
         System.out.println("| getwd():\t" + q.eval("getwd()"));

@@ -4,23 +4,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.api.scripting.ScriptUtils;
+
 import org.apache.commons.io.FileUtils;
 import org.math.R.*;
+
+import javax.script.ScriptException;
 
 /**
  * This class evaluate an R expression by parsing it in javascript expression
@@ -58,44 +53,7 @@ import org.math.R.*;
  *
  * @author Nicolas Chabalier
  */
-public class R2jsSession extends Rsession implements RLog {
-
-    File wdir;
-
-    private static final String[] MATH_FUN_JS = {"abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
-        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum", "mean", "median", "std", "var"};
-    private static final String[] MATH_CONST_JS = {"pi"};
-
-    // JavaScript libraries used to evaluate expression
-    private static final String MATH_JS_FILE = "/org/math/R/math.js";
-    private static final String R_JS_FILE = "/org/math/R/R.js";
-    private static final String RAND_JS_FILE = "/org/math/R/rand.js";
-//    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
-
-    public ScriptEngine js;
-
-    private static final String ENVIRONMENT_DEFAULT = "__r2js__";
-    private static final String THIS_ENVIRONMENT = "__this__";
-
-    public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
-
-    // Set of global variables declared
-    public Set<String> variablesSet;
-    public Set<String> functionsSet;
-
-    // List of quotes expression
-    private List<String> quotesList;
-
-    // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
-    private final static Map<String, Object> jsLibraries = Collections.synchronizedMap(new HashMap<>());
-
-    public static R2jsSession newInstance(final RLog console, Properties properties) {
-        return new R2jsSession(console, properties);
-    }
-
-    public R2jsSession(RLog console, Properties properties) {
-        this(console, properties, null);
-    }
+public abstract class R2jsSession extends Rsession implements RLog {
 
     /**
      * Default constructor
@@ -107,7 +65,7 @@ public class R2jsSession extends Rsession implements RLog {
      * @param environmentName - name of the environment
      */
     @SuppressWarnings({"removal","deprecation"})
-    public R2jsSession(RLog console, Properties properties, String environmentName) {
+    protected R2jsSession(RLog console, Properties properties, String environmentName) {
         super(console);
         if (environmentName != null) {
             envName = "__" + environmentName + "__";
@@ -120,41 +78,34 @@ public class R2jsSession extends Rsession implements RLog {
 
         TRY_MODE_DEFAULT = false;
 
-        ScriptEngineManager manager = new ScriptEngineManager(null);
-        js = manager.getEngineByName("JavaScript");
-        if (js==null) js = manager.getEngineByName("js");
-        if (js==null) js = manager.getEngineByExtension("js");
-        if (js==null) js = manager.getEngineByName("nashorn");
-        if (js==null) js = manager.getEngineByName("Nashorn");
-        if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
-        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
+        this.createScriptEngine();
 
         // Load external js libraries used by the js to evaluate expressions
         try {
-            loadJSLibraries();
+            this.loadJSLibraries();
 
             for (String f : DISABLED_FUNCTIONS) {
                 addReturnNullFunction(f);
             }
 
             // Instantiate the variables storage object which store all variables defined in the current session
-            js.eval("var " + envName + " = math.clone({});");
-            //js.eval("var " + envName + " = {};");
-            js.eval(THIS_ENVIRONMENT + " = " + envName);
-        } catch (ScriptException ex) {
+            simpleEval("var " + envName + " = math.clone({});");
+            //simpleEval("var " + envName + " = {};");
+            simpleEval(THIS_ENVIRONMENT + " = " + envName);
+        } catch (Exception ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
 
         try {
             int rand = Math.round((float) Math.random() * 10000);
-            wdir = new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".R2js"), "" + rand);
+            wdir = new File(new File(System.getProperty("RSESSION_HOME", FileUtils.getTempDirectoryPath()), ".R2js"), "" + rand);
             if (!wdir.mkdirs()) {
                 wdir = new File(new File(FileUtils.getUserDirectory(), ".R2js"), "" + rand);
                 if (!wdir.mkdirs()) {
                     throw new IOException("Could not create directory " +
-                    new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand) + 
-                    "\n or " + 
-                    new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand));
+                            new File(new File(System.getProperty("RSESSION_HOME",FileUtils.getTempDirectoryPath()), ".Renjin"), "" + rand) +
+                            "\n or " +
+                            new File(new File(FileUtils.getUserDirectory(), ".Renjin"), "" + rand));
                 }
             }
             eval("setwd('" + toRpath(wdir.getAbsolutePath()) + "')");
@@ -165,6 +116,40 @@ public class R2jsSession extends Rsession implements RLog {
 
         setenv(properties);
     }
+
+    protected abstract void loadJSLibraries() throws Exception;
+
+    protected abstract void createScriptEngine();
+
+    File wdir;
+
+    private static final String[] MATH_FUN_JS = {"abs", "acos", "asin", "atan", "atan2", "ceil", "cos", "exp", "floor",
+        "log", "max", "min", "round", "sin", "sqrt", "tan", "sign", "sum", "mean", "median", "std", "var"};
+    private static final String[] MATH_CONST_JS = {"pi"};
+
+    // JavaScript libraries used to evaluate expression
+    protected static final String MATH_JS_FILE = "/org/math/R/math.js";
+    protected static final String R_JS_FILE = "/org/math/R/R.js";
+    protected static final String RAND_JS_FILE = "/org/math/R/rand.js";
+//    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
+
+    protected static final String ENVIRONMENT_DEFAULT = "__r2js__";
+    protected static final String THIS_ENVIRONMENT = "__this__";
+
+    public static final String[] DISABLED_FUNCTIONS = new String[]{"png", "plot", "abline", "rgb", "hist", "pairs", "lines", "points"};
+
+    // Set of global variables declared
+    public Set<String> variablesSet;
+    public Set<String> functionsSet;
+
+    // List of quotes expression
+    private List<String> quotesList;
+
+
+    protected R2jsSession(RLog console) {
+        super(console);
+    }
+
 
     @Override
     protected void setenv(Properties properties) {
@@ -186,76 +171,16 @@ public class R2jsSession extends Rsession implements RLog {
         }
     }
 
-    public R2jsSession(final PrintStream p, Properties properties) {
-        this(p, properties, null);
-    }
-
-    public R2jsSession(final PrintStream p, Properties properties, String environmentName) {
-        this(new RLogPrintStream(p), properties, environmentName);
-    }
-
-    public void addReturnNullFunction(String name) throws ScriptException {
-        js.eval("function " + name + "(a,b,c,d,e,f) {return null;}");
+    public void addReturnNullFunction(String name) throws Exception {
+        simpleEval("function " + name + "(a,b,c,d,e,f) {return null;}");
         functionsSet.add(name);
     }
 
-    public void addJSFunction(String name, String js) throws ScriptException {
-        this.js.eval("function " + name + (js.startsWith("function") ? js.substring("function".length()) : js));
+    public void addJSFunction(String name, String js) throws Exception {
+        simpleEval("function " + name + (js.startsWith("function") ? js.substring("function".length()) : js));
         functionsSet.add(name);
     }
 
-    /**
-     * Load external js libraries to evaluate js expresions: - 'math.js' :
-     * evaluate all mathematical expressions with numbers, arrays and matrices.
-     * - 'r.js': contains various function ( loading and saving files/variables,
-     * range function, ...)
-     *
-     * @throws ScriptException
-     */
-    private synchronized void loadJSLibraries() throws ScriptException {
-
-        // Loading math.JS
-        if (!jsLibraries.containsKey("math")) {
-            InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
-            js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
-            jsLibraries.put("math", js.get("math"));
-        } else {
-            js.put("math", jsLibraries.get("math"));
-        }
-
-        js.eval("var parser = math.parser();");
-        // Change 'Matrix' mathjs config by 'Array'
-        js.eval("math.config({matrix: 'Array'})");
-        js.eval("var str = String.prototype;");
-
-        // suport T/F TRUE/FALSE shortcuts
-        js.eval("var T = true;");
-        js.eval("var F = false;");
-        
-        // Loading rand.js
-        if (!jsLibraries.containsKey("rand")) {
-            InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
-            js.eval(new InputStreamReader(randInputStream, Charset.forName("UTF-8")));
-            js.eval("__rand = rand()");
-            jsLibraries.put("__rand", js.get("rand"));
-        } else {
-            js.put("__rand", jsLibraries.get("rand"));
-        }
-
-        // Loading plotly.js
-//        InputStream RInputStream = this.getClass().getResourceAsStream(PLOT_JS_FILE);
-//        js.eval(new InputStreamReader(RInputStream));
-//        js.eval("Plotly = Plotly()");
-        // Loading R.js
-        if (!jsLibraries.containsKey("R")) {
-            InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
-            js.eval(new InputStreamReader(RInputStream, Charset.forName("UTF-8")));
-            js.eval("__R = R()");
-            jsLibraries.put("__R", js.get("R"));
-        } else {
-            js.put("__R", jsLibraries.get("R"));
-        }
-    }
 
     static final String POINT_CHAR_JS_KEY = "__";
 
@@ -677,7 +602,7 @@ public class R2jsSession extends Rsession implements RLog {
 
         try {
             e = convertFunction(e);
-        } catch (ScriptException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
 
@@ -720,7 +645,7 @@ public class R2jsSession extends Rsession implements RLog {
         return e;
     }
 
-    private String convertFunction(String expr) throws ScriptException {
+    private String convertFunction(String expr) throws Exception {
 
         // Add a space after a parenthesis, otherwise the second regex bellow doesn't work for function in function
         expr = expr.replaceAll("[(](\\w)", "( $1");
@@ -735,7 +660,7 @@ public class R2jsSession extends Rsession implements RLog {
                 // Ignore if the functions is already defined
                 if (!this.variablesSet.contains(fctName)) {
                     // If the function is not defined yet in js environment
-                    if (!this.asLogical(this.js.eval("typeof " + fctName + " !== 'undefined'"))) {
+                    if (!this.asLogical(simpleEval("typeof " + fctName + " !== 'undefined'"))) {
                         this.variablesSet.add(fctName);
                     }
                 }
@@ -746,6 +671,8 @@ public class R2jsSession extends Rsession implements RLog {
 
         return expr;
     }
+
+    protected abstract Object simpleEval(String eval) throws Exception;
 
     int maxLength(String... s) {
         int ml = 0;
@@ -1847,9 +1774,9 @@ public class R2jsSession extends Rsession implements RLog {
             // Add all loaded variables to the java list of variables
             try {
                 String readVariablesExpr = replaceNameByQuotes(quotesList, "__R.readJsonVariables(" + fileString + ")", false);
-                String[] loadedVariables = (String[]) cast(js.eval(readVariablesExpr));
+                String[] loadedVariables = (String[]) cast(simpleEval(readVariablesExpr));
                 addGlobalVariables(loadedVariables);
-            } catch (ScriptException ex) {
+            } catch (Exception ex) {
                 Logger.getLogger(R2jsSession.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
             }
 
@@ -2719,12 +2646,6 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public synchronized void end() {
-        js = null;
-        super.end();
-    }
-
-    @Override
     public boolean isAvailable() {
         return true;
     }
@@ -2753,11 +2674,11 @@ public class R2jsSession extends Rsession implements RLog {
         String jsExpr = "?";
         try {
             jsExpr = convertRtoJs(expression);
-            this.js.eval(jsExpr);
+            simpleEval(jsExpr);
         } catch (Exception e) {
             String ls = "?";
             try {
-                ls = (this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
+                ls = (simpleEval("JSON.stringify(" + THIS_ENVIRONMENT + ")")).toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
@@ -2780,11 +2701,11 @@ public class R2jsSession extends Rsession implements RLog {
         String jsExpr = "?";
         try {
             jsExpr = convertRtoJs(expression);
-            result = this.js.eval(jsExpr);
+            result = simpleEval(jsExpr);
         } catch (Exception e) {
             String ls = "?";
             try {
-                ls = (String) this.js.eval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
+                ls = (String) simpleEval("JSON.stringify(" + THIS_ENVIRONMENT + ")").toString();
             } catch (Exception ee) {
                 ls = ee.getMessage();
             }
@@ -2821,10 +2742,10 @@ public class R2jsSession extends Rsession implements RLog {
             //synchronized (js) {
             String dim = "[" + data.length + "," + data[0].length + "]";
             String stringMatrix = Arrays.deepToString(data);
-            js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+            simpleEval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-            js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
-            js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+            simpleEval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+            simpleEval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
             variablesSet.add(varname);
             //}
         } catch (Exception e) {
@@ -2858,29 +2779,29 @@ public class R2jsSession extends Rsession implements RLog {
                 double[][] var2DArray = (double[][]) var;
                 String dim = "[" + var2DArray.length + "," + var2DArray[0].length + "]";
                 String stringMatrix = Arrays.deepToString(var2DArray);
-                js.eval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
+                simpleEval(varname + " = math.reshape(" + stringMatrix + ", " + dim + ")");
 
-                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                simpleEval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                 String allnames = "";
                 for (int i = 0; i < var2DArray[0].length; i++) {
                     allnames = allnames + ",'X" + (i + 1) + "'";
                 }
                 allnames = allnames.substring(1);
-                js.eval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
+                simpleEval(THIS_ENVIRONMENT + "." + varname + ".names = [" + allnames + "]");
                 variablesSet.add(varname);
             } else if (var instanceof double[]) {
                 double[] var1DArray = (double[]) var;
                 String dim = "[" + var1DArray.length + ",1]";
                 String stringMatrix = Arrays.toString(var1DArray);
-                js.eval(varname + " = " + Arrays.toString(var1DArray));
+                simpleEval(varname + " = " + Arrays.toString(var1DArray));
 
-                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                simpleEval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                 variablesSet.add(varname);
             } else if (var instanceof Map) {
                 Map m = (Map)var;
                 try {
-                    js.eval(THIS_ENVIRONMENT + "." +varname + " = {}");
-                } catch (ScriptException ex) {
+                    simpleEval(THIS_ENVIRONMENT + "." +varname + " = {}");
+                } catch (Exception ex) {
                     log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                     return false;
                 }
@@ -2888,8 +2809,8 @@ public class R2jsSession extends Rsession implements RLog {
                     String h = hash(k);
                     set(varname+"_"+h, m.get(k) );
                     try {
-                        js.eval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+h);
-                    } catch (ScriptException ex) {
+                        simpleEval(THIS_ENVIRONMENT + "." +varname + "['"+k+"'] = "+varname+"_"+h);
+                    } catch (Exception ex) {
                         log(HEAD_ERROR + ex.getMessage(), Level.ERROR);
                         return false;
                     }
@@ -2897,8 +2818,8 @@ public class R2jsSession extends Rsession implements RLog {
                 }
                 variablesSet.add(varname);
             } else {
-                js.put(varname, var);
-                js.eval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
+                putVariable(varname, var);
+                simpleEval(THIS_ENVIRONMENT + "." + varname + " = " + varname);
                 variablesSet.add(varname);
             }
             //}
@@ -2909,6 +2830,9 @@ public class R2jsSession extends Rsession implements RLog {
 
         return true;
     }
+
+    protected abstract void putVariable(String varname, Object var);
+
 
     public File putFileInWorkspace(File file) {
         if (file.isAbsolute()) {
@@ -2996,9 +2920,9 @@ public class R2jsSession extends Rsession implements RLog {
         try {
             //synchronized (js) {
             for (String var : vars) {
-                js.eval("delete " + THIS_ENVIRONMENT + "." + var + ";");
+                simpleEval("delete " + THIS_ENVIRONMENT + "." + var + ";");
                 variablesSet.remove(var);
-                js.eval("delete " + var + ";");
+                simpleEval("delete " + var + ";");
             }
             //}
         } catch (Exception e) {
@@ -3013,10 +2937,10 @@ public class R2jsSession extends Rsession implements RLog {
     public synchronized boolean rmAll() {
         try {
             //synchronized (js) {
-            js.eval("delete " + envName + ";");
+            simpleEval("delete " + envName + ";");
             variablesSet.clear();
-            js.eval("var " + envName + " = math.clone({});");
-            js.eval(THIS_ENVIRONMENT + " = " + envName);
+            simpleEval("var " + envName + " = math.clone({});");
+            simpleEval(THIS_ENVIRONMENT + " = " + envName);
             //}
         } catch (Exception e) {
             log(HEAD_ERROR + " " + e.getMessage(), Level.ERROR);
@@ -3031,99 +2955,6 @@ public class R2jsSession extends Rsession implements RLog {
         throw new UnsupportedOperationException("Cannot load any package in R2Js. Use 'source' for external static content loading.");
     }
 
-    @Override
-    public double asDouble(Object o) throws ClassCastException {
-        if (o instanceof Double) {
-            return (Double) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        return (double) ScriptUtils.convert(o, double.class);
-    }
-
-    @Override
-    public double[] asArray(Object o) throws ClassCastException {
-        if (o instanceof double[]) {
-            return (double[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof Double) {
-            return new double[]{(double)o};
-        }
-        Object co = ScriptUtils.convert(o, double[].class);
-        if (co instanceof Double) {
-            return new double[]{(double)co};
-        }            
-        return (double[]) co; 
-    }
-
-    @Override
-    public double[][] asMatrix(Object o) throws ClassCastException {
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof double[][]) {
-            return (double[][]) o;
-        } else if (o instanceof double[]) {
-            return t(new double[][]{(double[]) o});
-        } else if (o instanceof Double) {
-            return new double[][]{{(double) o}};
-        } else /*if (o instanceof Map)*/ {
-            double[][] vals = null;
-            int i = 0;
-            try {
-                for (Object k : ((Map) o).keySet()) {
-                    double[] v = null;
-                    if (o instanceof ScriptObjectMirror) {
-                        try {
-                            v = (double[]) ((ScriptObjectMirror) o).to(double[].class);
-                        } catch (Exception ex) {
-                            //ex.printStackTrace();
-                            throw new ClassCastException("[asMatrix] Cannot cast ScriptObjectMirror list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                        }
-                    } else {
-                        try {
-                            v = (double[]) ((Map) o).get(k);
-                        } catch (Exception ex) {
-                            //ex.printStackTrace();
-                            throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                        }
-                    }
-                    if (v == null) {
-                        throw new ClassCastException("[asMatrix] Cannot get list element as double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                    }
-                    if (vals == null) {
-                        vals = new double[v.length][((Map) o).size()];
-                    }
-                    for (int j = 0; j < v.length; j++) {
-                        vals[j][i] = v[j];
-                    }
-                    i++;
-                }
-                return vals;
-            } catch (Exception ex) {
-                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: " + ex.getMessage());
-            }
-        }
-    }
-
-    @Override
-    public String asString(Object o) throws ClassCastException {
-        if (o instanceof String) {
-            return (String) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        return (String) ScriptUtils.convert(o, String.class);
-    }
-
-    @Override
-    public String[] asStrings(Object o) throws ClassCastException {
-        if (o instanceof String[]) {
-            return (String[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof String) {
-            return new String[]{(String)o};
-        }
-        Object co = ScriptUtils.convert(o, String[].class);
-        if (co instanceof String) {
-            return new String[]{(String)co};
-        }            
-        return (String[]) co; 
-    }
 
     @Override
     public int asInteger(Object o) throws ClassCastException {
@@ -3141,39 +2972,6 @@ public class R2jsSession extends Rsession implements RLog {
     }
 
     @Override
-    public boolean asLogical(Object o) throws ClassCastException {
-        if (o instanceof Boolean) {
-            return (Boolean) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        if (o instanceof RException) {
-            throw new IllegalArgumentException("[asLogical] Exception: " + ((RException) o).getMessage());
-        }
-        return (boolean) ScriptUtils.convert(o, boolean.class);
-    }
-
-    @Override
-    public boolean[] asLogicals(Object o) throws ClassCastException {
-        if (o instanceof boolean[]) {
-            return (boolean[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof Boolean) {
-            return new boolean[]{(boolean)o};
-        }
-        Object co =  ScriptUtils.convert(o, boolean[].class);
-        if (co instanceof Boolean) {
-            return new boolean[]{(boolean)co};
-        }            
-        return (boolean[]) co; 
-    }
-
-    @Override
-    public Map asList(Object o) throws ClassCastException {
-        if (o instanceof Map) {
-            return (Map) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        }
-        return (Map) ScriptUtils.convert(o, Map.class);
-    }
-
-    @Override
     public boolean isNull(Object o) {
         if (o == null) {
             return true;
@@ -3187,123 +2985,7 @@ public class R2jsSession extends Rsession implements RLog {
         return o.toString();
     }
 
-    @Override
-    public Object cast(Object o) throws ClassCastException {
-        // If it's a ScriptObjectMirror, it can be an array or a matrix
-        if (o instanceof Integer) {
-            return Double.valueOf((int) o);
-        } else if (o instanceof ScriptObjectMirror) {
-            try {
-//                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
-                return ((ScriptObjectMirror) o).to(double[][].class);
-            } catch (Exception e) {//e.printStackTrace();
-            }
-
-            try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
-                String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
-
-//                 System.err.println("// Check if the String[] array can be cast to a double[] array");
-                try {
-                    for (String string : stringArray) {
-                        Double.valueOf(string);
-                    }
-                } catch (Exception e) {//e.printStackTrace();
-                    // It can't be cast to double[] so we return String[]
-                    return stringArray;
-                }
-
-//                 System.err.println("// return double[] array");
-                return ((ScriptObjectMirror) o).to(double[].class);
-
-            } catch (Exception e) {//e.printStackTrace();
-            }
-
-            try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
-                return ((ScriptObjectMirror) o).to(double[].class);
-            } catch (Exception e) {//e.printStackTrace();
-            }
-
-            try {
-//                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
-                Map m = ((ScriptObjectMirror) o).to(Map.class);
-                try {
-                    return asMatrix(m);
-                } catch (ClassCastException c) {
-                    //c.printStackTrace();
-                    return m;
-                }
-            } catch (Exception e) {//e.printStackTrace();
-            }
-
-            throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
-        } else {
-            return o;
-        }
-    }
-
     Map<String, Set<String>> envVariables = new HashMap<>();
-
-    @Override
-    public void setGlobalEnv(String envName) {
-        if (envName == null) {
-            envName = ENVIRONMENT_DEFAULT;
-        } else {
-            envName = "__" + envName + "__";
-        }
-
-        try {
-            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) {// env still not exists            
-                js.eval("var " + envName + " = math.clone({});");
-            }
-            js.eval(THIS_ENVIRONMENT + " = " + envName);
-        } catch (ScriptException ex) {
-            Log.Err.println(ex.getMessage());
-        }
-
-        String oldEnv = this.envName;
-        envVariables.put(oldEnv, new TreeSet(variablesSet));
-
-        variablesSet.clear();
-        if (envVariables.containsKey(envName)) {
-            variablesSet.addAll(envVariables.get(envName));
-        }
-
-        this.envName = envName;
-    }
-
-    @Override
-    public void copyGlobalEnv(String envName) {
-        if (envName == null) {
-            envName = ENVIRONMENT_DEFAULT;
-        } else {
-            envName = "__" + envName + "__";
-        }
-
-        try {
-            if (asLogical(js.eval("typeof " + envName + " == 'undefined'"))) // env still not exists            
-            {
-                js.eval("var " + envName + " = math.clone({});");
-            }
-        } catch (ScriptException ex) {
-            Log.Err.println(ex.getMessage());
-        }
-
-        String[] ls = ls(true);
-        for (String o : ls) {
-            try {
-                js.eval(envName + "." + o + " = " + this.envName + "." + o);
-            } catch (ScriptException ex) {
-                Log.Err.println(ex.getMessage());
-            }
-        }
-        if (!envVariables.containsKey(envName)) {
-            envVariables.put(envName, new TreeSet(variablesSet));
-        } else {
-            envVariables.get(envName).addAll(new TreeSet(variablesSet));
-        }
-    }
 
     private static String html_tmpl
             = "<html>\n"
@@ -3333,7 +3015,7 @@ public class R2jsSession extends Rsession implements RLog {
     // maybe the worst idea I ever had...
     public static String HTMLfun(String Rcode, String fun, String... args) throws RException {
 
-        R2jsSession R = new R2jsSession(System.out, null);
+        R2jsSession R = R2jsBuilder.newInstance(System.out, null);
         String html = html_tmpl.replace("___JS___", R.convertRtoJs(Rcode).replace(R.THIS_ENVIRONMENT + ".", ""));
         html = html.replace("___R___", Rcode);
         html = html.replace("___f___", fun);
@@ -3357,7 +3039,7 @@ public class R2jsSession extends Rsession implements RLog {
                 args[i] = Math.random() + "+pi";
             }
         }
-        R2jsSession R = new R2jsSession(System.out, null);
+        R2jsSession R = R2jsBuilder.newInstance(System.out, null);
 
         for (int j = 0; j < args.length; j++) {
             System.out.print(args[j] + ": ");

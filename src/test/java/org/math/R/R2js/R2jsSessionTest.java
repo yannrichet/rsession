@@ -36,7 +36,7 @@ public class R2jsSessionTest {
 
     // maximal epsilon wanted between actual and expected values
     final double epsilon = 1e-12;
-    R2jsSession engine = R2jsSession.newInstance(new RLogSlf4j(), null);
+    R2jsSession engine = R2jsBuilder.newInstance(new RLogSlf4j(), null);
 
     public static void main(String args[]) {
         org.junit.runner.JUnitCore.main(R2jsSessionTest.class.getName());
@@ -51,7 +51,7 @@ public class R2jsSessionTest {
     public void test2Sessions() throws RException { // was failing for f <- function(){return(list(a=1,b=2))}; f()[['a']] called in _TWO_ engines
         engine.debug_js = true;
 
-        R2jsSession engine2 = R2jsSession.newInstance(new RLogSlf4j(), null);
+        R2jsSession engine2 = R2jsBuilder.newInstance(new RLogSlf4j(), null);
         engine2.debug_js = true;
 
         // ok for simple list
