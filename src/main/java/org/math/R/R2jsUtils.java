@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.math.R.R2js;
+package org.math.R;
 
 import java.util.ArrayList;
 import java.util.List;

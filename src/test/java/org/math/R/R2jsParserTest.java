@@ -1,8 +1,10 @@
-package org.math.R.R2js;
+package org.math.R;
 
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
+import org.math.R.AbstractR2jsSession;
+import org.math.R.R2jsUtils;
 import org.math.R.Rsession;
 
 /**

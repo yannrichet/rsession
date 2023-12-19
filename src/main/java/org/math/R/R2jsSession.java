@@ -1,8 +1,4 @@
-package org.math.R.R2js;
-
-import org.math.R.RLog;
-import org.math.R.RLogPrintStream;
-import org.math.R.Rsession;
+package org.math.R;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
