@@ -6,11 +6,15 @@ import org.math.R.RLogPrintStream;
 
 import java.io.File;
 import java.io.PrintStream;
+import java.net.URL;
 import java.util.*;
 
 public class R2jsSession extends AbstractR2jsSession {
 
-    private Engine engine;
+    private static Engine ENGINE = Engine.create();
+    private static Source MATH_SOURCE;
+    private static Source RAND_SOURCE;
+    private static Source R_SOURCE;
     private Context context;
 
     /**
@@ -56,12 +60,22 @@ public class R2jsSession extends AbstractR2jsSession {
 
 
     protected synchronized void loadJSLibraries() throws Exception {
-        Source mathSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
-        Source randSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/rand.js")).build();
-        Source rSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/R.js")).build();
-        this.context.eval(mathSource);
-        this.context.eval(randSource);
-        this.context.eval(rSource);
+        if(MATH_SOURCE == null) {
+            URL math_url = getClass().getResource(MATH_JS_FILE);
+            URL rand_url = getClass().getResource(RAND_JS_FILE);
+            URL r_url = getClass().getResource(R_JS_FILE);
+            if (math_url == null || rand_url == null || r_url == null) {
+                throw new IllegalArgumentException("file not found!");
+            } else {
+                MATH_SOURCE = Source.newBuilder("js",new File(math_url.toURI())).build();
+                RAND_SOURCE = Source.newBuilder("js",new File(rand_url.toURI())).build();
+                R_SOURCE = Source.newBuilder("js",new File(r_url.toURI())).build();
+            }
+        }
+
+        this.context.eval(MATH_SOURCE);
+        this.context.eval(RAND_SOURCE);
+        this.context.eval(R_SOURCE);
 
         this.simpleEval("__rand = rand()");
         this.simpleEval("__R = R()");
@@ -70,11 +84,10 @@ public class R2jsSession extends AbstractR2jsSession {
 
     @Override
     protected void createScriptEngine() {
-        engine = Engine.create();
         context = Context.newBuilder().
                 allowHostClassLookup(s -> true).
                 allowHostAccess(HostAccess.ALL).
-                engine(engine).build();
+                engine(ENGINE).build();
     }
 
     @Override
