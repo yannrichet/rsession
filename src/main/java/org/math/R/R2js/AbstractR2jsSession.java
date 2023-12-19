@@ -510,6 +510,8 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         // Replace "TRUE" by "true" and "FALSE" by "false"
         e = e.replaceAll("(?<!\\.)(\\b)TRUE(\\b)", "true");
         e = e.replaceAll("(?<!\\.)(\\b)FALSE(\\b)", "false");
+        e = e.replaceAll("(?<!\\.)(\\b)T(\\b)", "true");
+        e = e.replaceAll("(?<!\\.)(\\b)F(\\b)", "false");
 
         e = e.replaceAll("(?<!\\.)(\\b)NULL(\\b)", "null");
         e = e.replaceAll("(?<!\\.)(\\b)NA(\\b)", "null");

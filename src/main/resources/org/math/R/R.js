@@ -117,7 +117,11 @@
             eval(print(variable + '=' + value));
             if (typeof (value) == "string") {
                 if (value.startsWith("function")) {
-                    jsVariableStorageObject[variable] = eval(value);
+                    // Needs to define tmp variable
+                    var __tmp__ = {};
+                    eval("__tmp__.__tmp__ = " + value);
+                    jsVariableStorageObject[variable] = eval("__tmp__.__tmp__");
+                    eval("delete __tmp__")
                 } else {
                     jsVariableStorageObject[variable] = value;
                 }

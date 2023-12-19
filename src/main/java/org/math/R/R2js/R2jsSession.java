@@ -1,25 +1,17 @@
 package org.math.R.R2js;
 
+import org.graalvm.polyglot.*;
 import org.math.R.RLog;
 import org.math.R.RLogPrintStream;
-import org.math.R.Rsession;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.File;
+import java.io.PrintStream;
 import java.util.*;
-
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.api.scripting.ScriptUtils;
 
 public class R2jsSession extends AbstractR2jsSession {
 
-    public ScriptEngine js;
-
-    // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
-    private final static Map<String, Object> jsLibraries = Collections.synchronizedMap(new HashMap<>());
+    private Engine engine;
+    private Context context;
 
     /**
      * Default constructor
@@ -51,225 +43,158 @@ public class R2jsSession extends AbstractR2jsSession {
         return new R2jsSession(console, properties);
     }
 
+
     @Override
-    protected Object simpleEval(String toEval) throws ScriptException {
-        return js.eval(toEval);
+    protected Object simpleEval(String toEval) throws Exception {
+        return context.eval("js", toEval);
     }
 
     @Override
     protected void putVariable(String varname, Object var) {
-        this.js.put(varname, var);
+        context.getBindings("js").putMember(varname, var);
     }
 
-    /**
-     * Load external js libraries to evaluate js expresions: - 'math.js' :
-     * evaluate all mathematical expressions with numbers, arrays and matrices.
-     * - 'r.js': contains various function ( loading and saving files/variables,
-     * range function, ...)
-     *
-     * @throws ScriptException
-     */
-    protected synchronized void loadJSLibraries() throws ScriptException {
 
-        // Loading math.JS
-        if (!jsLibraries.containsKey("math")) {
-            InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
-            js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
-            jsLibraries.put("math", js.get("math"));
-        } else {
-            js.put("math", jsLibraries.get("math"));
-        }
+    protected synchronized void loadJSLibraries() throws Exception {
+        Source mathSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
+        Source randSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/rand.js")).build();
+        Source rSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/R.js")).build();
+        this.context.eval(mathSource);
+        this.context.eval(randSource);
+        this.context.eval(rSource);
 
-        js.eval("var parser = math.parser();");
-        // Change 'Matrix' mathjs config by 'Array'
-        js.eval("math.config({matrix: 'Array'})");
-        js.eval("var str = String.prototype;");
+        this.simpleEval("__rand = rand()");
+        this.simpleEval("__R = R()");
 
-        // suport T/F TRUE/FALSE shortcuts
-        js.eval("var T = true;");
-        js.eval("var F = false;");
-
-        // Loading rand.js
-        if (!jsLibraries.containsKey("rand")) {
-            InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
-            js.eval(new InputStreamReader(randInputStream, Charset.forName("UTF-8")));
-            js.eval("__rand = rand()");
-            jsLibraries.put("__rand", js.get("rand"));
-        } else {
-            js.put("__rand", jsLibraries.get("rand"));
-        }
-
-        // Loading plotly.js
-//        InputStream RInputStream = this.getClass().getResourceAsStream(PLOT_JS_FILE);
-//        js.eval(new InputStreamReader(RInputStream));
-//        js.eval("Plotly = Plotly()");
-        // Loading R.js
-        if (!jsLibraries.containsKey("R")) {
-            InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
-            js.eval(new InputStreamReader(RInputStream, Charset.forName("UTF-8")));
-            js.eval("__R = R()");
-            jsLibraries.put("__R", js.get("R"));
-        } else {
-            js.put("__R", jsLibraries.get("R"));
-        }
     }
 
     @Override
     protected void createScriptEngine() {
-        ScriptEngineManager manager = new ScriptEngineManager(null);
-        js = manager.getEngineByName("JavaScript");
-        if (js==null) js = manager.getEngineByName("js");
-        if (js==null) js = manager.getEngineByExtension("js");
-        if (js==null) js = manager.getEngineByName("nashorn");
-        if (js==null) js = manager.getEngineByName("Nashorn");
-        if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
-        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
+        engine = Engine.create();
+        context = Context.newBuilder().
+                allowHostClassLookup(s -> true).
+                allowHostAccess(HostAccess.ALL).
+                engine(engine).build();
     }
 
     @Override
     public double asDouble(Object o) throws ClassCastException {
-        if (o instanceof Double) {
-            return (Double) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if(o instanceof Value) {
+            return ((Value) o).asDouble();
+        } else {
+            return (double) o;
         }
-        return (double) ScriptUtils.convert(o, double.class);
     }
 
     @Override
     public double[] asArray(Object o) throws ClassCastException {
-        if (o instanceof double[]) {
-            return (double[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof Double) {
+        if(o instanceof Double) {
             return new double[]{(double)o};
         }
-        Object co = ScriptUtils.convert(o, double[].class);
-        if (co instanceof Double) {
-            return new double[]{(double)co};
+        Value value = (Value) o;
+        if(value.hasArrayElements()) {
+            return value.as(double[].class);
+        } else {
+            return new double[]{value.asDouble()};
         }
-        return (double[]) co;
     }
 
     @Override
     public double[][] asMatrix(Object o) throws ClassCastException {
-        if (o == null) {
-            return null;
-        }
-        if (o instanceof double[][]) {
-            return (double[][]) o;
-        } else if (o instanceof double[]) {
-            return t(new double[][]{(double[]) o});
-        } else if (o instanceof Double) {
-            return new double[][]{{(double) o}};
-        } else /*if (o instanceof Map)*/ {
-            double[][] vals = null;
-            int i = 0;
-            try {
-                for (Object k : ((Map) o).keySet()) {
-                    double[] v = null;
-                    if (o instanceof ScriptObjectMirror) {
-                        try {
-                            v = (double[]) ((ScriptObjectMirror) o).to(double[].class);
-                        } catch (Exception ex) {
-                            //ex.printStackTrace();
-                            throw new ClassCastException("[asMatrix] Cannot cast ScriptObjectMirror list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                        }
-                    } else {
-                        try {
-                            v = (double[]) ((Map) o).get(k);
-                        } catch (Exception ex) {
-                            //ex.printStackTrace();
-                            throw new ClassCastException("[asMatrix] Cannot cast list element to double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                        }
-                    }
-                    if (v == null) {
-                        throw new ClassCastException("[asMatrix] Cannot get list element as double[] " + ((Map) o).get(k) + " for key " + k + " in " + o);
-                    }
-                    if (vals == null) {
-                        vals = new double[v.length][((Map) o).size()];
-                    }
-                    for (int j = 0; j < v.length; j++) {
-                        vals[j][i] = v[j];
-                    }
-                    i++;
-                }
-                return vals;
-            } catch (Exception ex) {
-                throw new ClassCastException("[asMatrix] Cannot cast Map to matrix: " + ex.getMessage());
+        if(o instanceof Value) {
+            return ((Value)o).as(double[][].class);
+        } else {
+            if (o == null) {
+                return null;
+            }
+            if (o instanceof double[][]) {
+                return (double[][]) o;
+            } else if (o instanceof double[]) {
+                return t(new double[][]{(double[]) o});
+            } else if (o instanceof Double) {
+                return new double[][]{{(double) o}};
             }
         }
+        return null;
     }
 
     @Override
     public String asString(Object o) throws ClassCastException {
-        if (o instanceof String) {
-            return (String) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if(o instanceof Value) {
+            return ((Value) o).asString();
+        } else {
+            return (String) o;
         }
-        return (String) ScriptUtils.convert(o, String.class);
     }
 
     @Override
     public String[] asStrings(Object o) throws ClassCastException {
-        if (o instanceof String[]) {
-            return (String[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof String) {
-            return new String[]{(String)o};
+        if(o instanceof String) {
+            return new String[]{o.toString()};
         }
-        Object co = ScriptUtils.convert(o, String[].class);
-        if (co instanceof String) {
-            return new String[]{(String)co};
+        if(o instanceof String[]) {
+            return (String[]) o;
         }
-        return (String[]) co;
+        Value value = (Value) o;
+        if(value.hasArrayElements()) {
+            try {
+                return value.as(String[].class);
+            } catch (Exception e) {
+                Object[] objects = value.as(Object[].class);
+                return Arrays.stream(objects).map(Object::toString).
+                        toArray(String[]::new);
+            }
+        } else {
+            return new String[]{asString(o)};
+        }
     }
 
     @Override
     public boolean asLogical(Object o) throws ClassCastException {
-        if (o instanceof Boolean) {
-            return (Boolean) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if(o instanceof Value) {
+            return ((Value) o).asBoolean();
+        } else {
+            return (Boolean) o;
         }
-        if (o instanceof Rsession.RException) {
-            throw new IllegalArgumentException("[asLogical] Exception: " + ((Rsession.RException) o).getMessage());
-        }
-        return (boolean) ScriptUtils.convert(o, boolean.class);
     }
 
     @Override
     public boolean[] asLogicals(Object o) throws ClassCastException {
-        if (o instanceof boolean[]) {
-            return (boolean[]) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
-        } else if (o instanceof Boolean) {
-            return new boolean[]{(boolean)o};
+        if(o instanceof Value) {
+            return ((Value)o).as(boolean[].class);
+        } else {
+            return new boolean[] {(boolean) o};
         }
-        Object co =  ScriptUtils.convert(o, boolean[].class);
-        if (co instanceof Boolean) {
-            return new boolean[]{(boolean)co};
-        }
-        return (boolean[]) co;
     }
 
     @Override
     public Map asList(Object o) throws ClassCastException {
-        if (o instanceof Map) {
-            return (Map) o; // because already cast in Nashorn/jdk11 (but not in Nashorn/jdk8 !!)
+        if(o instanceof Value) {
+            return ((Value)o).as(Map.class);
+        } else {
+            return (Map) o;
         }
-        return (Map) ScriptUtils.convert(o, Map.class);
     }
 
     @Override
     public Object cast(Object o) throws ClassCastException {
-        // If it's a ScriptObjectMirror, it can be an array or a matrix
-        if (o instanceof Integer) {
-            return Double.valueOf((int) o);
-        } else if (o instanceof ScriptObjectMirror) {
-            try {
-//                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
-                return ((ScriptObjectMirror) o).to(double[][].class);
-            } catch (Exception e) {//e.printStackTrace();
+        Value value = (Value) o;
+        if(value.isNumber()) {
+            return asDouble(o);
+        }
+        if(value.isBoolean()) {
+            return asLogical(o);
+        }
+        if(value.isString()) {
+            return asString(o);
+        }
+        if(value.hasArrayElements()) {
+            try{
+                return asMatrix(o);
+            } catch (Exception e) {
             }
-
-            try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
-                String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
-
-//                 System.err.println("// Check if the String[] array can be cast to a double[] array");
+            try{
+                String[] stringArray = asStrings(o);
                 try {
                     for (String string : stringArray) {
                         Double.valueOf(string);
@@ -278,40 +203,81 @@ public class R2jsSession extends AbstractR2jsSession {
                     // It can't be cast to double[] so we return String[]
                     return stringArray;
                 }
-
-//                 System.err.println("// return double[] array");
-                return ((ScriptObjectMirror) o).to(double[].class);
-
-            } catch (Exception e) {//e.printStackTrace();
+                return asArray(o);
+            } catch (Exception e) {
             }
 
-            try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
-                return ((ScriptObjectMirror) o).to(double[].class);
-            } catch (Exception e) {//e.printStackTrace();
+            try{
+                return asArray(o);
+            } catch (Exception e) {
             }
-
-            try {
-//                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
-                Map m = ((ScriptObjectMirror) o).to(Map.class);
-                try {
-                    return asMatrix(m);
-                } catch (ClassCastException c) {
-                    //c.printStackTrace();
-                    return m;
-                }
-            } catch (Exception e) {//e.printStackTrace();
-            }
-
-            throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
-        } else {
-            return o;
         }
+        try {
+            return asList(o);
+        } catch (Exception e) {
+        }
+        return o;
+
+
+//        return o;
+////        // If it's a ScriptObjectMirror, it can be an array or a matrix
+//        if (o instanceof Integer) {
+//            return Double.valueOf((int) o);
+//        } else if (o instanceof ScriptObjectMirror) {
+//            try {
+////                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
+//                return ((ScriptObjectMirror) o).to(double[][].class);
+//            } catch (Exception e) {//e.printStackTrace();
+//            }
+//
+//            try {
+////                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
+//                String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
+//
+////                 System.err.println("// Check if the String[] array can be cast to a double[] array");
+//                try {
+//                    for (String string : stringArray) {
+//                        Double.valueOf(string);
+//                    }
+//                } catch (Exception e) {//e.printStackTrace();
+//                    // It can't be cast to double[] so we return String[]
+//                    return stringArray;
+//                }
+//
+////                 System.err.println("// return double[] array");
+//                return ((ScriptObjectMirror) o).to(double[].class);
+//
+//            } catch (Exception e) {//e.printStackTrace();
+//            }
+//
+//            try {
+////                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
+//                return ((ScriptObjectMirror) o).to(double[].class);
+//            } catch (Exception e) {//e.printStackTrace();
+//            }
+//
+//            try {
+////                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
+//                Map m = ((ScriptObjectMirror) o).to(Map.class);
+//                try {
+//                    return asMatrix(m);
+//                } catch (ClassCastException c) {
+//                    //c.printStackTrace();
+//                    return m;
+//                }
+//            } catch (Exception e) {//e.printStackTrace();
+//            }
+//
+//            throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
+//        } else {
+//            return o;
+//        }
     }
 
     @Override
     public synchronized void end() {
-        js = null;
+        //js = null;
+        // TODO
         super.end();
     }
 }
