@@ -1,4 +1,4 @@
-package org.math.R.R2js;
+package org.math.R;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
-import org.math.R.*;
 
 /**
  * This class evaluate an R expression by parsing it in javascript expression

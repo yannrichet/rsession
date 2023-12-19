@@ -1,4 +1,4 @@
-package org.math.R.R2js;
+package org.math.R;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -16,8 +16,6 @@ import javax.script.ScriptException;
 //import org.graalvm.polyglot.*;
 
 import org.junit.Test;
-import org.math.R.RLog;
-import org.math.R.RLogSlf4j;
 import org.math.R.Rsession.RException;
 
 import static org.junit.Assert.*;

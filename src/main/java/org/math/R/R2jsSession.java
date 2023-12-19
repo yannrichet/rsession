@@ -1,12 +1,10 @@
-package org.math.R.R2js;
+package org.math.R;
 
 import org.graalvm.polyglot.*;
-import org.math.R.RLog;
-import org.math.R.RLogPrintStream;
 
-import java.io.File;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class R2jsSession extends AbstractR2jsSession {
@@ -58,19 +56,29 @@ public class R2jsSession extends AbstractR2jsSession {
         context.getBindings("js").putMember(varname, var);
     }
 
+    private static StringBuilder resourceToStringBuilder(String resource) {
+        InputStream inputStream = R2jsSession.class.getResourceAsStream(MATH_JS_FILE);
+        StringBuilder textBuilder = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            int c = 0;
+            while ((c = reader.read()) != -1) {
+                textBuilder.append((char) c);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return textBuilder;
+    }
 
     protected synchronized void loadJSLibraries() throws Exception {
         if(MATH_SOURCE == null) {
-            URL math_url = getClass().getResource(MATH_JS_FILE);
-            URL rand_url = getClass().getResource(RAND_JS_FILE);
-            URL r_url = getClass().getResource(R_JS_FILE);
-            if (math_url == null || rand_url == null || r_url == null) {
-                throw new IllegalArgumentException("file not found!");
-            } else {
-                MATH_SOURCE = Source.newBuilder("js",new File(math_url.toURI())).build();
-                RAND_SOURCE = Source.newBuilder("js",new File(rand_url.toURI())).build();
-                R_SOURCE = Source.newBuilder("js",new File(r_url.toURI())).build();
-            }
+            Reader mathReader = new InputStreamReader(R2jsSession.class.getResourceAsStream(MATH_JS_FILE));
+            Reader randReader = new InputStreamReader(R2jsSession.class.getResourceAsStream(RAND_JS_FILE));
+            Reader rReader = new InputStreamReader(R2jsSession.class.getResourceAsStream(R_JS_FILE));
+            
+            MATH_SOURCE = Source.newBuilder("js",mathReader, "math.js").build();
+            RAND_SOURCE = Source.newBuilder("js",randReader, "rand.js").build();
+            R_SOURCE = Source.newBuilder("js",rReader, "R.js").build();
         }
 
         this.context.eval(MATH_SOURCE);
@@ -230,61 +238,6 @@ public class R2jsSession extends AbstractR2jsSession {
         } catch (Exception e) {
         }
         return o;
-
-
-//        return o;
-////        // If it's a ScriptObjectMirror, it can be an array or a matrix
-//        if (o instanceof Integer) {
-//            return Double.valueOf((int) o);
-//        } else if (o instanceof ScriptObjectMirror) {
-//            try {
-////                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
-//                return ((ScriptObjectMirror) o).to(double[][].class);
-//            } catch (Exception e) {//e.printStackTrace();
-//            }
-//
-//            try {
-////                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
-//                String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
-//
-////                 System.err.println("// Check if the String[] array can be cast to a double[] array");
-//                try {
-//                    for (String string : stringArray) {
-//                        Double.valueOf(string);
-//                    }
-//                } catch (Exception e) {//e.printStackTrace();
-//                    // It can't be cast to double[] so we return String[]
-//                    return stringArray;
-//                }
-//
-////                 System.err.println("// return double[] array");
-//                return ((ScriptObjectMirror) o).to(double[].class);
-//
-//            } catch (Exception e) {//e.printStackTrace();
-//            }
-//
-//            try {
-////                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
-//                return ((ScriptObjectMirror) o).to(double[].class);
-//            } catch (Exception e) {//e.printStackTrace();
-//            }
-//
-//            try {
-////                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
-//                Map m = ((ScriptObjectMirror) o).to(Map.class);
-//                try {
-//                    return asMatrix(m);
-//                } catch (ClassCastException c) {
-//                    //c.printStackTrace();
-//                    return m;
-//                }
-//            } catch (Exception e) {//e.printStackTrace();
-//            }
-//
-//            throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
-//        } else {
-//            return o;
-//        }
     }
 
     @Override
