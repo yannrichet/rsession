@@ -2307,7 +2307,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
         // We consider differently the '-' operator in '2-3' to the '-' negative: '-3'.
         // So we replace -3 by î3 first, but 2-3 stays 2-3
-        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]) *-", "$1 î");
+        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]|return) *-", "$1 î");
 
         String stoppingCharacters = "-=*/^;%+:,><&|ôâêŝĝ\n"; // all operators but 'î'
         expr = expr.replaceAll("[)]/", ") /");

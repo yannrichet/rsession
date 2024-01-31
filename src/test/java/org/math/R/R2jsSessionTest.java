@@ -1483,6 +1483,18 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("1e-31*1e-32"),  1e-63, 1e-75); //"normal" floating error of 1e-15 on multiplication
     }
 
+    @Test
+    public void testMinus() throws RException {
+        engine.eval("test <- function() { -100+100+5 }");
+        assert (Double) engine.eval("test()") == 5.0;
+        assert (Double) engine.eval("-3 -4") == -7;
+        assert (Double) engine.eval(" -3 -4") == -7;
+        assert (Double) engine.eval("( -3 -4)") == -7;
+        assert (Double) engine.eval(" ( -3 -4)") == -7;
+        assert (Double) engine.eval(" { -3 -4}") == -7;
+        assert ((double[]) engine.eval(" [ -3 -4]"))[0] == -7;
+    }
+
 //    @Test
 //    public void testEvaluationTime() throws RException, ScriptException, IOException {
 //        String MATH_JS_FILE = "/org/math/R/math.js";
