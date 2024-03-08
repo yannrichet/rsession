@@ -127,6 +127,14 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testQuoteExpr() throws RException {
+        System.err.println("================= testQuoteExpr ===============");
+        engine.debug_js = true;
+        String conversion = engine.convertRtoJs("save(file='/test/ZoneE_alvéole_manuelle_mod1et2_21N/calc-results/00ylufTCubG/spool/Rint=1E-4/brd=1.0/ep_eau=1E-4/.RData', list=ls(all.names=T))");
+        assert conversion.equals("__R.write( '/test/ZoneE_alvéole_manuelle_mod1et2_21N/calc-results/00ylufTCubG/spool/Rint=1E-4/brd=1.0/ep_eau=1E-4/.RData', __R.createJsonString( Object.keys( __this__), __this__))") : conversion;
+    }
+
+    @Test
     public void testConvert() throws RException, UnknownHostException {
         System.err.println("================= testConvert ===============");
 

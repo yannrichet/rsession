@@ -351,7 +351,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
      * @param e - the R expression
      * @return the js script expression
      */
-    private String convertRtoJs(String e) throws RException {
+    protected String convertRtoJs(String e) throws RException {
 
         // If e contains already "__this__" ... (should not happen, but...)
         if (e.contains(THIS_ENVIRONMENT)) {
@@ -381,6 +381,10 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             }
         }
 
+        // Get all expression in quote and replace them by variables to not
+        // modify them in this function
+        quotesList = replaceQuotesByVariables(e, 1);
+
         //1E-8 -> 1*10^-8
         //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
@@ -390,10 +394,6 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             } catch (Exception ex) {//Do nothing, for instance if it is nt a number in facts (-> hostname bug 'travis-1ee1-...)
             }
         }
-
-        // Get all expression in quote and replace them by variables to not
-        // modify them in this function
-        quotesList = replaceQuotesByVariables(e, 1);
 
         // Get the expression with replaced quotes (it's the first element of
         // the returned list)
