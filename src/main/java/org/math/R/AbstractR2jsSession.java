@@ -385,6 +385,10 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         // modify them in this function
         quotesList = replaceQuotesByVariables(e, 1);
 
+        // Get the expression with replaced quotes (it's the first element of
+        // the returned list)
+        e = quotesList.get(0);
+
         //1E-8 -> 1*10^-8
         //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
@@ -395,9 +399,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             }
         }
 
-        // Get the expression with replaced quotes (it's the first element of
-        // the returned list)
-        e = quotesList.get(0);
+
 
         checkExpressionValidity(e);
 
