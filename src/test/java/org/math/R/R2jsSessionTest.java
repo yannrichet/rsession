@@ -666,6 +666,15 @@ public class R2jsSessionTest {
         //assert Double.parseDouble( js.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(0)").toString()) == -273.15;
+
+        engine.eval("f12 <- function() {  if (TRUE) {\n" +
+                "     d <- 1+1\n" +
+                "   } else if (!TRUE) {\n" +
+                "     d <- 2+2\n" +
+                "   } " +
+                "return d}");
+        assert (Double) engine.eval("f12()") == 2;
+
         engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
         assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
         assert (Double) engine.eval("f(3)") == 3403;

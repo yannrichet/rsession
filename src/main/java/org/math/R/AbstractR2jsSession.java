@@ -1227,12 +1227,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             ifSb.append(ifArg);
             ifSb.append(")");
 
-            //if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
-
-
             int elseIndex = getNextElseIndex(result, endIndex);
-
-            boolean dontCloseBrack = false;
 
             if (elseIndex > 0) {
                 String ifStatement = result.substring(endIndex + 1, elseIndex).trim();
@@ -1241,7 +1236,20 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
                 ifSb.append(ifStatement);
                 if(addIfBrackets) ifSb.append("}");
                 ifSb.append(" else ");
+
+                // If this is a "else if", "else" stop when the next "if" stop
+                // Otherwise "else" stop at the next "}"
                 int stopElseStatement = getNextExpressionLastIndex(result, elseIndex, "}");
+                int elseIfIdx = result.indexOf("else if", elseIndex);
+                if(elseIndex == elseIfIdx) {
+                    int nextIdOpenBracket = result.indexOf("{", elseIndex);
+                    int nextCloseBracket = result.indexOf("}", elseIndex);
+                    if(nextCloseBracket<nextIdOpenBracket) {
+                        stopElseStatement = nextCloseBracket;
+                    } else {
+                        stopElseStatement = getNextExpressionLastIndex(result, nextIdOpenBracket + 1, "}");
+                    }
+                }
                 String elseStatement = result.substring(elseIndex + 4, stopElseStatement+1).trim();
                 boolean addElseBrackets = !elseStatement.startsWith("{");
                 if(addElseBrackets) ifSb.append("{");
@@ -1260,8 +1268,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
-            sb.append(ifSb.toString());
-            //if(!dontCloseBrack && !ifSb.toString().trim().endsWith("}")) sb.append("}");
+            sb.append(ifSb);
             result = sb.toString();
 
             // Search the next "if"
