@@ -1234,7 +1234,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
             boolean dontCloseBrack = false;
 
-            if (elseIndex >= 0) {
+            if (elseIndex > 0) {
                 String ifStatement = result.substring(endIndex + 1, elseIndex).trim();
                 boolean addIfBrackets = !ifStatement.startsWith("{");
                 if(addIfBrackets) ifSb.append("{");
