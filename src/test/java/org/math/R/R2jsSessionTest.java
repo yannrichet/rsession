@@ -1393,6 +1393,22 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("if(f1()>2) f1() else f1()+1"), 4, epsilon);
         assertEquals((Double) engine.eval("if(f1()==2) f1() else f1()+1"), 5, epsilon);
         assertEquals((Double) engine.eval("if(f1()>2) f1()"), 4, epsilon);
+        engine.eval("f2 <- function() {if(123>6) 12 else 123}");
+        assertEquals((Double) engine.eval("f2()"), 12, epsilon);
+
+        engine.eval("f3 <- function() {if(TRUE) if(FALSE) if(TRUE) 13 else 11 else 123 else 45}");
+        assertEquals(123,(Double) engine.eval("f3()"), epsilon);
+        engine.eval("f4 <- function() {if(TRUE) 12 else if(FALSE) if(TRUE) 13 else 11 else 123}");
+        assertEquals(12,(Double) engine.eval( "f4()"), epsilon);
+        engine.eval("f5 <- function() {if(TRUE) 12 else {if(FALSE) if(TRUE) 13 else 11 else 123}}");
+        assertEquals(12,(Double) engine.eval( "f5()"), epsilon);
+        engine.eval("f6 <- function() {if(TRUE) 12 else {if(FALSE) if(TRUE) {13} else { 11 } else 123}}");
+        assertEquals(12,(Double) engine.eval( "f6()"), epsilon);
+        engine.eval("f7 <- function() {if(12>(67.4-61.5)) if(13>(67.4-54))  13.4+((13-5.9)*7.5)-13.4 else if(11<(67.4-54)) 1 else 2}");
+        assertEquals(1,(Double) engine.eval( "f7()"), epsilon);
+
+        engine.eval("f8 <- function() {if(TRUE) if(FALSE) 34 else if(TRUE) 1 else 2}");
+        assertEquals(1,(Double) engine.eval( "f8()"), epsilon);
     }
 
     @Test

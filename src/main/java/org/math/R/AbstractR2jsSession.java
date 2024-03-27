@@ -1230,44 +1230,38 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             //if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
 
 
-            int elseIndex = result.indexOf("else", endIndex);
+            int elseIndex = getNextElseIndex(result, endIndex);
 
             boolean dontCloseBrack = false;
 
             if (elseIndex >= 0) {
                 String ifStatement = result.substring(endIndex + 1, elseIndex).trim();
-                if(!ifStatement.startsWith("{")) ifSb.append("{");
+                boolean addIfBrackets = !ifStatement.startsWith("{");
+                if(addIfBrackets) ifSb.append("{");
                 ifSb.append(ifStatement);
-                if(!ifStatement.endsWith("}")) ifSb.append("}");
+                if(addIfBrackets) ifSb.append("}");
                 ifSb.append(" else ");
-                String elseStatement = result.substring(elseIndex + 4).trim();
-                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("{");
+                int stopElseStatement = getNextExpressionLastIndex(result, elseIndex, "}");
+                String elseStatement = result.substring(elseIndex + 4, stopElseStatement+1).trim();
+                boolean addElseBrackets = !elseStatement.startsWith("{");
+                if(addElseBrackets) ifSb.append("{");
                 ifSb.append(elseStatement);
-                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("}");
+                if(addElseBrackets) ifSb.append("}");
+                ifSb.append(result.substring(stopElseStatement+1));
             } else {
-                String ifStatement = result.substring(endIndex + 1, result.length()).trim();
-                if(!ifStatement.startsWith("{")) {
-                    ifSb.append("{");
-                    int returnLineIdx = ifStatement.indexOf('\n');
-                    if(returnLineIdx>=0) {
-                        ifStatement = ifStatement.substring(0, returnLineIdx) + "}" + ifStatement.substring(returnLineIdx, ifStatement.length());
-                        ifSb.append(ifStatement);
-                        dontCloseBrack = true;
-                    } else {
-                        ifSb.append(ifStatement);
-                        ifSb.append("}");
-                    }
-                } else {
-                    ifSb.append(ifStatement);
-                    dontCloseBrack = true;
-                }
-
+                int stopIdx = getNextExpressionLastIndex(result, endIndex, "}")+1;
+                String ifStatement = result.substring(endIndex + 1, stopIdx).trim();
+                boolean addIfBrackets = !ifStatement.startsWith("{");
+                if(addIfBrackets) ifSb.append("{");
+                ifSb.append(ifStatement);
+                if(addIfBrackets) ifSb.append("}");
+                ifSb.append(result.substring(stopIdx));
             }
 
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
             sb.append(ifSb.toString());
-            if(!dontCloseBrack && !ifSb.toString().trim().endsWith("}")) sb.append("}");
+            //if(!dontCloseBrack && !ifSb.toString().trim().endsWith("}")) sb.append("}");
             result = sb.toString();
 
             // Search the next "if"
@@ -2580,6 +2574,101 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         //System.err.println("\n" + repeat(" ", firstIndex + 2) + "|");
         return firstIndex;
     }
+
+
+    private static int getNextElseIndex(String expr, int startIndex) {
+        int ifCount = 0;
+        int ifIdx = getNextExpressionLastIndexForString(expr, startIndex, "if");
+        int elseIdx = getNextExpressionLastIndexForString(expr, startIndex, "else");
+        while(ifIdx>0 || elseIdx>0) {
+            if(elseIdx<=ifIdx || ifIdx<0) {
+                if(ifCount > 0) {
+                    ifCount--;
+                } else {
+                    if(elseIdx+4>=expr.length()) {
+                        return -1;
+                    } else {
+                        return elseIdx+1;
+                    }
+                }
+            } else {
+                ifCount++;
+            }
+            int nextIdx = ifIdx + 1;
+            if(ifIdx<0) {
+                nextIdx = elseIdx +1;
+            }
+            ifIdx = getNextExpressionLastIndexForString(expr, nextIdx, "if");
+            elseIdx = getNextExpressionLastIndexForString(expr, nextIdx, "else");
+        }
+
+        return -1;
+    }
+
+    /**
+     * Get the index of the end of an expression
+     * The function starts at the
+     * given startIndex and return the index of the first character founded in
+     * the stoppingCharacters string. This function ignore characters inside
+     * brackets or paranthesis
+     *
+     * @param expr - the expression to check
+     * @param startIndex - index to start with to search a stopping characters
+     * @param searchedString - searched string.
+     * @return the last index of the next expression
+     */
+    private static int getNextExpressionLastIndexForString(String expr, int startIndex, String searchedString) {
+        //System.err.println("getNextExpressionLastIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
+
+        int lastIndex = expr.length() - 1;
+
+        int parenthesis = 0; // '(' and ')'
+        int brackets = 0; // '{' and '}'
+        int brackets2 = 0; // '[' and ']'
+
+        // Ignore space character at beginning
+        int startingIndex = startIndex + 1;
+        while (startingIndex < expr.length() && expr.charAt(startingIndex) == ' ') {
+            startingIndex++;
+        }
+
+        // Stop at the first stopping character
+        for (int i = startingIndex; i < expr.length(); i++) {
+            char currentChar = expr.charAt(i);
+            if (currentChar == '(') {
+                parenthesis++;
+            } else if (currentChar == ')') {
+                parenthesis--;
+                if (parenthesis < 0) {
+                    return -1;
+                }
+            } else if (currentChar == '{') {
+                brackets++;
+            } else if (currentChar == '}') {
+                brackets--;
+                if (brackets < 0) {
+                    return -1;
+                }
+            } else if (currentChar == '[') {
+                brackets2++;
+            } else if (currentChar == ']') {
+                brackets2--;
+                if (brackets2 < 0) {
+                    return -1;
+                }
+            } else if (parenthesis == 0 && brackets == 0 && brackets2 == 0) {
+                if(expr.indexOf(searchedString, i) == i) {
+                    return i - 1;
+                }
+            }
+        }
+
+        // If there is no stopping character, the expression stop at the
+        // end of the sentence
+        //System.err.println("\n"+repeat(" ",lastIndex +2)+"|");
+        return lastIndex;
+    }
+
 
     /**
      * Get the index of the end of an expression
