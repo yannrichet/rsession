@@ -1194,6 +1194,28 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
     }
 
+    private static int findElseEnd(String result, int startIdx) {
+        int stopElseStatement = 0;
+        int nextCloseBracket = getNextExpressionLastIndex(result, startIdx, "\n");
+        //result.substring(startIdx, nextCloseBracket)
+        int nextIdOpenBracket = result.indexOf("{", startIdx);
+        boolean noStartingBracket = false;
+        if(nextIdOpenBracket<nextCloseBracket) {
+            int nextCloseBracket2 = getNextExpressionLastIndex(result, nextIdOpenBracket+1, "}");
+            stopElseStatement = nextCloseBracket2;
+        } else {
+            stopElseStatement = nextCloseBracket;
+            noStartingBracket = true;
+        }
+        int elseIfIdx = result.indexOf("else", stopElseStatement);
+        // If there is a "else" just after the end of "if" statement, then it is not the end of this "else" -> recursivity
+        if(!noStartingBracket && Math.abs(stopElseStatement-elseIfIdx)<=3) {
+            return findElseEnd(result, elseIfIdx);
+        }
+
+        return  stopElseStatement;
+    }
+
     /**
      * This function add brackets in if/else expression. In nashorn (Java8_161 -
      * ECMA5) the if without '{' work but not the if else without '{'
@@ -1237,7 +1259,14 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
                 if(addIfBrackets) ifSb.append("}");
                 ifSb.append(" else ");
 
+                // If this is a "else if", "else" stop when the next "if" stop
+                // Otherwise "else" stop at the next "\n"
                 int stopElseStatement = getNextExpressionLastIndex(result, elseIndex, "}");
+                int elseIfIdx = result.indexOf("else if", elseIndex);
+                if(elseIndex == elseIfIdx) {
+                    // Stop else when the "if" end
+                    stopElseStatement = findElseEnd(result, elseIfIdx);
+                }
                 String elseStatement = result.substring(elseIndex + 4, stopElseStatement+1).trim();
                 boolean addElseBrackets = !elseStatement.startsWith("{");
                 if(addElseBrackets) ifSb.append("{");
@@ -2702,6 +2731,14 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         // Stop at the first stopping character
         for (int i = startingIndex; i < expr.length(); i++) {
             char currentChar = expr.charAt(i);
+
+            if (parenthesis == 0 && brackets == 0 && brackets2 == 0
+                    && stoppingCharacters.indexOf(currentChar) >= 0) {
+                // If it's a stopping character
+                //System.err.println("\n" + repeat(" ", i - 1 + 2) + "|");
+                return i - 1;
+            }
+
             if (currentChar == '(') {
                 parenthesis++;
             } else if (currentChar == ')') {
