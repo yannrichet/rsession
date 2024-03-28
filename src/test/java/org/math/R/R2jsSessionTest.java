@@ -1395,6 +1395,7 @@ public class R2jsSessionTest {
     @Test
     public void testIfFunction() throws RException, ScriptException {
         engine.debug_js = true;
+
         engine.voidEval("f1 <- function() { return 4}");
         assertEquals((Double) engine.eval("if(f1() == 2) f1() else f1()+1"), 5, epsilon);
         assertEquals((Double) engine.eval("if(f1() >2) { 3 } else { 4 }"), 3, epsilon);
@@ -1418,6 +1419,13 @@ public class R2jsSessionTest {
 
         engine.eval("f8 <- function() {if(TRUE) if(FALSE) 34 else if(TRUE) 1 else 2}");
         assertEquals(1,(Double) engine.eval( "f8()"), epsilon);
+
+        engine.eval("f9 <- function() {if(FALSE) 12 else if(FALSE) 13 else if(TRUE) 14}");
+        assertEquals(14,(Double) engine.eval( "f9()"), epsilon);
+
+        engine.eval("f10 <- function() {if(FALSE) { 12 } else if(FALSE) { 13 } else if(TRUE) { 14 }}");
+        assertEquals(14,(Double) engine.eval( "f10()"), epsilon);
+
     }
 
     @Test

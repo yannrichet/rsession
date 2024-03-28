@@ -1237,19 +1237,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
                 if(addIfBrackets) ifSb.append("}");
                 ifSb.append(" else ");
 
-                // If this is a "else if", "else" stop when the next "if" stop
-                // Otherwise "else" stop at the next "}"
                 int stopElseStatement = getNextExpressionLastIndex(result, elseIndex, "}");
-                int elseIfIdx = result.indexOf("else if", elseIndex);
-                if(elseIndex == elseIfIdx) {
-                    int nextIdOpenBracket = result.indexOf("{", elseIndex);
-                    int nextCloseBracket = result.indexOf("}", elseIndex);
-                    if(nextCloseBracket<nextIdOpenBracket) {
-                        stopElseStatement = nextCloseBracket;
-                    } else {
-                        stopElseStatement = getNextExpressionLastIndex(result, nextIdOpenBracket + 1, "}");
-                    }
-                }
                 String elseStatement = result.substring(elseIndex + 4, stopElseStatement+1).trim();
                 boolean addElseBrackets = !elseStatement.startsWith("{");
                 if(addElseBrackets) ifSb.append("{");
@@ -1259,6 +1247,13 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             } else {
                 int stopIdx = getNextExpressionLastIndex(result, endIndex, "}")+1;
                 String ifStatement = result.substring(endIndex + 1, stopIdx).trim();
+                if(!ifStatement.startsWith("{")) {
+                    int endOfLine = getNextExpressionLastIndex(result, endIndex, "\n")+1;
+                    if(endOfLine<stopIdx) {
+                        stopIdx = endOfLine;
+                        ifStatement = result.substring(endIndex + 1, stopIdx).trim();
+                    }
+                }
                 boolean addIfBrackets = !ifStatement.startsWith("{");
                 if(addIfBrackets) ifSb.append("{");
                 ifSb.append(ifStatement);
