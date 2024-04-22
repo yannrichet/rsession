@@ -2531,7 +2531,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
                 } else {
                     int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
                     String variableName = expr.substring(startIndex, equalIndex).trim();
-                    if (variableName.matches("\\w+")) {
+                    if (variableName.matches("[a-zA-Z]\\w*")) {
                         variablesSet.add(variableName);
                     }
                 }

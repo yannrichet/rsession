@@ -1393,6 +1393,15 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testMalformedExpression() throws RException, ScriptException {
+        try {
+            engine.voidEval("123=a2()");
+        } catch (Exception ignored) {
+        }
+        assertFalse("Variable should not exist", engine.variablesSet.contains("123"));
+    }
+
+    @Test
     public void testIfFunction() throws RException, ScriptException {
         engine.debug_js = true;
 
