@@ -52,6 +52,11 @@ import org.apache.commons.io.FileUtils;
  */
 public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
+
+    // If cache is activated, correspondences between R and Js expressions will be stored
+    private boolean useCache = false;
+    private static HashMap<String, String> CACHE = new HashMap<>();
+
     /**
      * Default constructor
      *
@@ -344,6 +349,26 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         }
     }
 
+
+    /**
+     * If cache is activated and contains R expression correspondence, get js expression from it.
+     * Otherwise, convert R to js
+     *
+     * @param e - the R expression
+     * @return the js script expression
+     */
+    protected String convertRtoJs(String e) throws RException {
+        if(useCache && CACHE.containsKey(e)) {
+            return CACHE.get(e);
+        } else {
+            String jsExpr = convertRtoJsNoCache(e);
+            if(useCache) {
+                addToCache(e, jsExpr);
+            }
+            return jsExpr;
+        }
+    }
+
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are
      * not supported yet
@@ -351,7 +376,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
      * @param e - the R expression
      * @return the js script expression
      */
-    protected String convertRtoJs(String e) throws RException {
+    protected String convertRtoJsNoCache(String e) throws RException {
 
         // If e contains already "__this__" ... (should not happen, but...)
         if (e.contains(THIS_ENVIRONMENT)) {
@@ -3218,6 +3243,19 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         html = html.replace("___SUBMIT___", submit_tmpl.replace("___ONCLICK___", "document.write(" + fun + "(" + cat(",", args) + "))"));
 
         return (html);
+    }
+
+    private synchronized void addToCache(String key, String value) {
+        CACHE.put(key, value);
+    }
+
+    // Method to print the entire shared map
+    public static void printCache() {
+        System.out.println(CACHE);
+    }
+
+    public void useCache(boolean useCache) {
+        this.useCache = useCache;
     }
 
     public static void main(String[] args) throws Exception {
