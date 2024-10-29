@@ -432,7 +432,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         e = e.replaceAll("([a-zA-Z]*)\\.([a-zA-Z]+)", "$1__$2");
 
         // Replace 0. by 0 do avoid bug with leading zeros regex
-        e = e.replaceAll("0+\\.([^0-9]|$)", "0$1");
+        e = e.replaceAll("0\\.([^0-9]|$)", "0$1");
 
         // Remove all leading zeros before a number to prevent conversion from octal numeral system
         e = e.replaceAll("(?<!\\.)\\b0+([1-9\\.])", "$1");

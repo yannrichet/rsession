@@ -287,6 +287,8 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("2^+4+4^+5"), 1040, epsilon);
         assertEquals((Double) engine.eval("2 ^ 4+4 ^- 5"), 16.0009765625, epsilon);
         assertEquals((Double) engine.eval("2 ^  + 4 +4^ + 5"), 1040, epsilon);
+        assertEquals((Double) engine.eval("1/100"), 0.01, epsilon);
+        assertEquals((Double) engine.eval("1/100."), 0.01, epsilon);
 
 
 
