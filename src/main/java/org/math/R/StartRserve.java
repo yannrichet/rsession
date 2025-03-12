@@ -870,14 +870,14 @@ public class StartRserve {
         }
         try {
             if (RserveDaemon.isWindows()) {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, FileUtils.getUserDirectoryPath()+File.separator+".Rserve.tmp" , false, null);
                 if (p == null) {
                     return false;
                 }
                 p.kill();
                 return true;
             } else {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, FileUtils.getUserDirectoryPath()+File.separator+".Rserve.tmp", false, null);
                 if (p == null) {
                     return false;
                 }
