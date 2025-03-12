@@ -2,12 +2,13 @@ package org.math.R;
 
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
+import java.io.File;
 
 public class RserverConf {
 
     public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be used, as it seems an incoming connection, not authorized
     public static int DEFAULT_RSERVE_PORT = 6311;
-    public static String DEFAULT_RSERVE_PATH = System.getProperty("user.home") + File.separator + ".Rserve";
+    public static String DEFAULT_RSERVE_WORKDIR = System.getProperty("user.home") + File.separator + ".Rserve";
 
     RConnection connection;
     public String host;
