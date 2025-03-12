@@ -662,10 +662,9 @@ public class StartRserve {
                 if (rsrvargs.contains("--RS-port")) {
                     String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
                     port = Integer.parseInt(rsport);
-                    testconf = new RserverConf("localhost", port, null, null);
-                } else {
-                    testconf = new RserverConf("localhost", -1, null, null);
                 }
+                testconf = new RserverConf("localhost", port, null, null, wd.getAbsolutePath().replace('\\', '/'));
+                Log.Out.println("  On port: " + testconf.port);
                 c = testconf.connect();
                 if (c == null) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed start connection to " + testconf);
@@ -673,7 +672,6 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
-                Log.Out.println("  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
