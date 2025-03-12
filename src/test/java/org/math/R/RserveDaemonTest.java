@@ -260,7 +260,7 @@ public class RserveDaemonTest {
     public void testParsePrintConf() {
         System.err.println("====================================== testParsePrintConf");
 
-        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever");
+        RserverConf c = new RserverConf("localhost", 3600, "me", "whatever", "/tmp");
         System.err.println(c.toString());
         System.err.println(RserverConf.parse(c.toString()));
     }
@@ -283,7 +283,7 @@ public class RserveDaemonTest {
 
 
         System.err.println("--- Start Rserve daemon");
-        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null);
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, RserverConf.DEFAULT_RSERVE_PORT, null, null, RserverConf.DEFAULT_RSERVE_WORKDIR);
         RserveDaemon d = new RserveDaemon(conf, new RLogPrintStream(System.out));
         d.start();
         Thread.sleep(1000);
@@ -344,7 +344,7 @@ public class RserveDaemonTest {
                 public void run() {
                     try {
                         System.err.println("--- Start Rserve daemon " + i);
-                        confs[i] = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null);// -1 will let Rdaemon find a free port to host Rserve
+                        confs[i] = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null, "/tmp");// -1 will let Rdaemon find a free port to host Rserve
                         daemons[i] = new RserveDaemon(confs[i], new RLogPrintStream(System.out));
                         daemons[i].start();
                         System.err.println("--- Rserve daemon " + i+" Started");
@@ -460,7 +460,7 @@ public class RserveDaemonTest {
         System.err.println("--- Check port is locked");
         assert StartRserve.lockPort(port) == null : "Port was not locked";
 
-        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null);
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null, RserverConf.DEFAULT_RSERVE_WORKDIR);
         RserveDaemon d = null;
         try {
             d = new RserveDaemon(conf, new RLogPrintStream(System.out));
@@ -509,7 +509,7 @@ public class RserveDaemonTest {
             assert false : "Cannot close port";
         }
 
-        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null);
+        RserverConf conf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, port, null, null, RserverConf.DEFAULT_RSERVE_WORKDIR);
         RserveDaemon d_ok = null;
         try {
             d_ok = new RserveDaemon(conf, new RLogPrintStream(System.out));
