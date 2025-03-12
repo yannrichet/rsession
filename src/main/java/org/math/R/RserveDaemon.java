@@ -369,7 +369,7 @@ public class RserveDaemon {
                 String RserveArgs = RESERVE_ARGS + " --RS-port " + conf.port;
 
                 if (rserve!=null) rserve.kill(); // cleanup before restarting...
-                rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), Boolean.parseBoolean(System.getProperty("Rserve.debug","false")), portLocker);
+                rserve = StartRserve.launchRserve(Rcmd, "--vanilla", RserveArgs.toString(), conf.workdir, Boolean.parseBoolean(System.getProperty("Rserve.debug","false")), portLocker);
                 log.log("                 ... R daemon started.", Level.INFO);
             } catch (Exception e) {                
                 log.log("R daemon startup failed: " + e.getMessage(), Level.ERROR);

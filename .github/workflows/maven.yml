@@ -63,7 +63,8 @@ jobs:
         java-version: 1.8
         java-package: jdk
     - run: mvn -B package -DskipTests=true --file pom.xml
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest' && matrix.java == 13 && matrix.r == 'release'
       with:
         path: target
     - uses: softprops/action-gh-release@v1
