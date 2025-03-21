@@ -27,6 +27,10 @@
             <activation>
                 <jdk>[11,12)</jdk>
             </activation>
+            <properties>
+                <maven.compiler.source>11</maven.compiler.source>
+                <maven.compiler.target>11</maven.compiler.target>
+            </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.openjdk.nashorn</groupId>
@@ -34,6 +38,21 @@
                     <version>15.4</version>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <excludes>
+                                <!-- Correct the path to match the actual location of GraalVMExecutor.java -->
+                                <exclude>**/executors/GraalVMExecutor.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <!-- Profile for Java 21 (GraalVM) -->
@@ -42,6 +61,10 @@
             <activation>
                 <jdk>[21,22)</jdk>
             </activation>
+            <properties>
+                <maven.compiler.source>21</maven.compiler.source>
+                <maven.compiler.target>21</maven.compiler.target>
+            </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.graalvm.polyglot</groupId>
@@ -65,6 +88,11 @@
     </profiles>
 
     <dependencies>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.2</version> <!-- Use a compatible version -->
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -145,18 +173,6 @@
             </resource>
         </resources>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <source>21</source>
-                    <target>21</target>
-                    <excludes>
-                        <exclude>src/main/java/org/math/R/R2js/R2jsPolyglotSession.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -1,6 +1,5 @@
 package org.math.R.executors;
 
-import java.io.Reader;
 import java.util.Map;
 
 public abstract class JavaScriptExecutor {
@@ -9,11 +8,17 @@ public abstract class JavaScriptExecutor {
         if (version.startsWith("11")) {
             return new NashornExecutor();
         } else {
-            return new GraalVMExecutor();
+            try {
+                // Dynamically load GraalVMExecutor to avoid compile-time dependency
+                Class<?> clazz = Class.forName("org.math.R.executors.GraalVMExecutor");
+                return (JavaScriptExecutor) clazz.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load GraalVMExecutor. Ensure you are running with a compatible Java version.", e);
+            }
         }
     }
 
-    public abstract Object execute(String script);
+    public abstract Object execute(String script) throws Exception;
 
     public abstract void loadJSLibraries() throws Exception;
 
@@ -36,4 +41,6 @@ public abstract class JavaScriptExecutor {
     public abstract Object cast(Object o) throws ClassCastException;
 
     public abstract void putVariable(String varname, Object var);
+
+    public abstract void close();
 }

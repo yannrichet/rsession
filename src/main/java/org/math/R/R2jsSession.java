@@ -121,6 +121,7 @@ public class R2jsSession extends AbstractR2jsSession {
 
     @Override
     public synchronized void end() {
+        this.executor.close();
         super.end();
     }
 }

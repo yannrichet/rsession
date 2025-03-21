@@ -1,53 +1,82 @@
 package org.math.R.executors;
 
-import java.io.Reader;
-import java.lang.reflect.Method;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
+import org.math.R.Rsession;
+
+import static org.math.R.AbstractR2jsSession.MATH_JS_FILE;
+import static org.math.R.AbstractR2jsSession.RAND_JS_FILE;
+import static org.math.R.AbstractR2jsSession.R_JS_FILE;
 
 public class NashornExecutor extends JavaScriptExecutor {
-    private static final Logger LOGGER = Logger.getLogger(NashornExecutor.class.getName());
+
+    private ScriptEngine js;
+
+    // Map containing js libraries already loaded (to not reload them at each instance of R2jsSession)
+    private final static Map<String, Object> jsLibraries = Collections.synchronizedMap(new HashMap<>());
 
     @Override
-    public Object execute(String script) {
-        try {
-            // Load Nashorn ScriptEngine using Reflection
-            Class<?> scriptEngineManagerClass = Class.forName("javax.script.ScriptEngineManager");
-            Object manager = scriptEngineManagerClass.getDeclaredConstructor().newInstance();
-            Method getEngineByNameMethod = scriptEngineManagerClass.getMethod("getEngineByName", String.class);
-            Object engine = getEngineByNameMethod.invoke(manager, "Nashorn");
+    public Object execute(String script) throws ScriptException {
+        return js.eval(script);
+    }
 
-            if (engine == null) {
-                throw new RuntimeException("Nashorn engine not available");
-            }
+    @Override
+    public synchronized void loadJSLibraries() throws Exception {
+        ScriptEngineManager manager = new ScriptEngineManager(null);
+        js = manager.getEngineByName("JavaScript");
+        if (js==null) js = manager.getEngineByName("js");
+        if (js==null) js = manager.getEngineByExtension("js");
+        if (js==null) js = manager.getEngineByName("nashorn");
+        if (js==null) js = manager.getEngineByName("Nashorn");
+        if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
 
-            Method evalMethod = engine.getClass().getMethod("eval", String.class);
-            return evalMethod.invoke(engine, script);
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error executing script", e);
-            return null;
+        // Loading math.JS
+        if (!jsLibraries.containsKey("math")) {
+            InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+            js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
+            jsLibraries.put("math", js.get("math"));
+        } else {
+            js.put("math", jsLibraries.get("math"));
         }
-    }
 
-    @Override
-    public void loadJSLibraries() throws Exception {
+        js.eval("var parser = math.parser();");
+        // Change 'Matrix' mathjs config by 'Array'
+        js.eval("math.config({matrix: 'Array'})");
+        js.eval("var str = String.prototype;");
 
-    }
+        // suport T/F TRUE/FALSE shortcuts
+        js.eval("var T = true;");
+        js.eval("var F = false;");
 
-    @Override
-    public void loadLibrary(String name, Reader reader) {
+        // Loading rand.js
+        if (!jsLibraries.containsKey("rand")) {
+            InputStream randInputStream = this.getClass().getResourceAsStream(RAND_JS_FILE);
+            js.eval(new InputStreamReader(randInputStream, Charset.forName("UTF-8")));
+            js.eval("__rand = rand()");
+            jsLibraries.put("__rand", js.get("rand"));
+        } else {
+            js.put("__rand", jsLibraries.get("rand"));
+        }
 
-    }
-
-    @Override
-    public void evalLibrary(String name) {
-
+        // Loading R.js
+        if (!jsLibraries.containsKey("R")) {
+            InputStream RInputStream = this.getClass().getResourceAsStream(R_JS_FILE);
+            js.eval(new InputStreamReader(RInputStream, Charset.forName("UTF-8")));
+            js.eval("__R = R()");
+            jsLibraries.put("__R", js.get("R"));
+        } else {
+            js.put("__R", jsLibraries.get("R"));
+        }
     }
 
     @Override
@@ -80,10 +109,10 @@ public class NashornExecutor extends JavaScriptExecutor {
         if (o instanceof double[][]) {
             return (double[][]) o;
         } else if (o instanceof double[]) {
-            return t(new double[][]{(double[]) o});
+            return (new double[][]{(double[]) o});
         } else if (o instanceof Double) {
             return new double[][]{{(double) o}};
-        } else /*if (o instanceof Map)*/ {
+        } else {
             double[][] vals = null;
             int i = 0;
             try {
@@ -181,19 +210,15 @@ public class NashornExecutor extends JavaScriptExecutor {
     public Object cast(Object o) throws ClassCastException {
         // If it's a ScriptObjectMirror, it can be an array or a matrix
         if (o instanceof Integer) {
-            return Double.valueOf((int) o);
+            return (double) (int) o;
         } else if (o instanceof ScriptObjectMirror) {
             try {
-//                System.err.println("// Casting of the ScriptObjectMirror to a double matrix");
                 return ((ScriptObjectMirror) o).to(double[][].class);
-            } catch (Exception e) {//e.printStackTrace();
+            } catch (Exception ignored) {
             }
 
             try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a string array");
                 String[] stringArray = ((ScriptObjectMirror) o).to(String[].class);
-
-//                 System.err.println("// Check if the String[] array can be cast to a double[] array");
                 try {
                     for (String string : stringArray) {
                         Double.valueOf(string);
@@ -202,34 +227,38 @@ public class NashornExecutor extends JavaScriptExecutor {
                     // It can't be cast to double[] so we return String[]
                     return stringArray;
                 }
-
-//                 System.err.println("// return double[] array");
                 return ((ScriptObjectMirror) o).to(double[].class);
-
-            } catch (Exception e) {//e.printStackTrace();
+            } catch (Exception ignored) {
             }
 
             try {
-//                 System.err.println("// Casting of the ScriptObjectMirror to a double array");
                 return ((ScriptObjectMirror) o).to(double[].class);
-            } catch (Exception e) {//e.printStackTrace();
+            } catch (Exception ignored) {
             }
 
             try {
-//                System.err.println(" // Casting of the ScriptObjectMirror to a list/map");
                 Map m = ((ScriptObjectMirror) o).to(Map.class);
                 try {
                     return asMatrix(m);
                 } catch (ClassCastException c) {
-                    //c.printStackTrace();
                     return m;
                 }
-            } catch (Exception e) {//e.printStackTrace();
+            } catch (Exception ignored) {
             }
 
             throw new IllegalArgumentException("Impossible to cast object: ScriptObjectMirror");
         } else {
             return o;
         }
+    }
+
+    @Override
+    public void putVariable(String varname, Object var) {
+        this.js.put(varname, var);
+    }
+
+    @Override
+    public void close() {
+        this.js = null;
     }
 }

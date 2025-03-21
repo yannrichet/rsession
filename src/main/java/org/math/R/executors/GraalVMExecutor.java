@@ -6,7 +6,6 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.io.InputStreamReader;
 
 import static org.math.R.AbstractR2jsSession.*;
@@ -33,6 +32,7 @@ public class GraalVMExecutor extends JavaScriptExecutor {
         return context.eval("js", script);
     }
 
+    @Override
     public synchronized void loadJSLibraries() throws Exception {
         if (MATH_SOURCE == null) {
             Reader mathReader = new InputStreamReader(GraalVMExecutor.class.getResourceAsStream(MATH_JS_FILE));
@@ -76,25 +76,16 @@ public class GraalVMExecutor extends JavaScriptExecutor {
 
     @Override
     public double[][] asMatrix(Object o) throws ClassCastException {
-        if(o instanceof Value) {
-            return ((Value)o).as(double[][].class);
-        } else {
-            switch (o) {
-                case null -> {
-                    return null;
-                }
-                case double[][] doubles -> {
-                    return doubles;
-                }
-                case double[] doubles -> {
-                    return (new double[][]{doubles});
-                }
-                case Double aDouble -> {
-                    return new double[][]{{aDouble}};
-                }
-                default -> {
-                }
-            }
+        if (o instanceof Value) {
+            return ((Value) o).as(double[][].class);
+        } else if (o == null) {
+            return null;
+        } else if (o instanceof double[][]) {
+            return (double[][]) o;
+        } else if (o instanceof double[]) {
+            return new double[][]{(double[]) o};
+        } else if (o instanceof Double) {
+            return new double[][]{{(Double) o}};
         }
         return null;
     }
@@ -203,5 +194,10 @@ public class GraalVMExecutor extends JavaScriptExecutor {
     @Override
     public void putVariable(String varname, Object var) {
         context.getBindings("js").putMember(varname, var);
+    }
+
+    @Override
+    public void close() {
+        context.close();
     }
 }
