@@ -190,9 +190,9 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
     private static final String[] MATH_CONST_JS = {"pi"};
 
     // JavaScript libraries used to evaluate expression
-    protected static final String MATH_JS_FILE = "/org/math/R/math.js";
-    protected static final String R_JS_FILE = "/org/math/R/R.js";
-    protected static final String RAND_JS_FILE = "/org/math/R/rand.js";
+    public static final String MATH_JS_FILE = "/org/math/R/math.js";
+    public static final String R_JS_FILE = "/org/math/R/R.js";
+    public static final String RAND_JS_FILE = "/org/math/R/rand.js";
 //    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
 
     protected static final String ENVIRONMENT_DEFAULT = "__r2js__";

@@ -20,24 +20,51 @@
         <github.global.server>github</github.global.server>
     </properties>
 
+    <profiles>
+        <!-- Profile for Java 11 (Nashorn) -->
+        <profile>
+            <id>java11</id>
+            <activation>
+                <jdk>[11,12)</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjdk.nashorn</groupId>
+                    <artifactId>nashorn-core</artifactId>
+                    <version>15.4</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Profile for Java 21 (GraalVM) -->
+        <profile>
+            <id>java21</id>
+            <activation>
+                <jdk>[21,22)</jdk>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>polyglot</artifactId>
+                    <version>23.1.1</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.polyglot</groupId>
+                    <artifactId>js</artifactId>
+                    <version>23.1.1</version>
+                    <type>pom</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.graalvm.truffle</groupId>
+                    <artifactId>truffle-api</artifactId>
+                    <version>23.1.1</version>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <dependencies>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>polyglot</artifactId>
-            <version>23.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.polyglot</groupId>
-            <artifactId>js</artifactId>
-            <version>23.1.1</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.graalvm.truffle</groupId>
-            <artifactId>truffle-api</artifactId>
-            <version>23.1.1</version>
-            <type>pom</type>
-        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
