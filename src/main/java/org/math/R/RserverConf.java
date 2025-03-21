@@ -2,23 +2,27 @@ package org.math.R;
 
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
+import java.io.File;
 
 public class RserverConf {
 
     public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be used, as it seems an incoming connection, not authorized
     public static int DEFAULT_RSERVE_PORT = 6311;
+    public static String DEFAULT_RSERVE_WORKDIR = System.getProperty("user.home") + File.separator + ".Rserve";
 
     RConnection connection;
     public String host;
     public int port;
     public String login;
     public String password;
+    public String workdir;
 
-    public RserverConf(String RserverHostName, int RserverPort, String login, String password) {
+    public RserverConf(String RserverHostName, int RserverPort, String login, String password, String workdir) {
         this.host = RserverHostName;
         this.port = RserverPort;
         this.login = login;
         this.password = password;
+        this.workdir = workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR;
     }
     public static long CONNECT_TIMEOUT = 5000;
 
@@ -147,7 +151,7 @@ public class RserverConf {
 
     @Override
     public String toString() {
-        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "");
+        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") + (workdir != null ? "/" + workdir : DEFAULT_RSERVE_WORKDIR);
     }
 
     public final static String RURL_START = "R://";
@@ -157,6 +161,7 @@ public class RserverConf {
         String passwd = null;
         String host = null;
         int port = -1;
+        String workdir = null;
         //Properties props = null;
         try {
             String loginhostport = null;
@@ -193,9 +198,14 @@ public class RserverConf {
                 host = hostport;
             }
 
-            return new RserverConf(host, port, login, passwd);
+            if (hostport.contains("/")) {
+                workdir = afterFirst(hostport, "/");
+                hostport = beforeFirst(hostport, "/");
+            }
+
+            return new RserverConf(host, port, login, passwd, workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd);
+            throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd + "\n  workdir=" + workdir);
         }
     }
 

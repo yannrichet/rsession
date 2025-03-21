@@ -577,10 +577,11 @@ public class StartRserve {
      * started, <code>false</code> otherwise.
      * @throws java.io.IOException
      */
-    public static ProcessToKill launchRserve(String Rcmd, /*String libloc,*/ String rargs, String rsrvargs, boolean debug, ServerSocket lock) throws IOException {
+    public static ProcessToKill launchRserve(String Rcmd, /*String libloc,*/ String rargs, String rsrvargs, String workdir, boolean debug, ServerSocket lock) throws IOException {
         Log.Out.println("Will launch Rserve (" + Rcmd + " " + rargs + ")");
         Log.Out.println("  With lib directory: " + RserveDaemon.app_dir());// + " , which contains: " + Arrays.toString(RserveDaemon.app_dir().list()));
-        File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
+        //File wd = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
+        File wd = new File(workdir, new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()));
         Log.Out.println("  In working directory: " + wd.getAbsolutePath());
         try {
             FileUtils.forceMkdir(wd);
@@ -591,6 +592,10 @@ public class StartRserve {
             if (debug) Log.Err.println("Working dir " + wd + " not available.");
             throw new IOException("Working dir " + wd + " not available.");
         }
+        if (!wd.canWrite()) {
+            if (debug) Log.Err.println("Working dir " + wd + " not writable.");
+            throw new IOException("Working dir " + wd + " not writable.");
+        }        
         wd.deleteOnExit();
 
         Process p = null;
@@ -606,10 +611,11 @@ public class StartRserve {
             }
         }
 
-        File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
+        //File outstream = new File(RserveDaemon.app_dir(), new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(Calendar.getInstance().getTime()) + ".Rout");
+        File outstream = new File(wd, "R.out");
         String todo = "library(Rserve,lib.loc='" + RserveDaemon.app_dir() + "'); "
                 + "setwd('" + wd.getAbsolutePath().replace('\\', '/') + "'); "
-                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + "',wait=TRUE);" + UGLY_FIXES; 
+                + "Rserve(" + (debug ? "TRUE" : "FALSE") + ",args='" + rsrvargs + " --RS-workdir "+ wd.getAbsolutePath().replace('\\', '/') + "',wait=TRUE);" + UGLY_FIXES; 
         int[] last_pids = getRservePIDs();
         p = system(Rcmd + " "+ rargs + " -e \"" + todo + "\"", outstream, false);
         if (p == null) {
@@ -656,10 +662,9 @@ public class StartRserve {
                 if (rsrvargs.contains("--RS-port")) {
                     String rsport = rsrvargs.split("--RS-port")[1].trim().split(" ")[0];
                     port = Integer.parseInt(rsport);
-                    testconf = new RserverConf("localhost", port, null, null);
-                } else {
-                    testconf = new RserverConf("localhost", -1, null, null);
                 }
+                testconf = new RserverConf("localhost", port, null, null, wd.getAbsolutePath().replace('\\', '/'));
+                Log.Out.println("  On port: " + testconf.port);
                 c = testconf.connect();
                 if (c == null) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed start connection to " + testconf);
@@ -667,7 +672,6 @@ public class StartRserve {
                 if (!c.isConnected()) {
                     throw new RserverConf.TimeOut.TimeOutException("Failed to connect to " + testconf);
                 }
-                Log.Out.println("  On port: " + testconf.port);
 
                 if (c.eval("exists('.RSERVE_PID')").asInteger() != 0) {
                     int previous_pid = c.eval(".RSERVE_PID").asInteger();
@@ -866,14 +870,14 @@ public class StartRserve {
         }
         try {
             if (RserveDaemon.isWindows()) {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "\\bin\\R.exe", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, FileUtils.getUserDirectoryPath()+File.separator+".Rserve.tmp" , false, null);
                 if (p == null) {
                     return false;
                 }
                 p.kill();
                 return true;
             } else {
-                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, false, null);
+                ProcessToKill p = launchRserve(RserveDaemon.R_HOME + "/bin/R", "--vanilla", "--vanilla "+/*--RS-enable-control */"--RS-port " + port, FileUtils.getUserDirectoryPath()+File.separator+".Rserve.tmp", false, null);
                 if (p == null) {
                     return false;
                 }

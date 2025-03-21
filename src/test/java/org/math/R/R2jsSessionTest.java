@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.script.ScriptException;
-//import org.graalvm.polyglot.*;
 
 import org.junit.Test;
 import org.math.R.Rsession.RException;
