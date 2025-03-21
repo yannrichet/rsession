@@ -142,7 +142,7 @@ public class RserverConf {
     }
 
     public boolean isLocal() {
-        return host == null || host.equals(DEFAULT_RSERVE_HOST) || host.equals("127.0.0.1") || host.equals("localhost");
+        return host == null || host.equals(DEFAULT_RSERVE_HOST) || host.equals("localhost");
     }
 
     @Override
