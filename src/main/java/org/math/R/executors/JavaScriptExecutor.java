@@ -6,7 +6,13 @@ public abstract class JavaScriptExecutor {
     public static JavaScriptExecutor getInstance() {
         String version = System.getProperty("java.version");
         if (version.startsWith("11")) {
-            return new NashornExecutor();
+            try {
+                // Dynamically load the NashornExecutor class
+                Class<?> clazz = Class.forName("org.math.R.executors.NashornExecutor");
+                return (JavaScriptExecutor) clazz.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load NashornExecutor. Ensure you are running with a compatible Java version.", e);
+            }
         } else {
             try {
                 // Dynamically load GraalVMExecutor to avoid compile-time dependency

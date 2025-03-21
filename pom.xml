@@ -46,7 +46,6 @@
                         <version>3.8.1</version>
                         <configuration>
                             <excludes>
-                                <!-- Correct the path to match the actual location of GraalVMExecutor.java -->
                                 <exclude>**/executors/GraalVMExecutor.java</exclude>
                             </excludes>
                         </configuration>
@@ -84,6 +83,20 @@
                     <type>pom</type>
                 </dependency>
             </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.8.1</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/executors/NashornExecutor.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
