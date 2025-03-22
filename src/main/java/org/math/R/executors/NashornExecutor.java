@@ -1,8 +1,4 @@
-<<<<<<<< HEAD:src/main/java/org/math/R/executors/NashornExecutor.java
 package org.math.R.executors;
-========
-package org.math.R;
->>>>>>>> master:src/main/java/org/math/R/R2jsSession.java
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
