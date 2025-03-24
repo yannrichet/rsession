@@ -179,7 +179,7 @@ public class RserveDaemon {
                         }
                     }
                 } else {
-                    String[] paths = {"/usr/lib/R", "/usr/local/lib/R/", "/usr/lib64/R"};
+                    String[] paths = {"/usr/lib/R", "/usr/local/lib/R/", "/usr/lib64/R", "/opt/R"};
                     for (String r_home : paths) {
                         R_HOME = r_home; // standard R install
                         if (new File(R_HOME).isDirectory()) {
