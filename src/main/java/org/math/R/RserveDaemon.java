@@ -55,15 +55,24 @@ public class RserveDaemon {
     public static String R_VERSION = null;
 
     private static String OS = System.getProperty("os.name").toLowerCase();
+    private static String ARCH = System.getProperty("os.arch").toLowerCase();
 
     public static boolean isWindows() {
         return (OS.indexOf("win") >= 0);
     }
 
+    public static boolean isMacOSXIntel() {
+        return (OS.indexOf("mac") >= 0) && (ARCH.indexOf("64") >= 0);
+    }    
+    
+    public static boolean isMacOSXARM() {
+        return (OS.indexOf("mac") >= 0) && (ARCH.indexOf("aarch64") >= 0);
+    }
+
     public static boolean isMacOSX() {
         return (OS.indexOf("mac") >= 0);
     }
-
+    
     public static boolean isLinux() {
         return OS.indexOf("inux") >= 0;
     }
