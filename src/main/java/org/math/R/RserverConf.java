@@ -8,7 +8,7 @@ public class RserverConf {
 
     public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be used, as it seems an incoming connection, not authorized
     public static int DEFAULT_RSERVE_PORT = 6311;
-    public static String DEFAULT_RSERVE_WORKDIR = System.getProperty("user.home") + File.separator + ".Rserve";
+    public static String DEFAULT_RSERVE_WORKDIR = System.getProperty("user.home") + "/" + ".Rserve";
 
     RConnection connection;
     public String host;
@@ -164,9 +164,9 @@ public class RserverConf {
         String workdir = null;
         //Properties props = null;
         try {
-            String loginhostport = null;
+            String loginhostportpath = null;
             if (RURL.contains("?")) {
-                loginhostport = beforeFirst(RURL, "?").substring((RURL_START).length());
+                loginhostportpath = beforeFirst(RURL, "?").substring((RURL_START).length());
 //                String[] allprops = afterFirst(RURL, "?").split("&");
 //                props = new Properties();
 //                for (String prop : allprops) {
@@ -175,32 +175,32 @@ public class RserverConf {
 //                    } // else ignore
 //                }
             } else {
-                loginhostport = RURL.substring((RURL_START).length());
+                loginhostportpath = RURL.substring((RURL_START).length());
             }
 
-            String hostport = null;
-            if (loginhostport.contains("@")) {
-                hostport = afterFirst(loginhostport, "@");
-                String loginpasswd = beforeFirst(loginhostport, "@");
+            String hostportpath = null;
+            if (loginhostportpath.contains("@")) {
+                hostportpath = beforeFirst(afterFirst(loginhostportpath, "@"), "/");
+                String loginpasswd = beforeFirst(loginhostportpath, "@");
                 login = beforeFirst(loginpasswd, ":");
                 if (login.equals("user.name")) {
                     login = System.getProperty("user.name");
                 }
                 passwd = afterFirst(loginpasswd, ":");
             } else {
-                hostport = loginhostport;
+                hostportpath = loginhostportpath;
             }
 
-            if (hostport.contains(":")) {
-                host = beforeFirst(hostport, ":");
-                port = Integer.parseInt(afterFirst(hostport, ":"));
+            if (hostportpath.contains(":")) {
+                host = beforeFirst(hostportpath, ":");
+                port = Integer.parseInt(beforeFirst(afterFirst(hostportpath, ":"), "/"));
             } else {
-                host = hostport;
+                host = hostportpath;
             }
 
-            if (hostport.contains("/")) {
-                workdir = afterFirst(hostport, "/");
-                hostport = beforeFirst(hostport, "/");
+            if (hostportpath.contains("/")) {
+                workdir = afterFirst(hostportpath, "/");
+                hostportpath = beforeFirst(hostportpath, "/");
             }
 
             return new RserverConf(host, port, login, passwd, workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
