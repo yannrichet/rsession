@@ -188,11 +188,34 @@ public class RserveDaemon {
                         }
                     }
                 } else {
-                    String[] paths = {"/usr/lib/R", "/usr/local/lib/R/", "/usr/lib64/R", "/opt/R"};
+                    String[] paths = {"/usr/lib/R", "/usr/local/lib/R/", "/usr/lib64/R"};
                     for (String r_home : paths) {
                         R_HOME = r_home; // standard R install
                         if (new File(R_HOME).isDirectory()) {
                             return true;
+                        }
+                    }
+
+                    for (int version = 4; version >= 0; version--) {
+                        for (int major = 20; major >= 0; major--) { // for homebrew install
+                            //int major = 10;//known to work with R 2.9 only.
+                            for (int minor = 10; minor >= 0; minor--) {
+                                //int minor = 0;
+                                r_HOME = "/opt/R/" + version + "." + major + "." + minor;
+                                if (new File(r_HOME + "_3").isDirectory()) {
+                                    R_HOME = r_HOME + "_3";
+                                    break;
+                                } else if (new File(r_HOME + "_2").isDirectory()) {
+                                    R_HOME = r_HOME + "_2";
+                                    break;
+                                } else if (new File(r_HOME + "_1").isDirectory()) {
+                                    R_HOME = r_HOME + "_1";
+                                    break;
+                                } else if (new File(r_HOME).isDirectory()) {
+                                    R_HOME = r_HOME;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
