@@ -55,15 +55,24 @@ public class RserveDaemon {
     public static String R_VERSION = null;
 
     private static String OS = System.getProperty("os.name").toLowerCase();
+    private static String ARCH = System.getProperty("os.arch").toLowerCase();
 
     public static boolean isWindows() {
         return (OS.indexOf("win") >= 0);
     }
 
+    public static boolean isMacOSXIntel() {
+        return (OS.indexOf("mac") >= 0) && (ARCH.indexOf("64") >= 0);
+    }    
+    
+    public static boolean isMacOSXARM() {
+        return (OS.indexOf("mac") >= 0) && (ARCH.indexOf("aarch64") >= 0);
+    }
+
     public static boolean isMacOSX() {
         return (OS.indexOf("mac") >= 0);
     }
-
+    
     public static boolean isLinux() {
         return OS.indexOf("inux") >= 0;
     }
@@ -184,6 +193,29 @@ public class RserveDaemon {
                         R_HOME = r_home; // standard R install
                         if (new File(R_HOME).isDirectory()) {
                             return true;
+                        }
+                    }
+
+                    for (int version = 4; version >= 0; version--) {
+                        for (int major = 20; major >= 0; major--) { // for homebrew install
+                            //int major = 10;//known to work with R 2.9 only.
+                            for (int minor = 10; minor >= 0; minor--) {
+                                //int minor = 0;
+                                r_HOME = "/opt/R/" + version + "." + major + "." + minor;
+                                if (new File(r_HOME + "_3").isDirectory()) {
+                                    R_HOME = r_HOME + "_3";
+                                    break;
+                                } else if (new File(r_HOME + "_2").isDirectory()) {
+                                    R_HOME = r_HOME + "_2";
+                                    break;
+                                } else if (new File(r_HOME + "_1").isDirectory()) {
+                                    R_HOME = r_HOME + "_1";
+                                    break;
+                                } else if (new File(r_HOME).isDirectory()) {
+                                    R_HOME = r_HOME;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

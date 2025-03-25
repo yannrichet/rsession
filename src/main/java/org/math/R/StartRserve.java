@@ -322,7 +322,7 @@ public class StartRserve {
         if (!R_version_path.equals("."))
             if (RserveDaemon.isWindows()) {
                 pack_suffix = ".zip";
-            } else if (RserveDaemon.isMacOSX()) {
+            } else if (RserveDaemon.isMacOSXIntel()) {
                 pack_suffix = ".tgz";
             } else R_version_path="."; //back to source install
 
