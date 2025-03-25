@@ -43,7 +43,7 @@ jobs:
     - run: ln -s /Library/Frameworks/R.framework/Versions/3.6 /Library/Frameworks/R.framework/Versions/3.5
       if: matrix.os == 'macos-latest' && matrix. r == '3.6'
     - run: ln -s /opt/R/next /opt/R/4.4.0 
-      if: matrix.os == 'linux-latest' && matrix. r == 'next'
+      if: matrix.os == 'ubuntu-latest' && matrix. r == 'next'
 
     - uses: coactions/setup-xvfb@v1
       with:
