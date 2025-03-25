@@ -77,17 +77,31 @@ public class GraalVMExecutor extends JavaScriptExecutor {
     @Override
     public double[][] asMatrix(Object o) throws ClassCastException {
         if (o instanceof Value) {
-            return ((Value) o).as(double[][].class);
-        } else if (o == null) {
-            return null;
+            Value value = (Value) o;
+            try {
+                double[] array = value.as(double[].class);
+                return convertArrayToMatrix(array);
+            } catch (ClassCastException e) {
+                // If it cannot be cast to double[], try as double[][]
+                return value.as(double[][].class);
+            }
         } else if (o instanceof double[][]) {
             return (double[][]) o;
         } else if (o instanceof double[]) {
-            return new double[][]{(double[]) o};
+            return convertArrayToMatrix((double[]) o);
         } else if (o instanceof Double) {
             return new double[][]{{(Double) o}};
         }
         return null;
+    }
+
+    private static double[][] convertArrayToMatrix(double[] array) {
+        // Convert [0, 1] to [[0], [1]]
+        double[][] matrix = new double[array.length][1];
+        for (int i = 0; i < array.length; i++) {
+            matrix[i][0] = array[i];
+        }
+        return matrix;
     }
 
     @Override
@@ -162,6 +176,10 @@ public class GraalVMExecutor extends JavaScriptExecutor {
         }
         if(value.hasArrayElements()) {
             try{
+                return asArray(o);
+            } catch (Exception ignored) {
+            }
+            try{
                 return asMatrix(o);
             } catch (Exception ignored) {
             }
@@ -175,11 +193,6 @@ public class GraalVMExecutor extends JavaScriptExecutor {
                     // It can't be cast to double[] so we return String[]
                     return stringArray;
                 }
-                return asArray(o);
-            } catch (Exception ignored) {
-            }
-
-            try{
                 return asArray(o);
             } catch (Exception ignored) {
             }
