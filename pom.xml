@@ -50,6 +50,25 @@
                             </excludes>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.11.2</version>
+                        <configuration>
+                            <sourceFileExcludes>
+                                <!-- Exclude all files in executors directory, otherwise javadoc still can see GraalVM class ... -->
+                                <sourceFileExclude>**/executors/*.java</sourceFileExclude>
+                            </sourceFileExcludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -94,6 +113,26 @@
                                 <exclude>**/executors/NashornExecutor.java</exclude>
                             </excludes>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <configuration>
+                            <source>21</source>
+                            <!-- Exclude all files in executors directory, otherwise javadoc still can see Nashorn class ... -->
+                            <excludes>
+                                <sourceFileExclude>**/executors/*.java</sourceFileExclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
@@ -224,24 +263,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.0</version>
-                <!-- needed to fix javadoc on java 11+ https://github.com/joel-costigliola/assertj-core/issues/1403 -->
-                <configuration>
-                    <source>8</source>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
                 <version>1.6.3</version>
@@ -328,7 +349,7 @@
             </plugin>
         </plugins>
     </reporting>
-	
+
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
