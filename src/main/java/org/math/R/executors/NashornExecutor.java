@@ -109,7 +109,7 @@ public class NashornExecutor extends JavaScriptExecutor {
         if (o instanceof double[][]) {
             return (double[][]) o;
         } else if (o instanceof double[]) {
-            return (new double[][]{(double[]) o});
+            return convertArrayToMatrix((double[])o);
         } else if (o instanceof Double) {
             return new double[][]{{(double) o}};
         } else {

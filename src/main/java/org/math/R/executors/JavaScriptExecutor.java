@@ -24,6 +24,16 @@ public abstract class JavaScriptExecutor {
         }
     }
 
+    static double[][] convertArrayToMatrix(double[] array) {
+        // Convert [0, 1] to [[0], [1]]
+        double[][] matrix = new double[array.length][1];
+        for (int i = 0; i < array.length; i++) {
+            matrix[i][0] = array[i];
+        }
+        return matrix;
+    }
+
+
     public abstract Object execute(String script) throws Exception;
 
     public abstract void loadJSLibraries() throws Exception;

@@ -95,15 +95,6 @@ public class GraalVMExecutor extends JavaScriptExecutor {
         return null;
     }
 
-    private static double[][] convertArrayToMatrix(double[] array) {
-        // Convert [0, 1] to [[0], [1]]
-        double[][] matrix = new double[array.length][1];
-        for (int i = 0; i < array.length; i++) {
-            matrix[i][0] = array[i];
-        }
-        return matrix;
-    }
-
     @Override
     public String asString(Object o) throws ClassCastException {
         if(o instanceof Value) {
