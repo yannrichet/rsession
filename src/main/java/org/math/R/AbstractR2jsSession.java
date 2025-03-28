@@ -52,6 +52,11 @@ import org.apache.commons.io.FileUtils;
  */
 public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
+
+    // If cache is activated, correspondences between R and Js expressions will be stored
+    private boolean useCache = false;
+    private static HashMap<String, String> CACHE = new HashMap<>();
+
     /**
      * Default constructor
      *
@@ -185,9 +190,9 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
     private static final String[] MATH_CONST_JS = {"pi"};
 
     // JavaScript libraries used to evaluate expression
-    protected static final String MATH_JS_FILE = "/org/math/R/math.js";
-    protected static final String R_JS_FILE = "/org/math/R/R.js";
-    protected static final String RAND_JS_FILE = "/org/math/R/rand.js";
+    public static final String MATH_JS_FILE = "/org/math/R/math.js";
+    public static final String R_JS_FILE = "/org/math/R/R.js";
+    public static final String RAND_JS_FILE = "/org/math/R/rand.js";
 //    private static final String PLOT_JS_FILE = "/org/math/R/plotly.js";
 
     protected static final String ENVIRONMENT_DEFAULT = "__r2js__";
@@ -344,6 +349,26 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         }
     }
 
+
+    /**
+     * If cache is activated and contains R expression correspondence, get js expression from it.
+     * Otherwise, convert R to js
+     *
+     * @param e - the R expression
+     * @return the js script expression
+     */
+    protected String convertRtoJs(String e) throws RException {
+        if(useCache && CACHE.containsKey(e)) {
+            return CACHE.get(e);
+        } else {
+            String jsExpr = convertRtoJsNoCache(e);
+            if(useCache) {
+                addToCache(e, jsExpr);
+            }
+            return jsExpr;
+        }
+    }
+
     /**
      * Convert an R expression in a Js expression WARNING: many R syntaxes are
      * not supported yet
@@ -351,7 +376,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
      * @param e - the R expression
      * @return the js script expression
      */
-    private String convertRtoJs(String e) throws RException {
+    protected String convertRtoJsNoCache(String e) throws RException {
 
         // If e contains already "__this__" ... (should not happen, but...)
         if (e.contains(THIS_ENVIRONMENT)) {
@@ -381,6 +406,14 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             }
         }
 
+        // Get all expression in quote and replace them by variables to not
+        // modify them in this function
+        quotesList = replaceQuotesByVariables(e, 1);
+
+        // Get the expression with replaced quotes (it's the first element of
+        // the returned list)
+        e = quotesList.get(0);
+
         //1E-8 -> 1*10^-8
         //e = e.replaceAll("(\\d|\\d\\.)[eE]+([+-])*(\\d)", "$1*10^$2$3");
         Matcher m = Pattern.compile("(\\d|\\d\\.)+[eE]+([+-])*(\\d*)").matcher(e);
@@ -391,13 +424,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             }
         }
 
-        // Get all expression in quote and replace them by variables to not
-        // modify them in this function
-        quotesList = replaceQuotesByVariables(e, 1);
 
-        // Get the expression with replaced quotes (it's the first element of
-        // the returned list)
-        e = quotesList.get(0);
 
         checkExpressionValidity(e);
 
@@ -405,7 +432,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         e = e.replaceAll("([a-zA-Z]*)\\.([a-zA-Z]+)", "$1__$2");
 
         // Replace 0. by 0 do avoid bug with leading zeros regex
-        e = e.replaceAll("0+\\.([^0-9]|$)", "0$1");
+        e = e.replaceAll("0\\.([^0-9]|$)", "0$1");
 
         // Remove all leading zeros before a number to prevent conversion from octal numeral system
         e = e.replaceAll("(?<!\\.)\\b0+([1-9\\.])", "$1");
@@ -509,6 +536,8 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         // Replace "TRUE" by "true" and "FALSE" by "false"
         e = e.replaceAll("(?<!\\.)(\\b)TRUE(\\b)", "true");
         e = e.replaceAll("(?<!\\.)(\\b)FALSE(\\b)", "false");
+        e = e.replaceAll("(?<!\\.)(\\b)T(\\b)", "true");
+        e = e.replaceAll("(?<!\\.)(\\b)F(\\b)", "false");
 
         e = e.replaceAll("(?<!\\.)(\\b)NULL(\\b)", "null");
         e = e.replaceAll("(?<!\\.)(\\b)NA(\\b)", "null");
@@ -1190,6 +1219,28 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
     }
 
+    private static int findElseEnd(String result, int startIdx) {
+        int stopElseStatement = 0;
+        int nextCloseBracket = getNextExpressionLastIndex(result, startIdx, "\n");
+        //result.substring(startIdx, nextCloseBracket)
+        int nextIdOpenBracket = result.indexOf("{", startIdx);
+        boolean noStartingBracket = false;
+        if(nextIdOpenBracket<nextCloseBracket) {
+            int nextCloseBracket2 = getNextExpressionLastIndex(result, nextIdOpenBracket+1, "}");
+            stopElseStatement = nextCloseBracket2;
+        } else {
+            stopElseStatement = nextCloseBracket;
+            noStartingBracket = true;
+        }
+        int elseIfIdx = result.indexOf("else", stopElseStatement);
+        // If there is a "else" just after the end of "if" statement, then it is not the end of this "else" -> recursivity
+        if(!noStartingBracket && Math.abs(stopElseStatement-elseIfIdx)<=3) {
+            return findElseEnd(result, elseIfIdx);
+        }
+
+        return  stopElseStatement;
+    }
+
     /**
      * This function add brackets in if/else expression. In nashorn (Java8_161 -
      * ECMA5) the if without '{' work but not the if else without '{'
@@ -1223,47 +1274,50 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
             ifSb.append(ifArg);
             ifSb.append(")");
 
-            //if (!result.substring(endIndex + 1).trim().startsWith("{") && expr.indexOf("else", endIndex) >= 0) {
+            int elseIndex = getNextElseIndex(result, endIndex);
 
-
-            int elseIndex = result.indexOf("else", endIndex);
-
-            boolean dontCloseBrack = false;
-
-            if (elseIndex >= 0) {
+            if (elseIndex > 0) {
                 String ifStatement = result.substring(endIndex + 1, elseIndex).trim();
-                if(!ifStatement.startsWith("{")) ifSb.append("{");
+                boolean addIfBrackets = !ifStatement.startsWith("{");
+                if(addIfBrackets) ifSb.append("{");
                 ifSb.append(ifStatement);
-                if(!ifStatement.endsWith("}")) ifSb.append("}");
+                if(addIfBrackets) ifSb.append("}");
                 ifSb.append(" else ");
-                String elseStatement = result.substring(elseIndex + 4).trim();
-                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("{");
-                ifSb.append(elseStatement);
-                if(!elseStatement.startsWith("{") && !elseStatement.startsWith("if")) ifSb.append("}");
-            } else {
-                String ifStatement = result.substring(endIndex + 1, result.length()).trim();
-                if(!ifStatement.startsWith("{")) {
-                    ifSb.append("{");
-                    int returnLineIdx = ifStatement.indexOf('\n');
-                    if(returnLineIdx>=0) {
-                        ifStatement = ifStatement.substring(0, returnLineIdx) + "}" + ifStatement.substring(returnLineIdx, ifStatement.length());
-                        ifSb.append(ifStatement);
-                        dontCloseBrack = true;
-                    } else {
-                        ifSb.append(ifStatement);
-                        ifSb.append("}");
-                    }
-                } else {
-                    ifSb.append(ifStatement);
-                    dontCloseBrack = true;
-                }
 
+                // If this is a "else if", "else" stop when the next "if" stop
+                // Otherwise "else" stop at the next "\n"
+                int stopElseStatement = getNextExpressionLastIndex(result, elseIndex, "}");
+                int elseIfIdx = result.indexOf("else if", elseIndex);
+                if(elseIndex == elseIfIdx) {
+                    // Stop else when the "if" end
+                    stopElseStatement = findElseEnd(result, elseIfIdx);
+                }
+                String elseStatement = result.substring(elseIndex + 4, stopElseStatement+1).trim();
+                boolean addElseBrackets = !elseStatement.startsWith("{");
+                if(addElseBrackets) ifSb.append("{");
+                ifSb.append(elseStatement);
+                if(addElseBrackets) ifSb.append("}");
+                ifSb.append(result.substring(stopElseStatement+1));
+            } else {
+                int stopIdx = getNextExpressionLastIndex(result, endIndex, "}")+1;
+                String ifStatement = result.substring(endIndex + 1, stopIdx).trim();
+                if(!ifStatement.startsWith("{")) {
+                    int endOfLine = getNextExpressionLastIndex(result, endIndex, "\n")+1;
+                    if(endOfLine<stopIdx) {
+                        stopIdx = endOfLine;
+                        ifStatement = result.substring(endIndex + 1, stopIdx).trim();
+                    }
+                }
+                boolean addIfBrackets = !ifStatement.startsWith("{");
+                if(addIfBrackets) ifSb.append("{");
+                ifSb.append(ifStatement);
+                if(addIfBrackets) ifSb.append("}");
+                ifSb.append(result.substring(stopIdx));
             }
 
             StringBuilder sb = new StringBuilder();
             sb.append(result.substring(0, startIndex));
-            sb.append(ifSb.toString());
-            if(!dontCloseBrack && !ifSb.toString().trim().endsWith("}")) sb.append("}");
+            sb.append(ifSb);
             result = sb.toString();
 
             // Search the next "if"
@@ -2305,7 +2359,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
 
         // We consider differently the '-' operator in '2-3' to the '-' negative: '-3'.
         // So we replace -3 by î3 first, but 2-3 stays 2-3
-        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]) *-", "$1 î");
+        expr = expr.replaceAll("([\\[\\{\\(\\-\\\\=*\\/^;%+:,><&|ôâêŝĝ\\n]|return) *-", "$1 î");
 
         String stoppingCharacters = "-=*/^;%+:,><&|ôâêŝĝ\n"; // all operators but 'î'
         expr = expr.replaceAll("[)]/", ") /");
@@ -2502,7 +2556,7 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
                 } else {
                     int startIndex = getPreviousExpressionFirstIndex(expr, equalIndex, "=*/^;%+,. ");
                     String variableName = expr.substring(startIndex, equalIndex).trim();
-                    if (variableName.matches("\\w+")) {
+                    if (variableName.matches("[a-zA-Z]\\w*")) {
                         variablesSet.add(variableName);
                     }
                 }
@@ -2577,6 +2631,101 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         return firstIndex;
     }
 
+
+    private static int getNextElseIndex(String expr, int startIndex) {
+        int ifCount = 0;
+        int ifIdx = getNextExpressionLastIndexForString(expr, startIndex, "if");
+        int elseIdx = getNextExpressionLastIndexForString(expr, startIndex, "else");
+        while(ifIdx>0 || elseIdx>0) {
+            if(elseIdx<=ifIdx || ifIdx<0) {
+                if(ifCount > 0) {
+                    ifCount--;
+                } else {
+                    if(elseIdx+4>=expr.length()) {
+                        return -1;
+                    } else {
+                        return elseIdx+1;
+                    }
+                }
+            } else {
+                ifCount++;
+            }
+            int nextIdx = ifIdx + 1;
+            if(ifIdx<0) {
+                nextIdx = elseIdx +1;
+            }
+            ifIdx = getNextExpressionLastIndexForString(expr, nextIdx, "if");
+            elseIdx = getNextExpressionLastIndexForString(expr, nextIdx, "else");
+        }
+
+        return -1;
+    }
+
+    /**
+     * Get the index of the end of an expression
+     * The function starts at the
+     * given startIndex and return the index of the first character founded in
+     * the stoppingCharacters string. This function ignore characters inside
+     * brackets or paranthesis
+     *
+     * @param expr - the expression to check
+     * @param startIndex - index to start with to search a stopping characters
+     * @param searchedString - searched string.
+     * @return the last index of the next expression
+     */
+    private static int getNextExpressionLastIndexForString(String expr, int startIndex, String searchedString) {
+        //System.err.println("getNextExpressionLastIndex:\n  "+expr+"\n"+repeat(" ",startIndex+2)+"^");
+
+        int lastIndex = expr.length() - 1;
+
+        int parenthesis = 0; // '(' and ')'
+        int brackets = 0; // '{' and '}'
+        int brackets2 = 0; // '[' and ']'
+
+        // Ignore space character at beginning
+        int startingIndex = startIndex + 1;
+        while (startingIndex < expr.length() && expr.charAt(startingIndex) == ' ') {
+            startingIndex++;
+        }
+
+        // Stop at the first stopping character
+        for (int i = startingIndex; i < expr.length(); i++) {
+            char currentChar = expr.charAt(i);
+            if (currentChar == '(') {
+                parenthesis++;
+            } else if (currentChar == ')') {
+                parenthesis--;
+                if (parenthesis < 0) {
+                    return -1;
+                }
+            } else if (currentChar == '{') {
+                brackets++;
+            } else if (currentChar == '}') {
+                brackets--;
+                if (brackets < 0) {
+                    return -1;
+                }
+            } else if (currentChar == '[') {
+                brackets2++;
+            } else if (currentChar == ']') {
+                brackets2--;
+                if (brackets2 < 0) {
+                    return -1;
+                }
+            } else if (parenthesis == 0 && brackets == 0 && brackets2 == 0) {
+                if(expr.indexOf(searchedString, i) == i) {
+                    return i - 1;
+                }
+            }
+        }
+
+        // If there is no stopping character, the expression stop at the
+        // end of the sentence
+        //System.err.println("\n"+repeat(" ",lastIndex +2)+"|");
+        return lastIndex;
+    }
+
+
     /**
      * Get the index of the end of an expression
      * The function starts at the
@@ -2607,6 +2756,14 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         // Stop at the first stopping character
         for (int i = startingIndex; i < expr.length(); i++) {
             char currentChar = expr.charAt(i);
+
+            if (parenthesis == 0 && brackets == 0 && brackets2 == 0
+                    && stoppingCharacters.indexOf(currentChar) >= 0) {
+                // If it's a stopping character
+                //System.err.println("\n" + repeat(" ", i - 1 + 2) + "|");
+                return i - 1;
+            }
+
             if (currentChar == '(') {
                 parenthesis++;
             } else if (currentChar == ')') {
@@ -3086,6 +3243,19 @@ public abstract class AbstractR2jsSession extends Rsession implements RLog {
         html = html.replace("___SUBMIT___", submit_tmpl.replace("___ONCLICK___", "document.write(" + fun + "(" + cat(",", args) + "))"));
 
         return (html);
+    }
+
+    private synchronized void addToCache(String key, String value) {
+        CACHE.put(key, value);
+    }
+
+    // Method to print the entire shared map
+    public static void printCache() {
+        System.out.println(CACHE);
+    }
+
+    public void useCache(boolean useCache) {
+        this.useCache = useCache;
     }
 
     public static void main(String[] args) throws Exception {

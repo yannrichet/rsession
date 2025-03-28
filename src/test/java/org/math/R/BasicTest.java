@@ -1,6 +1,7 @@
 package org.math.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,6 +54,31 @@ public class BasicTest {
         
         if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
+
+        initializeRserve(l, prop);
+        initializeRenjin(l, prop);
+        initializeR2js(l);
+    }
+
+    private void initializeR2js(RLog l) throws Rsession.RException {
+        q = R2jsSession.newInstance(l, null);
+        System.out.println("| R.version:\t" + q.eval("R.version.string"));
+
+        System.out.println("| getwd():\t" + q.eval("getwd()"));
+//        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) q.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) q.ls(true)));
+    }
+
+    private void initializeRenjin(RLog l, Properties prop) throws Rsession.RException {
+        r = RenjinSession.newInstance(l, prop);
+        System.out.println("| R.version:\t" + r.eval("R.version.string"));
+
+        System.out.println("| getwd():\t" + r.eval("getwd()"));
+        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
+        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
+    }
+
+    private void initializeRserve(RLog l, Properties prop) throws Rsession.RException, IOException {
         s = new RserveSession(l, prop,null);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
@@ -68,20 +94,6 @@ public class BasicTest {
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
-
-        r = RenjinSession.newInstance(l, prop);
-        System.out.println("| R.version:\t" + r.eval("R.version.string"));
-
-        System.out.println("| getwd():\t" + r.eval("getwd()"));
-        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
-
-        q = R2jsSession.newInstance(l, null);
-        System.out.println("| R.version:\t" + q.eval("R.version.string"));
-
-        System.out.println("| getwd():\t" + q.eval("getwd()"));
-//        System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) q.eval("list.files(all.files=TRUE)")));
-        System.out.println("| ls():\t" + Arrays.toString((String[]) q.ls(true)));
     }
 
     @After

@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.script.ScriptException;
-//import org.graalvm.polyglot.*;
 
 import org.junit.Test;
 import org.math.R.Rsession.RException;
@@ -124,6 +123,14 @@ public class R2jsSessionTest {
             assert ex.getMessage().contains("Failed to evaluate") : ex.getMessage();
         }
         assert Arrays.equals(engine.ls(), new String[]{"l"}) : Arrays.toString(engine.ls());
+    }
+
+    @Test
+    public void testQuoteExpr() throws RException {
+        System.err.println("================= testQuoteExpr ===============");
+        engine.debug_js = true;
+        String conversion = engine.convertRtoJs("save(file='/test/ZoneE_alvéole_manuelle_mod1et2_21N/calc-results/00ylufTCubG/spool/Rint=1E-4/brd=1.0/ep_eau=1E-4/.RData', list=ls(all.names=T))");
+        assert conversion.equals("__R.write( '/test/ZoneE_alvéole_manuelle_mod1et2_21N/calc-results/00ylufTCubG/spool/Rint=1E-4/brd=1.0/ep_eau=1E-4/.RData', __R.createJsonString( Object.keys( __this__), __this__))") : conversion;
     }
 
     @Test
@@ -279,6 +286,8 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("2^+4+4^+5"), 1040, epsilon);
         assertEquals((Double) engine.eval("2 ^ 4+4 ^- 5"), 16.0009765625, epsilon);
         assertEquals((Double) engine.eval("2 ^  + 4 +4^ + 5"), 1040, epsilon);
+        assertEquals((Double) engine.eval("1/100"), 0.01, epsilon);
+        assertEquals((Double) engine.eval("1/100."), 0.01, epsilon);
 
 
 
@@ -658,6 +667,15 @@ public class R2jsSessionTest {
         //assert Double.parseDouble( js.eval("fahrenheit_to_celsius(32.0);\n").toString()) == 0;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(fahrenheit_to_kelvin(32.0))").toString()) == 32;
         //assert Double.parseDouble( js.eval("kelvin_to_celsius(0)").toString()) == -273.15;
+
+        engine.eval("f12 <- function() {  if (TRUE) {\n" +
+                "     d <- 1+1\n" +
+                "   } else if (!TRUE) {\n" +
+                "     d <- 2+2\n" +
+                "   } " +
+                "return d}");
+        assert (Double) engine.eval("f12()") == 2;
+
         engine.eval("f <- function(x,bool1=TRUE,bool2=TRUE) {\n   if (!bool1) {\n     a <- 1; b <- 2\n   } else {\n     a <- 3; b <- 4\n   }\n   if (bool2) {\n     c<-a*1000 + b*100\n   } else if (!bool2) {\n     c<--a*1000 - b*100\n   }\n   result <- c + x\n   return(result)\n }");
         assert (Double) engine.eval("f(1, TRUE, TRUE)") == 3401;
         assert (Double) engine.eval("f(3)") == 3403;
@@ -1376,8 +1394,18 @@ public class R2jsSessionTest {
     }
 
     @Test
+    public void testMalformedExpression() throws RException, ScriptException {
+        try {
+            engine.voidEval("123=a2()");
+        } catch (Exception ignored) {
+        }
+        assertFalse("Variable should not exist", engine.variablesSet.contains("123"));
+    }
+
+    @Test
     public void testIfFunction() throws RException, ScriptException {
         engine.debug_js = true;
+
         engine.voidEval("f1 <- function() { return 4}");
         assertEquals((Double) engine.eval("if(f1() == 2) f1() else f1()+1"), 5, epsilon);
         assertEquals((Double) engine.eval("if(f1() >2) { 3 } else { 4 }"), 3, epsilon);
@@ -1385,6 +1413,29 @@ public class R2jsSessionTest {
         assertEquals((Double) engine.eval("if(f1()>2) f1() else f1()+1"), 4, epsilon);
         assertEquals((Double) engine.eval("if(f1()==2) f1() else f1()+1"), 5, epsilon);
         assertEquals((Double) engine.eval("if(f1()>2) f1()"), 4, epsilon);
+        engine.eval("f2 <- function() {if(123>6) 12 else 123}");
+        assertEquals((Double) engine.eval("f2()"), 12, epsilon);
+
+        engine.eval("f3 <- function() {if(TRUE) if(FALSE) if(TRUE) 13 else 11 else 123 else 45}");
+        assertEquals(123,(Double) engine.eval("f3()"), epsilon);
+        engine.eval("f4 <- function() {if(TRUE) 12 else if(FALSE) if(TRUE) 13 else 11 else 123}");
+        assertEquals(12,(Double) engine.eval( "f4()"), epsilon);
+        engine.eval("f5 <- function() {if(TRUE) 12 else {if(FALSE) if(TRUE) 13 else 11 else 123}}");
+        assertEquals(12,(Double) engine.eval( "f5()"), epsilon);
+        engine.eval("f6 <- function() {if(TRUE) 12 else {if(FALSE) if(TRUE) {13} else { 11 } else 123}}");
+        assertEquals(12,(Double) engine.eval( "f6()"), epsilon);
+        engine.eval("f7 <- function() {if(12>(67.4-61.5)) if(13>(67.4-54))  13.4+((13-5.9)*7.5)-13.4 else if(11<(67.4-54)) 1 else 2}");
+        assertEquals(1,(Double) engine.eval( "f7()"), epsilon);
+
+        engine.eval("f8 <- function() {if(TRUE) if(FALSE) 34 else if(TRUE) 1 else 2}");
+        assertEquals(1,(Double) engine.eval( "f8()"), epsilon);
+
+        engine.eval("f9 <- function() {if(FALSE) 12 else if(FALSE) 13 else if(TRUE) 14}");
+        assertEquals(14,(Double) engine.eval( "f9()"), epsilon);
+
+        engine.eval("f10 <- function() {if(FALSE) { 12 } else if(FALSE) { 13 } else if(TRUE) { 14 }}");
+        assertEquals(14,(Double) engine.eval( "f10()"), epsilon);
+
     }
 
     @Test
@@ -1482,4 +1533,99 @@ public class R2jsSessionTest {
         assert (Double) engine.eval("1e-31+1e-32") == 1.1e-31;
         assertEquals((Double) engine.eval("1e-31*1e-32"),  1e-63, 1e-75); //"normal" floating error of 1e-15 on multiplication
     }
+
+    @Test
+    public void testMinus() throws RException {
+        engine.eval("test <- function() { -100+100+5 }");
+        assert (Double) engine.eval("test()") == 5.0;
+        assert (Double) engine.eval("-3 -4") == -7;
+        assert (Double) engine.eval(" -3 -4") == -7;
+        assert (Double) engine.eval("( -3 -4)") == -7;
+        assert (Double) engine.eval(" ( -3 -4)") == -7;
+        assert (Double) engine.eval(" { -3 -4}") == -7;
+        assert ((double[]) engine.eval(" [ -3 -4]"))[0] == -7;
+    }
+
+//    @Test
+//    public void testEvaluationTime() throws RException, ScriptException, IOException {
+//        String MATH_JS_FILE = "/org/math/R/math.js";
+//        InputStream mathInputStream = this.getClass().getResourceAsStream(MATH_JS_FILE);
+////
+////
+////        StringBuilder textBuilder = new StringBuilder();
+////        try (Reader reader = new BufferedReader(new InputStreamReader
+////                (mathInputStream, StandardCharsets.UTF_8))) {
+////            int c = 0;
+////            while ((c = reader.read()) != -1) {
+////                textBuilder.append((char) c);
+////            }
+////        }
+////
+////        Context polyglotContext = Context.create();
+//
+////
+////        //polyglotContext.eval("js", textBuilder);
+//
+//
+//        // POLYGLOT
+////        long time1 = System.currentTimeMillis();
+////        Source scriptSource = Source.newBuilder("js",new File("/home/chabs/Documents/workspaces/rsession/src/main/resources/org/math/R/math.js")).build();
+////        Engine engine = Engine.create();
+////        Context ctx = Context.newBuilder()
+////                .engine(engine)
+////                .build();
+////        long time2 = System.currentTimeMillis();
+////
+////        Value result = ctx.eval(scriptSource);
+////        //Value math = ctx.getBindings("js").getMember("math");
+////        System.out.println("Res=" + ctx.eval("js", "math.add(1,2)"));
+////
+////        long time3 = System.currentTimeMillis();
+////
+////        //Context newContext = Context.newBuilder("js").(true).option("js.foreign-object-prototype", Boolean.TRUE.toString()).build();
+////        Context newContext = Context.newBuilder()
+////                .engine(engine)
+////                .build();
+////        newContext.eval(scriptSource);
+////        //newContext.getBindings("js").putMember("math", math);
+////
+////        System.out.println("Res=" + newContext.eval("js", "math.add(1,11)"));
+////
+////        long time4 = System.currentTimeMillis();
+////
+////        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
+////        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
+////        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
+//
+//
+//
+//        long time1 = System.currentTimeMillis();
+//        ScriptEngineManager manager = new ScriptEngineManager(null);
+//        long time11 = System.currentTimeMillis();
+//        ScriptEngine js = manager.getEngineByName("JavaScript");
+//        if (js==null) js = manager.getEngineByName("js");
+//        if (js==null) js = manager.getEngineByExtension("js");
+//        if (js==null) js = manager.getEngineByName("nashorn");
+//        if (js==null) js = manager.getEngineByName("Nashorn");
+//        //if (js==null) js = new jdk.nashorn.api.scripting.NashornScriptEngineFactory().getScriptEngine();
+//        if (js==null) throw new IllegalArgumentException("Could not load JavaScript ScriptEngine: "+manager.getEngineFactories());
+//
+//        long time2 = System.currentTimeMillis();
+//        js.eval(new InputStreamReader(mathInputStream, Charset.forName("UTF-8")));
+//        System.out.println("Res="+ js.eval("math.add(1,2)"));
+//        Object math = js.get("math");
+//        long time3 = System.currentTimeMillis();
+//        ScriptEngine js2 = manager.getEngineByName("JavaScript");
+//        //System.out.println("Res="+ js2.eval("math.add(1,11)"));
+//        js2.put("math", math);
+//        System.out.println("Res="+ js2.eval("math.add(1,11)"));
+//        long time4 = System.currentTimeMillis();
+//
+//        System.out.println("Evaluation time polyglot---:" + (time11 - time1) + " ms");
+//        System.out.println("Evaluation time polyglot:" + (time2 - time1) + " ms");
+//        System.out.println("Evaluation time polyglot:" + (time3 - time2) + " ms");
+//        System.out.println("Evaluation time polyglot:" + (time4 - time3) + " ms");
+//
+//    }
+
 }
