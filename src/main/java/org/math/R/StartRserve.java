@@ -640,8 +640,30 @@ public class StartRserve {
             //Log.Out.print(".");
         }
         if (pid == -1) {
-            if (debug) Log.Err.println("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
-            throw new IOException("Failed to get Rserve PID:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
+            String psRserve = "ps matching Rserve:";
+            try{
+                File psoutstream = File.createTempFile(workdir, "ps.out");
+                if (RserveDaemon.isWindows()) { // Windows, so we expect tasklist is available in PATH
+                    system("tasklist", psoutstream, true);                       
+                } else if (RserveDaemon.isLinux()) {
+                    system("ps -aux", psoutstream, true);
+                } else if (RserveDaemon.isMacOSX()) { // MacOS
+                    system("ps aux", psoutstream, true);
+                }
+                String psout = org.apache.commons.io.FileUtils.readFileToString(psoutstream);
+                for (String ps : psout.split("\n")) {
+                    if (ps.contains("Rserve") || ps.contains("Rserve_d")) {
+                        psRserve += "\n  | " + ps;
+                    }
+                }
+            } catch (Exception e) {
+                Log.Err.println(e.getMessage());
+            }
+            if (debug) {
+                Log.Err.println("Failed to get Rserve PID in "+psRserve);                
+                Log.Err.println("R/Rserve startup returns:\n" + org.apache.commons.io.FileUtils.readFileToString(outstream).replaceAll("\n", "\n  | "));
+            }
+            throw new IOException("Failed to get Rserve PID in "+psRserve);                
         }
         Log.Out.println("  With PID: " + pid);
 
