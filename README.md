@@ -68,7 +68,7 @@ Use this maven dependency:
     <dependency>
       <groupId>com.github.yannrichet</groupId>
       <artifactId>Rsession</artifactId>
-      <version>3.1.7</version>
+      <version>3.1.8</version>
     </dependency>
 ...
 </dependencies>
