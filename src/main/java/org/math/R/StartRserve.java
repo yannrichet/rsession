@@ -442,9 +442,6 @@ public class StartRserve {
                         try{Thread.sleep(100);}catch(InterruptedException e){} // ensure writer started or wait 10 s.
                         t+=1;
                     }
-                    while ((line = reader.readLine()) != null) {
-                        try{Thread.sleep(100);}catch(InterruptedException e){}    
-                    }
 
                     try {p.destroyForcibly();} catch (Exception e) {e.printStackTrace();}
 
