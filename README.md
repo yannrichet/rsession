@@ -5,7 +5,7 @@
 
 
 # Rsession: R (3.5+) sessions wrapping for Java (8+) #
- 
+
 Rsession provides an easy to use java class giving access to remote or local R sessions.
 The back-end engine should be:
 
