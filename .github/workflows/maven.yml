@@ -2,7 +2,7 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: [ java21 ]
+    branches: [ '*' ]
     tags: [ '*.*' ]
   pull_request:
     branches: [ java21 ]
