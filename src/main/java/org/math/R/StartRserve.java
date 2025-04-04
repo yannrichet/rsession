@@ -774,7 +774,7 @@ public class StartRserve {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && line.contains("Ss")) {
+                    if ((line.contains("Rserve --vanilla") || line.contains("Rserve_d --vanilla")) && (line.contains("Ss") || line.contains("S<s"))) {
                         //Log.Out.print("\n> " + line);
                         String[] info = line.split("\\s+");
                         int pid = Integer.parseInt(info[1]);
