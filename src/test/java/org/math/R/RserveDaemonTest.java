@@ -17,6 +17,8 @@ import org.codehaus.plexus.util.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.math.R.RserveDaemon.isMacOSXARM;
 import static org.math.R.StartRserve.doInR;
 
 /**
@@ -133,6 +135,10 @@ public class RserveDaemonTest {
     @Test
     public void testInstallCustomRserve() throws Exception {
         System.err.println("====================================== testInstallCustomRserve");
+        if (isMacOSXARM()) {
+            System.err.println("MacOS ARM64 is not supported yet! Skipping test.");
+            return;
+        }
 
         if (RserveDaemon.R_HOME == null || Rcmd == null) {
             testFindR_HOME();
