@@ -56,7 +56,7 @@ public class RenjinSessionTest {
     @Test
     public void testInstallPackage() {
         // disable if  github actions
-        if (System.getProperty("GITHUB_ACTIONS") != null) {
+        if (System.getProperty("GITHUB_ACTION") != null) {
             System.err.println("Skipping testInstallPackage on GitHub Actions");
             return;
         }
@@ -79,7 +79,7 @@ public class RenjinSessionTest {
     @Test
     public void testInstallPackages() {
         // disable if  github actions
-        if (System.getProperty("GITHUB_ACTIONS") != null) {
+        if (System.getProperty("GITHUB_ACTION") != null) {
            System.err.println("Skipping testInstallPackage on GitHub Actions");
            return;
         }

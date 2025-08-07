@@ -34,7 +34,7 @@ public class RenjinLibraryTest {
     @Test
     public void testInstallPackage() throws Exception {
         // disable if  github actions
-        if (System.getProperty("GITHUB_ACTIONS") != null) {
+        if (System.getProperty("GITHUB_ACTION") != null) {
             System.err.println("Skipping testInstallPackage on GitHub Actions");
             return;
         }
