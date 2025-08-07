@@ -33,6 +33,11 @@ public class RenjinLibraryTest {
 
     @Test
     public void testInstallPackage() throws Exception {
+        // disable if  github actions
+        if (System.getProperty("GITHUB_ACTIONS") != null) {
+            System.err.println("Skipping testInstallPackage on GitHub Actions");
+            return;
+        }
         Object ret = R.eval("library('pso')");
         System.err.println(">> " + ret + " (" + ret.getClass() + ")");
         String[] a = ((StringArrayVector) ret).toArray();

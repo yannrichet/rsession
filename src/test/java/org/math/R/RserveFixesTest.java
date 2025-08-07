@@ -58,7 +58,7 @@ public class RserveFixesTest {
                 c.eval("Sys.setenv(https_proxy='" + http_proxy_env + "')");
             }
 
-            c.eval("download.file(quiet=T,'http://cran.irsn.fr/',paste0(getwd(),'/log.txt'))");
+            c.eval("download.file(quiet=T,'http://cran.r-project.org/',paste0(getwd(),'/log.txt'))");
             c.close();
         } catch (Exception x) {
             x.printStackTrace();

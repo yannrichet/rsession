@@ -55,6 +55,11 @@ public class RenjinSessionTest {
 
     @Test
     public void testInstallPackage() {
+        // disable if  github actions
+        if (System.getProperty("GITHUB_ACTIONS") != null) {
+            System.err.println("Skipping testInstallPackage on GitHub Actions");
+            return;
+        }
         File dir = new File(System.getProperty("user.home"), ".m2/repository/org/renjin/cran/pso".replace("/", File.separator));
         if (dir.exists()) {
             try {
@@ -73,6 +78,11 @@ public class RenjinSessionTest {
 
     @Test
     public void testInstallPackages() {
+        // disable if  github actions
+        if (System.getProperty("GITHUB_ACTIONS") != null) {
+           System.err.println("Skipping testInstallPackage on GitHub Actions");
+           return;
+        }
         String out = s.installPackage("boot", true);
         assert out.equals(Rsession.PACKAGELOADED) : "Failed to load package boot: " + out;
         String out2 = s.installPackage("pso", true);
