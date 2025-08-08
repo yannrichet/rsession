@@ -111,7 +111,8 @@ public class StartRserve {
             if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
                 return true;
             } else {
-                Log.Err.println("Seems Rserve is not _well_ installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):"No DESCRIPTION in "+dir) +" Force remove!");
+                Log.Err.println("Seems Rserve is not _well_ installed: " + (desc.isFile()?org.apache.commons.io.FileUtils.readFileToString(desc):
+                "No DESCRIPTION in "+dir+" (just "+org.apache.commons.io.FileUtils.listFiles(dir, null, false)+")") +" Force remove!");
                 if (RserveDaemon.isWindows()) {
                     //Log.Err.println("  OS:Windows, so try to kill Rserve.exe before:");
                     KillAll("Rserve.exe");
