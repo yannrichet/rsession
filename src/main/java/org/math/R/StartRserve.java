@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
+import org.renjin.gnur.api.S;
 
 import static org.math.R.RserveDaemon.isWindows;
 import org.rosuda.REngine.REXPMismatchException;
@@ -106,6 +107,15 @@ public class StartRserve {
         // shortcut & try avoid filesystem sync issues on windows
         File dir = new File(RserveDaemon.app_dir(), "Rserve");
         if (dir.isDirectory()) {
+            // wait for dir is not locked
+            int i=10;
+            while (i-- > 0 && !dir.canWrite()) {
+                System.err.println("Waiting for Rserve directory "+dir+" to be writable... ("+i+")");
+                try {
+                    Thread.sleep(1000);/* a safety sleep just in case the start up is delayed or asynchronous */
+                } catch (InterruptedException ix) {
+                }
+            }
             File desc = new File(dir, "DESCRIPTION");
             // validate install if version >=1.7-5 or 1.8
             if (desc.isFile() && (org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.7-5") | org.apache.commons.io.FileUtils.readFileToString(desc).contains("1.8"))) {
