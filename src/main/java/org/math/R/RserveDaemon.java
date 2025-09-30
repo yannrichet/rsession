@@ -168,7 +168,7 @@ public class RserveDaemon {
                     for (int version = 4; version >= 0; version--) {
                         for (int major = 20; major >= 0; major--) { // for homebrew install
                             //int major = 10;//known to work with R 2.9 only.
-                            r_HOME = "/usr/local/Cellar/r/" + version + "." + major 
+                            r_HOME = "/usr/local/Cellar/r/" + version + "." + major;
                             if (new File(r_HOME).isDirectory()) {
                                 R_HOME = r_HOME;
                                 break;
@@ -204,7 +204,7 @@ public class RserveDaemon {
                     for (int version = 4; version >= 0; version--) {
                         for (int major = 20; major >= 0; major--) { // for homebrew install
                             //int major = 10;//known to work with R 2.9 only.
-                            r_HOME = "/opt/R/" + version + "." + major 
+                            r_HOME = "/opt/R/" + version + "." + major;
                             if (new File(r_HOME).isDirectory()) {
                                 R_HOME = r_HOME;
                                 break;
