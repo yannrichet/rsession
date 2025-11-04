@@ -16,12 +16,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-java@v1
+    - uses: actions/checkout@v3
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - run: mvn -B compile -DskipTests=true --file pom.xml
 
   test:
@@ -173,13 +175,25 @@ jobs:
       RSESSION_INSTANCE: ${{ matrix.rsession_instance }}
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/setup-java@v1
+    # Set up GraalVM with JavaScript for R2js tests
+    - name: Set up GraalVM (for R2js)
+      if: matrix.rsession_instance == 'R2js'
+      uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    # Set up standard JDK for Renjin and Rserve tests
+    - name: Set up JDK (for Renjin/Rserve)
+      if: matrix.rsession_instance != 'R2js'
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'temurin'
 
     # Only setup R for Rserve tests
     - uses: r-lib/actions/setup-r@v2
@@ -217,13 +231,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/setup-java@v1
+    - name: Set up GraalVM
+      uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - run: mvn -B package -DskipTests=true --file pom.xml
 
     - uses: actions/upload-artifact@v4
