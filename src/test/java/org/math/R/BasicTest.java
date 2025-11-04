@@ -10,6 +10,7 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 
 /**
  *
@@ -51,13 +52,27 @@ public class BasicTest {
         if (http_proxy_env != null) {
             prop.setProperty("http_proxy", http_proxy_env);
         }
-        
+
         if (!(tmpdir.isDirectory() || tmpdir.mkdirs())) throw new IllegalArgumentException("Failed to create temp dir");
 
+        // Check RSESSION_INSTANCE environment variable to determine which instances to initialize
+        String rsessionInstance = System.getenv("RSESSION_INSTANCE");
 
-        initializeRserve(l, prop);
-        initializeRenjin(l, prop);
-        initializeR2js(l);
+        if (rsessionInstance == null || rsessionInstance.isEmpty()) {
+            // No environment variable set - initialize all instances (local development)
+            initializeRserve(l, prop);
+            initializeRenjin(l, prop);
+            initializeR2js(l);
+        } else {
+            // CI mode - initialize only the specified instance
+            if ("Rserve".equals(rsessionInstance)) {
+                initializeRserve(l, prop);
+            } else if ("Renjin".equals(rsessionInstance)) {
+                initializeRenjin(l, prop);
+            } else if ("R2js".equals(rsessionInstance)) {
+                initializeR2js(l);
+            }
+        }
     }
 
     private void initializeR2js(RLog l) throws Rsession.RException {
@@ -120,6 +135,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
@@ -131,6 +147,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
@@ -142,6 +159,7 @@ public class BasicTest {
 
     @Test
     public void testWriteCSVAnywhere_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         File totof = new File(new File("..").getAbsoluteFile(), "toto.csv");
         if (totof.exists()) {
             assert totof.delete() : "Failed to delete " + totof;
@@ -153,6 +171,7 @@ public class BasicTest {
 
     @Test
     public void testCast_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
         //cast
         assert Double.isNaN((Double) s.eval("NaN")) : r.eval("NaN");
@@ -182,6 +201,7 @@ public class BasicTest {
 
     @Test
     public void testCast_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
         //cast
         assert Double.isNaN((Double) r.eval("NaN")) : r.eval("NaN");
@@ -211,6 +231,7 @@ public class BasicTest {
 
     @Test
     public void testCast_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
         //cast
         assert Double.isNaN((Double) q.eval("NaN"));
@@ -239,6 +260,7 @@ public class BasicTest {
     
     @Test
     public void testEval_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
        q.debug_js=true;
         assert q.eval("if (1<2) print('a') else print('b')").toString().equals("a"):q.eval("if (1<2) print('a') else print('b')");
@@ -249,6 +271,7 @@ public class BasicTest {
         
     @Test
     public void testEval_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== R2Js");
         assert r.eval("if (1<2) print('a') else print('b')").toString().equals("a"):r.eval("if (1<2) print('a') else print('b')");
         //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
@@ -256,6 +279,7 @@ public class BasicTest {
         
     @Test
     public void testEval_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== R2Js");
         assert s.eval("if (1<2) print('a') else print('b')").toString().equals("a"):s.eval("if (1<2) print('a') else print('b')");
         //assert q.eval("( if (1<2) print('a') else print('b') )").toString().equals("a"):q.eval("( if (1<2) print('a') else print('b') )");
@@ -263,6 +287,7 @@ public class BasicTest {
 
     @Test
     public void testMatrix_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
 
         assert r.set("n", null, "a") : "Failed to create NULL matrix";
@@ -300,6 +325,7 @@ public class BasicTest {
 
     @Test
     public void testMatrix_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
 
         assert s.set("n", null, "a") : "Failed to create NULL matrix";
@@ -337,6 +363,7 @@ public class BasicTest {
 
     @Test
     public void testMatrix_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
 
         // TODO: support and uncomment these lines
@@ -377,6 +404,7 @@ public class BasicTest {
 
     @Test
     public void testEnv_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
         q.debug_js = true;
         
@@ -435,6 +463,7 @@ public class BasicTest {
 
     @Test
     public void testEnv_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
         
         double v = 123.456;
@@ -496,6 +525,7 @@ public class BasicTest {
     
     @Test
     public void testEnv_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
 
         double v = 123.456;
@@ -557,6 +587,7 @@ public class BasicTest {
     
     @Test
     public void testSet_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
 
         //assert q.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
@@ -609,6 +640,7 @@ public class BasicTest {
 
     @Test
     public void testSet_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
 
         assert r.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
@@ -656,6 +688,7 @@ public class BasicTest {
 
     @Test
     public void testSet_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
 
         assert s.set("ddd", new double[3][0], "ddd.a", "ddd.b", "ddd.c") : "Failed to setup empty dataframe";
@@ -704,6 +737,7 @@ public class BasicTest {
 
     @Test
     public void testSource_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         s.source(new File("src/test/R/test.R"));
         assert s.asDouble(s.eval("a")) == 1;
         assert s.asDouble(s.eval("b")) == 2;
@@ -716,6 +750,7 @@ public class BasicTest {
 
     @Test
     public void testSource_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         r.source(new File("src/test/R/test.R"));
         assert r.asDouble(r.eval("a")) == 1;
         assert r.asDouble(r.eval("b")) == 2;
@@ -728,6 +763,7 @@ public class BasicTest {
 
     @Test
     public void testSource_R2Js_smallx() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         q.source(new File("src/test/R/test.R"));
         assert q.asDouble(q.eval("a")) == 1;
         assert q.asDouble(q.eval("b")) == 2;
@@ -740,6 +776,7 @@ public class BasicTest {
 
     @Test
     public void testSource_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         q.source(new File("src/test/R/test.R"));
         assert q.asDouble(q.eval("a")) == 1;
         assert q.asDouble(q.eval("b")) == 2;
@@ -777,6 +814,7 @@ public class BasicTest {
 
     @Test
     public void testSave_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         String str = "abcd";
         r.set("s", str);
         assert ((String) r.eval("s")).equals(str);
@@ -803,6 +841,7 @@ public class BasicTest {
 
     @Test
     public void testSave_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         String str = "abcd";
         q.set("s", str);
         assert ((String) q.eval("s")).equals(str);
@@ -830,6 +869,7 @@ public class BasicTest {
 
     @Test
     public void testIOFiles_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
         //set
         double c = Math.random();
@@ -894,6 +934,7 @@ public class BasicTest {
 
     @Test
     public void testIOFiles_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
         //set
         double c = Math.random();
@@ -956,6 +997,7 @@ public class BasicTest {
 
     @Test
     public void testIOFiles_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
         //set
         double c = Math.random();
@@ -1021,6 +1063,7 @@ public class BasicTest {
     // Lin      Win       C:\toto   /titi/tata.R    C:/toto/_-_titi_-_tata.R
     @Test
     public void testRemoteLocalFiles_R2Js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== R2Js");
         
         File rel_l = new File("titi/tata.R");
@@ -1046,6 +1089,7 @@ public class BasicTest {
     
     @Test
     public void testRemoteLocalFiles_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== Renjin");
         
         File rel_l = new File("titi/tata.R");
@@ -1071,6 +1115,7 @@ public class BasicTest {
         
     @Test
     public void testRemoteLocalFiles_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== Rserve");
         
         File rel_l = new File("titi/tata.R");

@@ -7,6 +7,7 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 import org.math.array.DoubleArray;
 import org.math.array.LinearAlgebra;
 
@@ -100,6 +101,7 @@ public class BrentTest {
 
     @Test
     public void testfrom01R2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -143,6 +145,7 @@ public class BrentTest {
 
     //@Test
     public void testfrom01FunR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         ((AbstractR2jsSession)R).debug_js=true;
         try {
@@ -192,6 +195,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -243,6 +247,7 @@ public class BrentTest {
 
     @Test
     public void testgetInitialDesignFunR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -492,6 +497,7 @@ public class BrentTest {
 
     @Test
     public void testErrorFunR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -561,6 +567,7 @@ public class BrentTest {
 
     @Test
     public void testRserve() {
+        assumeTrue("Skipping Rserve test", shouldRunForInstance("Rserve"));
         R = new RserveSession(l, prop,null);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -583,6 +590,7 @@ public class BrentTest {
 
     @Test
     public void testRenjin() {
+        assumeTrue("Skipping Renjin test", shouldRunForInstance("Renjin"));
         R = new RenjinSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -600,6 +608,7 @@ public class BrentTest {
 
     @Test
     public void testR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         ((AbstractR2jsSession)R).debug_js = true;
         try {
@@ -619,6 +628,11 @@ public class BrentTest {
     RLog l;
     Properties prop;
     Rsession R;
+
+    private boolean shouldRunForInstance(String instanceName) {
+        String rsessionInstance = System.getenv("RSESSION_INSTANCE");
+        return rsessionInstance == null || rsessionInstance.isEmpty() || rsessionInstance.equals(instanceName);
+    }
 
     @Before
     public void setUp() {

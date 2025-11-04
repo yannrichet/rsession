@@ -10,6 +10,7 @@ import javax.swing.JPanel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 import org.math.R.Rsession.RException;
 
 /**
@@ -65,6 +66,27 @@ public class RPanelsTest {
             throw new IllegalArgumentException("Failed to create temp dir");
         }
 
+        // Check RSESSION_INSTANCE environment variable to determine which instances to initialize
+        String rsessionInstance = System.getenv("RSESSION_INSTANCE");
+
+        if (rsessionInstance == null || rsessionInstance.isEmpty()) {
+            // No environment variable set - initialize all instances (local development)
+            initializeRserve(l, prop);
+            initializeRenjin(l, prop);
+            initializeR2js(l);
+        } else {
+            // CI mode - initialize only the specified instance
+            if ("Rserve".equals(rsessionInstance)) {
+                initializeRserve(l, prop);
+            } else if ("Renjin".equals(rsessionInstance)) {
+                initializeRenjin(l, prop);
+            } else if ("R2js".equals(rsessionInstance)) {
+                initializeR2js(l);
+            }
+        }
+    }
+
+    private void initializeRserve(RLog l, Properties prop) throws Exception {
         s = new RserveSession(l, prop, null);
         System.out.println("| R.version:\t" + s.eval("R.version.string"));
         System.out.println("| Rserve.version:\t" + s.eval("installed.packages(lib.loc='" + RserveDaemon.app_dir() + "')[\"Rserve\",\"Version\"]"));
@@ -80,14 +102,18 @@ public class RPanelsTest {
         System.out.println("| getwd():\t" + s.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) s.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) s.ls(true)));
+    }
 
+    private void initializeRenjin(RLog l, Properties prop) throws Exception {
         r = RenjinSession.newInstance(l, prop);
         System.out.println("| R.version:\t" + r.eval("R.version.string"));
 
         System.out.println("| getwd():\t" + r.eval("getwd()"));
         System.out.println("| list.files(all.files=TRUE):\t" + Arrays.toString((String[]) r.eval("list.files(all.files=TRUE)")));
         System.out.println("| ls():\t" + Arrays.toString((String[]) r.ls(true)));
+    }
 
+    private void initializeR2js(RLog l) throws Exception {
         q = R2jsSession.newInstance(l, null);
         System.out.println("| R.version:\t" + q.eval("R.version.string"));
 
@@ -133,6 +159,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_Rserve() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== testRLogPanel_Rserve");
         RLogPanel p = new RLogPanel();
         s.addLogger(p);
@@ -152,6 +179,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== testRLogPanel_Renjin");
         RLogPanel p = new RLogPanel();
         r.addLogger(p);
@@ -190,6 +218,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_RserveError() throws Exception {
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== testRLogPanel_RserveError");
         RLogPanel p = new RLogPanel();
         s.addLogger(p);
@@ -208,6 +237,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_RenjinError() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== testRLogPanel_RserveError");
         RLogPanel p = new RLogPanel();
         r.addLogger(p);
@@ -244,6 +274,7 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_Renjin() throws Exception {
+        assumeTrue("Renjin instance not initialized", r != null);
         System.err.println("====================================== testRObjPanel_Renjin");
         RObjectsPanel p = new RObjectsPanel(r);
         frame(p);

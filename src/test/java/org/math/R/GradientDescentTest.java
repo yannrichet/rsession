@@ -6,6 +6,7 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assume.assumeTrue;
 import org.math.R.Rsession.RException;
 import org.math.array.DoubleArray;
 
@@ -111,6 +112,7 @@ public class GradientDescentTest {
 
     @Test
     public void testRserve() {
+        assumeTrue("Skipping Rserve test", shouldRunForInstance("Rserve"));
         R = new RserveSession(l, prop,null);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -133,6 +135,7 @@ public class GradientDescentTest {
 
     @Test
     public void testRenjin() {
+        assumeTrue("Skipping Renjin test", shouldRunForInstance("Renjin"));
         R = new RenjinSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -150,6 +153,7 @@ public class GradientDescentTest {
 
     @Test
     public void testR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         ((AbstractR2jsSession)R).debug_js = true;
         try {
@@ -211,6 +215,7 @@ public class GradientDescentTest {
 
     @Test
     public void testFailRserve() {
+        assumeTrue("Skipping Rserve test", shouldRunForInstance("Rserve"));
         R = new RserveSession(l, prop,null);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -233,6 +238,7 @@ public class GradientDescentTest {
 
     @Test
     public void testFailRenjin() {
+        assumeTrue("Skipping Renjin test", shouldRunForInstance("Renjin"));
         R = new RenjinSession(l, prop);
         try {
             System.err.println(R.eval("R.version.string"));
@@ -250,6 +256,7 @@ public class GradientDescentTest {
 
     @Test
     public void testFailR2js() {
+        assumeTrue("Skipping R2js test", shouldRunForInstance("R2js"));
         R = R2jsSession.newInstance(l, prop);
         ((AbstractR2jsSession)R).debug_js = true;
         try {
@@ -270,6 +277,11 @@ public class GradientDescentTest {
     RLog l;
     Properties prop;
     Rsession R;
+
+    private boolean shouldRunForInstance(String instanceName) {
+        String rsessionInstance = System.getenv("RSESSION_INSTANCE");
+        return rsessionInstance == null || rsessionInstance.isEmpty() || rsessionInstance.equals(instanceName);
+    }
 
     @Before
     public void setUp() {
