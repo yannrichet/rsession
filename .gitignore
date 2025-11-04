@@ -12,5 +12,7 @@ target
 *.Rout
 *.sav*
 *.png
+*.jpg
+*.pdf
 *.Rdata
 *.out
