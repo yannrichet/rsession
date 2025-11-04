@@ -129,21 +129,21 @@ public class RPanelsTest {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        s.closeLog();
+        if (s != null) s.closeLog();
         //A shutdown hook kills all Rserve at the end.
-        r.closeLog();
+        if (r != null) r.closeLog();
 
-        q.closeLog();
+        if (q != null) q.closeLog();
 
         System.out.println("========================================================================");
-        System.out.println(s.notebook());
-        System.out.println(r.notebook());
-        System.out.println(q.notebook());
+        if (s != null) System.out.println(s.notebook());
+        if (r != null) System.out.println(r.notebook());
+        if (q != null) System.out.println(q.notebook());
         System.out.println("========================================================================");
-        
-        s.end();
-        r.end();
-        q.end();
+
+        if (s != null) s.end();
+        if (r != null) r.end();
+        if (q != null) q.end();
     }
 
     void frame(JPanel p) {
@@ -199,6 +199,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_R2js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== testRLogPanel_R2js");
         RLogPanel p = new RLogPanel();
         q.addLogger(p);
@@ -256,6 +257,7 @@ public class RPanelsTest {
 
     @Test
     public void testRLogPanel_R2jsError() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== testRLogPanel_R2jsError");
         RLogPanel p = new RLogPanel();
         q.addLogger(p);
@@ -289,6 +291,7 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_Rsession() throws Exception {
+        assumeTrue("At least one Rsession instance initialized", s != null || r != null || q != null);
         System.err.println("====================================== testRObjPanel_Rsession");
         RObjectsPanel p = new RObjectsPanel(s);
         frame(p);
@@ -303,6 +306,7 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_R2js() throws Exception {
+        assumeTrue("R2js instance not initialized", q != null);
         System.err.println("====================================== testRObjPanel_R2js");
         RObjectsPanel p = new RObjectsPanel(q);
         frame(p);
