@@ -305,7 +305,9 @@ public class GradientDescentTest {
     @After
     public void tearDown() {
         //uncomment following for sequential call.
-        R.end();
+        if (R != null) {
+            R.end();
+        }
         //A shutdown hook kills all Rserve in the end.
     }
 }
