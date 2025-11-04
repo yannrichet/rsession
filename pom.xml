@@ -18,9 +18,61 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
+        <!-- By default, run all tests -->
+        <rsession.skip.r2js>false</rsession.skip.r2js>
+        <rsession.skip.renjin>false</rsession.skip.renjin>
+        <rsession.skip.rserve>false</rsession.skip.rserve>
     </properties>
 
     <profiles>
+        <!-- Profile to run only R2js tests -->
+        <profile>
+            <id>r2js-only</id>
+            <activation>
+                <property>
+                    <name>env.RSESSION_INSTANCE</name>
+                    <value>R2js</value>
+                </property>
+            </activation>
+            <properties>
+                <rsession.skip.r2js>false</rsession.skip.r2js>
+                <rsession.skip.renjin>true</rsession.skip.renjin>
+                <rsession.skip.rserve>true</rsession.skip.rserve>
+            </properties>
+        </profile>
+
+        <!-- Profile to run only Renjin tests -->
+        <profile>
+            <id>renjin-only</id>
+            <activation>
+                <property>
+                    <name>env.RSESSION_INSTANCE</name>
+                    <value>Renjin</value>
+                </property>
+            </activation>
+            <properties>
+                <rsession.skip.r2js>true</rsession.skip.r2js>
+                <rsession.skip.renjin>false</rsession.skip.renjin>
+                <rsession.skip.rserve>true</rsession.skip.rserve>
+            </properties>
+        </profile>
+
+        <!-- Profile to run only Rserve tests -->
+        <profile>
+            <id>rserve-only</id>
+            <activation>
+                <property>
+                    <name>env.RSESSION_INSTANCE</name>
+                    <value>Rserve</value>
+                </property>
+            </activation>
+            <properties>
+                <rsession.skip.r2js>true</rsession.skip.r2js>
+                <rsession.skip.renjin>true</rsession.skip.renjin>
+                <rsession.skip.rserve>false</rsession.skip.rserve>
+            </properties>
+        </profile>
+
         <!-- Profile for Java 11 (Nashorn) -->
         <profile>
             <id>java11</id>
@@ -224,6 +276,81 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+                <executions>
+                    <!-- Disable default test execution -->
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                    <!-- Run common tests (not R2js/Renjin/Rserve specific) -->
+                    <execution>
+                        <id>test-common</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/R2js*Test.java</exclude>
+                                <exclude>**/Renjin*Test.java</exclude>
+                                <exclude>**/Rserve*Test.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <!-- Run R2js-specific tests -->
+                    <execution>
+                        <id>test-r2js</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${rsession.skip.r2js}</skip>
+                            <includes>
+                                <include>**/R2js*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <!-- Run Renjin-specific tests -->
+                    <execution>
+                        <id>test-renjin</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${rsession.skip.renjin}</skip>
+                            <includes>
+                                <include>**/Renjin*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <!-- Run Rserve-specific tests -->
+                    <execution>
+                        <id>test-rserve</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${rsession.skip.rserve}</skip>
+                            <includes>
+                                <include>**/Rserve*Test.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -25,13 +25,152 @@ jobs:
     - run: mvn -B compile -DskipTests=true --file pom.xml
 
   test:
+    name: Test ${{ matrix.rsession_instance }} (Java ${{ matrix.java }}, ${{ matrix.os }}${{ matrix.r && format(', R {0}', matrix.r) || '' }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        java: [11, 21]
-        r: [3.6, oldrel, release, next]
+        # Define all combinations explicitly
+        include:
+          # R2js tests (OS x Java) - no R version needed
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: R2js
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: R2js
+          - os: windows-latest
+            java: 11
+            rsession_instance: R2js
+          - os: windows-latest
+            java: 21
+            rsession_instance: R2js
+          - os: macOS-latest
+            java: 11
+            rsession_instance: R2js
+          - os: macOS-latest
+            java: 21
+            rsession_instance: R2js
+
+          # Renjin tests (OS x Java) - no R version needed
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: Renjin
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: Renjin
+          - os: windows-latest
+            java: 11
+            rsession_instance: Renjin
+          - os: windows-latest
+            java: 21
+            rsession_instance: Renjin
+          - os: macOS-latest
+            java: 11
+            rsession_instance: Renjin
+          - os: macOS-latest
+            java: 21
+            rsession_instance: Renjin
+
+          # Rserve tests (OS x Java x R) - R version is meaningful
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: Rserve
+            r: oldrel
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: Rserve
+            r: release
+          - os: ubuntu-latest
+            java: 11
+            rsession_instance: Rserve
+            r: next
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: Rserve
+            r: oldrel
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: Rserve
+            r: release
+          - os: ubuntu-latest
+            java: 21
+            rsession_instance: Rserve
+            r: next
+          - os: windows-latest
+            java: 11
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: windows-latest
+            java: 11
+            rsession_instance: Rserve
+            r: oldrel
+          - os: windows-latest
+            java: 11
+            rsession_instance: Rserve
+            r: release
+          - os: windows-latest
+            java: 11
+            rsession_instance: Rserve
+            r: next
+          - os: windows-latest
+            java: 21
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: windows-latest
+            java: 21
+            rsession_instance: Rserve
+            r: oldrel
+          - os: windows-latest
+            java: 21
+            rsession_instance: Rserve
+            r: release
+          - os: windows-latest
+            java: 21
+            rsession_instance: Rserve
+            r: next
+          - os: macOS-latest
+            java: 11
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: macOS-latest
+            java: 11
+            rsession_instance: Rserve
+            r: oldrel
+          - os: macOS-latest
+            java: 11
+            rsession_instance: Rserve
+            r: release
+          - os: macOS-latest
+            java: 11
+            rsession_instance: Rserve
+            r: next
+          - os: macOS-latest
+            java: 21
+            rsession_instance: Rserve
+            r: "3.6"
+          - os: macOS-latest
+            java: 21
+            rsession_instance: Rserve
+            r: oldrel
+          - os: macOS-latest
+            java: 21
+            rsession_instance: Rserve
+            r: release
+          - os: macOS-latest
+            java: 21
+            rsession_instance: Rserve
+            r: next
     runs-on: ${{ matrix.os }}
+    env:
+      RSESSION_INSTANCE: ${{ matrix.rsession_instance }}
     steps:
 
     - uses: actions/checkout@v2
@@ -41,14 +180,17 @@ jobs:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
+
+    # Only setup R for Rserve tests
     - uses: r-lib/actions/setup-r@v2
+      if: matrix.rsession_instance == 'Rserve'
       with:
         r-version: ${{ matrix.r }}
 
     - run: ln -s /Library/Frameworks/R.framework/Versions/3.6 /Library/Frameworks/R.framework/Versions/3.5
-      if: matrix.os == 'macos-latest' && matrix. r == '3.6'
-    - run: sudo ln -s /opt/R/next /opt/R/4.4.0 
-      if: matrix.os == 'ubuntu-latest' && matrix. r == 'next'
+      if: matrix.os == 'macos-latest' && matrix.rsession_instance == 'Rserve' && matrix.r == '3.6'
+    - run: sudo ln -s /opt/R/next /opt/R/4.4.0
+      if: matrix.os == 'ubuntu-latest' && matrix.rsession_instance == 'Rserve' && matrix.r == 'next'
 
     - uses: coactions/setup-xvfb@v1
       with:
@@ -85,7 +227,7 @@ jobs:
     - run: mvn -B package -DskipTests=true --file pom.xml
 
     - uses: actions/upload-artifact@v4
-      if: matrix.os == 'ubuntu-latest' && matrix.java == 13 && matrix.r == 'release'
+      if: matrix.java == 21
       with:
         path: target
 
