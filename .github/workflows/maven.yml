@@ -23,7 +23,6 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
-        components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Set up JDK (Java 11)
       if: matrix.java == 11
@@ -145,10 +144,11 @@ jobs:
             java: 21
             rsession_instance: Rserve
             r: next
-          - os: macOS-latest
-            java: 11
-            rsession_instance: Rserve
-            r: "3.6"
+          # Skip macOS R 3.6 - not available for arm64 architecture
+          # - os: macOS-latest
+          #   java: 11
+          #   rsession_instance: Rserve
+          #   r: "3.6"
           - os: macOS-latest
             java: 11
             rsession_instance: Rserve
@@ -161,10 +161,11 @@ jobs:
             java: 11
             rsession_instance: Rserve
             r: next
-          - os: macOS-latest
-            java: 21
-            rsession_instance: Rserve
-            r: "3.6"
+          # Skip macOS R 3.6 - not available for arm64 architecture
+          # - os: macOS-latest
+          #   java: 21
+          #   rsession_instance: Rserve
+          #   r: "3.6"
           - os: macOS-latest
             java: 21
             rsession_instance: Rserve
@@ -185,13 +186,13 @@ jobs:
     - uses: actions/checkout@v3
 
     # Set up GraalVM with JavaScript for R2js tests (Java 21 only)
+    # Note: GraalVM for JDK 21+ no longer uses components, JS is included by default
     - name: Set up GraalVM (for R2js Java 21)
       if: matrix.rsession_instance == 'R2js' && matrix.java == 21
       uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
-        components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     # Set up standard JDK for Java 11 (all tests) and Renjin/Rserve tests
@@ -246,7 +247,6 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
-        components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Set up JDK (Java 11)
       if: matrix.java == 11
