@@ -291,7 +291,7 @@ public class RPanelsTest {
 
     @Test
     public void testRObjPanel_Rsession() throws Exception {
-        assumeTrue("At least one Rsession instance initialized", s != null || r != null || q != null);
+        assumeTrue("Rserve instance not initialized", s != null);
         System.err.println("====================================== testRObjPanel_Rsession");
         RObjectsPanel p = new RObjectsPanel(s);
         frame(p);
