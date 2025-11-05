@@ -875,7 +875,7 @@ public class BasicTest {
         double c = Math.random();
         s.set("c", c);
         s.set("z", 0.0);
-        assert ((Double) s.eval("c")) == c;
+        assert ((Double) s.eval("c")) == c : "Failed to set/get variable c: " + s.eval("c") + " != " + c;
 
         //get/put files
         String[] ls = (String[]) s.eval("ls()");
