@@ -141,18 +141,18 @@
                 <dependency>
                     <groupId>org.graalvm.polyglot</groupId>
                     <artifactId>polyglot</artifactId>
-                    <version>23.1.1</version>
+                    <version>24.1.1</version>
                 </dependency>
                 <dependency>
                     <groupId>org.graalvm.polyglot</groupId>
                     <artifactId>js</artifactId>
-                    <version>23.1.1</version>
+                    <version>24.1.1</version>
                     <type>pom</type>
                 </dependency>
                 <dependency>
                     <groupId>org.graalvm.truffle</groupId>
                     <artifactId>truffle-api</artifactId>
-                    <version>23.1.1</version>
+                    <version>24.1.1</version>
                     <type>pom</type>
                 </dependency>
             </dependencies>
@@ -184,6 +184,35 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Release profile for signing artifacts -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
@@ -282,6 +311,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
+                <configuration>
+                    <!-- Use @{argLine} to preserve jacoco argLine -->
+                    <argLine>@{argLine} --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED --add-opens=java.base/sun.misc=ALL-UNNAMED --add-exports=java.base/jdk.internal.module=ALL-UNNAMED --add-exports=java.base/sun.misc=ALL-UNNAMED</argLine>
+                </configuration>
                 <executions>
                     <!-- Disable default test execution -->
                     <execution>
@@ -391,13 +424,34 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.7</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.3</version>
+                <version>1.6.13</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <!--nexusUrl>https://oss.sonatype.org/</nexusUrl-->
+                    <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
@@ -460,7 +514,23 @@
         </plugins>
         <finalName>rsession</finalName>
     </build>
-	
+
+    <licenses>
+        <license>
+            <name>BSD</name>
+            <url>https://opensource.org/licenses/BSD-2-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>yannrichet</id>
+            <name>Yann Richet</name>
+            <email>yann.richet@laposte.net</email>
+        </developer>
+    </developers>
+
     <scm>
         <connection>scm:git:git@github.com:yannrichet/rsession.git</connection>
         <developerConnection>scm:git:git@github.com:yannrichet/rsession.git</developerConnection>
