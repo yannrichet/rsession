@@ -17,13 +17,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up GraalVM
+    - name: Set up GraalVM (Java 21)
+      if: matrix.java == 21
       uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up JDK (Java 11)
+      if: matrix.java == 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'temurin'
     - run: mvn -B compile -DskipTests=true --file pom.xml
 
   test:
@@ -177,9 +184,9 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    # Set up GraalVM with JavaScript for R2js tests
-    - name: Set up GraalVM (for R2js)
-      if: matrix.rsession_instance == 'R2js'
+    # Set up GraalVM with JavaScript for R2js tests (Java 21 only)
+    - name: Set up GraalVM (for R2js Java 21)
+      if: matrix.rsession_instance == 'R2js' && matrix.java == 21
       uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
@@ -187,9 +194,9 @@ jobs:
         components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Set up standard JDK for Renjin and Rserve tests
-    - name: Set up JDK (for Renjin/Rserve)
-      if: matrix.rsession_instance != 'R2js'
+    # Set up standard JDK for Java 11 (all tests) and Renjin/Rserve tests
+    - name: Set up JDK (for Java 11 or Renjin/Rserve)
+      if: matrix.rsession_instance != 'R2js' || matrix.java == 11
       uses: actions/setup-java@v4
       with:
         java-version: ${{ matrix.java }}
@@ -233,13 +240,20 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: Set up GraalVM
+    - name: Set up GraalVM (Java 21)
+      if: matrix.java == 21
       uses: graalvm/setup-graalvm@v1
       with:
         java-version: ${{ matrix.java }}
         distribution: 'graalvm'
         components: 'js'
         github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up JDK (Java 11)
+      if: matrix.java == 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'temurin'
     - run: mvn -B package -DskipTests=true --file pom.xml
 
     - uses: actions/upload-artifact@v4
