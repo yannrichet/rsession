@@ -434,15 +434,21 @@ public class StartRserve {
         return org.apache.commons.io.FileUtils.readFileToString(out);
     }
 
-    public static Process system(String command, File redirect, boolean waitFor) { 
-        command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : "");
+    public static Process system(String command, File redirect, boolean waitFor) {
+        command = command +" > " + redirect.getAbsolutePath() + (!RserveDaemon.isWindows() ? " 2>&1" : " 2>&1");
         boolean system_log = Boolean.parseBoolean(System.getProperty("system.print", "false"));
         if (system_log) Log.Out.println("  $  " + command );
         Process p = null;
         try {
             if (RserveDaemon.isWindows()) {
                 ProcessBuilder pb = new ProcessBuilder("cmd.exe","/c", command);
-                pb.redirectError(); // ~ 2>&1
+                if (!waitFor) {
+                    // Discard cmd.exe's output streams to prevent buffer blocking when not waiting
+                    pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+                    pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+                } else {
+                    pb.redirectErrorStream(true);
+                }
                 p = pb.start();
 
                 if (waitFor) {
@@ -753,7 +759,7 @@ public class StartRserve {
                         pids.add(pid);
                     }
                 }
-                //process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
+                process.waitFor(TIMEOUT, java.util.concurrent.TimeUnit.SECONDS);
             } catch (Exception e) {
                 Log.Err.println(e.getMessage());
             }
