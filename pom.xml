@@ -22,6 +22,8 @@
         <rsession.skip.r2js>false</rsession.skip.r2js>
         <rsession.skip.renjin>false</rsession.skip.renjin>
         <rsession.skip.rserve>false</rsession.skip.rserve>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
     <profiles>
@@ -125,11 +127,11 @@
             </build>
         </profile>
 
-        <!-- Profile for Java 21 (GraalVM) -->
+        <!-- Profile for Java 21+ (GraalVM) -->
         <profile>
             <id>java21</id>
             <activation>
-                <jdk>[21,22)</jdk>
+                <jdk>[21,)</jdk>
             </activation>
             <properties>
                 <maven.compiler.source>21</maven.compiler.source>
