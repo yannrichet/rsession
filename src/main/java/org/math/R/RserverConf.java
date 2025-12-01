@@ -8,7 +8,7 @@ public class RserverConf {
 
     public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be used, as it seems an incoming connection, not authorized
     public static int DEFAULT_RSERVE_PORT = 6311;
-    public static String DEFAULT_RSERVE_WORKDIR = System.getProperty("user.home") + "/" + ".Rserve";
+    public static String DEFAULT_RSERVE_WORKDIR = "tmp" + "/" + ".Rserve";
 
     RConnection connection;
     public String host;
@@ -203,7 +203,10 @@ public class RserverConf {
                 hostportpath = beforeFirst(hostportpath, "/");
             }
 
-            return new RserverConf(host, port, login, passwd, workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
+            RserverConf rc = new RserverConf(host, port, login, passwd, workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
+            if (rc.isLocal() && workdir==null)
+                rc.workdir =  System.getProperty("user.home") + rc.workdir;
+            return rc;
         } catch (Exception e) {
             throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd + "\n  workdir=" + workdir);
         }
