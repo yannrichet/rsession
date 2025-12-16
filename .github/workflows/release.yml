@@ -51,16 +51,16 @@ jobs:
       run: |
         cp target/rsession.jar target/Rsession-${{ steps.get_version.outputs.VERSION }}-${{ steps.java_type.outputs.type }}.jar
     
-    - name: Build lite JAR (without Renjin)
+    - name: Build lite JAR (without Rserve binaries)
       run: |
-        # Create lite version by excluding Renjin classes and keeping only necessary files
+        # Create lite version by excluding Rserve binaries (tgz, zip, tar.gz)
         mkdir -p target/lite-classes
         cd target/classes
         
-        # Copy all non-Renjin classes
-        find . -type f \( -name "*.class" -o -name "*.js" -o -name "*.tgz" -o -name "*.zip" -o -name "*.tar.gz" \) \
-          ! -name "RenjinSession*.class" \
-          ! -name "Renjin*Test*.class" \
+        # Copy all classes and resources EXCEPT Rserve binaries and test classes
+        find . -type f \( -name "*.class" -o -name "*.js" -o -name "*.form" \) \
+          ! -name "*Test.class" \
+          ! -name "*Test$*.class" \
           -exec cp --parents {} ../lite-classes/ \;
         
         cd ../lite-classes
