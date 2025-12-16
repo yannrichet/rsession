@@ -187,7 +187,16 @@ public class RserveSession extends Rsession implements RLog {
             return;
         }
 
-        silentlyVoidEval("if (!any(file.access(.libPaths(),2)>=0)) .libPaths(new=tempdir())"); // ensure a writable directory for libPath
+        // Ensure a writable directory for libPath, especially for remote Rserve
+        // For remote connections, prioritize tempdir() to avoid client username path issues
+        if (RserveConf != null && !RserveConf.isLocal()) {
+            // Remote Rserve: always put tempdir first to avoid /home/<client_user> issues
+            silentlyVoidEval(".libPaths(c(tempdir(), .libPaths()[file.access(.libPaths(), 2) >= 0]))");
+            log("Remote Rserve: prioritized tempdir() for package installation", Level.INFO);
+        } else {
+            // Local Rserve: only add tempdir if no writable path exists
+            silentlyVoidEval("if (!any(file.access(.libPaths(),2)>=0)) .libPaths(new=tempdir())");
+        }
 
         setenv(properties);
     }
@@ -218,7 +227,7 @@ public class RserveSession extends Rsession implements RLog {
         status = STATUS_NOT_CONNECTED;
 
         if (RserveConf == null) {// no RserveConf given, so create one, and need to be started
-            RserveConf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null, RserverConf.DEFAULT_RSERVE_WORKDIR);
+            RserveConf = new RserverConf(RserverConf.DEFAULT_RSERVE_HOST, -1, null, null, System.getProperty("user.home") + File.separator + RserverConf.DEFAULT_RSERVE_WORKDIR);
             log("No Rserve conf given. Trying to use " + RserveConf.toString(), Level.INFO);
 
             try {
@@ -253,6 +262,20 @@ public class RserveSession extends Rsession implements RLog {
             status = STATUS_ERROR;
             throw new RException("Rserve " + RserveConf + " version is too old.");
         } else {
+            // Ensure workdir exists on remote Rserve
+            if (RserveConf.workdir != null && !RserveConf.workdir.isEmpty()) {
+                try {
+                    String checkCmd = "dir.exists('" + RserveConf.workdir.replace("\\", "/") + "')";
+                    REXP dirExists = R.eval(checkCmd);
+                    if (dirExists != null && dirExists.asInteger() == 0) {
+                        log("Creating workdir on remote Rserve: " + RserveConf.workdir, Level.INFO);
+                        String createCmd = "dir.create('" + RserveConf.workdir.replace("\\", "/") + "', recursive=TRUE, showWarnings=FALSE)";
+                        R.eval(createCmd);
+                    }
+                } catch (Exception ex) {
+                    log(HEAD_ERROR + "Failed to check/create workdir on remote Rserve: " + ex.getMessage(), Level.WARNING);
+                }
+            }
             status = STATUS_READY;
         }
     }
@@ -1252,6 +1275,14 @@ public class RserveSession extends Rsession implements RLog {
         getFile(localfile, localfile.getName());
     }
 
+    @Override
+    public boolean isLocal() {
+        if (RserveConf == null) {
+            return true;
+        } else {
+            return RserveConf.isLocal();
+        }
+    }
     /**
      * Get file from R environment to user filesystem
      *

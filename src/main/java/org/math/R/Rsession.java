@@ -52,6 +52,10 @@ public abstract class Rsession implements RLog {
     List<RLog> loggers;
     public boolean debug;
 
+    public boolean isLocal() {
+        return true;
+    }
+
     //** GLG HACK: Logging fix **//
     // No sink file (Passed to false) a lot faster not to sink the output
     boolean SINK_OUTPUT = true, SINK_MESSAGE = true;
@@ -707,7 +711,8 @@ public abstract class Rsession implements RLog {
     public String installPackage(File pack, boolean load) {
         pack = putFileInWorkspace(pack);
         try {
-            rawEval("install.packages('" + pack.getPath().replace("\\", "/") + "',repos=NULL,quiet=T" + install_packages_moreargs + ")");
+            // Explicitly specify lib to use first writable path (avoids client username path issues)
+            rawEval("install.packages('" + pack.getPath().replace("\\", "/") + "',repos=NULL,lib=.libPaths()[1],quiet=T" + install_packages_moreargs + ")");
         } catch (Exception ex) {
             log(ex.getMessage(), Level.ERROR);
         }
@@ -819,7 +824,8 @@ public abstract class Rsession implements RLog {
          log("  package " + pack + " not accessible on " + repos + ": CRAN unreachable.");
          return "Impossible to get package " + pack + " from " + repos;
          }*/
-        rawEval("install.packages('" + pack + "',repos='" + repos + "',quiet=T" + install_packages_moreargs + ")", TRY_MODE);
+        // Explicitly specify lib to use first writable path (avoids client username path issues)
+        rawEval("install.packages('" + pack + "',repos='" + repos + "',lib=.libPaths()[1],quiet=T" + install_packages_moreargs + ")", TRY_MODE);
         log("  request if package " + pack + " is installed...", Level.INFO);
 
         if (isPackageInstalled(pack, null)) {

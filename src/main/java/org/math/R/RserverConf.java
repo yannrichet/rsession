@@ -6,7 +6,8 @@ import java.io.File;
 
 public class RserverConf {
 
-    public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be used, as it seems an incoming connection, not authorized
+    public static String DEFAULT_RSERVE_HOST = "localhost"; // InetAddress.getLocalHost().getHostName(); should not be
+                                                            // used, as it seems an incoming connection, not authorized
     public static int DEFAULT_RSERVE_PORT = 6311;
     public static String DEFAULT_RSERVE_WORKDIR = "tmp" + "/" + ".Rserve";
 
@@ -24,6 +25,7 @@ public class RserverConf {
         this.password = password;
         this.workdir = workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR;
     }
+
     public static long CONNECT_TIMEOUT = 5000;
 
     public static abstract class TimeOut {
@@ -55,6 +57,7 @@ public class RserverConf {
                 }
             }
         }
+
         private boolean timedOut = false;
         private Object result = null;
 
@@ -91,7 +94,7 @@ public class RserverConf {
     }
 
     public synchronized RConnection connect() {
-        //Logger.err.print("Connecting " + toString()+" ... ");
+        // Logger.err.print("Connecting " + toString()+" ... ");
 
         TimeOut t = new TimeOut() {
 
@@ -124,7 +127,8 @@ public class RserverConf {
                         }
                         return 0;
                     } catch (RserveException ex) {
-                        Log.Err.println("Failed to connect on host:" + host + " port:" + port + " login:" + login + "\n  " + ex.getMessage());
+                        Log.Err.println("Failed to connect on host:" + host + " port:" + port + " login:" + login
+                                + "\n  " + ex.getMessage());
                     }
                 }
                 return -1;
@@ -151,7 +155,9 @@ public class RserverConf {
 
     @Override
     public String toString() {
-        return RURL_START + (login != null ? (login + ":" + password + "@") : "") + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "") + (workdir != null ? "/" + workdir : DEFAULT_RSERVE_WORKDIR);
+        return RURL_START + (login != null ? (login + ":" + password + "@") : "")
+                + (host == null ? DEFAULT_RSERVE_HOST : host) + (port > 0 ? ":" + port : "")
+                + (workdir != null ? "/" + workdir : DEFAULT_RSERVE_WORKDIR);
     }
 
     public final static String RURL_START = "R://";
@@ -162,18 +168,18 @@ public class RserverConf {
         String host = null;
         int port = -1;
         String workdir = null;
-        //Properties props = null;
+        // Properties props = null;
         try {
             String loginhostportpath = null;
             if (RURL.contains("?")) {
                 loginhostportpath = beforeFirst(RURL, "?").substring((RURL_START).length());
-//                String[] allprops = afterFirst(RURL, "?").split("&");
-//                props = new Properties();
-//                for (String prop : allprops) {
-//                    if (prop.contains("=")) {
-//                        props.put(beforeFirst(prop, "="), afterFirst(prop, "="));
-//                    } // else ignore
-//                }
+                // String[] allprops = afterFirst(RURL, "?").split("&");
+                // props = new Properties();
+                // for (String prop : allprops) {
+                // if (prop.contains("=")) {
+                // props.put(beforeFirst(prop, "="), afterFirst(prop, "="));
+                // } // else ignore
+                // }
             } else {
                 loginhostportpath = RURL.substring((RURL_START).length());
             }
@@ -203,12 +209,12 @@ public class RserverConf {
                 hostportpath = beforeFirst(hostportpath, "/");
             }
 
-            RserverConf rc = new RserverConf(host, port, login, passwd, workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
-            if (rc.isLocal() && workdir==null)
-                rc.workdir =  System.getProperty("user.home") + rc.workdir;
+            RserverConf rc = new RserverConf(host, port, login, passwd,
+                    workdir != null ? workdir : DEFAULT_RSERVE_WORKDIR);
             return rc;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port + "\n  login=" + login + "\n  password=" + passwd + "\n  workdir=" + workdir);
+            throw new IllegalArgumentException("Impossible to parse " + RURL + ":\n  host=" + host + "\n  port=" + port
+                    + "\n  login=" + login + "\n  password=" + passwd + "\n  workdir=" + workdir);
         }
     }
 
@@ -238,5 +244,5 @@ public class RserverConf {
         } else {
             return "";
         }
-    }    
+    }
 }
