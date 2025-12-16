@@ -45,7 +45,14 @@ jobs:
         fi
     
     - name: Build regular JAR with Maven
-      run: mvn -B package -DskipTests=true --file pom.xml
+      run: |
+        if [ ${{ matrix.java }} -eq 11 ]; then
+          # JDK 11: Compile for Java 11 (class version 55)
+          mvn -B package -DskipTests=true --file pom.xml -Dmaven.compiler.source=11 -Dmaven.compiler.target=11 -Dmaven.compiler.release=11
+        else
+          # GraalVM 21: Compile for Java 21 (class version 65)
+          mvn -B package -DskipTests=true --file pom.xml
+        fi
     
     - name: Rename regular JAR with version and Java type
       run: |
